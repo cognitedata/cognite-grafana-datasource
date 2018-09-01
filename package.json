@@ -1,0 +1,28 @@
+{
+  "name": "cognite-cdp-datasource",
+  "version": "0.0.1",
+  "description": "Cognite Data Platform datasource",
+  "repository": "https://github.com/cognitedata/cognite-dataplatform-datasource",
+  "author": "Cognite AS",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "rm -rf dist/* && cp src/plugin.json dist/ && cp -r src/css dist/ && cp -r src/partials dist/ && npx tsc -m system --outDir dist/ src/*ts",
+  },
+  "devDependencies": {
+    "awesome-typescript-loader": "^5.2.0",
+    "clean-webpack-plugin": "^0.1.19",
+    "copy-webpack-plugin": "^4.5.2",
+    "css-loader": "^1.0.0",
+    "grafana-sdk-mocks": "github:briangann/grafana-sdk-mocks",
+    "source-map-loader": "^0.2.4",
+    "style-loader": "^0.23.0",
+    "systemjs": "^0.21.4",
+    "typescript": "^3.0.1",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.10",
+    "q": "^1.5.1"
+  }
+}
