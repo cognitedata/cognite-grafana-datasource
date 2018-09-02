@@ -1,12 +1,16 @@
-///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
+///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
-import {QueryCtrl} from 'app/plugins/sdk';
+import { QueryCtrl } from 'app/plugins/sdk';
 import './css/query_editor.css!';
+import CogniteDatasource from "./datasource";
+
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
   target: any;
+  datasource: CogniteDatasource;
+  panelCtrl: any;
   aggregation = [
     { value: null, name: 'None' },
     { value: 'average', name: 'Average' },

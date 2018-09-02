@@ -1,3 +1,4 @@
+///<reference path="./grafana.d.ts" />
 import * as dateMath from 'app/core/utils/datemath';
 
 export interface TimeSeriesResponse {
