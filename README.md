@@ -7,7 +7,7 @@
 
 `yarn` followed by `yarn build` should work on systems with a shell.
 
-## Run with docker
+## Run with Docker
 
 Building the image will build the plugin and copy it into the grafana/plugins folder.
 
@@ -17,7 +17,8 @@ Building the image will build the plugin and copy it into the grafana/plugins fo
 
 Now you can access it at http://localhost:3000
 
-Standard username/password for logging in is admin/admin. See http://docs.grafana.org/installation/docker/ for configuration details.
+Standard username/password for logging in is admin/admin. See
+http://docs.grafana.org/installation/docker/ for configuration details.
 
 ## Developing
 
