@@ -10,10 +10,8 @@
   },
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.0",
-    "clean-webpack-plugin": "^0.1.19",
-    "copy-webpack-plugin": "^4.5.2",
     "css-loader": "^1.0.0",
-    "grafana-sdk-mocks": "github:briangann/grafana-sdk-mocks",
+    "grafana-sdk-mocks": "git+https://github.com/briangann/grafana-sdk-mocks.git",
     "source-map-loader": "^0.2.4",
     "style-loader": "^0.23.0",
     "systemjs": "^0.21.4",
