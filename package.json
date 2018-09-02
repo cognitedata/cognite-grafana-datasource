@@ -6,7 +6,7 @@
   "author": "Cognite AS",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "rm -rf dist/* && cp src/plugin.json dist/ && cp -r src/css dist/ && cp -r src/partials dist/ && npx tsc -m system --outDir dist/ src/*ts",
+    "build": "rm -rf dist/* && cp src/plugin.json dist/ && cp -r src/css dist/ && cp -r src/partials dist/ && npx tsc -m system --outDir dist/ src/*ts"
   },
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.0",
