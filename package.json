@@ -6,7 +6,8 @@
   "author": "Cognite AS",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "rm -rf dist && npx tsc && cp -r src/plugin.json src/css src/partials src/img dist/"
+    "build": "rm -rf dist && npx tsc && cp -r src/plugin.json src/css src/partials src/img dist/",
+    "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 cognite-grafana"
   },
   "devDependencies": {
     "typescript": "^3.0.1"
