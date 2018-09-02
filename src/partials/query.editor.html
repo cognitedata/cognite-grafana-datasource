@@ -9,6 +9,12 @@
           on-change="ctrl.onChangeInternal()">
         </gf-form-dropdown>
       </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+        <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
+          <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+        </select>
+      </div>
       <div class="gf-form gf-form--grow">
         <div class="gf-form-label gf-form-label--grow"></div>
       </div>

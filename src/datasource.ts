@@ -1,11 +1,13 @@
 import * as dateMath from 'app/core/utils/datemath';
 
-export class TimeSeriesResponse {
-  constructor(readonly target: string, readonly datapoints: [number, number]) {
-  }
+export interface TimeSeriesResponse {
+  target: string,
+  datapoints: [number, number][],
 }
 
-export type QueryResponse = TimeSeriesResponse[];
+export interface QueryResponse {
+  data: TimeSeriesResponse[]
+}
 
 export class MetricDescription {
   constructor(readonly text: string, readonly value: number) {
@@ -60,6 +62,7 @@ export interface QueryRange {
 export interface QueryTarget {
   refId: string,
   target: string,
+  aggregation: string,
 }
 
 export type QueryFormat = "json";
@@ -70,6 +73,7 @@ export interface QueryOptions {
   targets: QueryTarget[],
   format: QueryFormat,
   maxDataPoints: number,
+  intervalMs: number,
 }
 
 export interface TimeSeriesDatapoint {
@@ -90,6 +94,24 @@ export interface DataDatapoints {
   data: Datapoints,
 }
 
+interface DataQueryRequestItem {
+  name: string,
+  start?: string | number,
+  end?: string | number,
+  limit?: number,
+  granularity?: string,
+  aggregates?: string,
+}
+
+interface DataQueryRequest {
+  items: DataQueryRequestItem[],
+  start: string | number,
+  end: string | number,
+  limit?: number,
+  aggregates?: string,
+  granularity?: string,
+}
+
 export default class CogniteDatasource {
   id: number;
   url: string;
@@ -106,41 +128,72 @@ export default class CogniteDatasource {
     this.name = instanceSettings.name;
   }
 
+  private intervalToGranularity(intervalMs: number): string {
+    const seconds = Math.round(intervalMs / 1000.0);
+    if (seconds <= 60) {
+      if (seconds <= 1) {
+        return '1s';
+      } else {
+        return seconds + 's';
+      }
+    }
+    const minutes = Math.round(intervalMs / 1000.0 / 60.0);
+    if (minutes < 60) {
+      return minutes + 'm';
+    }
+    const hours = Math.round(intervalMs / 1000.0 / 60.0 / 60.0);
+    if (hours <= 24) {
+      return hours + 'h';
+    }
+    const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
+    return days + 'd';
+  }
+
   query(options: QueryOptions): Promise<QueryResponse> {
     if (options.targets.length === 0) {
-      return Promise.resolve([]);
+      return Promise.resolve({data: []});
     }
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const queryData = {
-      items: options.targets.map(t => ({
-        name: t.target,
-      })),
-      start: timeFrom,
-      end: timeTo,
-      limit: 10_000,
-    };
-    return this.backendSrv.datasourceRequest({
-      method: "POST",
-      url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
-      data: queryData
-    }).then((response: { data: DataDatapoints }) => (
+    const queries: DataQueryRequest[] = options.targets.map(target => {
+      const query: DataQueryRequestItem = {
+        name: target.target,
+        granularity: this.intervalToGranularity(options.intervalMs),
+      };
+      if (target.aggregation && target.aggregation.length > 0) {
+        query.aggregates = target.aggregation;
+      }
+      return {
+        items: [query],
+        start: timeFrom,
+        end: timeTo,
+        limit: 10_000,
+        aggregation: query.aggregates,
+      };
+    });
+    return Promise.all(queries.map(q => this.backendSrv.datasourceRequest(
       {
-        data: response.data.data.items.map(item => (
-          {
-            target: item.name,
-            datapoints: item.datapoints
-              .filter(datapoint => {
-                return datapoint.timestamp >= timeFrom && datapoint.timestamp <= timeTo
-              })
-              .map(datapoint => {
-                return [datapoint.value, datapoint.timestamp];
-              })
-          }))
-      })).catch((r: any) => {
-      data: []
-    })
+        url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
+        method: "POST",
+        data: q
+      })))
+      .then((timeseries: [{ data: DataDatapoints, config: { data: { aggregation: string } } }]) => ({
+        data: timeseries
+          .reduce((datapoints, response) => {
+            const aggregation = response.config.data.aggregation;
+            const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
+            return datapoints.concat(response.data.data.items.map(item => (
+              {
+                target: aggregationPrefix + item.name,
+                datapoints: item.datapoints
+                  .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
+                  .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
+              }
+            )));
+          }, [])
+      }))
+      .catch((r: any) => ({data: []}));
   }
 
   annotationQuery(options: any) {

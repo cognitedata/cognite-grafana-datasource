@@ -6,6 +6,15 @@ import './css/query_editor.css!';
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
+  target: any;
+  aggregation = [
+    { value: null, name: 'None' },
+    { value: 'average', name: 'Average' },
+    { value: 'max', name: 'Max' },
+    { value: 'min', name: 'Min' },
+    { value: 'count', name: 'Count' },
+    { value: 'sum', name: 'Sum' },
+  ];
   defaults = {
   };
 
@@ -17,6 +26,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
     this.target.target = this.target.target || 'select metric';
     this.target.type = this.target.type || 'timeserie';
+    this.target.aggregation = this.target.aggregation || null;
   }
 
   getOptions(query) {
