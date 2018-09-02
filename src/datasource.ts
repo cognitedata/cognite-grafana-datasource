@@ -168,7 +168,10 @@ export default class CogniteDatasource {
         items: [query],
         start: timeFrom,
         end: timeTo,
-        limit: 10_000,
+        // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
+        //       still looks ok for aggregates, so perhaps we should use it for those?
+        //limit: options.maxDataPoints,
+        limit: query.aggregates ? 10_000 : 100_000,
         aggregation: query.aggregates,
       };
     });
