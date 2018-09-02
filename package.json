@@ -1,8 +1,8 @@
 {
-  "name": "cognite-cdp-datasource",
+  "name": "@cognite/cognite-grafana-datasource",
   "version": "0.0.1",
   "description": "Cognite Data Platform datasource",
-  "repository": "https://github.com/cognitedata/cognite-dataplatform-datasource",
+  "repository": "https://github.com/cognitedata/cognite-grafana-datasource",
   "author": "Cognite AS",
   "license": "Apache-2.0",
   "scripts": {

@@ -1,22 +1,22 @@
 {
   "type": "datasource",
   "name": "Cognite Data Platform",
-  "id": "cognite-dataplatform-datasource",
+  "id": "cognitedata-platform-datasource",
 
   "info": {
-    "description": "Cognite Data Platform",
+    "description": "Cognite Data Platform datasource",
     "author": {
       "name": "Cognite AS",
       "url": "https://cognite.com"
     },
     "keywords": ["cognite", "timeseries", "iot"],
     "logos": {
-      "small": "img/your_logo.png",
-      "large": "img/your_logo.png"
+      "small": "img/Cognite_logo_RGB.png",
+      "large": "img/Cognite_logo_RGB.png"
     },
     "links": [
-      {"name": "Project site", "url": "https://github.com/cognite/cognite-dataplatform-datasource"},
-      {"name": "Apache License", "url": "https://github.com/cognite/cognite-dataplatform-datasource/blob/master/LICENSE"}
+      {"name": "Project site", "url": "https://github.com/cognitedata/cognite-grafana-datasource"},
+      {"name": "Apache License", "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"}
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
