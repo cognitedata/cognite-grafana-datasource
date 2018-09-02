@@ -9,15 +9,7 @@
     "build": "rm -rf dist/* && cp src/plugin.json dist/ && cp -r src/css dist/ && cp -r src/partials dist/ && npx tsc -m system --outDir dist/ src/*ts"
   },
   "devDependencies": {
-    "awesome-typescript-loader": "^5.2.0",
-    "css-loader": "^1.0.0",
-    "grafana-sdk-mocks": "git+https://github.com/briangann/grafana-sdk-mocks.git",
-    "source-map-loader": "^0.2.4",
-    "style-loader": "^0.23.0",
-    "systemjs": "^0.21.4",
-    "typescript": "^3.0.1",
-    "webpack": "^4.17.1",
-    "webpack-cli": "^3.1.0"
+    "typescript": "^3.0.1"
   },
   "dependencies": {
     "lodash": "^4.17.10",
