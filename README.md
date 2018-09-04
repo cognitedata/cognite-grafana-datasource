@@ -13,7 +13,7 @@ Building the image will build the plugin and copy it into the grafana/plugins fo
 
 `$ docker build -t cognite-grafana .`
 
-`$ docker run -d --name grafana -p 3000:3000 cognite-grafana`
+`$ docker run -d --name grafana -p 3000:3000 cognite/grafana-cdp`
 
 Now you can access it at http://localhost:3000
 
