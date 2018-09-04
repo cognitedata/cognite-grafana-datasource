@@ -9,16 +9,21 @@
 
 ## Run with Docker
 
-Building the image will build the plugin and copy it into the grafana/plugins folder.
-
-`$ docker build -t cognite-grafana .`
+The official image is hosted on Docker Hub as
+[cognite/grafana-cdp](https://hub.docker.com/r/cognite/grafana-cdp/)
 
 `$ docker run -d --name grafana -p 3000:3000 cognite/grafana-cdp`
 
-Now you can access it at http://localhost:3000
+Now you can access Grafana at http://localhost:3000
 
 Standard username/password for logging in is admin/admin. See
 http://docs.grafana.org/installation/docker/ for configuration details.
+
+## Building with Docker
+
+Building the image will build the plugin and copy it into the grafana/plugins folder.
+
+`$ docker build -t cognite-grafana .`
 
 ## Developing
 
