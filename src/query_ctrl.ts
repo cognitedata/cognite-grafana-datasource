@@ -28,7 +28,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
     _.defaultsDeep(this.target, this.defaults);
 
-    this.target.target = this.target.target || 'Start typing tag id';
+    this.target.target = this.target.target || 'Start typing tag id here';
     this.target.type = this.target.type || 'timeserie';
     this.target.aggregation = this.target.aggregation || 'average';
   }
