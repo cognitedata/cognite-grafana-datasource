@@ -3,6 +3,10 @@
 [Grafana](https://grafana.com/) datasource for the
 [Cognite Data Platform](https://cognite.com/).
 
+## Detailed instructions
+
+See [step-by-step guide](./instructions.md)
+
 ## Run with Docker
 
 The official image is hosted on Docker Hub as
