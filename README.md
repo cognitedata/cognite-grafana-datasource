@@ -7,6 +7,8 @@
 
 See [step-by-step guide](./instructions.md)
 
+![Test](./images/screenshot.png)
+
 ## Run with Docker
 
 The official image is hosted on Docker Hub as
