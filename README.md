@@ -5,9 +5,7 @@
 
 ## Detailed instructions
 
-See [step-by-step guide](./instructions.md)
-
-![Test](./images/screenshot.png)
+For detailed instructions, see the [step-by-step guide](./instructions.md).
 
 ## Run with Docker
 
