@@ -1,6 +1,6 @@
-# instructions
+# Step-by-step guide to how to get started with Grafana
 
-1: Use the virtual machine Docker to access the Grafana data source for the Cognite Data Platform. Download it here: https://www.docker.com/get-started
+1. Use the virtual machine Docker to access the Grafana data source for the Cognite Data Platform. Download it here: https://www.docker.com/get-started
 
 ![Docker download](./images/image1.png)
 
@@ -30,7 +30,7 @@ The download from cognite/grafana-cdp will start immediately.
 
 Standard username/password for logging in is admin/admin.
 
-Well in you can see that CDP is installed.
+Once logged in you can see that CDP is installed.
 
 ![Opening Grafana](./images/image6.png)
 
