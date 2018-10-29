@@ -37,7 +37,7 @@ podTemplate(
       container('node') {
         stage('Checkout') {
           checkout(scm)
-          shortSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+          shortSha = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
         }
 
         stage('Prepare') {
