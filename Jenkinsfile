@@ -12,7 +12,7 @@ podTemplate(
     secretVolume(secretName: 'npm-credentials',
                  mountPath: '/npm-credentials',
                  readOnly: true),
-    secretVolume(secretName: 'jenkins-docker-builder', mountPath: '/jenkins-docker-builder'),
+    secretVolume(secretName: 'cognitecicd-dockerhub', mountPath: '/dockerhub-credentials'),
   ],
   envVars: [
     envVar(key: 'CHANGE_ID', value: env.CHANGE_ID),
@@ -35,6 +35,10 @@ podTemplate(
         stage('Build docker image') {
           shortSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
           sh("docker build -t ${imageName}:${shortSha} .")
+        }
+
+        stage('Login to docker hub') {
+          sh('docker login -u "$(cat /dockerhub-credentials/DOCKER_USERNAME)" -p "$(cat /dockerhub-credentials/DOCKER_PASSWORD"')
         }
 
         if (env.CHANGE_ID) {
