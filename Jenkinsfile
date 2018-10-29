@@ -52,7 +52,7 @@ podTemplate(
         }
 
         stage('Login to docker hub') {
-          sh('docker login -u "$(cat /dockerhub-credentials/DOCKER_USERNAME)" -p "$(cat /dockerhub-credentials/DOCKER_PASSWORD"')
+          sh('docker login -u "$(cat /dockerhub-credentials/DOCKER_USERNAME)" -p "$(cat /dockerhub-credentials/DOCKER_PASSWORD)"')
         }
 
         if (env.CHANGE_ID) {
