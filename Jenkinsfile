@@ -48,6 +48,7 @@ podTemplate(
       }
       container('docker') {
         stage('Build docker image') {
+          sh("docker -v")
           sh("docker build -t ${imageName}:${shortSha} .")
         }
 
