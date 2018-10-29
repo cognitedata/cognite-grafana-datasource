@@ -50,7 +50,7 @@ podTemplate(
         }
 
         stage('Test') {
-          sh('echo "¯\_(ツ)_/¯"')
+          sh('echo "/shrug"')
         }
       }
 
