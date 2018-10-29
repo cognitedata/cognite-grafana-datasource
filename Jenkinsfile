@@ -46,10 +46,12 @@ podTemplate(
         }
 
         stage('Build') {
+          // Prepares artifacts (/dist) for the docker builds
           sh('yarn build')
         }
 
         stage('Test') {
+          // TODO: Implement tests
           sh('echo "/shrug"')
         }
       }
