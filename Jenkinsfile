@@ -26,6 +26,7 @@ podTemplate(
                  mountPath: '/npm-credentials',
                  readOnly: true),
     secretVolume(secretName: 'cognitecicd-dockerhub', mountPath: '/dockerhub-credentials'),
+    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'),
   ],
   envVars: [
     envVar(key: 'CHANGE_ID', value: env.CHANGE_ID),
