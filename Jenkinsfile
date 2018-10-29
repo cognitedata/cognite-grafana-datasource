@@ -48,7 +48,7 @@ podTemplate(
       }
       container('docker') {
         stage('Build docker image') {
-          sh("docker -v")
+          sh("docker version --format '{{json .}}'")
           sh("docker build -t ${imageName}:${shortSha} .")
         }
 
