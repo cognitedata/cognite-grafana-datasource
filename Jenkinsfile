@@ -13,7 +13,7 @@ podTemplate(
     containerTemplate(
       name: 'docker',
       command: '/bin/cat -',
-      image: 'docker:17.06.2-ce',
+      image: 'docker:18.06.1-ce',
       resourceRequestCpu: '100m',
       resourceRequestMemory: '500Mi',
       resourceLimitCpu: '300m',
