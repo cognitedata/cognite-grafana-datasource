@@ -43,9 +43,17 @@ podTemplate(
         stage('Prepare') {
           sh('cp /npm-credentials/npm-public-credentials.txt ~/.npmrc')
           sh('yarn')
-          sh('yarn build');
+        }
+
+        stage('Build') {
+          sh('yarn build')
+        }
+
+        stage('Test') {
+          sh('echo "¯\_(ツ)_/¯"')
         }
       }
+
       container('docker') {
         stage('Build docker image') {
           sh("docker build -t ${imageName}:${shortSha} .")
