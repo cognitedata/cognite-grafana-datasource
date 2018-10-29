@@ -7,13 +7,27 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && npx tsc && cp -r src/plugin.json src/css src/partials src/img dist/",
-    "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 cognite-grafana"
+    "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite-grafana"
   },
   "devDependencies": {
+    "husky": "^1.1.2",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
     "typescript": "^3.0.1"
   },
   "dependencies": {
     "lodash": "^4.17.10",
     "q": "^1.5.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,js,json,css,md}": [
+      "prettier --write",
+      "git add"
+    ]
   }
 }

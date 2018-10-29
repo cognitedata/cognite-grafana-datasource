@@ -1,7 +1,4 @@
 export class CogniteConfigCtrl {
-  static templateUrl = 'partials/config.html';
-  current: any;
-
-  constructor($scope) {
-  }
+  public static templateUrl = 'partials/config.html';
+  public current: any;
 }

@@ -1,17 +1,18 @@
+// tslint:disable
 ///<reference path="./grafana.d.ts" />
-import _ from 'lodash';
 import { QueryCtrl } from 'app/plugins/sdk';
+// tslint:enable
+import _ from 'lodash';
 import './css/query_editor.css!';
-import CogniteDatasource from "./datasource";
-
+import CogniteDatasource from './datasource';
 
 export class CogniteQueryCtrl extends QueryCtrl {
-  static templateUrl = 'partials/query.editor.html';
+  public static templateUrl = 'partials/query.editor.html';
 
-  target: any;
-  datasource: CogniteDatasource;
-  panelCtrl: any;
-  aggregation = [
+  public target: any;
+  public datasource: CogniteDatasource;
+  public panelCtrl: any;
+  public aggregation = [
     { value: null, name: 'None' },
     { value: 'average', name: 'Average' },
     { value: 'max', name: 'Max' },
@@ -19,9 +20,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'count', name: 'Count' },
     { value: 'sum', name: 'Sum' },
   ];
-  defaults = {
-  };
+  public defaults = {};
 
+  // tslint:disable-next-line:jsdoc-format
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
     super($scope, $injector);
@@ -33,11 +34,15 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.aggregation = this.target.aggregation || 'average';
   }
 
-  getOptions(query) {
+  public getOptions(query) {
     return this.datasource.metricFindQuery(query || '');
   }
 
-  onChangeInternal() {
+  public onChangeInternal() {
     this.panelCtrl.refresh(); // Asks the panel to refresh data.
   }
+}
+
+export class CogniteAnnotationsQueryCtrl {
+  public static templateUrl = 'partials/annotations.editor.html';
 }
