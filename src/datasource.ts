@@ -141,6 +141,7 @@ interface Annotation {
   name: string;
   query_type?: string;
   query_subtype?: string;
+  query_assetIds?: string;
   type: string;
   tags: string[];
 }
@@ -181,7 +182,7 @@ export interface Event {
   description: string;
   type: string;
   subtype: string;
-  assetIds: [number];
+  assetIds: number[];
   source: string;
   sourceId: string;
 }
@@ -307,7 +308,7 @@ export default class CogniteDatasource {
 
   public annotationQuery(options: AnnotationQueryOptions) {
     const { range, annotation } = options;
-    const { query_type, query_subtype } = annotation;
+    const { query_type, query_subtype, query_assetIds } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
     const searchRequest: Partial<AnnotationSearchQuery> = {
@@ -315,18 +316,26 @@ export default class CogniteDatasource {
       minStartTime: +startTime,
       subtype: query_subtype,
       type: query_type,
+      assetIds: query_assetIds
+        ? query_assetIds.split(',').map(Number)
+        : undefined,
     };
+
+    const stringified = Object.keys(searchRequest)
+      .filter(k => searchRequest[k] !== undefined)
+      .map(
+        k =>
+          Array.isArray(searchRequest[k])
+            ? `${k}=[${searchRequest[k]}]` // arrays are always IDs AFAIK, does not need to be encoded
+            : `${k}=${encodeURIComponent(searchRequest[k])}`
+      )
+      .join('&');
+
     return this.backendSrv
       .datasourceRequest({
         method: 'GET',
         url:
-          this.url +
-          `/cogniteapi/${this.project}/events/search?${Object.keys(
-            searchRequest
-          )
-            .filter(k => searchRequest[k] !== undefined)
-            .map(k => `${k}=${searchRequest[k]}`)
-            .join('&')}`,
+          this.url + `/cogniteapi/${this.project}/events/search?${stringified}`,
       })
       .then((result: AnnotationQueryRequestResponse) => {
         return result.data.data.items.map(event => ({
