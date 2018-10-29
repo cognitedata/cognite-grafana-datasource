@@ -1,7 +1,5 @@
-// tslint:disable
 ///<reference path="./grafana.d.ts" />
 import { QueryCtrl } from 'app/plugins/sdk';
-// tslint:enable
 import _ from 'lodash';
 import './css/query_editor.css!';
 import CogniteDatasource from './datasource';
@@ -22,7 +20,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
   ];
   public defaults = {};
 
-  // tslint:disable-next-line:jsdoc-format
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
     super($scope, $injector);

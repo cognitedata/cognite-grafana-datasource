@@ -1,7 +1,5 @@
-// tslint:disable
 ///<reference path="./grafana.d.ts" />
 import * as dateMath from 'app/core/utils/datemath';
-// tslint:enable
 
 export interface TimeSeriesResponse {
   target: string;
