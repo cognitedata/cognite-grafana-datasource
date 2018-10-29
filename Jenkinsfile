@@ -4,9 +4,22 @@ def devImageName = "cognite/grafana-cdp-dev"
 
 podTemplate(
   label: label,
-  containers: [containerTemplate(name: 'node',
-    image: 'node:9',
-    ttyEnabled: true)
+  containers: [
+    containerTemplate(
+      name: 'node',
+      image: 'node:9',
+      ttyEnabled: true
+    ),
+    containerTemplate(
+      name: 'docker',
+      command: '/bin/cat -',
+      image: 'docker:17.06.2-ce',
+      resourceRequestCpu: '100m',
+      resourceRequestMemory: '500Mi',
+      resourceLimitCpu: '300m',
+      resourceLimitMemory: '500Mi',
+      ttyEnabled: true
+    ),
   ],
   volumes: [
     secretVolume(secretName: 'npm-credentials',
@@ -19,9 +32,11 @@ podTemplate(
   ],
   ) {
     node(label) {
+      def shortSha
       container('node') {
         stage('Checkout') {
           checkout(scm)
+          shortSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
         }
 
         stage('Prepare') {
@@ -31,9 +46,7 @@ podTemplate(
         }
       }
       container('docker') {
-        def shortSha
         stage('Build docker image') {
-          shortSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
           sh("docker build -t ${imageName}:${shortSha} .")
         }
 
