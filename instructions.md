@@ -14,13 +14,13 @@ After download, log in to launch Docker.
 
 ![Docker running](./images/image4.png)
 
-2. Use terminal to first create a Docker volume (as in the GitHub instructions). Use the command: 
+2. Use terminal to first create a Docker volume (as in the GitHub instructions). Use the command:
 
-    docker volume create grafana-storage
+   docker volume create grafana-storage
 
 3. Run Docker using the volume just created
 
-    docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdp
+   docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdp
 
 The download from cognite/grafana-cdp will start immediately.
 
@@ -36,7 +36,7 @@ Once logged in you can see that CDP is installed.
 
 5. To set up CDP, do the following:
 
-Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Platform as "Type". Give the data source a name, provide the name of the project and your API key. 
+Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Platform as "Type". Give the data source a name, provide the name of the project and your API key.
 
 ![Configuration](./images/image9.png)
 

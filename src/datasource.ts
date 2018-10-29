@@ -302,7 +302,7 @@ export default class CogniteDatasource {
           };
         }
       })
-      .catch((r: any) => ({ data: [] }));
+      .catch(() => ({ data: [] }));
   }
 
   public annotationQuery(options: AnnotationQueryOptions) {
@@ -340,10 +340,7 @@ export default class CogniteDatasource {
       });
   }
 
-  public metricFindQuery(
-    query: string,
-    options?: any
-  ): Promise<MetricFindQueryResponse> {
+  public metricFindQuery(query: string): Promise<MetricFindQueryResponse> {
     if (query.length === 0) {
       return Promise.resolve([]);
     }
