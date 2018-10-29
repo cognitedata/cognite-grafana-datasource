@@ -194,15 +194,6 @@ export interface DataEvents {
   data: Events;
 }
 
-interface AnnotationQueryRequest {
-  minStartTime: DataQueryRequestItem[];
-  start: string | number;
-  end: string | number;
-  limit?: number;
-  aggregates?: string;
-  granularity?: string;
-}
-
 interface AnnotationQueryRequestResponse {
   data: DataEvents;
 }
