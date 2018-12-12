@@ -27,6 +27,7 @@ interface DataSourceRequestOptions {
   headers?: { [s: string]: string; },
   silent?: boolean,
   data?: any,
+  aggregation?: string,
 }
 
 interface BackendService {
@@ -116,9 +117,7 @@ interface DataQueryRequest {
 interface DataQueryRequestResponse {
   data: DataDatapoints,
   config: {
-    data: {
-      aggregation: string
-    }
+    aggregation: string
   }
 }
 
@@ -204,7 +203,8 @@ export default class CogniteDatasource {
       {
         url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
         method: "POST",
-        data: q
+        data: q,
+        aggregation: q.items[0].aggregates,
       })
       .catch(error => { return ({ error: error }) }) );
     return Promise.all(queryRequests)
@@ -229,14 +229,14 @@ export default class CogniteDatasource {
                 if (isError(response)) {
                   return datapoints;
                 }
-                const aggregation = response.config.data.aggregation;
+                const aggregation = response.config.aggregation;
                 const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
                 return datapoints.concat(response.data.data.items.map(item => (
                   {
                     target: aggregationPrefix + item.name,
                     datapoints: item.datapoints
                       .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                      .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
+                      .map(d => [d[response.config.aggregation || 'value'], d.timestamp])
                   }
                 )));
               }, [])
