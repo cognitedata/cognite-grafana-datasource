@@ -256,7 +256,7 @@ export default class CogniteDatasource {
       return Promise.resolve([]);
     }
     return this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries?q=${query}`,
+      url: this.url + `/cogniteapi/${this.project}/timeseries/search?query=${query}`,
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) =>
       result.data.data.items.map(timeSeriesResponseItem => (
