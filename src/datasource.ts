@@ -235,7 +235,6 @@ export default class CogniteDatasource {
                 let errmsg:string;
                 if (response.error.data && response.error.data.error) {
                   errmsg = "[" + response.error.status + " ERROR] " + response.error.data.error.message;
-                  console.log(errmsg);
                 } else {
                   errmsg = "Unknown error";
                 }
