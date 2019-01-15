@@ -12,7 +12,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   datasource: CogniteDatasource;
   panelCtrl: any;
   aggregation = [
-    { value: null, name: 'None' },
+    { value: 'none', name: 'None' },
     { value: 'average', name: 'Average' },
     { value: 'max', name: 'Max' },
     { value: 'min', name: 'Min' },
@@ -31,6 +31,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.target = this.target.target || 'Start typing tag id here';
     this.target.type = this.target.type || 'timeserie';
     this.target.aggregation = this.target.aggregation || 'average';
+    this.target.granularity = this.target.granularity || '';
   }
 
   getOptions(query) {
