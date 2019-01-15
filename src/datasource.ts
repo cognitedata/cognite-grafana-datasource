@@ -64,6 +64,9 @@ export interface QueryTarget {
   refId: string,
   target: string,
   aggregation: string,
+  granularity: string,
+  error: string,
+  hide: boolean,
 }
 
 export type QueryFormat = "json";
@@ -130,6 +133,7 @@ type DataQueryError = {
         notFound?: string[],
       }
     }
+    status: number
   }
 };
 
@@ -175,19 +179,31 @@ export default class CogniteDatasource {
   }
 
   query(options: QueryOptions): Promise<QueryResponse> {
-    if (options.targets.length === 0) {
+    const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
+      target.error = "";
+      if (target.hide) {
+        return targets;
+      }
+      return targets.concat(target);
+    }, []);
+
+    if (queryTargets.length === 0) {
       return Promise.resolve({data: []});
     }
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const queries: DataQueryRequest[] = options.targets.map(target => {
+    const queries: DataQueryRequest[] = queryTargets.map(target => {
       const query: DataQueryRequestItem = {
         name: target.target,
-        granularity: this.intervalToGranularity(options.intervalMs),
       };
-      if (target.aggregation && target.aggregation.length > 0) {
+      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
         query.aggregates = target.aggregation;
+      }
+      if (target.granularity == "") {
+        query.granularity = this.intervalToGranularity(options.intervalMs);
+      } else {
+        query.granularity = target.granularity;
       }
       return {
         items: [query],
@@ -212,37 +228,32 @@ export default class CogniteDatasource {
       .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
         const errors = timeseries.filter(isError);
-        // TODO: report errors, ignore the code below for now
-        if (errors.length === -1) {
-          errors.forEach(err => {
-            console.log(err);
-            if (err.error.data && err.error.data.error) {
-              throw {
-                message: "boom",
-                error: err.error.data.error,
-              };
-            }
-          });
-        } else {
-          return {
-            data: timeseries
-              .reduce((datapoints, response) => {
-                if (isError(response)) {
-                  return datapoints;
+        return {
+          data: timeseries
+            .reduce((datapoints, response, i) => {
+              if (isError(response)) {
+                let errmsg:string;
+                if (response.error.data && response.error.data.error) {
+                  errmsg = "[" + response.error.status + " ERROR] " + response.error.data.error.message;
+                } else {
+                  errmsg = "Unknown error";
                 }
-                const aggregation = response.config.data.aggregation;
-                const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
-                return datapoints.concat(response.data.data.items.map(item => (
-                  {
-                    target: aggregationPrefix + item.name,
-                    datapoints: item.datapoints
-                      .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                      .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
-                  }
-                )));
-              }, [])
-          };
-        }
+                queryTargets[i].error = errmsg;
+                return datapoints;
+              }
+
+              const aggregation = response.config.data.aggregation;
+              const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
+              return datapoints.concat(response.data.data.items.map(item => (
+                {
+                  target: aggregationPrefix + item.name,
+                  datapoints: item.datapoints
+                    .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
+                    .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
+                }
+              )));
+            }, [])
+        };
       })
       .catch((r: any) => ({data: []}));
   }

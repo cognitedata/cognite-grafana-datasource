@@ -2,12 +2,6 @@
   <div class="gf-form-group">
     <div class="gf-form-inline">
       <div class="gf-form">
-        <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
-        <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
-          <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
-        </select>
-      </div>
-      <div class="gf-form gf-form--grow">
         <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
         <gf-form-dropdown model="ctrl.target.target"
           css-class="gf-size-auto"
@@ -17,6 +11,20 @@
           on-change="ctrl.onChangeInternal()">
         </gf-form-dropdown>
       </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+        <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
+          <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+        </select>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+        <input type="text" class="gf-form-input width-5" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
+      </div>
+    </div>
+    <!-- error messages -->
+    <div class="gf-form-inline">
+      <label class="gf-form-label--error">{{ctrl.target.error}}</label>
     </div>
   </div>
 </query-editor-row>
