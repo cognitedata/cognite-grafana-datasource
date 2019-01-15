@@ -265,11 +265,14 @@ export default class CogniteDatasource {
   }
 
   metricFindQuery(query: string, options?: any): Promise<MetricFindQueryResponse> {
+    let urlEnd: string;
     if (query.length == 0) {
-      return Promise.resolve([]);
+      urlEnd = `/cogniteapi/${this.project}/timeseries?limit=5`;
+    } else {
+      urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
     }
     return this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries/search?query=${query}`,
+      url: this.url + urlEnd,
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) =>
       result.data.data.items.map(timeSeriesResponseItem => (
