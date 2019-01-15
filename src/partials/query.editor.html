@@ -17,7 +17,7 @@
           <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
         </select>
       </div>
-      <div class="gf-form">
+      <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
         <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
         <input type="text" class="gf-form-input width-5" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
       </div>

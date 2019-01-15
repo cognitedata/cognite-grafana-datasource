@@ -199,6 +199,8 @@ export default class CogniteDatasource {
       };
       if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
         query.aggregates = target.aggregation;
+      } else {
+        target.granularity = "";
       }
       if (target.granularity == "") {
         query.granularity = this.intervalToGranularity(options.intervalMs);
