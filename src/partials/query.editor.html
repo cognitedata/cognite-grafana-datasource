@@ -1,6 +1,31 @@
 <query-editor-row query-ctrl="ctrl" can-collapse="false">
   <div class="gf-form-group">
+    <!-- tabs -->
+    <div class="tabbed-view-header">
+      <ul class="gf-tabs">
+        <li class="gf-tabs-item" ng-repeat="tab in ctrl.tabs">
+          <a class="gf-tabs-link" ng-click="ctrl.changeTab($index)" ng-class="{active: ctrl.currentTabIndex === $index}">
+            {{tab.name}}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- body -->
+    <div ng-repeat="tab in ctrl.tabs" ng-if="ctrl.currentTabIndex == $index">
+      <div ng-include src="tab.src" class="share-modal-body"></div>
+    </div>
+
+    <!-- error messages -->
     <div class="gf-form-inline">
+      <label class="gf-form-label--error">{{ctrl.target.error}}</label>
+    </div>
+  </div>
+</query-editor-row>
+
+<!-- tab bodies -->
+<script type="text/ng-template" id="timeseriestab.html">
+	<div class="gf-form-inline">
       <div class="gf-form">
         <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
         <gf-form-dropdown model="ctrl.target.target"
@@ -14,17 +39,29 @@
       <div class="gf-form">
         <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
         <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
-          <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+        <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
         </select>
       </div>
       <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
         <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
-        <input type="text" class="gf-form-input width-5" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
+        <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
+        <info-popover mode="right-absolute">
+            The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
+        </info-popover>
       </div>
     </div>
-    <!-- error messages -->
-    <div class="gf-form-inline">
-      <label class="gf-form-label--error">{{ctrl.target.error}}</label>
+</script>
+
+<script type="text/ng-template" id="assettab.html">
+	<div class="gf-form-inline">
+      Assets Tab
     </div>
-  </div>
-</query-editor-row>
+</script>
+
+<script type="text/ng-template" id="customtab.html">
+	<div class="gf-form-inline">
+      test
+    </div>
+</script>
+
+

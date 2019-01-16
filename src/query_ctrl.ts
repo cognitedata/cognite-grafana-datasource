@@ -21,6 +21,12 @@ export class CogniteQueryCtrl extends QueryCtrl {
   ];
   defaults = {
   };
+  tabs = [
+    { name: 'Timeseries', src: 'timeseriestab.html' },
+    { name: 'Asset', src: 'assettab.html' },
+    { name: 'Custom', src: 'customtab.html' },
+  ]
+  currentTabIndex: number;
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -32,6 +38,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.type = this.target.type || 'timeserie';
     this.target.aggregation = this.target.aggregation || 'average';
     this.target.granularity = this.target.granularity || '';
+    this.currentTabIndex = this.currentTabIndex || 0;
   }
 
   getOptions(query) {
@@ -40,5 +47,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   onChangeInternal() {
     this.panelCtrl.refresh(); // Asks the panel to refresh data.
+  }
+
+  changeTab(index) {
+    this.currentTabIndex = index;
   }
 }
