@@ -1,0 +1,7 @@
+{
+  "base": "origin/master",
+  "reviewers": [
+    "martincognite",
+    "hulien22"
+  ]
+}
