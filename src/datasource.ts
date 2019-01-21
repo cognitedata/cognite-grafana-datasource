@@ -150,6 +150,72 @@ type DataQueryError = {
   }
 };
 
+interface Annotation {
+  datasource: string;
+  enable: boolean;
+  hide: boolean;
+  iconColor: string;
+  limit: number;
+  name: string;
+  query_type?: string;
+  query_subtype?: string;
+  type: string;
+  tags: string[];
+}
+
+interface AnnotationQueryOptions {
+  range: QueryRange;
+  rangeRaw: any;
+  annotation: Annotation;
+  dashboard: number;
+}
+
+interface AnnotationSearchQuery {
+  description: string;
+  type: string;
+  subtype: string;
+  minStartTime: number;
+  maxStartTime: number;
+  minEndTime: number;
+  maxEndTime: number;
+  minCreatedTime: number;
+  maxCreatedTime: number;
+  minLastUpdatedTime: number;
+  maxLastUpdatedTime: number;
+  // format is {"k1": "v1", "k2": "v2"}
+  metadata: string;
+  assetIds: number[];
+  assetSubTrees: number[];
+  sort: 'startTime' | 'endTime' | 'createdTime' | 'lastUpdatedTime';
+  dir: 'asc' | 'desc';
+  limit: number;
+  offset: 0;
+}
+
+export interface Event {
+  id: number;
+  startTime: number;
+  endTime: number;
+  description: string;
+  type: string;
+  subtype: string;
+  assetIds: [number];
+  source: string;
+  sourceId: string;
+}
+
+ export interface Events {
+  items: Event[];
+}
+
+ export interface DataEvents {
+  data: Events;
+}
+
+interface AnnotationQueryRequestResponse {
+  data: DataEvents;
+}
+
 function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
@@ -317,8 +383,39 @@ export default class CogniteDatasource {
       .catch((r: any) => ({data: []}));
   }
 
-  annotationQuery(options: any) {
-    throw new Error("Annotation Support not implemented yet.");
+  public annotationQuery(options: AnnotationQueryOptions) {
+    const { range, annotation } = options;
+    const { query_type, query_subtype } = annotation;
+    const startTime = Math.ceil(dateMath.parse(range.from));
+    const endTime = Math.ceil(dateMath.parse(range.to));
+    const searchRequest: Partial<AnnotationSearchQuery> = {
+      maxEndTime: +endTime,
+      minStartTime: +startTime,
+      subtype: query_subtype,
+      type: query_type,
+    };
+    return this.backendSrv
+      .datasourceRequest({
+        method: 'GET',
+        url:
+          this.url +
+          `/cogniteapi/${this.project}/events/search?${Object.keys(
+            searchRequest
+          )
+            .filter(k => searchRequest[k] !== undefined)
+            .map(k => `${k}=${searchRequest[k]}`)
+            .join('&')}`,
+      })
+      .then((result: AnnotationQueryRequestResponse) => {
+        return result.data.data.items.map(event => ({
+          annotation,
+          isRegion: true,
+          text: event.description,
+          time: event.startTime,
+          timeEnd: event.endTime,
+          title: event.type,
+        }));
+      });
   }
 
   metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {

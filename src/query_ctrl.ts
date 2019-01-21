@@ -79,3 +79,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
 }
+
+export class CogniteAnnotationsQueryCtrl {
+  public static templateUrl = 'partials/annotations.editor.html';
+}
