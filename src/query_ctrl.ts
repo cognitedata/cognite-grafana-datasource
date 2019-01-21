@@ -40,12 +40,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.aggregation = this.target.aggregation || 'average';
     this.target.granularity = this.target.granularity || '';
     this.target.tab = this.target.tab || 'Timeseries';
-    this.currentTabIndex = this.tabs.findIndex(x => x.name === this.target.tab) || 0;
-    this.target.assetQuery = this.target.assetQuery || {};
-    this.target.assetQuery.assetSubtree = this.target.assetQuery.assetSubtree || false;
-    this.target.assetQuery.query = this.target.assetQuery.query || '';
-    this.target.assetQuery.metadata = this.target.assetQuery.metadata || '';
-    
+    this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    this.target.expr = this.target.expr || "";
+    this.target.assetQuery = this.target.assetQuery || {
+      target: '',
+      timeseries: [],
+      includeSubtrees: false,
+    };
   }
 
   getOptions(query:string, type:string) {
@@ -62,18 +63,18 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
   getCollapsedText() {
-    return this.target.tab + ": " + this.target.target + " " + this.target.error;
+    if (this.target.tab === "Timeseries") {
+      return "Timeseries: " + this.target.target + " " + this.target.error;
+    } else if (this.target.tab === "Asset") {
+      return "Timeseries from Asset: " + this.target.assetQuery.target + " " + this.target.error;
+    } else if (this.target.tab === "Custom") {
+      return "Custom Query: " + this.target.expr + " " + this.target.error;
+    }
+    return "";
   }
 
-  getAssetTimeseries(target) {
-    this.datasource.findAssetTimeseries(target, this.panelCtrl);
+  getAssetTimeseries() {
+    this.datasource.findAssetTimeseries(this.target, this.panelCtrl);
   }
-  
-  // filterOnAssetTimeseries(target) {
-  //   this.datasource.filterOnAssetTimeseries(target, this.panelCtrl);
-  // }
 
-  // evaluateExpr(target) {
-  //   this.datasource.evaluateExpr(target);
-  // }
 }

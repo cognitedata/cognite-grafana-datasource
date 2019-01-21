@@ -65,16 +65,9 @@ export interface QueryRange {
 }
 
 export interface AssetQuery {
-  query: string,
-  unit: string,
-  isStep: boolean,
-  metadata: object,
-  minCreatedTime: number,
-  maxCreatedTime: number,
-  minLastUpdatedTime: number,
-  maxLastUpdatedTime: number,
-  assetTimeseries: TimeSeriesResponseItem[],
-  assetSubtrees?: boolean,
+  target: string,
+  timeseries: TimeSeriesResponseItem[],
+  includeSubtrees: boolean,
 }
 
 export interface QueryTarget {
@@ -87,7 +80,7 @@ export interface QueryTarget {
   label: string,
   tab: string,
   assetQuery: AssetQuery,
-  custom: string,
+  expr: string,
 }
 
 export type QueryFormat = "json";
@@ -135,7 +128,6 @@ interface DataQueryRequest {
   limit?: number,
   aggregates?: string,
   granularity?: string,
-  // target: QueryTarget,
 }
 
 interface DataQueryRequestResponse {
@@ -216,28 +208,17 @@ export default class CogniteDatasource {
         query.granularity = target.granularity;
       }
       return [query];
-    } else if (target.tab === 'Asset') {
-      return target.assetQuery.assetTimeseries.reduce((queries,ts) => {
+    } else if (target.tab === 'Asset' || target.tab === 'Custom') {
+      if (target.tab === 'Custom') {
+        this.filterOnAssetTimeseries(target); //apply the search expression
+      }
+      return target.assetQuery.timeseries.reduce((queries,ts) => {
         if (!ts.selected) {
           return queries;
         }
         const query: DataQueryRequestItem = {
           name: ts.name,
-          granularity: this.intervalToGranularity(options.intervalMs),
-          aggregates: 'average',
         };
-        return queries.concat(query);
-      }, []);
-    } else if (target.tab === 'Custom') {
-      this.filterOnAssetTimeseries(target);
-      return target.assetQuery.assetTimeseries.reduce((queries,ts) => {
-        if (!ts.selected) {
-          return queries;
-        }
-        const query: DataQueryRequestItem = {
-          name: ts.name
-        };
-        console.log(target.aggregation, target.granularity);
         if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
           query.aggregates = target.aggregation;
         } else {
@@ -250,8 +231,8 @@ export default class CogniteDatasource {
         }
         return queries.concat(query);
       }, []);
-
     }
+
     return [];
   }
 
@@ -270,10 +251,14 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-
+    const targetQueriesCount = [];
     const queries: DataQueryRequest[] = queryTargets.reduce((queries,target) => {
-      const query: DataQueryRequestItem[] = this.getDataQueryRequestItem(target, options);
-      return queries.concat(query.map(q => {
+      const queryList: DataQueryRequestItem[] = this.getDataQueryRequestItem(target, options);
+      targetQueriesCount.push({
+        refId: target.refId,
+        count: queryList.length,
+      })
+      return queries.concat(queryList.map(q => {
         return {
           items: [q],
           start: timeFrom,
@@ -297,10 +282,14 @@ export default class CogniteDatasource {
     return Promise.all(queryRequests)
       .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
-        // const errors = timeseries.filter(isError);
         return {
           data: timeseries
             .reduce((datapoints, response, i) => {
+              const refId = targetQueriesCount.reduce((retval, query) => {
+                if (typeof(retval) === "string") return retval;
+                else if (retval + query.count > i) return query.refId;
+                else return retval + query.count;
+              }, 0);
               if (isError(response)) {
                 let errmsg:string;
                 if (response.error.data && response.error.data.error) {
@@ -308,7 +297,7 @@ export default class CogniteDatasource {
                 } else {
                   errmsg = "Unknown error";
                 }
-                queryTargets[i].error = errmsg;
+                queryTargets.find(x => x.refId === refId).error = errmsg;
                 return datapoints;
               }
 
@@ -342,8 +331,7 @@ export default class CogniteDatasource {
       }
     } else if (type === 'Timeseries') {
       if (query.length == 0) {
-        //might want to leave at 25 (default) or increase to an even higher value?
-        urlEnd = `/cogniteapi/${this.project}/timeseries?limit=5`;
+        urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
       }
@@ -365,45 +353,29 @@ export default class CogniteDatasource {
         {
           text: timeSeriesResponseItem.name,
           value: (type==="Asset") ? '' + timeSeriesResponseItem.id : timeSeriesResponseItem.name
-        }
-      ))
+        }))
       );
   }
 
   findAssetTimeseries(target, panelCtrl) {
-    console.log(target.target);
-    // console.log(`/cogniteapi/${this.project}/timeseries/search?` +
-    // `query='${target.assetQuery.query}'&` +
-    // `${(target.assetQuery.assetSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.target}]&` +
-    // `metadata=${target.assetQuery.metadata}&` +
-    // `isStep=${target.assetQuery.isStep}&` +
-    // `limit=1000&` +
-    // `isString=false`);
     this.backendSrv.datasourceRequest({
       url: this.url + `/cogniteapi/${this.project}/timeseries/search?` +
-      `${(target.assetQuery.assetSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.target}]&` +
+      `${(target.assetQuery.includeSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.assetQuery.target}]&` +
       `isString=false&` +
-      `limit=1000&` +
-      // target.assetQuery.query,
-      `query='${target.assetQuery.query}'&` +
-      `metadata=${target.assetQuery.metadata}&`,
-      // `isStep=${target.assetQuery.isStep}&` ,
+      `limit=1000`,
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) => {
-      console.log(result.data.data.items);
-      target.assetQuery.assetTimeseries = result.data.data.items.map(ts => {
+      target.assetQuery.timeseries = result.data.data.items.map(ts => {
         ts.selected = true;
         return ts;
       });
-    })./*then(() => panelCtrl.refresh()).*/then(console.log(target.assetQuery)).then(this.filterOnAssetTimeseries(target));
+    }).then(() => panelCtrl.refresh());
   }
 
   filterOnAssetTimeseries(target) {
-    const customQuery = target.assetQuery.custom;
-    const filterOptions = this.parse(customQuery);
+    const filterOptions = this.parse(target.expr);
 
-    for (let ts of target.assetQuery.assetTimeseries) {
-      // console.log(ts);
+    for (let ts of target.assetQuery.timeseries) {
       ts.selected = true;
       for (let filter of filterOptions.filters) {
         if (filter.type === "=~") {
@@ -442,17 +414,13 @@ export default class CogniteDatasource {
     if (filterOptions.granularity) {
       target.granularity = filterOptions.granularity;
     }
-
-    // panelCtrl.refresh();
   }
 
   parse(customQuery) {
-
-    console.log(customQuery);
+    // replace variables with their values
     for (let templateVariable of this.templateSrv.variables) {
       customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
     }
-    console.log("!!",customQuery);
 
     let filtersOptions = {
       filters: [],
@@ -465,6 +433,7 @@ export default class CogniteDatasource {
     if (timeseriesMatch) {
       const splitfilters = timeseriesMatch[1].split(",");
       for (let f of splitfilters) {
+        if (f == '') continue;
         const filter: any = {};
         let i:number;
         f = _.trim(f," ");
@@ -491,7 +460,6 @@ export default class CogniteDatasource {
       }
 
       const aggregation = timeseriesMatch[2];
-      // console.log(timeseriesMatch);
       if (aggregation) {
         const splitAggregation = aggregation.split(',');
         filtersOptions.aggregation = splitAggregation[0];

@@ -26,10 +26,6 @@ input[type=checkbox] {
   margin: 4px;
 }
 
-.static_text {
-  padding: 0 5px;
-  border: solid 1px #000;
-  border-right: none;
-  float: left;
+.custom-query {
+  font-family: monospace;
 }
-
