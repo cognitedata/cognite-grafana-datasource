@@ -44,6 +44,10 @@
       ]
     }
   ],
+  
+  "queryOptions": {
+    "maxDataPoints": true
+  },
 
   "metrics": true,
   "annotations": false

@@ -9,6 +9,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
   target: any;
+  assetVals: any;
   datasource: CogniteDatasource;
   panelCtrl: any;
   aggregation = [
@@ -22,9 +23,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
   defaults = {
   };
   tabs = [
-    { name: 'Timeseries', src: 'timeseriestab.html' },
-    { name: 'Asset', src: 'assettab.html' },
-    { name: 'Custom', src: 'customtab.html' },
+    { value: 'Timeseries', name: 'Select Timeseries', src: 'timeseriestab.html' },
+    { value: 'Asset', name: 'Select Timeseries from Asset', src: 'assettab.html' },
+    { value: 'Custom', name: 'Custom Query', src: 'customtab.html' },
   ]
   currentTabIndex: number;
 
@@ -38,18 +39,41 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.type = this.target.type || 'timeserie';
     this.target.aggregation = this.target.aggregation || 'average';
     this.target.granularity = this.target.granularity || '';
-    this.currentTabIndex = this.currentTabIndex || 0;
+    this.target.tab = this.target.tab || 'Timeseries';
+    this.currentTabIndex = this.tabs.findIndex(x => x.name === this.target.tab) || 0;
+    this.target.assetQuery = this.target.assetQuery || {};
+    this.target.assetQuery.assetSubtree = this.target.assetQuery.assetSubtree || false;
+    this.target.assetQuery.query = this.target.assetQuery.query || '';
+    this.target.assetQuery.metadata = this.target.assetQuery.metadata || '';
+    
   }
 
-  getOptions(query) {
-    return this.datasource.metricFindQuery(query || '');
+  getOptions(query:string, type:string) {
+    return this.datasource.metricFindQuery(query || '', type);
   }
 
   onChangeInternal() {
-    this.panelCtrl.refresh(); // Asks the panel to refresh data.
+    this.refresh(); // Asks the panel to refresh data.
   }
 
-  changeTab(index) {
+  changeTab(index:number) {
     this.currentTabIndex = index;
+    this.target.tab = this.tabs[index].value;
   }
+
+  getCollapsedText() {
+    return this.target.tab + ": " + this.target.target + " " + this.target.error;
+  }
+
+  getAssetTimeseries(target) {
+    this.datasource.findAssetTimeseries(target, this.panelCtrl);
+  }
+  
+  // filterOnAssetTimeseries(target) {
+  //   this.datasource.filterOnAssetTimeseries(target, this.panelCtrl);
+  // }
+
+  // evaluateExpr(target) {
+  //   this.datasource.evaluateExpr(target);
+  // }
 }

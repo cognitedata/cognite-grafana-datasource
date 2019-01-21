@@ -4,7 +4,7 @@
     <div class="tabbed-view-header">
       <ul class="gf-tabs">
         <li class="gf-tabs-item" ng-repeat="tab in ctrl.tabs">
-          <a class="gf-tabs-link" ng-click="ctrl.changeTab($index)" ng-class="{active: ctrl.currentTabIndex === $index}">
+          <a class="gf-tabs-link gf-tabs-cognite" ng-click="ctrl.changeTab($index)" ng-class="{active: ctrl.currentTabIndex === $index}">
             {{tab.name}}
           </a>
         </li>
@@ -30,9 +30,9 @@
         <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
         <gf-form-dropdown model="ctrl.target.target"
           css-class="gf-size-auto"
-          allow-custom="true"
+          allow-custom="false"
           lookup-text="true"
-          get-options="ctrl.getOptions($query)"
+          get-options="ctrl.getOptions($query,'Timeseries')"
           on-change="ctrl.onChangeInternal()">
         </gf-form-dropdown>
       </div>
@@ -49,19 +49,116 @@
             The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
         </info-popover>
       </div>
+      <div class="gf-form gf-form--grow">
+        <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+        <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+      </div>
     </div>
 </script>
 
 <script type="text/ng-template" id="assettab.html">
-	<div class="gf-form-inline">
-      Assets Tab
+  <div class="gf-form-inline">
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword fix-query-keyword">Asset Tag</label>
+      <gf-form-dropdown model="ctrl.target.target"
+        css-class="gf-size-auto"
+        allow-custom="false"
+        lookup-text="true"
+        get-options="ctrl.getOptions($query,'Asset')"
+        on-change="ctrl.getAssetTimeseries(ctrl.target)">
+      </gf-form-dropdown>
+    </div>
+    <div class="gf-form">
+      <input type="checkbox" ng-model="ctrl.target.assetQuery.assetSubtrees" ng-change="ctrl.getAssetTimeseries(ctrl.target)">Include Subassets 
+    </div>
+    
+  </div>
+
+
+
+  <div class="gf-form">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Query</label>
+      <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.assetQuery.query" ng-change="ctrl.getAssetTimeseries(ctrl.target)" placeholder=""/>
+      <info-popover mode="right-absolute">
+          Filter on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+      </info-popover>
+    </div>
+
+  <div class="gf-form">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Metadata</label>
+      <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.assetQuery.metadata" ng-change="ctrl.getAssetTimeseries(ctrl.target)" placeholder=""/>
+      <info-popover mode="right-absolute">
+          Filter on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+      </info-popover>
+    </div>
+
+  <div class="gf-form">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">isStep</label>
+      <div class="gf-form-switch gf-form-switch--table-cell">
+          <input id="check-{{::$id}}" type="checkbox" ng-model="ctrl.target.assetQuery.isStep" ng-change="ctrl.getAssetTimeseries(ctrl.target)" class="ng-untouched ng-valid ng-dirty ng-valid-parse ng-empty">
+          <label for="check-{{::$id}}" data-on="Yes" data-off="No"></label>
+        </div>
+      <!-- <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.assetQuery.isStep" ng-change="ctrl.getAssetTimeseries(ctrl.target)" placeholder=""/>
+      <info-popover mode="right-absolute">
+          Filter on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+      </info-popover> -->
+    </div>
+
+    <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px">
+      <ul>
+        <li ng-repeat="timeseries in ctrl.target.assetQuery.assetTimeseries">
+          <input type="checkbox" ng-model="timeseries.selected" ng-change="ctrl.onChangeInternal()"> {{timeseries.name}}
+        </li>
+      </ul>
+      <!-- <table>
+          <tr ng-repeat="timeseries in ctrl.target.assetTimeseries">
+            <td>
+              <div class="gf-form-switch gf-form-switch--table-cell">
+                <input id="check-{{::$id}}" type="checkbox" ng-model="timeseries.selected" ng-change="ctrl.onChangeInternal()" class="ng-untouched ng-valid ng-dirty ng-valid-parse ng-empty">
+                <label for="check-{{::$id}}" data-on="Yes" data-off="No"></label>
+              </div>
+            </td>
+            <td>{{timeseries.text}}</td>
+          </tr>
+        </table> -->
     </div>
 </script>
 
 <script type="text/ng-template" id="customtab.html">
-	<div class="gf-form-inline">
-      test
-    </div>
+	<!-- <div class="gf-form-inline">
+      <label class="gf-form-label query-keyword fix-query-keyword">Custom Query</label>
+      <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.expr" ng-blur="ctrl.evaluateExpr(ctrl.target)" placeholder=""/>
+    </div> -->
+    <div class="gf-form-inline">
+        <div class="gf-form">
+          <div class="gf-form">
+            <label class="gf-form-label query-keyword fix-query-keyword width-8">Root Asset</label>
+            <info-popover mode="right-absolute">
+                Select an asset to pull timeseries from.
+            </info-popover>
+          </div>
+          <gf-form-dropdown model="ctrl.target.target"
+            css-class="gf-size-auto"
+            allow-custom="false"
+            lookup-text="true"
+            get-options="ctrl.getOptions($query,'Asset')"
+            on-change="ctrl.getAssetTimeseries(ctrl.target);">
+          </gf-form-dropdown>
+        </div>
+        <div class="gf-form">
+          <input type="checkbox" ng-model="ctrl.target.assetQuery.assetSubtrees" ng-change="ctrl.getAssetTimeseries(ctrl.target);">Include Subassets 
+        </div>
+        
+      </div>
+    <div class="gf-form">
+        <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
+        <!-- <input type="text" class="gf-form-input width-12" id="static" value="timeseries/search?" disabled> -->
+        <!-- <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.assetQuery.custom" ng-blur="ctrl.filterOnAssetTimeseries(ctrl.target)" placeholder=""/> -->
+        <input type="text" class="gf-form-input width-auto" ng-model="ctrl.target.assetQuery.custom" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+        <info-popover mode="right-absolute">
+            Filter on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+        </info-popover>
+      </div>
 </script>
 
 
