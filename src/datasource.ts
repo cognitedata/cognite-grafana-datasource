@@ -435,6 +435,9 @@ export default class CogniteDatasource {
       aggregation: ''
     };
 
+    // Format: timeseries{ options }
+    //     or  timeseries{ options }[aggregation, granularity]
+    // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
     if (timeseriesMatch) {
