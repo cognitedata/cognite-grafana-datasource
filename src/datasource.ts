@@ -1,7 +1,6 @@
 ///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
-import { QueryCtrl } from './module';
 
 export interface TimeSeriesResponse {
   target: string,
