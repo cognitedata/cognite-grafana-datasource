@@ -290,6 +290,7 @@ export default class CogniteDatasource {
                 else if (retval + query.count > i) return query.refId;
                 else return retval + query.count;
               }, 0);
+              const target = queryTargets.find(x => x.refId === refId);
               if (isError(response)) {
                 let errmsg:string;
                 if (response.error.data && response.error.data.error) {
@@ -297,7 +298,7 @@ export default class CogniteDatasource {
                 } else {
                   errmsg = "Unknown error";
                 }
-                queryTargets.find(x => x.refId === refId).error = errmsg;
+                target.error = errmsg;
                 return datapoints;
               }
 
@@ -305,7 +306,7 @@ export default class CogniteDatasource {
               const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
               return datapoints.concat(response.data.data.items.map(item => (
                 {
-                  target: aggregationPrefix + item.name,
+                  target: (target.label) ? target.label : aggregationPrefix + item.name,
                   datapoints: item.datapoints
                     .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                     .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])

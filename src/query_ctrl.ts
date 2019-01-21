@@ -39,9 +39,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.type = this.target.type || 'timeserie';
     this.target.aggregation = this.target.aggregation || 'average';
     this.target.granularity = this.target.granularity || '';
+    this.target.label = this.target.label || '';
     this.target.tab = this.target.tab || 'Timeseries';
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
-    this.target.expr = this.target.expr || "";
+    this.target.expr = this.target.expr || '';
     this.target.assetQuery = this.target.assetQuery || {
       target: '',
       timeseries: [],
