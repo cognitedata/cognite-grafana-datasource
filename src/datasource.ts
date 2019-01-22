@@ -1,4 +1,5 @@
 ///<reference path="./grafana.d.ts" />
+import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 
 export interface TimeSeriesResponse {
@@ -19,6 +20,12 @@ export type MetricFindQueryResponse = MetricDescription[];
 
 type HttpMethod = "POST" | "GET" | "PATCH" | "DELETE";
 
+export enum Tab {
+  Timeseries = "Timeseries",
+  Asset = "Asset",
+  Custom = "Custom"
+}
+
 interface DataSourceRequestOptions {
   url: string,
   method: HttpMethod,
@@ -38,6 +45,7 @@ interface BackendService {
 interface TimeSeriesResponseItem {
   name: string,
   isString?: boolean,
+  metadata?: object,
   unit?: string,
   assetId?: string,
   isStep: boolean,
@@ -47,6 +55,7 @@ interface TimeSeriesResponseItem {
   id: number,
   createdTime: number,
   lastUpdatedTime: number,
+  selected: boolean
 }
 
 export interface TimeSeriesResponse {
@@ -60,6 +69,12 @@ export interface QueryRange {
   to: string,
 }
 
+export interface AssetQuery {
+  target: string,
+  timeseries: TimeSeriesResponseItem[],
+  includeSubtrees: boolean,
+}
+
 export interface QueryTarget {
   refId: string,
   target: string,
@@ -67,6 +82,10 @@ export interface QueryTarget {
   granularity: string,
   error: string,
   hide: boolean,
+  label: string,
+  tab: Tab,
+  assetQuery: AssetQuery,
+  expr: string,
 }
 
 export type QueryFormat = "json";
@@ -178,6 +197,50 @@ export default class CogniteDatasource {
     return days + 'd';
   }
 
+  private getDataQueryRequestItem(target: QueryTarget, options: QueryOptions): DataQueryRequestItem[] {
+    if (target.tab === Tab.Timeseries) {
+      const query: DataQueryRequestItem = {
+        name: target.target,
+      };
+      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+        query.aggregates = target.aggregation;
+      } else {
+        target.granularity = "";
+      }
+      if (target.granularity == "") {
+        query.granularity = this.intervalToGranularity(options.intervalMs);
+      } else {
+        query.granularity = target.granularity;
+      }
+      return [query];
+    } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
+      if (target.tab === Tab.Custom) {
+        this.filterOnAssetTimeseries(target); //apply the search expression
+      }
+      return target.assetQuery.timeseries.reduce((queries,ts) => {
+        if (!ts.selected) {
+          return queries;
+        }
+        const query: DataQueryRequestItem = {
+          name: ts.name,
+        };
+        if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+          query.aggregates = target.aggregation;
+        } else {
+          target.granularity = "";
+        }
+        if (target.granularity == "") {
+          query.granularity = this.intervalToGranularity(options.intervalMs);
+        } else {
+          query.granularity = target.granularity;
+        }
+        return queries.concat(query);
+      }, []);
+    }
+
+    return [];
+  }
+
   query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
@@ -193,31 +256,26 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const queries: DataQueryRequest[] = queryTargets.map(target => {
-      const query: DataQueryRequestItem = {
-        name: target.target,
-      };
-      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-        query.aggregates = target.aggregation;
-      } else {
-        target.granularity = "";
-      }
-      if (target.granularity == "") {
-        query.granularity = this.intervalToGranularity(options.intervalMs);
-      } else {
-        query.granularity = target.granularity;
-      }
-      return {
-        items: [query],
-        start: timeFrom,
-        end: timeTo,
-        // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
-        //       still looks ok for aggregates, so perhaps we should use it for those?
-        //limit: options.maxDataPoints,
-        limit: query.aggregates ? 10_000 : 100_000,
-        aggregation: query.aggregates,
-      };
-    });
+    const targetQueriesCount = [];
+    const queries: DataQueryRequest[] = queryTargets.reduce((queries,target) => {
+      const queryList: DataQueryRequestItem[] = this.getDataQueryRequestItem(target, options);
+      targetQueriesCount.push({
+        refId: target.refId,
+        count: queryList.length,
+      })
+      return queries.concat(queryList.map(q => {
+        return {
+          items: [q],
+          start: timeFrom,
+          end: timeTo,
+          // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
+          //       still looks ok for aggregates, so perhaps we should use it for those?
+          //limit: options.maxDataPoints,
+          limit: q.aggregates ? 10_000 : 100_000,
+          aggregation: q.aggregates,
+        }
+      }));
+    }, []);
 
     const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
       {
@@ -229,10 +287,15 @@ export default class CogniteDatasource {
     return Promise.all(queryRequests)
       .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
-        const errors = timeseries.filter(isError);
         return {
           data: timeseries
             .reduce((datapoints, response, i) => {
+              const refId = targetQueriesCount.reduce((retval, query) => {
+                if (typeof(retval) === "string") return retval;
+                else if (retval + query.count > i) return query.refId;
+                else return retval + query.count;
+              }, 0);
+              const target = queryTargets.find(x => x.refId === refId);
               if (isError(response)) {
                 let errmsg:string;
                 if (response.error.data && response.error.data.error) {
@@ -240,7 +303,7 @@ export default class CogniteDatasource {
                 } else {
                   errmsg = "Unknown error";
                 }
-                queryTargets[i].error = errmsg;
+                target.error = errmsg;
                 return datapoints;
               }
 
@@ -248,7 +311,7 @@ export default class CogniteDatasource {
               const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
               return datapoints.concat(response.data.data.items.map(item => (
                 {
-                  target: aggregationPrefix + item.name,
+                  target: (target.label) ? target.label : aggregationPrefix + item.name,
                   datapoints: item.datapoints
                     .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                     .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
@@ -264,13 +327,30 @@ export default class CogniteDatasource {
     throw new Error("Annotation Support not implemented yet.");
   }
 
-  metricFindQuery(query: string, options?: any): Promise<MetricFindQueryResponse> {
+  metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
-    if (query.length == 0) {
-      urlEnd = `/cogniteapi/${this.project}/timeseries?limit=5`;
-    } else {
-      urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
+    if (type === Tab.Asset){
+      if (query.length == 0) {
+        urlEnd = `/cogniteapi/${this.project}/assets?`;
+      } else {
+        urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`
+      }
+    } else if (type === 'Timeseries') {
+      if (query.length == 0) {
+        urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
+      } else {
+        urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
+      }
+    } else { //metrics
+      urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&query=${query}`;
+      type=Tab.Asset;
     }
+    if (options) {
+      for (let option in options) {
+        urlEnd += "&" + option + "=" + options[option];
+      }
+    }
+
     return this.backendSrv.datasourceRequest({
       url: this.url + urlEnd,
       method: "GET",
@@ -278,10 +358,128 @@ export default class CogniteDatasource {
       result.data.data.items.map(timeSeriesResponseItem => (
         {
           text: timeSeriesResponseItem.name,
-          value: timeSeriesResponseItem.name
-        }
-      )));
+          value: (type===Tab.Asset) ? '' + timeSeriesResponseItem.id : timeSeriesResponseItem.name
+        }))
+      );
   }
+
+  findAssetTimeseries(target, panelCtrl) {
+    this.backendSrv.datasourceRequest({
+      url: this.url + `/cogniteapi/${this.project}/timeseries/search?` +
+      `${(target.assetQuery.includeSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.assetQuery.target}]&` +
+      `isString=false&` +
+      `limit=1000`,
+      method: "GET",
+    }).then((result: { data: TimeSeriesResponse }) => {
+      target.assetQuery.timeseries = result.data.data.items.map(ts => {
+        ts.selected = true;
+        return ts;
+      });
+    }).then(() => panelCtrl.refresh());
+  }
+
+  filterOnAssetTimeseries(target) {
+    const filterOptions = this.parse(target.expr);
+
+    for (let ts of target.assetQuery.timeseries) {
+      ts.selected = true;
+      for (let filter of filterOptions.filters) {
+        if (filter.type === "=~") {
+          const val = _.get(ts,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || !val.match(regex)) {
+            ts.selected = false;
+            break;
+          }
+        } else if (filter.type === "!~") {
+          const val = _.get(ts,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || val.match(regex)) {
+            ts.selected = false;
+            break;
+          }
+        } else if (filter.type === "!=") {
+          const val = _.get(ts,filter.property);
+          if (val === undefined || (val == filter.value)) {
+            ts.selected = false;
+            break;
+          }
+        } else if (filter.type === "=") {
+          const val = _.get(ts,filter.property);
+          if (val === undefined || (val != filter.value)) {
+            ts.selected = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (filterOptions.aggregation) {
+      target.aggregation = filterOptions.aggregation;
+    }
+    if (filterOptions.granularity) {
+      target.granularity = filterOptions.granularity;
+    }
+  }
+
+  parse(customQuery) {
+    // replace variables with their values
+    for (let templateVariable of this.templateSrv.variables) {
+      customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+      customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
+    }
+
+    let filtersOptions = {
+      filters: [],
+      granularity: '',
+      aggregation: ''
+    };
+
+    // Format: timeseries{ options }
+    //     or  timeseries{ options }[aggregation, granularity]
+    // regex pulls out the options string, as well as the aggre/gran string (if it exists)
+    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])$/;
+    const timeseriesMatch = customQuery.match(timeseriesRegex);
+    if (timeseriesMatch) {
+      const splitfilters = timeseriesMatch[1].split(",");
+      for (let f of splitfilters) {
+        if (f == '') continue;
+        const filter: any = {};
+        let i:number;
+        f = _.trim(f," ");
+        if ((i = f.indexOf("=~")) > -1) {
+          filter.property = _.trim(f.substr(0,i), " '\"");
+          filter.value = _.trim(f.substr(i+2), " '\"");
+          filter.type = "=~";
+        } else if ((i = f.indexOf("!~")) > -1) {
+          filter.property = _.trim(f.substr(0,i), " '\"");
+          filter.value = _.trim(f.substr(i+2), " '\"");
+          filter.type = "!~";
+        } else if ((i = f.indexOf("!=")) > -1) {
+          filter.property = _.trim(f.substr(0,i), " '\"");
+          filter.value = _.trim(f.substr(i+2), " '\"");
+          filter.type = "!=";
+        } else if ((i = f.indexOf("=")) > -1) {
+          filter.property = _.trim(f.substr(0,i), " '\"");
+          filter.value = _.trim(f.substr(i+1), " '\"");
+          filter.type = "=";
+        } else {
+          console.error("Error parsing " + f);
+        }
+        filtersOptions.filters.push(filter);
+      }
+
+      const aggregation = timeseriesMatch[2];
+      if (aggregation) {
+        const splitAggregation = aggregation.split(',');
+        filtersOptions.aggregation = splitAggregation[0];
+        filtersOptions.granularity = splitAggregation[1];
+      }
+    }
+
+    return filtersOptions;
+  }
+
 
   testDatasource() {
     return this.backendSrv.datasourceRequest({
