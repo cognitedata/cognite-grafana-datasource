@@ -20,6 +20,12 @@ export type MetricFindQueryResponse = MetricDescription[];
 
 type HttpMethod = "POST" | "GET" | "PATCH" | "DELETE";
 
+export enum Tab {
+  Timeseries = "Timeseries",
+  Asset = "Asset",
+  Custom = "Custom"
+}
+
 interface DataSourceRequestOptions {
   url: string,
   method: HttpMethod,
@@ -77,7 +83,7 @@ export interface QueryTarget {
   error: string,
   hide: boolean,
   label: string,
-  tab: string,
+  tab: Tab,
   assetQuery: AssetQuery,
   expr: string,
 }
@@ -258,7 +264,7 @@ export default class CogniteDatasource {
   }
 
   private getDataQueryRequestItem(target: QueryTarget, options: QueryOptions): DataQueryRequestItem[] {
-    if (target.tab === 'Timeseries') {
+    if (target.tab === Tab.Timeseries) {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
@@ -273,8 +279,8 @@ export default class CogniteDatasource {
         query.granularity = target.granularity;
       }
       return [query];
-    } else if (target.tab === 'Asset' || target.tab === 'Custom') {
-      if (target.tab === 'Custom') {
+    } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
+      if (target.tab === Tab.Custom) {
         this.filterOnAssetTimeseries(target); //apply the search expression
       }
       return target.assetQuery.timeseries.reduce((queries,ts) => {
@@ -420,7 +426,7 @@ export default class CogniteDatasource {
 
   metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
-    if (type === 'Asset'){
+    if (type === Tab.Asset){
       if (query.length == 0) {
         urlEnd = `/cogniteapi/${this.project}/assets?`;
       } else {
@@ -434,7 +440,7 @@ export default class CogniteDatasource {
       }
     } else { //metrics
       urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&query=${query}`;
-      type='Asset';
+      type=Tab.Asset;
     }
     if (options) {
       for (let option in options) {
@@ -449,7 +455,7 @@ export default class CogniteDatasource {
       result.data.data.items.map(timeSeriesResponseItem => (
         {
           text: timeSeriesResponseItem.name,
-          value: (type==="Asset") ? '' + timeSeriesResponseItem.id : timeSeriesResponseItem.name
+          value: (type===Tab.Asset) ? '' + timeSeriesResponseItem.id : timeSeriesResponseItem.name
         }))
       );
   }
@@ -517,6 +523,7 @@ export default class CogniteDatasource {
     // replace variables with their values
     for (let templateVariable of this.templateSrv.variables) {
       customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+      customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
     }
 
     let filtersOptions = {
@@ -525,6 +532,9 @@ export default class CogniteDatasource {
       aggregation: ''
     };
 
+    // Format: timeseries{ options }
+    //     or  timeseries{ options }[aggregation, granularity]
+    // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
     if (timeseriesMatch) {
