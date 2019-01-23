@@ -198,50 +198,6 @@ export default class CogniteDatasource {
     return days + 'd';
   }
 
-  private getDataQueryRequestItem(target: QueryTarget, options: QueryOptions): DataQueryRequestItem[] {
-    if (target.tab === Tab.Timeseries) {
-      const query: DataQueryRequestItem = {
-        name: target.target,
-      };
-      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-        query.aggregates = target.aggregation;
-      } else {
-        target.granularity = "";
-      }
-      if (target.granularity == "") {
-        query.granularity = this.intervalToGranularity(options.intervalMs);
-      } else {
-        query.granularity = target.granularity;
-      }
-      return [query];
-    } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
-      if (target.tab === Tab.Custom) {
-        this.filterOnAssetTimeseries(target); //apply the search expression
-      }
-      return target.assetQuery.timeseries.reduce((queries,ts) => {
-        if (!ts.selected) {
-          return queries;
-        }
-        const query: DataQueryRequestItem = {
-          name: ts.name,
-        };
-        if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-          query.aggregates = target.aggregation;
-        } else {
-          target.granularity = "";
-        }
-        if (target.granularity == "") {
-          query.granularity = this.intervalToGranularity(options.intervalMs);
-        } else {
-          query.granularity = target.granularity;
-        }
-        return queries.concat(query);
-      }, []);
-    }
-
-    return [];
-  }
-
   private getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
     if (target.tab === Tab.Timeseries) {
       const query: DataQueryRequestItem = {
@@ -548,8 +504,8 @@ export default class CogniteDatasource {
       const aggregation = timeseriesMatch[2];
       if (aggregation) {
         const splitAggregation = aggregation.split(',');
-        filtersOptions.aggregation = splitAggregation[0];
-        filtersOptions.granularity = splitAggregation[1];
+        filtersOptions.aggregation = _.trim(splitAggregation[0], " '\"");
+        filtersOptions.granularity = splitAggregation.length > 1 ? _.trim(splitAggregation[1], " '\"") : '';
       }
     }
 
