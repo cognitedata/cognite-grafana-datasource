@@ -435,7 +435,7 @@ export default class CogniteDatasource {
     }
 
     //check if assetId has changed, if not we do not need to perform this query again
-    if (target.assetQuery.old && (assetId == target.assetQuery.old.target || target.assetQuery.includeSubtrees == target.assetQuery.old.includeSubtrees)) {
+    if (target.assetQuery.old && assetId == target.assetQuery.old.target && target.assetQuery.includeSubtrees == target.assetQuery.old.includeSubtrees) {
       return Promise.resolve();
     } else {
       target.assetQuery.old = {};
