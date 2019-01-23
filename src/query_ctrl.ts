@@ -46,6 +46,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.expr = this.target.expr || '';
     this.target.assetQuery = this.target.assetQuery || {
       target: '',
+      oldTarget: {},
       timeseries: [],
       includeSubtrees: false,
     };
@@ -75,8 +76,5 @@ export class CogniteQueryCtrl extends QueryCtrl {
     return "";
   }
 
-  getAssetTimeseries() {
-    this.datasource.findAssetTimeseries(this.target, this.panelCtrl);
-  }
 
 }

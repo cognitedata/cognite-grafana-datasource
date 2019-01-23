@@ -71,6 +71,7 @@ export interface QueryRange {
 
 export interface AssetQuery {
   target: string,
+  old?: AssetQuery,
   timeseries: TimeSeriesResponseItem[],
   includeSubtrees: boolean,
 }
@@ -241,6 +242,56 @@ export default class CogniteDatasource {
     return [];
   }
 
+  private getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
+    if (target.tab === Tab.Timeseries) {
+      const query: DataQueryRequestItem = {
+        name: target.target,
+      };
+      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+        query.aggregates = target.aggregation;
+      } else {
+        target.granularity = "";
+      }
+      if (target.granularity == "") {
+        query.granularity = this.intervalToGranularity(options.intervalMs);
+      } else {
+        query.granularity = target.granularity;
+      }
+      return Promise.resolve([query]);
+    } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
+
+      return this.findAssetTimeseries(target)
+        .then(() => {
+        if (target.tab === Tab.Custom) {
+          this.filterOnAssetTimeseries(target); //apply the search expression
+        }
+
+        return target.assetQuery.timeseries.reduce((queries,ts) => {
+          if (!ts.selected) {
+            return queries;
+          }
+          const query: DataQueryRequestItem = {
+            name: ts.name,
+          };
+          if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+            query.aggregates = target.aggregation;
+          } else {
+            target.granularity = "";
+          }
+          if (target.granularity == "") {
+            query.granularity = this.intervalToGranularity(options.intervalMs);
+          } else {
+            query.granularity = target.granularity;
+          }
+          return queries.concat(query);
+        }, []);
+      });
+
+    }
+
+    return Promise.resolve([]);
+  }
+
   query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
@@ -256,35 +307,46 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const targetQueriesCount = [];
-    const queries: DataQueryRequest[] = queryTargets.reduce((queries,target) => {
-      const queryList: DataQueryRequestItem[] = this.getDataQueryRequestItem(target, options);
-      targetQueriesCount.push({
-        refId: target.refId,
-        count: queryList.length,
-      })
-      return queries.concat(queryList.map(q => {
-        return {
-          items: [q],
-          start: timeFrom,
-          end: timeTo,
-          // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
-          //       still looks ok for aggregates, so perhaps we should use it for those?
-          //limit: options.maxDataPoints,
-          limit: q.aggregates ? 10_000 : 100_000,
-          aggregation: q.aggregates,
-        }
-      }));
+    let targetQueriesCount, queryRequests = [];
+
+    const queryList: Promise<DataQueryRequestItem[]>[] = queryTargets.reduce((list, target) => {
+      const ql = this.getDataQueryRequestItems(target,options);
+      return list.concat(ql);
     }, []);
 
-    const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
-      {
-        url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
-        method: "POST",
-        data: q
+    return Promise.all(queryList)
+      .catch(() => queryList)
+      .then((ql : DataQueryRequestItem[][]) => {
+        //setup mapping between queries and targets (for error messages)
+        targetQueriesCount = queryTargets.reduce((list,target,i) => {
+          return list.concat({
+            refId: target.refId,
+            count: ql[i].length,
+          });
+        }, []);
+
+        const queries: DataQueryRequest[] = _.flatten(ql).map(q => {
+          return {
+            items: [q],
+            start: timeFrom,
+            end: timeTo,
+            // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
+            //       still looks ok for aggregates, so perhaps we should use it for those?
+            //limit: options.maxDataPoints,
+            limit: q.aggregates ? 10_000 : 100_000,
+            aggregation: q.aggregates,
+          }
+        });
+        queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
+          {
+            url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
+            method: "POST",
+            data: q
+          })
+          .catch(error => { return ({ error: error }) }) );
+
+        return Promise.all(queryRequests);
       })
-      .catch(error => { return ({ error: error }) }) );
-    return Promise.all(queryRequests)
       .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
         return {
@@ -321,6 +383,7 @@ export default class CogniteDatasource {
         };
       })
       .catch((r: any) => ({data: []}));
+
   }
 
   annotationQuery(options: any) {
@@ -363,19 +426,36 @@ export default class CogniteDatasource {
       );
   }
 
-  findAssetTimeseries(target, panelCtrl) {
-    this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries/search?` +
-      `${(target.assetQuery.includeSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.assetQuery.target}]&` +
-      `isString=false&` +
-      `limit=1000`,
+  findAssetTimeseries(target) {
+    // replace variables with their values
+    let assetId = target.assetQuery.target;
+    for (let templateVariable of this.templateSrv.variables) {
+      assetId = assetId.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+      assetId = assetId.replace("$" + templateVariable.name, templateVariable.current.value);
+    }
+
+    //check if assetId has changed, if not we do not need to perform this query again
+    if (target.assetQuery.old && (assetId == target.assetQuery.old.target || target.assetQuery.includeSubtrees == target.assetQuery.old.includeSubtrees)) {
+      return Promise.resolve();
+    } else {
+      target.assetQuery.old = {};
+      target.assetQuery.old.target = '' + assetId;
+      target.assetQuery.old.includeSubtrees = target.assetQuery.includeSubtrees;
+    }
+
+    return this.backendSrv.datasourceRequest({
+      url: this.url + `/cogniteapi/${this.project}/timeseries?` +
+      `${(target.assetQuery.includeSubtrees) ? `path=[${assetId}]` : `assetId=${assetId}`}&` +
+      `limit=10000`,
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) => {
-      target.assetQuery.timeseries = result.data.data.items.map(ts => {
-        ts.selected = true;
-        return ts;
+      target.assetQuery.timeseries = result.data.data.items
+        .filter(ts => ts.isString === false)
+        .map(ts => {
+          ts.selected = true;
+          return ts;
       });
-    }).then(() => panelCtrl.refresh());
+    })
   }
 
   filterOnAssetTimeseries(target) {

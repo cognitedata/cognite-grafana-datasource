@@ -66,11 +66,11 @@
         allow-custom="false"
         lookup-text="true"
         get-options="ctrl.getOptions($query,'Asset')"
-        on-change="ctrl.getAssetTimeseries()">
+        on-change="ctrl.onChangeInternal()">
       </gf-form-dropdown>
     </div>
     <div class="gf-form">
-      <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.getAssetTimeseries()">Include Subassets &nbsp;&nbsp;
+      <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.onChangeInternal()">Include Subassets &nbsp;&nbsp;
     </div>
      <div class="gf-form">
       <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
@@ -102,7 +102,7 @@
           <div class="gf-form">
             <label class="gf-form-label query-keyword fix-query-keyword width-8">Root Asset</label>
             <info-popover mode="right-absolute">
-                Select an asset to pull timeseries from.
+                Select an asset to pull timeseries from. (Variables can also be used via [[variable]] or $variable)
             </info-popover>
           </div>
           <gf-form-dropdown model="ctrl.target.assetQuery.target"
@@ -110,11 +110,11 @@
             allow-custom="false"
             lookup-text="true"
             get-options="ctrl.getOptions($query,'Asset')"
-            on-change="ctrl.getAssetTimeseries();">
+            on-change="ctrl.onChangeInternal();">
           </gf-form-dropdown>
         </div>
         <div class="gf-form">
-          <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.getAssetTimeseries();">Include Subassets
+          <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.onChangeInternal();">Include Subassets
         </div>
 
       </div>
