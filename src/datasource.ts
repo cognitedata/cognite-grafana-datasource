@@ -494,12 +494,8 @@ export default class CogniteDatasource {
       }
     }
 
-    if (filterOptions.aggregation) {
-      target.aggregation = filterOptions.aggregation;
-    }
-    if (filterOptions.granularity) {
-      target.granularity = filterOptions.granularity;
-    }
+    target.aggregation = filterOptions.aggregation;
+    target.granularity = filterOptions.granularity;
   }
 
   parse(customQuery) {
@@ -518,7 +514,7 @@ export default class CogniteDatasource {
     // Format: timeseries{ options }
     //     or  timeseries{ options }[aggregation, granularity]
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
-    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])$/;
+    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
     if (timeseriesMatch) {
       const splitfilters = timeseriesMatch[1].split(",");
