@@ -1,0 +1,34 @@
+<div class="gf-form-group">
+  <div class="gf-form">
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form">
+        <label class="gf-form-label">Type</label>
+        <input type="text" class="gf-form-input" ng-model='ctrl.annotation.query_type' placeholder=""></input>
+        <info-popover mode="right-absolute">
+            Filter on the type of the event (case-sensitive).
+        </info-popover>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label">Sub type</label>
+        <input type="text" class="gf-form-input" ng-model='ctrl.annotation.query_subtype' placeholder=""></input>
+        <info-popover mode="right-absolute">
+            Filter on the subtype of the event (case-sensitive).
+        </info-popover>
+      </div>
+    </div>
+  </div>
+
+  <div class="gf-form">
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form gf-form--grow">
+        <label class="gf-form-label">Asset ids (comma separated)</label>
+        <input type="text" class="gf-form-input" ng-model='ctrl.annotation.query_assetIds' placeholder=""></input>
+        <info-popover mode="right-absolute">
+            Filter out events that are not linked to any of these assets.
+        </info-popover>
+      </div>
+
+    </div>
+    <gf-form-switch class="gf-form" label="Include Subassets" checked="ctrl.annotation.query_includeSubtrees" label-class="width-9"></gf-form-switch>
+  </div>
+</div> 

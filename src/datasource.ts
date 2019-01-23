@@ -165,6 +165,8 @@ interface Annotation {
   name: string;
   query_type?: string;
   query_subtype?: string;
+  query_assetIds?: string;
+  query_includeSubtrees?: boolean;
   type: string;
   tags: string[];
 }
@@ -191,7 +193,7 @@ interface AnnotationSearchQuery {
   // format is {"k1": "v1", "k2": "v2"}
   metadata: string;
   assetIds: number[];
-  assetSubTrees: number[];
+  assetSubtrees: number[];
   sort: 'startTime' | 'endTime' | 'createdTime' | 'lastUpdatedTime';
   dir: 'asc' | 'desc';
   limit: number;
@@ -205,7 +207,7 @@ export interface Event {
   description: string;
   type: string;
   subtype: string;
-  assetIds: [number];
+  assetIds: number[];
   source: string;
   sourceId: string;
 }
@@ -391,7 +393,7 @@ export default class CogniteDatasource {
 
   public annotationQuery(options: AnnotationQueryOptions) {
     const { range, annotation } = options;
-    const { query_type, query_subtype } = annotation;
+    const { query_type, query_subtype, query_assetIds, query_includeSubtrees } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
     const searchRequest: Partial<AnnotationSearchQuery> = {
@@ -399,18 +401,28 @@ export default class CogniteDatasource {
       minStartTime: +startTime,
       subtype: query_subtype,
       type: query_type,
+      assetIds: query_assetIds && !query_includeSubtrees
+        ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
+        : undefined,
+      assetSubtrees: query_assetIds && query_includeSubtrees
+        ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
+        : undefined,
     };
+
+    const stringified = Object.keys(searchRequest)
+     .filter(k => searchRequest[k] !== undefined)
+     .map(
+       k =>
+         Array.isArray(searchRequest[k])
+           ? `${k}=[${searchRequest[k]}]` // arrays are always IDs AFAIK, does not need to be encoded
+           : `${k}=${encodeURIComponent(searchRequest[k])}`
+     )
+     .join('&');
+
     return this.backendSrv
       .datasourceRequest({
         method: 'GET',
-        url:
-          this.url +
-          `/cogniteapi/${this.project}/events/search?${Object.keys(
-            searchRequest
-          )
-            .filter(k => searchRequest[k] !== undefined)
-            .map(k => `${k}=${searchRequest[k]}`)
-            .join('&')}`,
+        url: this.url + `/cogniteapi/${this.project}/events/search?limit=1000&${stringified}`,
       })
       .then((result: AnnotationQueryRequestResponse) => {
         return result.data.data.items.map(event => ({
