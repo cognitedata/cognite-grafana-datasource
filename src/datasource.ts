@@ -26,6 +26,12 @@ export enum Tab {
   Custom = "Custom"
 }
 
+enum ParseType {
+  Timeseries = "Timeseries",
+  Asset = "Asset",
+  Event = "Event"
+}
+
 interface DataSourceRequestOptions {
   url: string,
   method: HttpMethod,
@@ -292,7 +298,7 @@ export default class CogniteDatasource {
 
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries) {
-        if (target.label.indexOf("{{") < target.label.lastIndexOf("}}")) {
+        if (target.label.match(/{{.*}}/)) {
           try { // need to fetch the timeseries
             const ts = await this.getTimeseries({
               q: target.target,
@@ -367,7 +373,7 @@ export default class CogniteDatasource {
     throw new Error("Annotation Support not implemented yet.");
   }
 
-  metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
+  async metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset){
       if (query.length == 0) {
@@ -375,15 +381,14 @@ export default class CogniteDatasource {
       } else {
         urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`
       }
-    } else if (type === 'Timeseries') {
+    } else if (type === Tab.Timeseries) {
       if (query.length == 0) {
         urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
       }
     } else { //metrics
-      urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&query=${query}`;
-      type=Tab.Asset;
+      return this.getAssetsForMetrics(query);
     }
     if (options) {
       for (let option in options) {
@@ -453,7 +458,7 @@ export default class CogniteDatasource {
   }
 
   filterOnAssetTimeseries(target) {
-    const filterOptions = this.parse(target.expr);
+    const filterOptions = this.parse(target.expr, ParseType.Timeseries);
 
     for (let ts of target.assetQuery.timeseries) {
       ts.selected = true;
@@ -492,11 +497,77 @@ export default class CogniteDatasource {
     target.granularity = filterOptions.granularity;
   }
 
-  parse(customQuery) {
-    // replace variables with their values
-    for (let templateVariable of this.templateSrv.variables) {
-      customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
-      customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
+  async getAssetsForMetrics(query) {
+    const parseFilters = this.parse(query, ParseType.Asset);
+    const urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&`;
+
+    // query and assetSubtrees NEED to be '=' ?
+    const queryFilter = parseFilters.filters.find(x => x.property === "query");
+    const assetSubtreeFilter = parseFilters.filters.find(x => x.property === "assetSubtree");
+    parseFilters.filters = parseFilters.filters.filter(x => x.property !== "query" && x.property !== "assetSubtree");
+
+    let result = await this.backendSrv.datasourceRequest({
+      url: this.url + urlEnd +
+      ((queryFilter) ? `query=${queryFilter.value}&` : '') +
+      ((assetSubtreeFilter) ? `query=${assetSubtreeFilter.value}&` : ''),
+      method: "GET",
+    });
+    const assets = result.data.data.items;
+
+    // now filter over these assets with the rest of the filters
+    const filteredAssets = [];
+    for (let asset of assets) {
+      let add = true;
+      for (let filter of parseFilters.filters) {
+        if (filter.type === "=~") {
+          const val = _.get(asset,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || !val.match(regex)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "!~") {
+          const val = _.get(asset,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || val.match(regex)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "!=") {
+          const val = _.get(asset,filter.property);
+          if (val === undefined || (val == filter.value)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "=") {
+          const val = _.get(asset,filter.property);
+          if (val === undefined || (val != filter.value)) {
+            add = false;
+            break;
+          }
+        } else {
+          add = false;
+          break;
+        }
+      }
+      if (add) filteredAssets.push(asset);
+    }
+
+    return filteredAssets.map( asset => (
+      {
+        text: asset.name,
+        value: asset.id,
+      }));
+
+  }
+
+  parse(customQuery, type) {
+    if (type === ParseType.Timeseries || type === ParseType.Event) {
+      // replace variables with their values
+      for (let templateVariable of this.templateSrv.variables) {
+        customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+        customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
+      }
     }
 
     let filtersOptions = {
@@ -510,35 +581,46 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
-    if (timeseriesMatch) {
-      const splitfilters = timeseriesMatch[1].split(",");
-      for (let f of splitfilters) {
-        if (f == '') continue;
-        const filter: any = {};
-        let i:number;
-        f = _.trim(f," ");
-        if ((i = f.indexOf("=~")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "=~";
-        } else if ((i = f.indexOf("!~")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "!~";
-        } else if ((i = f.indexOf("!=")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "!=";
-        } else if ((i = f.indexOf("=")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+1), " '\"");
-          filter.type = "=";
-        } else {
-          console.error("Error parsing " + f);
-        }
-        filtersOptions.filters.push(filter);
-      }
+    const assetRegex = /^asset\{(.*)\}$/;
+    const assetMatch = customQuery.match(assetRegex);
 
+    let splitfilters: string[];
+    if (timeseriesMatch) {
+      splitfilters = timeseriesMatch[1].split(",");
+    } else if (assetMatch) {
+      splitfilters = assetMatch[1].split(",");
+    } else {
+      return filtersOptions;
+    }
+
+    for (let f of splitfilters) {
+      if (f == '') continue;
+      const filter: any = {};
+      let i:number;
+      f = _.trim(f," ");
+      if ((i = f.indexOf("=~")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "=~";
+      } else if ((i = f.indexOf("!~")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "!~";
+      } else if ((i = f.indexOf("!=")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "!=";
+      } else if ((i = f.indexOf("=")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+1), " '\"");
+        filter.type = "=";
+      } else {
+        console.error("Error parsing " + f);
+      }
+      filtersOptions.filters.push(filter);
+    }
+
+    if (timeseriesMatch) {
       const aggregation = timeseriesMatch[2];
       if (aggregation) {
         const splitAggregation = aggregation.split(',');
