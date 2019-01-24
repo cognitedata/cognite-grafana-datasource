@@ -53,7 +53,9 @@
         <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
         <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
         <info-popover mode="right-absolute">
+          <span ng-non-bindable>
             Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+          </span>
         </info-popover>
       </div>
     </div>
@@ -93,7 +95,9 @@
         <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
         <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
         <info-popover mode="right-absolute">
+          <span ng-non-bindable>
             Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+          </span>
         </info-popover>
     </div>
   </div>
@@ -132,7 +136,9 @@
             <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
             <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
             <info-popover mode="right-absolute">
+              <span ng-non-bindable>
                 Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+              </span>
             </info-popover>
         </div>
       </div>
