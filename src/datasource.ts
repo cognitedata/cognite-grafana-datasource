@@ -267,10 +267,11 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    let targetQueriesCount = [];
+    let targetQueriesCount = [], labels = [];
 
     let queries: DataQueryRequest[] = [];
     for (let target of queryTargets) {
+      // create query requests
       const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
       targetQueriesCount.push({
         refId: target.refId,
@@ -288,6 +289,29 @@ export default class CogniteDatasource {
           aggregation: q.aggregates,
         }
       }));
+
+      // assign labels to each timeseries
+      if (target.tab === Tab.Timeseries) {
+        if (target.label.indexOf("{") < target.label.lastIndexOf("}")) {
+          try { // need to fetch the timeseries
+            const ts = await this.getTimeseries({
+              q: target.target,
+              limit: 1,
+            });
+            labels.push(this.getTimeseriesLabel(target.label,ts[0]));
+          } catch {
+            labels.push(target.label);
+          }
+        } else{
+          labels.push(target.label);
+        }
+      } else {
+        target.assetQuery.timeseries.forEach(ts => {
+          if (ts.selected) {
+            labels.push(this.getTimeseriesLabel(target.label,ts))
+          }
+        })
+      }
     }
 
     const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
@@ -329,7 +353,7 @@ export default class CogniteDatasource {
           const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
           return datapoints.concat(response.data.data.items.map(item => (
             {
-              target: (target.label) ? target.label : aggregationPrefix + item.name,
+              target: (labels[i]) ? labels[i] : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                 .map(d => [d[this.getDatasourceValueString(response.config.data.aggregation)], d.timestamp])
@@ -379,7 +403,7 @@ export default class CogniteDatasource {
       );
   }
 
-  findAssetTimeseries(target) {
+  async findAssetTimeseries(target) {
     // replace variables with their values
     let assetId = target.assetQuery.target;
     for (let templateVariable of this.templateSrv.variables) {
@@ -401,6 +425,15 @@ export default class CogniteDatasource {
       assetId: (!target.assetQuery.includeSubtrees) ? assetId : undefined,
       limit: 10000,
     }
+
+    target.assetQuery.timeseries = await this.getTimeseries(searchQuery)
+      .map(ts => {
+        ts.selected = true;
+        return ts;
+      });
+  }
+
+  getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>) : TimeSeriesResponseItem[] {
     const stringified = Object.keys(searchQuery)
     .filter(k => searchQuery[k] !== undefined)
     .map(
@@ -415,12 +448,7 @@ export default class CogniteDatasource {
       url: this.url + `/cogniteapi/${this.project}/timeseries?` + stringified,
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) => {
-      target.assetQuery.timeseries = result.data.data.items
-        .filter(ts => ts.isString === false)
-        .map(ts => {
-          ts.selected = true;
-          return ts;
-      });
+      return result.data.data.items.filter(ts => ts.isString === false);
     })
   }
 
@@ -538,6 +566,14 @@ export default class CogniteDatasource {
       'tv': 'totalVariation',
     };
     return mapping[aggregation] || aggregation;
+  }
+
+  private getTimeseriesLabel(label, timeseries) {
+    // matches with any text within { } 
+    const variableRegex = /\{([^\}]*)\}/g;
+    return label.replace(variableRegex, function(full,group) {
+      return _.get(timeseries,group,'');
+    })
   }
 
   testDatasource() {
