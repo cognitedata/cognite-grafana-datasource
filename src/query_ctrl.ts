@@ -20,6 +20,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'min', name: 'Min' },
     { value: 'count', name: 'Count' },
     { value: 'sum', name: 'Sum' },
+    { value: 'interpolation', name: 'Interpolation' },
+    { value: 'stepInterpolation', name: 'Step Interpolation' },
+    { value: 'continuousVariance', name: 'Continuous Variance' },
+    { value: 'discreteVariance', name: 'Discrete Variance' },
+    { value: 'totalVariation', name: 'Total Variation' },
   ];
   defaults = {
   };
