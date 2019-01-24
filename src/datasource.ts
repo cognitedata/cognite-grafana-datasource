@@ -292,7 +292,7 @@ export default class CogniteDatasource {
 
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries) {
-        if (target.label.indexOf("{") < target.label.lastIndexOf("}")) {
+        if (target.label.indexOf("{{") < target.label.lastIndexOf("}}")) {
           try { // need to fetch the timeseries
             const ts = await this.getTimeseries({
               q: target.target,
@@ -426,8 +426,8 @@ export default class CogniteDatasource {
       limit: 10000,
     }
 
-    target.assetQuery.timeseries = await this.getTimeseries(searchQuery)
-      .map(ts => {
+    const ts = await this.getTimeseries(searchQuery)
+    target.assetQuery.timeseries = ts.map(ts => {
         ts.selected = true;
         return ts;
       });
@@ -552,7 +552,7 @@ export default class CogniteDatasource {
 
   private getDatasourceValueString(aggregation:string): string {
     const mapping = {
-      '': 'value',
+      undefined: 'value',
       'none': 'value',
       'avg': 'average',
       'int': 'interpolation',
@@ -569,10 +569,10 @@ export default class CogniteDatasource {
   }
 
   private getTimeseriesLabel(label, timeseries) {
-    // matches with any text within { } 
-    const variableRegex = /\{([^\}]*)\}/g;
+    // matches with any text within {{ }} 
+    const variableRegex = /{{([^{}]*)}}/g;
     return label.replace(variableRegex, function(full,group) {
-      return _.get(timeseries,group,'');
+      return _.get(timeseries,group,full);
     })
   }
 
