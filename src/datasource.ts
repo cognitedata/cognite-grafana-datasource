@@ -198,7 +198,7 @@ export default class CogniteDatasource {
     return days + 'd';
   }
 
-  private getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
+  private async getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
     if (target.tab === Tab.Timeseries) {
       const query: DataQueryRequestItem = {
         name: target.target,
@@ -213,42 +213,37 @@ export default class CogniteDatasource {
       } else {
         query.granularity = target.granularity;
       }
-      return Promise.resolve([query]);
+      return [query];
     } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
-
-      return this.findAssetTimeseries(target)
-        .then(() => {
-        if (target.tab === Tab.Custom) {
-          this.filterOnAssetTimeseries(target); //apply the search expression
+      await this.findAssetTimeseries(target);
+      if (target.tab === Tab.Custom) {
+        this.filterOnAssetTimeseries(target); //apply the search expression
+      }
+      return target.assetQuery.timeseries.reduce((queries,ts) => {
+        if (!ts.selected) {
+          return queries;
         }
-
-        return target.assetQuery.timeseries.reduce((queries,ts) => {
-          if (!ts.selected) {
-            return queries;
-          }
-          const query: DataQueryRequestItem = {
-            name: ts.name,
-          };
-          if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-            query.aggregates = target.aggregation;
-          } else {
-            target.granularity = "";
-          }
-          if (target.granularity == "") {
-            query.granularity = this.intervalToGranularity(options.intervalMs);
-          } else {
-            query.granularity = target.granularity;
-          }
-          return queries.concat(query);
-        }, []);
-      });
-
+        const query: DataQueryRequestItem = {
+          name: ts.name,
+        };
+        if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+          query.aggregates = target.aggregation;
+        } else {
+          target.granularity = "";
+        }
+        if (target.granularity == "") {
+          query.granularity = this.intervalToGranularity(options.intervalMs);
+        } else {
+          query.granularity = target.granularity;
+        }
+        return queries.concat(query);
+      }, []);
     }
 
-    return Promise.resolve([]);
+    return [];
   }
 
-  query(options: QueryOptions): Promise<QueryResponse> {
+  public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
       if (target.hide) {
@@ -265,38 +260,37 @@ export default class CogniteDatasource {
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
     let targetQueriesCount = [];
 
-    return Promise.all(queryTargets.map(target => this.getDataQueryRequestItems(target, options)))
-      .then((ql : DataQueryRequestItem[][]) => {
-        //setup mapping between queries and targets (for error messages)
-        targetQueriesCount = queryTargets.map((target,i) => {
-          return {
-            refId: target.refId,
-            count: ql[i].length,
-          }
-        });
-
-        const queries: DataQueryRequest[] = _.flatten(ql).map(q => {
-          return {
-            items: [q],
-            start: timeFrom,
-            end: timeTo,
-            // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
-            //       still looks ok for aggregates, so perhaps we should use it for those?
-            //limit: options.maxDataPoints,
-            limit: q.aggregates ? 10_000 : 100_000,
-            aggregation: q.aggregates,
-          }
-        });
-        const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
-          {
-            url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
-            method: "POST",
-            data: q
-          })
-          .catch(error => { return ({ error: error }) }) );
-
-        return Promise.all(queryRequests);
+    let queries: DataQueryRequest[] = [];
+    for (let target of queryTargets) {
+      const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
+      targetQueriesCount.push({
+        refId: target.refId,
+        count: queryList.length,
       })
+      queries = queries.concat(queryList.map(q => {
+        return {
+          items: [q],
+          start: timeFrom,
+          end: timeTo,
+          // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
+          //       still looks ok for aggregates, so perhaps we should use it for those?
+          //limit: options.maxDataPoints,
+          limit: q.aggregates ? 10_000 : 100_000,
+          aggregation: q.aggregates,
+        }
+      }));
+    }
+
+    const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
+      {
+        url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
+        method: "POST",
+        data: q
+      })
+      .catch(error => { return ({ error: error }) }) );
+
+    return Promise.all(queryRequests)
+      .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
         return {
           data: timeseries
