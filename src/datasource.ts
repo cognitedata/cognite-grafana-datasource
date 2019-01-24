@@ -263,23 +263,17 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    let targetQueriesCount, queryRequests = [];
+    let targetQueriesCount = [];
 
-    const queryList: Promise<DataQueryRequestItem[]>[] = queryTargets.reduce((list, target) => {
-      const ql = this.getDataQueryRequestItems(target,options);
-      return list.concat(ql);
-    }, []);
-
-    return Promise.all(queryList)
-      .catch(() => queryList)
+    return Promise.all(queryTargets.map(target => this.getDataQueryRequestItems(target, options)))
       .then((ql : DataQueryRequestItem[][]) => {
         //setup mapping between queries and targets (for error messages)
-        targetQueriesCount = queryTargets.reduce((list,target,i) => {
-          return list.concat({
+        targetQueriesCount = queryTargets.map((target,i) => {
+          return {
             refId: target.refId,
             count: ql[i].length,
-          });
-        }, []);
+          }
+        });
 
         const queries: DataQueryRequest[] = _.flatten(ql).map(q => {
           return {
@@ -293,7 +287,7 @@ export default class CogniteDatasource {
             aggregation: q.aggregates,
           }
         });
-        queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
+        const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
           {
             url: this.url + `/cogniteapi/${this.project}/timeseries/dataquery`,
             method: "POST",
@@ -303,7 +297,6 @@ export default class CogniteDatasource {
 
         return Promise.all(queryRequests);
       })
-      .catch(() => queryRequests) // ignore errors
       .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
         return {
           data: timeseries
