@@ -146,7 +146,7 @@ interface DataQueryRequestResponse {
   data: DataDatapoints,
   config: {
     data: {
-      aggregation: string
+      aggregates: string
     }
   }
 }
@@ -283,18 +283,23 @@ export default class CogniteDatasource {
         refId: target.refId,
         count: queryList.length,
       })
-      queries = queries.concat(queryList.map(q => {
-        return {
-          items: [q],
-          start: timeFrom,
-          end: timeTo,
-          // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
-          //       still looks ok for aggregates, so perhaps we should use it for those?
-          //limit: options.maxDataPoints,
-          limit: q.aggregates ? 10_000 : 100_000,
-          aggregation: q.aggregates,
-        }
-      }));
+      const queryReq: DataQueryRequest = {
+        items: queryList,
+        start: timeFrom,
+        end: timeTo,
+      }
+      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+        queryReq.aggregates = target.aggregation;
+      } else {
+        target.granularity = "";
+      }
+      if (target.granularity == "") {
+        queryReq.granularity = this.intervalToGranularity(options.intervalMs);
+      } else {
+        queryReq.granularity = target.granularity;
+      }
+      queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length),
+      queries.push(queryReq);
 
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries) {
@@ -335,14 +340,11 @@ export default class CogniteDatasource {
       console.error(error);
       return {data: []};
     }
+    let count = 0;
     return {
       data: timeseries
         .reduce((datapoints, response, i) => {
-          const refId = targetQueriesCount.reduce((retval, query) => {
-            if (typeof(retval) === "string") return retval;
-            else if (retval + query.count > i) return query.refId;
-            else return retval + query.count;
-          }, 0);
+          const refId = targetQueriesCount[i].refId;
           const target = queryTargets.find(x => x.refId === refId);
           if (isError(response)) {
             let errmsg:string;
@@ -355,14 +357,14 @@ export default class CogniteDatasource {
             return datapoints;
           }
 
-          const aggregation = response.config.data.aggregation;
+          const aggregation = response.config.data.aggregates;
           const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
           return datapoints.concat(response.data.data.items.map(item => (
             {
-              target: (labels[i]) ? labels[i] : aggregationPrefix + item.name,
+              target: (labels[count++]) ? labels[count - 1] : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregation)], d.timestamp])
+                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregates)], d.timestamp])
             }
           )));
         }, [])
