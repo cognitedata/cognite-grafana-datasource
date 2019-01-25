@@ -198,7 +198,7 @@ export default class CogniteDatasource {
   }
 
   private getDataQueryRequestItem(target: QueryTarget, options: QueryOptions): DataQueryRequestItem[] {
-    if (target.tab === Tab.Timeseries) {
+    if (target.tab === Tab.Timeseries || target.tab == undefined) {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
@@ -207,7 +207,7 @@ export default class CogniteDatasource {
       } else {
         target.granularity = "";
       }
-      if (target.granularity == "") {
+      if (!target.granularity) {
         query.granularity = this.intervalToGranularity(options.intervalMs);
       } else {
         query.granularity = target.granularity;
