@@ -506,12 +506,17 @@ export default class CogniteDatasource {
     // query and assetSubtrees NEED to be '=' ?
     const queryFilter = parseFilters.filters.find(x => x.property === "query");
     const assetSubtreeFilter = parseFilters.filters.find(x => x.property === "assetSubtree");
-    parseFilters.filters = parseFilters.filters.filter(x => x.property !== "query" && x.property !== "assetSubtree");
-
+    // check if name and description are '=', in which case we add them to the query
+    const nameFilter = parseFilters.filters.find(x => x.property === "name" && x.type === "=");
+    const descriptionFilter = parseFilters.filters.find(x => x.property === "description" && x.type === "=");
+    parseFilters.filters = parseFilters.filters.filter(x => x.property !== "query" && x.property !== "assetSubtree" &&
+                                                      (x.property !== "name" || x.type !== "=") && (x.property !== "description" || x.type !== "="));
     let result = await this.backendSrv.datasourceRequest({
       url: this.url + urlEnd +
       ((queryFilter) ? `query=${queryFilter.value}&` : '') +
-      ((assetSubtreeFilter) ? `query=${assetSubtreeFilter.value}&` : ''),
+      ((assetSubtreeFilter) ? `assetSubtree=${assetSubtreeFilter.value}&` : '') +
+      ((nameFilter) ? `name=${nameFilter.value}&` : '') +
+      ((descriptionFilter) ? `description=${descriptionFilter.value}&` : ''),
       method: "GET",
     });
     const assets = result.data.data.items;
