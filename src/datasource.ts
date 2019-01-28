@@ -508,7 +508,7 @@ export default class CogniteDatasource {
       }
     }
 
-    target.aggregation = filterOptions.aggregation;
+    target.aggregation = filterOptions.aggregation || "average";
     target.granularity = filterOptions.granularity;
   }
 
