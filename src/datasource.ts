@@ -386,7 +386,7 @@ export default class CogniteDatasource {
   }
 
   // this function is for getting metrics (template variables)
-  async metricFindQuery(query: any) {
+  async metricFindQuery(query: VariableQueryData) {
     return this.getAssetsForMetrics(query);
   }
 
@@ -512,7 +512,7 @@ export default class CogniteDatasource {
     target.granularity = filterOptions.granularity;
   }
 
-  async getAssetsForMetrics(query) {
+  async getAssetsForMetrics(query: VariableQueryData) {
     const queryOptions = this.parse(query.query, ParseType.Asset);
     const filterOptions = this.parse(query.filter, ParseType.Asset);
     const urlEnd = `/cogniteapi/${this.project}/assets/search?`;

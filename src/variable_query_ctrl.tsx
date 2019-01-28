@@ -37,7 +37,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryP
             value={this.state.query}
             onChange={e => this.handleChange(e,"query")}
             onBlur={e => this.handleBlur()}
-            placeholder="eg: asset{name='example',assetSubtrees=[123456789]}"
+            placeholder="eg: asset{name='example', assetSubtrees=[123456789]}"
             required
           />
         </div>
@@ -49,7 +49,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryP
             value={this.state.filter}
             onChange={e => this.handleChange(e, "filter")}
             onBlur={e => this.handleBlur()}
-            placeholder="eg: filter{name=~'.*test.*',isStep=1,metadata.key1!=false}"
+            placeholder="eg: filter{name=~'.*test.*', isStep=1, metadata.key1!=false}"
           />
         </div>
         <div className="gf-form--grow">
