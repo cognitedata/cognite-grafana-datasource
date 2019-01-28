@@ -219,7 +219,7 @@ export default class CogniteDatasource {
   }
 
   private async getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
-    if (target.tab === Tab.Timeseries) {
+    if (target.tab === Tab.Timeseries || target.tab == undefined) {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
@@ -228,7 +228,7 @@ export default class CogniteDatasource {
       } else {
         target.granularity = "";
       }
-      if (target.granularity == "") {
+      if (!target.granularity) {
         query.granularity = this.intervalToGranularity(options.intervalMs);
       } else {
         query.granularity = target.granularity;
@@ -266,7 +266,12 @@ export default class CogniteDatasource {
   public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
-      if (target.hide) {
+      if (!target ||
+          target.hide ||
+          target.target === '' ||
+          target.target === 'Start typing tag id here' ||
+          !target.assetQuery ||
+          target.assetQuery.target === '') {
         return targets;
       }
       return targets.concat(target);
