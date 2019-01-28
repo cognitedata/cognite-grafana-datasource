@@ -13,7 +13,9 @@
     "typescript": "^3.0.1"
   },
   "dependencies": {
+    "@types/react": "^16.7.21",
     "lodash": "^4.17.10",
-    "q": "^1.5.1"
+    "q": "^1.5.1",
+    "react": "^16.7.0"
   }
 }

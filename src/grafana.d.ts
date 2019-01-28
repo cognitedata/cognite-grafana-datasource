@@ -112,3 +112,12 @@ declare module 'app/plugins/sdk' {
 
   export function loadPluginCss(options: any): void;
 }
+
+declare module 'app/types/plugins' {
+  export interface VariableQueryProps {
+    query: any;
+    onChange: (query: any, definition: string) => void;
+    datasource: any;
+    templateSrv: any;
+  }
+}

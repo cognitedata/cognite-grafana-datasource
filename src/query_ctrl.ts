@@ -58,7 +58,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
   getOptions(query:string, type:string) {
-    return this.datasource.metricFindQuery(query || '', type);
+    return this.datasource.getOptionsForDropdown(query || '', type);
   }
 
   onChangeInternal() {

@@ -172,6 +172,11 @@ interface TimeseriesSearchQuery {
   assetId: string;
 }
 
+export interface VariableQueryData {
+  query: string;
+  filter: string;
+}
+
 function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
@@ -375,7 +380,12 @@ export default class CogniteDatasource {
     throw new Error("Annotation Support not implemented yet.");
   }
 
-  async metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
+  // this function is for getting metrics (template variables)
+  async metricFindQuery(query: any) {
+    return this.getAssetsForMetrics(query);
+  }
+
+  public async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset){
       if (query.length == 0) {
@@ -389,8 +399,6 @@ export default class CogniteDatasource {
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
       }
-    } else { //metrics
-      return this.getAssetsForMetrics(query);
     }
     if (options) {
       for (let option in options) {
@@ -500,23 +508,23 @@ export default class CogniteDatasource {
   }
 
   async getAssetsForMetrics(query) {
-    const parseFilters = this.parse(query, ParseType.Asset);
-    const urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&`;
+    const queryOptions = this.parse(query.query, ParseType.Asset);
+    const filterOptions = this.parse(query.filter, ParseType.Asset);
+    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 
-    // query and assetSubtrees NEED to be '=' ?
-    const queryFilter = parseFilters.filters.find(x => x.property === "query");
-    const assetSubtreeFilter = parseFilters.filters.find(x => x.property === "assetSubtree");
-    // check if name and description are '=', in which case we add them to the query
-    const nameFilter = parseFilters.filters.find(x => x.property === "name" && x.type === "=");
-    const descriptionFilter = parseFilters.filters.find(x => x.property === "description" && x.type === "=");
-    parseFilters.filters = parseFilters.filters.filter(x => x.property !== "query" && x.property !== "assetSubtree" &&
-                                                      (x.property !== "name" || x.type !== "=") && (x.property !== "description" || x.type !== "="));
+    // need to have just equality
+    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
+    if (equalCheck) {
+      return [{value: "ERROR: Query can only use '='"}];
+    }
+
+    let url = this.url + urlEnd;
+    for (let param of queryOptions.filters) {
+      url += param.property + '=' + param.value + "&";
+    }
+
     let result = await this.backendSrv.datasourceRequest({
-      url: this.url + urlEnd +
-      ((queryFilter) ? `query=${queryFilter.value}&` : '') +
-      ((assetSubtreeFilter) ? `assetSubtree=${assetSubtreeFilter.value}&` : '') +
-      ((nameFilter) ? `name=${nameFilter.value}&` : '') +
-      ((descriptionFilter) ? `description=${descriptionFilter.value}&` : ''),
+      url: url + "limit=1000",
       method: "GET",
     });
     const assets = result.data.data.items;
@@ -525,7 +533,7 @@ export default class CogniteDatasource {
     const filteredAssets = [];
     for (let asset of assets) {
       let add = true;
-      for (let filter of parseFilters.filters) {
+      for (let filter of filterOptions.filters) {
         if (filter.type === "=~") {
           const val = _.get(asset,filter.property);
           const regex = "^" + filter.value + "$";
@@ -588,7 +596,7 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
-    const assetRegex = /^asset\{(.*)\}$/;
+    const assetRegex = /^(?:asset|filter)\{(.*)\}$/;
     const assetMatch = customQuery.match(assetRegex);
 
     let splitfilters: string[];
