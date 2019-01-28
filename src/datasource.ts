@@ -266,12 +266,9 @@ export default class CogniteDatasource {
   public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
-      if (!target ||
-          target.hide ||
-          target.target === '' ||
-          target.target === 'Start typing tag id here' ||
-          !target.assetQuery ||
-          target.assetQuery.target === '') {
+      if (!target || target.hide ||
+          ((target.tab === Tab.Timeseries || target.tab == undefined) && (!target.target || target.target === 'Start typing tag id here')) ||
+          ((target.tab === Tab.Asset || target.tab === Tab.Custom) && (!target.assetQuery || target.assetQuery.target === ''))) {
         return targets;
       }
       return targets.concat(target);
@@ -289,6 +286,9 @@ export default class CogniteDatasource {
     for (let target of queryTargets) {
       // create query requests
       const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
+      if (queryList.length === 0) {
+        continue;
+      }
       targetQueriesCount.push({
         refId: target.refId,
         count: queryList.length,
@@ -308,7 +308,7 @@ export default class CogniteDatasource {
       } else {
         queryReq.granularity = target.granularity;
       }
-      queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length),
+      queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length);
       queries.push(queryReq);
 
       // assign labels to each timeseries
@@ -390,7 +390,7 @@ export default class CogniteDatasource {
     return this.getAssetsForMetrics(query);
   }
 
-  public async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
+  public getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset){
       if (query.length == 0) {
