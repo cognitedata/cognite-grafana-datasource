@@ -459,7 +459,7 @@ export default class CogniteDatasource {
 
     const queryOptions = this.parse(expr,ParseType.Event);
     const filterOptions = this.parse(filter || '',ParseType.Event);
-    
+
     // need to have just equality
     const equalCheck = queryOptions.filters.find(x => x.type !== '=');
     if (equalCheck) {
@@ -476,7 +476,7 @@ export default class CogniteDatasource {
       method: "GET",
     });
     const events = result.data.data.items;
-    
+
     this.applyFilters(filterOptions.filters, events);
 
     return events.filter(e => e.selected === true).map( event=> ({
