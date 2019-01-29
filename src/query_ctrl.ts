@@ -20,6 +20,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'min', name: 'Min' },
     { value: 'count', name: 'Count' },
     { value: 'sum', name: 'Sum' },
+    { value: 'interpolation', name: 'Interpolation' },
+    { value: 'stepInterpolation', name: 'Step Interpolation' },
+    { value: 'continuousVariance', name: 'Continuous Variance' },
+    { value: 'discreteVariance', name: 'Discrete Variance' },
+    { value: 'totalVariation', name: 'Total Variation' },
   ];
   defaults = {
   };
@@ -46,13 +51,15 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.expr = this.target.expr || '';
     this.target.assetQuery = this.target.assetQuery || {
       target: '',
+      old: {},
       timeseries: [],
       includeSubtrees: false,
+      func: '',
     };
   }
 
   getOptions(query:string, type:string) {
-    return this.datasource.metricFindQuery(query || '', type);
+    return this.datasource.getOptionsForDropdown(query || '', type);
   }
 
   onChangeInternal() {
@@ -75,8 +82,5 @@ export class CogniteQueryCtrl extends QueryCtrl {
     return "";
   }
 
-  getAssetTimeseries() {
-    this.datasource.findAssetTimeseries(this.target, this.panelCtrl);
-  }
 
 }
