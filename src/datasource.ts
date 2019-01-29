@@ -288,12 +288,12 @@ export default class CogniteDatasource {
       } else {
         target.granularity = "";
       }
-      if (target.granularity == "") {
+      if (!target.granularity) {
         queryReq.granularity = this.intervalToGranularity(options.intervalMs);
       } else {
         queryReq.granularity = target.granularity;
       }
-      if (target.assetQuery.func && target.tab === Tab.Custom) {
+      if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
         let ids = 0;
         const idRegex = /\[\d*\]/g; //look for [number]
         for (let q of queryList) {
@@ -313,7 +313,8 @@ export default class CogniteDatasource {
       queries.push(queryReq);
 
       // assign labels to each timeseries
-      if (target.tab === Tab.Timeseries) {
+      if (target.tab === Tab.Timeseries || target.tab == undefined) {
+        if (!target.label) target.label = "";
         if (target.label.match(/{{.*}}/)) {
           try { // need to fetch the timeseries
             const ts = await this.getTimeseries({
