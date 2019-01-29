@@ -174,6 +174,7 @@ interface Annotation {
   name: string;
   expr: string;
   filter: string;
+  error: string;
   type: string;
   tags: string[];
 }
@@ -450,13 +451,13 @@ export default class CogniteDatasource {
   }
 
   public async annotationQuery(options: AnnotationQueryOptions) {
-    // console.log(options);
     const { range, annotation } = options;
-    const { expr, filter } = annotation;
+    const { expr, filter, error } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
+    if (annotation.error) return [];
 
-    const queryOptions = this.parse(expr || '',ParseType.Event);
+    const queryOptions = this.parse(expr,ParseType.Event);
     const filterOptions = this.parse(filter || '',ParseType.Event);
     
     // need to have just equality
@@ -471,7 +472,7 @@ export default class CogniteDatasource {
     }
 
     let result = await this.backendSrv.datasourceRequest({
-      url: url + "limit=1000",
+      url: url + `limit=1000&maxStartTime=${endTime}&minEndTime=${startTime}`,
       method: "GET",
     });
     const events = result.data.data.items;
@@ -486,45 +487,6 @@ export default class CogniteDatasource {
       timeEnd: event.endTime,
       title: event.type,
     }))
-
-    // const searchRequest: Partial<AnnotationSearchQuery> = {
-    //   maxEndTime: +endTime,
-    //   minStartTime: +startTime,
-    //   subtype: query_subtype,
-    //   type: query_type,
-    //   assetIds: query_assetIds && !query_includeSubtrees
-    //     ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
-    //     : undefined,
-    //   assetSubtrees: query_assetIds && query_includeSubtrees
-    //     ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
-    //     : undefined,
-    // };
-
-    // const stringified = Object.keys(searchRequest)
-    //  .filter(k => searchRequest[k] !== undefined)
-    //  .map(
-    //    k =>
-    //      Array.isArray(searchRequest[k])
-    //        ? `${k}=[${searchRequest[k]}]` // arrays are always IDs AFAIK, does not need to be encoded
-    //        : `${k}=${encodeURIComponent(searchRequest[k])}`
-    //  )
-    //  .join('&');
-
-    // return this.backendSrv
-    //   .datasourceRequest({
-    //     method: 'GET',
-    //     url: this.url + `/cogniteapi/${this.project}/events/search?limit=1000&${stringified}`,
-    //   })
-    //   .then((result: AnnotationQueryRequestResponse) => {
-    //     return result.data.data.items.map(event => ({
-    //       annotation,
-    //       isRegion: true,
-    //       text: event.description,
-    //       time: event.startTime,
-    //       timeEnd: event.endTime,
-    //       title: event.type,
-    //     }));
-    //   });
   }
 
   // this function is for getting metrics (template variables)
@@ -624,38 +586,6 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    // for (let ts of target.assetQuery.timeseries) {
-    //   ts.selected = true;
-    //   for (let filter of filterOptions.filters) {
-    //     if (filter.type === "=~") {
-    //       const val = _.get(ts,filter.property);
-    //       const regex = "^" + filter.value + "$";
-    //       if (val === undefined || !val.match(regex)) {
-    //         ts.selected = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "!~") {
-    //       const val = _.get(ts,filter.property);
-    //       const regex = "^" + filter.value + "$";
-    //       if (val === undefined || val.match(regex)) {
-    //         ts.selected = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "!=") {
-    //       const val = _.get(ts,filter.property);
-    //       if (val === undefined || (val == filter.value)) {
-    //         ts.selected = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "=") {
-    //       const val = _.get(ts,filter.property);
-    //       if (val === undefined || (val != filter.value)) {
-    //         ts.selected = false;
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
     this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
 
     target.aggregation = filterOptions.aggregation;
@@ -686,44 +616,7 @@ export default class CogniteDatasource {
 
     // now filter over these assets with the rest of the filters
     this.applyFilters(filterOptions.filters, assets);
-    const filteredAssets = assets.filter(a => a.selected === true);
-    // const filteredAssets = [];
-    // for (let asset of assets) {
-    //   let add = true;
-    //   for (let filter of filterOptions.filters) {
-    //     if (filter.type === "=~") {
-    //       const val = _.get(asset,filter.property);
-    //       const regex = "^" + filter.value + "$";
-    //       if (val === undefined || !val.match(regex)) {
-    //         add = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "!~") {
-    //       const val = _.get(asset,filter.property);
-    //       const regex = "^" + filter.value + "$";
-    //       if (val === undefined || val.match(regex)) {
-    //         add = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "!=") {
-    //       const val = _.get(asset,filter.property);
-    //       if (val === undefined || (val == filter.value)) {
-    //         add = false;
-    //         break;
-    //       }
-    //     } else if (filter.type === "=") {
-    //       const val = _.get(asset,filter.property);
-    //       if (val === undefined || (val != filter.value)) {
-    //         add = false;
-    //         break;
-    //       }
-    //     } else {
-    //       add = false;
-    //       break;
-    //     }
-    //   }
-    //   if (add) filteredAssets.push(asset);
-    // }
+    const filteredAssets = assets.filter(asset => asset.selected === true);
 
     return filteredAssets.map( asset => (
       {
