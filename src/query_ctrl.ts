@@ -54,6 +54,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
       oldTarget: {},
       timeseries: [],
       includeSubtrees: false,
+      func: '',
     };
   }
 

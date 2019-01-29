@@ -158,7 +158,10 @@
     =~ (regex equality),
     !~ (regex inequality) <br>
   Templated variables can also be used with [[variable]] or $variable <br>
-  Example: timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h]
+  Example: timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h] <br>
+  Functions can also be applied to the results by adding a function property. Use '[ID]' to access the timeseries values.
+    Note: No aggregates can be used when using functions.
+  Example: timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}
         </pre>
     </div>
   </script>

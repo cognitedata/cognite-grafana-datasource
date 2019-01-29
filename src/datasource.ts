@@ -80,6 +80,7 @@ export interface AssetQuery {
   old?: AssetQuery,
   timeseries: TimeSeriesResponseItem[],
   includeSubtrees: boolean,
+  func: string,
 }
 
 export interface QueryTarget {
@@ -131,6 +132,7 @@ interface DataQueryRequestItem {
   limit?: number,
   granularity?: string,
   aggregates?: string,
+  function?: string,
 }
 
 interface DataQueryRequest {
@@ -223,16 +225,6 @@ export default class CogniteDatasource {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
-      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-        query.aggregates = target.aggregation;
-      } else {
-        target.granularity = "";
-      }
-      if (!target.granularity) {
-        query.granularity = this.intervalToGranularity(options.intervalMs);
-      } else {
-        query.granularity = target.granularity;
-      }
       return [query];
     } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
       await this.findAssetTimeseries(target);
@@ -246,15 +238,8 @@ export default class CogniteDatasource {
         const query: DataQueryRequestItem = {
           name: ts.name,
         };
-        if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-          query.aggregates = target.aggregation;
-        } else {
-          target.granularity = "";
-        }
-        if (target.granularity == "") {
-          query.granularity = this.intervalToGranularity(options.intervalMs);
-        } else {
-          query.granularity = target.granularity;
+        if (target.tab === Tab.Custom && target.assetQuery.func) {
+          query.function = target.assetQuery.func.replace(/\[ID\]/g, "[" + ts.id + "]");
         }
         return queries.concat(query);
       }, []);
@@ -292,12 +277,12 @@ export default class CogniteDatasource {
       targetQueriesCount.push({
         refId: target.refId,
         count: queryList.length,
-      })
+      });
       const queryReq: DataQueryRequest = {
         items: queryList,
         start: timeFrom,
         end: timeTo,
-      }
+      };
       if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
         queryReq.aggregates = target.aggregation;
       } else {
@@ -308,7 +293,23 @@ export default class CogniteDatasource {
       } else {
         queryReq.granularity = target.granularity;
       }
-      queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length);
+      if (target.assetQuery.func && target.tab === Tab.Custom) {
+        let ids = 0;
+        const idRegex = /\[\d*\]/g; //look for [number]
+        for (let q of queryList) {
+          const matches = q.function.match(idRegex);
+          if (!matches) break;
+          const idsObj = {};
+          for (let match of matches) {
+            idsObj[match.substr(1,match.length-2)] = true;
+          }
+          ids += Object.keys(idsObj).length;
+        }
+        if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+        queryReq.limit = Math.floor(100_000/ids);
+      } else {
+        queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length);
+      }
       queries.push(queryReq);
 
       // assign labels to each timeseries
@@ -329,9 +330,9 @@ export default class CogniteDatasource {
       } else {
         target.assetQuery.timeseries.forEach(ts => {
           if (ts.selected) {
-            labels.push(this.getTimeseriesLabel(target.label,ts))
+            labels.push(this.getTimeseriesLabel(target.label,ts));
           }
-        })
+        });
       }
     }
 
@@ -374,7 +375,7 @@ export default class CogniteDatasource {
               target: (labels[count++]) ? labels[count - 1] : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregates)], d.timestamp])
+                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregates)] || d.value, d.timestamp])
             }
           )));
         }, [])
@@ -474,6 +475,13 @@ export default class CogniteDatasource {
 
   filterOnAssetTimeseries(target) {
     const filterOptions = this.parse(target.expr, ParseType.Timeseries);
+    const func = filterOptions.filters.find(x => x.property === "function");
+    if (func) {
+      filterOptions.filters = filterOptions.filters.filter(x => x.property !== "function");
+      target.assetQuery.func = func.value;
+    } else {
+      target.assetQuery.func = '';
+    }
 
     for (let ts of target.assetQuery.timeseries) {
       ts.selected = true;
@@ -508,7 +516,7 @@ export default class CogniteDatasource {
       }
     }
 
-    target.aggregation = filterOptions.aggregation || "average";
+    target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
   }
 
