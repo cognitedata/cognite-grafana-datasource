@@ -165,7 +165,7 @@ type DataQueryError = {
   }
 };
 
-interface Annotation {
+export interface Annotation {
   datasource: string;
   enable: boolean;
   hide: boolean;
@@ -471,11 +471,13 @@ export default class CogniteDatasource {
       url += param.property + '=' + param.value + "&";
     }
 
+    // use maxStartTime and minEndTime so that we include events that are partially in range
     let result = await this.backendSrv.datasourceRequest({
       url: url + `limit=1000&maxStartTime=${endTime}&minEndTime=${startTime}`,
       method: "GET",
     });
     const events = result.data.data.items;
+    if (!events) return [];
 
     this.applyFilters(filterOptions.filters, events);
 
@@ -751,7 +753,7 @@ export default class CogniteDatasource {
   }
 
   private getTimeseriesLabel(label, timeseries) {
-    // matches with any text within {{ }} 
+    // matches with any text within {{ }}
     const variableRegex = /{{([^{}]*)}}/g;
     return label.replace(variableRegex, function(full,group) {
       return _.get(timeseries,group,full);
