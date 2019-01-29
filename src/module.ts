@@ -1,6 +1,7 @@
 import CogniteDatasource from './datasource';
 import { CogniteAnnotationsQueryCtrl, CogniteQueryCtrl } from './query_ctrl';
 import {CogniteConfigCtrl} from './config_ctrl';
+import {CogniteVariableQueryCtrl} from './variable_query_ctrl';
 
 // class ChangeMyNameAnnotationsQueryCtrl {
 //   static templateUrl = 'partials/annotations.editor.html';
@@ -11,4 +12,6 @@ export {
   CogniteQueryCtrl as QueryCtrl,
   CogniteConfigCtrl as ConfigCtrl,
   CogniteAnnotationsQueryCtrl as AnnotationsQueryCtrl,
+  CogniteVariableQueryCtrl as VariableQueryEditor,
+  //ChangeMyNameAnnotationsQueryCtrl as AnnotationsQueryCtrl,
 };

@@ -26,6 +26,12 @@ export enum Tab {
   Custom = "Custom"
 }
 
+enum ParseType {
+  Timeseries = "Timeseries",
+  Asset = "Asset",
+  Event = "Event"
+}
+
 interface DataSourceRequestOptions {
   url: string,
   method: HttpMethod,
@@ -71,8 +77,10 @@ export interface QueryRange {
 
 export interface AssetQuery {
   target: string,
+  old?: AssetQuery,
   timeseries: TimeSeriesResponseItem[],
   includeSubtrees: boolean,
+  func: string,
 }
 
 export interface QueryTarget {
@@ -124,6 +132,7 @@ interface DataQueryRequestItem {
   limit?: number,
   granularity?: string,
   aggregates?: string,
+  function?: string,
 }
 
 interface DataQueryRequest {
@@ -139,7 +148,7 @@ interface DataQueryRequestResponse {
   data: DataDatapoints,
   config: {
     data: {
-      aggregation: string
+      aggregates: string
     }
   }
 }
@@ -224,6 +233,20 @@ interface AnnotationQueryRequestResponse {
   data: DataEvents;
 }
 
+interface TimeseriesSearchQuery {
+  q: string;
+  description: string;
+  limit: number;
+  includeMetadata: boolean;
+  path: string[];
+  assetId: string;
+}
+
+export interface VariableQueryData {
+  query: string;
+  filter: string;
+}
+
 function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
@@ -265,23 +288,14 @@ export default class CogniteDatasource {
     return days + 'd';
   }
 
-  private getDataQueryRequestItem(target: QueryTarget, options: QueryOptions): DataQueryRequestItem[] {
-    if (target.tab === Tab.Timeseries) {
+  private async getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<DataQueryRequestItem[]> {
+    if (target.tab === Tab.Timeseries || target.tab == undefined) {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
-      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-        query.aggregates = target.aggregation;
-      } else {
-        target.granularity = "";
-      }
-      if (target.granularity == "") {
-        query.granularity = this.intervalToGranularity(options.intervalMs);
-      } else {
-        query.granularity = target.granularity;
-      }
       return [query];
     } else if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
+      await this.findAssetTimeseries(target);
       if (target.tab === Tab.Custom) {
         this.filterOnAssetTimeseries(target); //apply the search expression
       }
@@ -292,15 +306,8 @@ export default class CogniteDatasource {
         const query: DataQueryRequestItem = {
           name: ts.name,
         };
-        if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
-          query.aggregates = target.aggregation;
-        } else {
-          target.granularity = "";
-        }
-        if (target.granularity == "") {
-          query.granularity = this.intervalToGranularity(options.intervalMs);
-        } else {
-          query.granularity = target.granularity;
+        if (target.tab === Tab.Custom && target.assetQuery.func) {
+          query.function = target.assetQuery.func.replace(/\[ID\]/g, "[" + ts.id + "]");
         }
         return queries.concat(query);
       }, []);
@@ -309,10 +316,12 @@ export default class CogniteDatasource {
     return [];
   }
 
-  query(options: QueryOptions): Promise<QueryResponse> {
+  public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets : QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = "";
-      if (target.hide) {
+      if (!target || target.hide ||
+          ((target.tab === Tab.Timeseries || target.tab == undefined) && (!target.target || target.target === 'Start typing tag id here')) ||
+          ((target.tab === Tab.Asset || target.tab === Tab.Custom) && (!target.assetQuery || target.assetQuery.target === ''))) {
         return targets;
       }
       return targets.concat(target);
@@ -324,26 +333,76 @@ export default class CogniteDatasource {
 
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const targetQueriesCount = [];
-    const queries: DataQueryRequest[] = queryTargets.reduce((queries,target) => {
-      const queryList: DataQueryRequestItem[] = this.getDataQueryRequestItem(target, options);
+    let targetQueriesCount = [], labels = [];
+
+    let queries: DataQueryRequest[] = [];
+    for (let target of queryTargets) {
+      // create query requests
+      const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
+      if (queryList.length === 0) {
+        continue;
+      }
       targetQueriesCount.push({
         refId: target.refId,
         count: queryList.length,
-      })
-      return queries.concat(queryList.map(q => {
-        return {
-          items: [q],
-          start: timeFrom,
-          end: timeTo,
-          // TODO: maxDataPoints is available, but seems to use unnecessarily low values.
-          //       still looks ok for aggregates, so perhaps we should use it for those?
-          //limit: options.maxDataPoints,
-          limit: q.aggregates ? 10_000 : 100_000,
-          aggregation: q.aggregates,
+      });
+      const queryReq: DataQueryRequest = {
+        items: queryList,
+        start: timeFrom,
+        end: timeTo,
+      };
+      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== "none") {
+        queryReq.aggregates = target.aggregation;
+      } else {
+        target.granularity = "";
+      }
+      if (target.granularity == "") {
+        queryReq.granularity = this.intervalToGranularity(options.intervalMs);
+      } else {
+        queryReq.granularity = target.granularity;
+      }
+      if (target.assetQuery.func && target.tab === Tab.Custom) {
+        let ids = 0;
+        const idRegex = /\[\d*\]/g; //look for [number]
+        for (let q of queryList) {
+          const matches = q.function.match(idRegex);
+          if (!matches) break;
+          const idsObj = {};
+          for (let match of matches) {
+            idsObj[match.substr(1,match.length-2)] = true;
+          }
+          ids += Object.keys(idsObj).length;
         }
-      }));
-    }, []);
+        if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+        queryReq.limit = Math.floor(100_000/ids);
+      } else {
+        queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000)/queryList.length);
+      }
+      queries.push(queryReq);
+
+      // assign labels to each timeseries
+      if (target.tab === Tab.Timeseries) {
+        if (target.label.match(/{{.*}}/)) {
+          try { // need to fetch the timeseries
+            const ts = await this.getTimeseries({
+              q: target.target,
+              limit: 1,
+            });
+            labels.push(this.getTimeseriesLabel(target.label,ts[0]));
+          } catch {
+            labels.push(target.label);
+          }
+        } else{
+          labels.push(target.label);
+        }
+      } else {
+        target.assetQuery.timeseries.forEach(ts => {
+          if (ts.selected) {
+            labels.push(this.getTimeseriesLabel(target.label,ts));
+          }
+        });
+      }
+    }
 
     const queryRequests = queries.map(q => this.backendSrv.datasourceRequest(
       {
@@ -352,43 +411,43 @@ export default class CogniteDatasource {
         data: q
       })
       .catch(error => { return ({ error: error }) }) );
-    return Promise.all(queryRequests)
-      .catch(() => queryRequests) // ignore errors
-      .then((timeseries: [DataQueryRequestResponse | DataQueryError]) => {
-        return {
-          data: timeseries
-            .reduce((datapoints, response, i) => {
-              const refId = targetQueriesCount.reduce((retval, query) => {
-                if (typeof(retval) === "string") return retval;
-                else if (retval + query.count > i) return query.refId;
-                else return retval + query.count;
-              }, 0);
-              const target = queryTargets.find(x => x.refId === refId);
-              if (isError(response)) {
-                let errmsg:string;
-                if (response.error.data && response.error.data.error) {
-                  errmsg = "[" + response.error.status + " ERROR] " + response.error.data.error.message;
-                } else {
-                  errmsg = "Unknown error";
-                }
-                target.error = errmsg;
-                return datapoints;
-              }
 
-              const aggregation = response.config.data.aggregation;
-              const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
-              return datapoints.concat(response.data.data.items.map(item => (
-                {
-                  target: (target.label) ? target.label : aggregationPrefix + item.name,
-                  datapoints: item.datapoints
-                    .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                    .map(d => [d[response.config.data.aggregation || 'value'], d.timestamp])
-                }
-              )));
-            }, [])
-        };
-      })
-      .catch((r: any) => ({data: []}));
+    let timeseries: (DataQueryRequestResponse | DataQueryError)[];
+    try {
+      timeseries = await Promise.all(queryRequests);
+    } catch (error) {
+      console.error(error);
+      return {data: []};
+    }
+    let count = 0;
+    return {
+      data: timeseries
+        .reduce((datapoints, response, i) => {
+          const refId = targetQueriesCount[i].refId;
+          const target = queryTargets.find(x => x.refId === refId);
+          if (isError(response)) {
+            let errmsg:string;
+            if (response.error.data && response.error.data.error) {
+              errmsg = "[" + response.error.status + " ERROR] " + response.error.data.error.message;
+            } else {
+              errmsg = "Unknown error";
+            }
+            target.error = errmsg;
+            return datapoints;
+          }
+
+          const aggregation = response.config.data.aggregates;
+          const aggregationPrefix = aggregation ? (aggregation + ' ') : '';
+          return datapoints.concat(response.data.data.items.map(item => (
+            {
+              target: (labels[count++]) ? labels[count - 1] : aggregationPrefix + item.name,
+              datapoints: item.datapoints
+                .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
+                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregates)] || d.value, d.timestamp])
+            }
+          )));
+        }, [])
+    };
   }
 
   public annotationQuery(options: AnnotationQueryOptions) {
@@ -436,7 +495,12 @@ export default class CogniteDatasource {
       });
   }
 
-  metricFindQuery(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
+  // this function is for getting metrics (template variables)
+  async metricFindQuery(query: VariableQueryData) {
+    return this.getAssetsForMetrics(query);
+  }
+
+  public getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset){
       if (query.length == 0) {
@@ -444,15 +508,12 @@ export default class CogniteDatasource {
       } else {
         urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`
       }
-    } else if (type === 'Timeseries') {
+    } else if (type === Tab.Timeseries) {
       if (query.length == 0) {
         urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`
       }
-    } else { //metrics
-      urlEnd = `/cogniteapi/${this.project}/assets/search?limit=1000&query=${query}`;
-      type=Tab.Asset;
     }
     if (options) {
       for (let option in options) {
@@ -472,23 +533,64 @@ export default class CogniteDatasource {
       );
   }
 
-  findAssetTimeseries(target, panelCtrl) {
-    this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries/search?` +
-      `${(target.assetQuery.includeSubtrees) ? "assetSubtrees" : "assetIds"}=[${target.assetQuery.target}]&` +
-      `isString=false&` +
-      `limit=1000`,
-      method: "GET",
-    }).then((result: { data: TimeSeriesResponse }) => {
-      target.assetQuery.timeseries = result.data.data.items.map(ts => {
+  async findAssetTimeseries(target) {
+    // replace variables with their values
+    let assetId = target.assetQuery.target;
+    for (let templateVariable of this.templateSrv.variables) {
+      assetId = assetId.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+      assetId = assetId.replace("$" + templateVariable.name, templateVariable.current.value);
+    }
+
+    //check if assetId has changed, if not we do not need to perform this query again
+    if (target.assetQuery.old && assetId == target.assetQuery.old.target && target.assetQuery.includeSubtrees == target.assetQuery.old.includeSubtrees) {
+      return Promise.resolve();
+    } else {
+      target.assetQuery.old = {};
+      target.assetQuery.old.target = '' + assetId;
+      target.assetQuery.old.includeSubtrees = target.assetQuery.includeSubtrees;
+    }
+
+    const searchQuery: Partial<TimeseriesSearchQuery> = {
+      path: (target.assetQuery.includeSubtrees) ? [assetId] : undefined,
+      assetId: (!target.assetQuery.includeSubtrees) ? assetId : undefined,
+      limit: 10000,
+    }
+
+    const ts = await this.getTimeseries(searchQuery)
+    target.assetQuery.timeseries = ts.map(ts => {
         ts.selected = true;
         return ts;
       });
-    }).then(() => panelCtrl.refresh());
+  }
+
+  getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>) : TimeSeriesResponseItem[] {
+    const stringified = Object.keys(searchQuery)
+    .filter(k => searchQuery[k] !== undefined)
+    .map(
+      k =>
+        Array.isArray(searchQuery[k])
+          ? `${k}=[${encodeURIComponent(searchQuery[k])}]`
+          : `${k}=${encodeURIComponent(searchQuery[k])}`
+    )
+    .join('&');
+
+    return this.backendSrv.datasourceRequest({
+      url: this.url + `/cogniteapi/${this.project}/timeseries?` + stringified,
+      method: "GET",
+    }).then((result: { data: TimeSeriesResponse }) => {
+      return result.data.data.items.filter(ts => ts.isString === false);
+    })
   }
 
   filterOnAssetTimeseries(target) {
-    const filterOptions = this.parse(target.expr);
+    const filterOptions = this.parse(target.expr, ParseType.Timeseries);
+    const func = filterOptions.filters.find(x => x.property === "function");
+    if (func) {
+      filterOptions.filters = filterOptions.filters.filter(x => x.property !== "function");
+      target.assetQuery.func = func.value;
+    } else {
+      target.assetQuery.func = '';
+    }
 
     for (let ts of target.assetQuery.timeseries) {
       ts.selected = true;
@@ -523,19 +625,86 @@ export default class CogniteDatasource {
       }
     }
 
-    if (filterOptions.aggregation) {
-      target.aggregation = filterOptions.aggregation;
-    }
-    if (filterOptions.granularity) {
-      target.granularity = filterOptions.granularity;
-    }
+    target.aggregation = filterOptions.aggregation;
+    target.granularity = filterOptions.granularity;
   }
 
-  parse(customQuery) {
-    // replace variables with their values
-    for (let templateVariable of this.templateSrv.variables) {
-      customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
-      customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
+  async getAssetsForMetrics(query: VariableQueryData) {
+    const queryOptions = this.parse(query.query, ParseType.Asset);
+    const filterOptions = this.parse(query.filter, ParseType.Asset);
+    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
+
+    // need to have just equality
+    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
+    if (equalCheck) {
+      return [{value: "ERROR: Query can only use '='"}];
+    }
+
+    let url = this.url + urlEnd;
+    for (let param of queryOptions.filters) {
+      url += param.property + '=' + param.value + "&";
+    }
+
+    let result = await this.backendSrv.datasourceRequest({
+      url: url + "limit=1000",
+      method: "GET",
+    });
+    const assets = result.data.data.items;
+
+    // now filter over these assets with the rest of the filters
+    const filteredAssets = [];
+    for (let asset of assets) {
+      let add = true;
+      for (let filter of filterOptions.filters) {
+        if (filter.type === "=~") {
+          const val = _.get(asset,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || !val.match(regex)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "!~") {
+          const val = _.get(asset,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || val.match(regex)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "!=") {
+          const val = _.get(asset,filter.property);
+          if (val === undefined || (val == filter.value)) {
+            add = false;
+            break;
+          }
+        } else if (filter.type === "=") {
+          const val = _.get(asset,filter.property);
+          if (val === undefined || (val != filter.value)) {
+            add = false;
+            break;
+          }
+        } else {
+          add = false;
+          break;
+        }
+      }
+      if (add) filteredAssets.push(asset);
+    }
+
+    return filteredAssets.map( asset => (
+      {
+        text: asset.name,
+        value: asset.id,
+      }));
+
+  }
+
+  parse(customQuery, type) {
+    if (type === ParseType.Timeseries || type === ParseType.Event) {
+      // replace variables with their values
+      for (let templateVariable of this.templateSrv.variables) {
+        customQuery = customQuery.replace("[[" + templateVariable.name + "]]", templateVariable.current.value);
+        customQuery = customQuery.replace("$" + templateVariable.name, templateVariable.current.value);
+      }
     }
 
     let filtersOptions = {
@@ -547,48 +716,84 @@ export default class CogniteDatasource {
     // Format: timeseries{ options }
     //     or  timeseries{ options }[aggregation, granularity]
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
-    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])$/;
+    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
-    if (timeseriesMatch) {
-      const splitfilters = timeseriesMatch[1].split(",");
-      for (let f of splitfilters) {
-        if (f == '') continue;
-        const filter: any = {};
-        let i:number;
-        f = _.trim(f," ");
-        if ((i = f.indexOf("=~")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "=~";
-        } else if ((i = f.indexOf("!~")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "!~";
-        } else if ((i = f.indexOf("!=")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+2), " '\"");
-          filter.type = "!=";
-        } else if ((i = f.indexOf("=")) > -1) {
-          filter.property = _.trim(f.substr(0,i), " '\"");
-          filter.value = _.trim(f.substr(i+1), " '\"");
-          filter.type = "=";
-        } else {
-          console.error("Error parsing " + f);
-        }
-        filtersOptions.filters.push(filter);
-      }
+    const assetRegex = /^(?:asset|filter)\{(.*)\}$/;
+    const assetMatch = customQuery.match(assetRegex);
 
+    let splitfilters: string[];
+    if (timeseriesMatch) {
+      splitfilters = timeseriesMatch[1].split(",");
+    } else if (assetMatch) {
+      splitfilters = assetMatch[1].split(",");
+    } else {
+      return filtersOptions;
+    }
+
+    for (let f of splitfilters) {
+      if (f == '') continue;
+      const filter: any = {};
+      let i:number;
+      f = _.trim(f," ");
+      if ((i = f.indexOf("=~")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "=~";
+      } else if ((i = f.indexOf("!~")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "!~";
+      } else if ((i = f.indexOf("!=")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+2), " '\"");
+        filter.type = "!=";
+      } else if ((i = f.indexOf("=")) > -1) {
+        filter.property = _.trim(f.substr(0,i), " '\"");
+        filter.value = _.trim(f.substr(i+1), " '\"");
+        filter.type = "=";
+      } else {
+        console.error("Error parsing " + f);
+      }
+      filtersOptions.filters.push(filter);
+    }
+
+    if (timeseriesMatch) {
       const aggregation = timeseriesMatch[2];
       if (aggregation) {
         const splitAggregation = aggregation.split(',');
-        filtersOptions.aggregation = splitAggregation[0];
-        filtersOptions.granularity = splitAggregation[1];
+        filtersOptions.aggregation = _.trim(splitAggregation[0], " '\"").toLowerCase();
+        filtersOptions.granularity = splitAggregation.length > 1 ? _.trim(splitAggregation[1], " '\"") : '';
       }
     }
 
     return filtersOptions;
   }
 
+  private getDatasourceValueString(aggregation:string): string {
+    const mapping = {
+      undefined: 'value',
+      'none': 'value',
+      'avg': 'average',
+      'int': 'interpolation',
+      'stepinterpolation': 'stepInterpolation',
+      'step': 'stepInterpolation',
+      'continuousvariance': 'continousVariance', //spelling mistake is intended - will have to change in 0.6
+      'cv': 'continousVariance',
+      'discretevariance': 'discreteVariance',
+      'dv': 'discreteVariance',
+      'totalvariation': 'totalVariation',
+      'tv': 'totalVariation',
+    };
+    return mapping[aggregation] || aggregation;
+  }
+
+  private getTimeseriesLabel(label, timeseries) {
+    // matches with any text within {{ }} 
+    const variableRegex = /{{([^{}]*)}}/g;
+    return label.replace(variableRegex, function(full,group) {
+      return _.get(timeseries,group,full);
+    })
+  }
 
   testDatasource() {
     return this.backendSrv.datasourceRequest({
