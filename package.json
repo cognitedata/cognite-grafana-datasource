@@ -10,10 +10,10 @@
     "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 cognite-grafana"
   },
   "devDependencies": {
+    "@types/react": "^16.7.22",
     "typescript": "^3.0.1"
   },
   "dependencies": {
-    "@types/react": "^16.7.21",
     "lodash": "^4.17.10",
     "q": "^1.5.1",
     "react": "^16.7.0"
