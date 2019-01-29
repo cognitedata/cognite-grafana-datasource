@@ -354,7 +354,7 @@ export default class CogniteDatasource {
       } else {
         target.granularity = "";
       }
-      if (target.granularity == "") {
+      if (!target.granularity) {
         queryReq.granularity = this.intervalToGranularity(options.intervalMs);
       } else {
         queryReq.granularity = target.granularity;
