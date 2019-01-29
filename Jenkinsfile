@@ -1,3 +1,5 @@
+@Library('jenkins-helpers@v0.1.19') _
+
 def label = "cognite-grafana-datasource-${UUID.randomUUID().toString().substring(0, 5)}"
 def imageName = "cognite/grafana-cdp"
 def devImageName = "cognite/grafana-cdp-dev"
@@ -70,7 +72,9 @@ podTemplate(
             def prImage = "${devImageName}:pr-${env.CHANGE_ID}"
             sh("docker tag ${imageName}:${shortSha} ${prImage}")
             sh("docker push ${prImage}")
+            pullRequest.comment("[pr-bot]\nRun this build with `docker run --rm -p 3000:3000 ${prImage}`")
           }
+
         } else if (env.BRANCH_NAME == 'master') {
           stage('Push to GCR') {
             sh("docker tag ${imageName}:${shortSha} ${imageName}")
