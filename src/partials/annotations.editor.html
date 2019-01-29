@@ -9,7 +9,9 @@
         <pre>
   Query for events using the 'events/search' endpoint.
     Format is: event{param=value,...} <br>
-    Example: event{type="WORKORDER",assetSubtrees=[12,345,6,7890]}</pre>
+    Example: event{type="WORKORDER",assetSubtrees=[12,345,6,7890]} <br>
+  Templated variables can also be used with [[variable]] or $variable
+    Example: event{assetSubtrees=[$Variable]}</pre>
     </div>
     <div class="gf-form gf-form--grow">
         <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
