@@ -51,7 +51,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.expr = this.target.expr || '';
     this.target.assetQuery = this.target.assetQuery || {
       target: '',
-      oldTarget: {},
+      old: {},
       timeseries: [],
       includeSubtrees: false,
       func: '',
