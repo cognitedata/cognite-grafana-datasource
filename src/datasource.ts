@@ -172,10 +172,8 @@ interface Annotation {
   iconColor: string;
   limit: number;
   name: string;
-  query_type?: string;
-  query_subtype?: string;
-  query_assetIds?: string;
-  query_includeSubtrees?: boolean;
+  expr: string;
+  filter: string;
   type: string;
   tags: string[];
 }
@@ -361,7 +359,7 @@ export default class CogniteDatasource {
       } else {
         queryReq.granularity = target.granularity;
       }
-      if (target.assetQuery.func && target.tab === Tab.Custom) {
+      if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
         let ids = 0;
         const idRegex = /\[\d*\]/g; //look for [number]
         for (let q of queryList) {
@@ -381,7 +379,8 @@ export default class CogniteDatasource {
       queries.push(queryReq);
 
       // assign labels to each timeseries
-      if (target.tab === Tab.Timeseries) {
+      if (target.tab === Tab.Timeseries || target.tab == undefined) {
+        if (!target.label) target.label = "";
         if (target.label.match(/{{.*}}/)) {
           try { // need to fetch the timeseries
             const ts = await this.getTimeseries({
@@ -450,49 +449,82 @@ export default class CogniteDatasource {
     };
   }
 
-  public annotationQuery(options: AnnotationQueryOptions) {
+  public async annotationQuery(options: AnnotationQueryOptions) {
+    // console.log(options);
     const { range, annotation } = options;
-    const { query_type, query_subtype, query_assetIds, query_includeSubtrees } = annotation;
+    const { expr, filter } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
-    const searchRequest: Partial<AnnotationSearchQuery> = {
-      maxEndTime: +endTime,
-      minStartTime: +startTime,
-      subtype: query_subtype,
-      type: query_type,
-      assetIds: query_assetIds && !query_includeSubtrees
-        ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
-        : undefined,
-      assetSubtrees: query_assetIds && query_includeSubtrees
-        ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
-        : undefined,
-    };
 
-    const stringified = Object.keys(searchRequest)
-     .filter(k => searchRequest[k] !== undefined)
-     .map(
-       k =>
-         Array.isArray(searchRequest[k])
-           ? `${k}=[${searchRequest[k]}]` // arrays are always IDs AFAIK, does not need to be encoded
-           : `${k}=${encodeURIComponent(searchRequest[k])}`
-     )
-     .join('&');
+    const queryOptions = this.parse(expr || '',ParseType.Event);
+    const filterOptions = this.parse(filter || '',ParseType.Event);
+    
+    // need to have just equality
+    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
+    if (equalCheck) {
+      return [{value: "ERROR: Query can only use '='"}];
+    }
 
-    return this.backendSrv
-      .datasourceRequest({
-        method: 'GET',
-        url: this.url + `/cogniteapi/${this.project}/events/search?limit=1000&${stringified}`,
-      })
-      .then((result: AnnotationQueryRequestResponse) => {
-        return result.data.data.items.map(event => ({
-          annotation,
-          isRegion: true,
-          text: event.description,
-          time: event.startTime,
-          timeEnd: event.endTime,
-          title: event.type,
-        }));
-      });
+    let url = this.url + `/cogniteapi/${this.project}/events/search?`;
+    for (let param of queryOptions.filters) {
+      url += param.property + '=' + param.value + "&";
+    }
+
+    let result = await this.backendSrv.datasourceRequest({
+      url: url + "limit=1000",
+      method: "GET",
+    });
+    const events = result.data.data.items;
+    
+    this.applyFilters(filterOptions.filters, events);
+
+    return events.filter(e => e.selected === true).map( event=> ({
+      annotation,
+      isRegion: true,
+      text: event.description,
+      time: event.startTime,
+      timeEnd: event.endTime,
+      title: event.type,
+    }))
+
+    // const searchRequest: Partial<AnnotationSearchQuery> = {
+    //   maxEndTime: +endTime,
+    //   minStartTime: +startTime,
+    //   subtype: query_subtype,
+    //   type: query_type,
+    //   assetIds: query_assetIds && !query_includeSubtrees
+    //     ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
+    //     : undefined,
+    //   assetSubtrees: query_assetIds && query_includeSubtrees
+    //     ? query_assetIds.split(',').map(Number).filter(n => !isNaN(n))
+    //     : undefined,
+    // };
+
+    // const stringified = Object.keys(searchRequest)
+    //  .filter(k => searchRequest[k] !== undefined)
+    //  .map(
+    //    k =>
+    //      Array.isArray(searchRequest[k])
+    //        ? `${k}=[${searchRequest[k]}]` // arrays are always IDs AFAIK, does not need to be encoded
+    //        : `${k}=${encodeURIComponent(searchRequest[k])}`
+    //  )
+    //  .join('&');
+
+    // return this.backendSrv
+    //   .datasourceRequest({
+    //     method: 'GET',
+    //     url: this.url + `/cogniteapi/${this.project}/events/search?limit=1000&${stringified}`,
+    //   })
+    //   .then((result: AnnotationQueryRequestResponse) => {
+    //     return result.data.data.items.map(event => ({
+    //       annotation,
+    //       isRegion: true,
+    //       text: event.description,
+    //       time: event.startTime,
+    //       timeEnd: event.endTime,
+    //       title: event.type,
+    //     }));
+    //   });
   }
 
   // this function is for getting metrics (template variables)
@@ -592,38 +624,39 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    for (let ts of target.assetQuery.timeseries) {
-      ts.selected = true;
-      for (let filter of filterOptions.filters) {
-        if (filter.type === "=~") {
-          const val = _.get(ts,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || !val.match(regex)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "!~") {
-          const val = _.get(ts,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || val.match(regex)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "!=") {
-          const val = _.get(ts,filter.property);
-          if (val === undefined || (val == filter.value)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "=") {
-          const val = _.get(ts,filter.property);
-          if (val === undefined || (val != filter.value)) {
-            ts.selected = false;
-            break;
-          }
-        }
-      }
-    }
+    // for (let ts of target.assetQuery.timeseries) {
+    //   ts.selected = true;
+    //   for (let filter of filterOptions.filters) {
+    //     if (filter.type === "=~") {
+    //       const val = _.get(ts,filter.property);
+    //       const regex = "^" + filter.value + "$";
+    //       if (val === undefined || !val.match(regex)) {
+    //         ts.selected = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "!~") {
+    //       const val = _.get(ts,filter.property);
+    //       const regex = "^" + filter.value + "$";
+    //       if (val === undefined || val.match(regex)) {
+    //         ts.selected = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "!=") {
+    //       const val = _.get(ts,filter.property);
+    //       if (val === undefined || (val == filter.value)) {
+    //         ts.selected = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "=") {
+    //       const val = _.get(ts,filter.property);
+    //       if (val === undefined || (val != filter.value)) {
+    //         ts.selected = false;
+    //         break;
+    //       }
+    //     }
+    //   }
+    // }
+    this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
 
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
@@ -652,43 +685,45 @@ export default class CogniteDatasource {
     const assets = result.data.data.items;
 
     // now filter over these assets with the rest of the filters
-    const filteredAssets = [];
-    for (let asset of assets) {
-      let add = true;
-      for (let filter of filterOptions.filters) {
-        if (filter.type === "=~") {
-          const val = _.get(asset,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || !val.match(regex)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "!~") {
-          const val = _.get(asset,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || val.match(regex)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "!=") {
-          const val = _.get(asset,filter.property);
-          if (val === undefined || (val == filter.value)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "=") {
-          const val = _.get(asset,filter.property);
-          if (val === undefined || (val != filter.value)) {
-            add = false;
-            break;
-          }
-        } else {
-          add = false;
-          break;
-        }
-      }
-      if (add) filteredAssets.push(asset);
-    }
+    this.applyFilters(filterOptions.filters, assets);
+    const filteredAssets = assets.filter(a => a.selected === true);
+    // const filteredAssets = [];
+    // for (let asset of assets) {
+    //   let add = true;
+    //   for (let filter of filterOptions.filters) {
+    //     if (filter.type === "=~") {
+    //       const val = _.get(asset,filter.property);
+    //       const regex = "^" + filter.value + "$";
+    //       if (val === undefined || !val.match(regex)) {
+    //         add = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "!~") {
+    //       const val = _.get(asset,filter.property);
+    //       const regex = "^" + filter.value + "$";
+    //       if (val === undefined || val.match(regex)) {
+    //         add = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "!=") {
+    //       const val = _.get(asset,filter.property);
+    //       if (val === undefined || (val == filter.value)) {
+    //         add = false;
+    //         break;
+    //       }
+    //     } else if (filter.type === "=") {
+    //       const val = _.get(asset,filter.property);
+    //       if (val === undefined || (val != filter.value)) {
+    //         add = false;
+    //         break;
+    //       }
+    //     } else {
+    //       add = false;
+    //       break;
+    //     }
+    //   }
+    //   if (add) filteredAssets.push(asset);
+    // }
 
     return filteredAssets.map( asset => (
       {
@@ -718,7 +753,7 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
-    const assetRegex = /^(?:asset|filter)\{(.*)\}$/;
+    const assetRegex = /^(?:asset|event|filter)\{(.*)\}$/;
     const assetMatch = customQuery.match(assetRegex);
 
     let splitfilters: string[];
@@ -767,6 +802,41 @@ export default class CogniteDatasource {
     }
 
     return filtersOptions;
+  }
+
+  private applyFilters(filters, objects) {
+    for (let obj of objects) {
+      obj.selected = true;
+      for (let filter of filters) {
+        if (filter.type === "=~") {
+          const val = _.get(obj,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || !val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "!~") {
+          const val = _.get(obj,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "!=") {
+          const val = _.get(obj,filter.property);
+          if (val === undefined || (val == filter.value)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "=") {
+          const val = _.get(obj,filter.property);
+          if (val === undefined || (val != filter.value)) {
+            obj.selected = false;
+            break;
+          }
+        }
+      }
+    }
   }
 
   private getDatasourceValueString(aggregation:string): string {

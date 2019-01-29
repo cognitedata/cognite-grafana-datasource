@@ -26,34 +26,6 @@
 <!-- Timeseries Tab -->
 <script type="text/ng-template" id="timeseriestab.html">
 	<div class="gf-form-inline">
-<<<<<<< HEAD
-    <div class="gf-form">
-      <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
-      <gf-form-dropdown model="ctrl.target.target"
-        css-class="gf-size-auto"
-        allow-custom="false"
-        lookup-text="true"
-        get-options="ctrl.getOptions($query,'Timeseries')"
-        on-change="ctrl.onChangeInternal()">
-      </gf-form-dropdown>
-    </div>
-    <div class="gf-form">
-      <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
-      <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
-      <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
-      </select>
-    </div>
-    <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
-      <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
-      <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
-      <info-popover mode="right-absolute">
-          The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
-      </info-popover>
-    </div>
-    <div class="gf-form gf-form--grow">
-      <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
-      <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
-=======
       <div class="gf-form">
         <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
         <gf-form-dropdown model="ctrl.target.target"
@@ -86,7 +58,6 @@
           </span>
         </info-popover>
       </div>
->>>>>>> asset-integration
     </div>
   </div>
 </script>
