@@ -376,7 +376,16 @@ export default class CogniteDatasource {
               target: (labels[count++]) ? labels[count - 1] : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                .map(d => [d[this.getDatasourceValueString(response.config.data.aggregates)] || d.value, d.timestamp])
+                .map(d =>
+                  {
+                    const val = this.getDatasourceValueString(response.config.data.aggregates);
+                    if (val === undefined) {
+                      return [d.value, d.timestamp];
+                    } else {
+                      return [d[this.getDatasourceValueString(response.config.data.aggregates)], d.timestamp];
+                    }
+                  }
+                )
             }
           )));
         }, [])
