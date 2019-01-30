@@ -679,6 +679,7 @@ export default class CogniteDatasource {
       'stepinterpolation': 'stepInterpolation',
       'step': 'stepInterpolation',
       'continuousvariance': 'continousVariance', //spelling mistake is intended - will have to change in 0.6
+      'continuousVariance': 'continousVariance',
       'cv': 'continousVariance',
       'discretevariance': 'discreteVariance',
       'dv': 'discreteVariance',
