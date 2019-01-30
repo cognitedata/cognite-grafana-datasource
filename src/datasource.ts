@@ -379,11 +379,7 @@ export default class CogniteDatasource {
                 .map(d =>
                   {
                     const val = this.getDatasourceValueString(response.config.data.aggregates);
-                    if (val === undefined) {
-                      return [d.value, d.timestamp];
-                    } else {
-                      return [d[this.getDatasourceValueString(response.config.data.aggregates)], d.timestamp];
-                    }
+                    return [(val === undefined) ? d.value : d[val], d.timestamp];
                   }
                 )
             }
