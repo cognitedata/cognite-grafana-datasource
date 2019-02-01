@@ -1,13 +1,16 @@
 ///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
 import React from 'react';
-import { VariableQueryData } from "./datasource";
+import { VariableQueryData } from './datasource';
 import { VariableQueryProps } from 'app/types/plugins';
 
-export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryProps, VariableQueryData> {
+export class CogniteVariableQueryCtrl extends React.PureComponent<
+  VariableQueryProps,
+  VariableQueryData
+> {
   defaults: VariableQueryData = {
     query: '',
-    filter: ''
+    filter: '',
   };
 
   constructor(props: VariableQueryProps) {
@@ -15,10 +18,10 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryP
     this.state = Object.assign(this.defaults, this.props.query);
   }
 
-  handleChange(event, prop:"query"|"filter") {
+  handleChange(event, prop: 'query' | 'filter') {
     const state: any = {
       [prop]: event.target.value,
-    }
+    };
     this.setState(state);
   }
 
@@ -30,31 +33,35 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryP
     return (
       <div>
         <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
+          <span className="gf-form-label query-keyword fix-query-keyword width-10">
+            Query
+          </span>
           <input
             type="text"
             className="gf-form-input"
             value={this.state.query}
-            onChange={e => this.handleChange(e,"query")}
+            onChange={e => this.handleChange(e, 'query')}
             onBlur={e => this.handleBlur()}
             placeholder="eg: asset{name='example', assetSubtrees=[123456789]}"
             required
           />
         </div>
         <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">Filter</span>
+          <span className="gf-form-label query-keyword fix-query-keyword width-10">
+            Filter
+          </span>
           <input
             type="text"
             className="gf-form-input"
             value={this.state.filter}
-            onChange={e => this.handleChange(e, "filter")}
+            onChange={e => this.handleChange(e, 'filter')}
             onBlur={e => this.handleBlur()}
             placeholder="eg: filter{name=~'.*test.*', isStep=1, metadata.key1!=false}"
           />
         </div>
         <div className="gf-form--grow">
           <pre>
-{`  Query for assets using the '/assets/search' endpoint
+            {`  Query for assets using the '/assets/search' endpoint
     Format is asset{param=value,...}
   Then, filter on these assets
     Format is filter{property comparator value,...}
@@ -65,4 +72,3 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<VariableQueryP
     );
   }
 }
-

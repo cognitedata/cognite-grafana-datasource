@@ -15,8 +15,14 @@
       "large": "img/Cognite_logo_RGB.png"
     },
     "links": [
-      {"name": "Project site", "url": "https://github.com/cognitedata/cognite-grafana-datasource"},
-      {"name": "Apache License", "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"}
+      {
+        "name": "Project site",
+        "url": "https://github.com/cognitedata/cognite-grafana-datasource"
+      },
+      {
+        "name": "Apache License",
+        "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
+      }
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
@@ -24,7 +30,7 @@
 
   "dependencies": {
     "grafanaVersion": "4.5.x",
-    "plugins": [ ]
+    "plugins": []
   },
 
   "routes": [
@@ -32,7 +38,10 @@
       "path": "cogniteapi",
       "url": "https://api.cognitedata.com/api/0.5/projects",
       "headers": [
-        {"name": "api-key", "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"}
+        {
+          "name": "api-key",
+          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        }
       ]
     },
     {
@@ -40,11 +49,14 @@
       "method": "GET",
       "url": "https://api.cognitedata.com/login/status",
       "headers": [
-        {"name": "api-key", "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"}
+        {
+          "name": "api-key",
+          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        }
       ]
     }
   ],
-  
+
   "queryOptions": {
     "maxDataPoints": true
   },
