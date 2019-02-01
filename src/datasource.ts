@@ -1,6 +1,7 @@
 ///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
+import Utils from "./utils";
 
 export interface TimeSeriesResponse {
   target: string,
@@ -466,14 +467,17 @@ export default class CogniteDatasource {
       return [{value: "ERROR: Query can only use '='"}];
     }
 
-    let url = this.url + `/cogniteapi/${this.project}/events/search?`;
-    for (let param of queryOptions.filters) {
-      url += param.property + '=' + param.value + "&";
-    }
-
     // use maxStartTime and minEndTime so that we include events that are partially in range
+    const queryParams = Object.assign({
+      limit: 1000,
+      maxStartTime: endTime,
+      minEndTime: startTime,
+    }, queryOptions.filters.reduce((obj, filter) => {
+      return obj[filter.property] = filter.value, obj;
+    },{}));
+
     let result = await this.backendSrv.datasourceRequest({
-      url: url + `limit=1000&maxStartTime=${endTime}&minEndTime=${startTime}`,
+      url: this.url + `/cogniteapi/${this.project}/events/search?` + Utils.getQueryString(queryParams),
       method: "GET",
     });
     const events = result.data.data.items;
@@ -512,9 +516,7 @@ export default class CogniteDatasource {
       }
     }
     if (options) {
-      for (let option in options) {
-        urlEnd += "&" + option + "=" + options[option];
-      }
+      urlEnd += "&" + Utils.getQueryString(options);
     }
 
     return this.backendSrv.datasourceRequest({
@@ -560,18 +562,8 @@ export default class CogniteDatasource {
   }
 
   getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>) : TimeSeriesResponseItem[] {
-    const stringified = Object.keys(searchQuery)
-    .filter(k => searchQuery[k] !== undefined)
-    .map(
-      k =>
-        Array.isArray(searchQuery[k])
-          ? `${k}=[${encodeURIComponent(searchQuery[k])}]`
-          : `${k}=${encodeURIComponent(searchQuery[k])}`
-    )
-    .join('&');
-
     return this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries?` + stringified,
+      url: this.url + `/cogniteapi/${this.project}/timeseries?` + Utils.getQueryString(searchQuery),
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) => {
       return result.data.data.items.filter(ts => ts.isString === false);
@@ -605,13 +597,12 @@ export default class CogniteDatasource {
       return [{value: "ERROR: Query can only use '='"}];
     }
 
-    let url = this.url + urlEnd;
-    for (let param of queryOptions.filters) {
-      url += param.property + '=' + param.value + "&";
-    }
+    const queryParams = Object.assign({limit:1000},queryOptions.filters.reduce((obj, filter) => {
+      return obj[filter.property] = filter.value, obj;
+    },{}));
 
     let result = await this.backendSrv.datasourceRequest({
-      url: url + "limit=1000",
+      url: this.url + urlEnd + Utils.getQueryString(queryParams),
       method: "GET",
     });
     const assets = result.data.data.items;
