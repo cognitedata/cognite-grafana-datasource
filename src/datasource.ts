@@ -488,12 +488,12 @@ export default class CogniteDatasource {
               : aggregationPrefix + item.name,
             datapoints: item.datapoints
               .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-              .map(d => [
-                d[
-                  this.getDatasourceValueString(response.config.data.aggregates)
-                ] || d.value,
-                d.timestamp,
-              ]),
+              .map(d => {
+                const val = this.getDatasourceValueString(
+                  response.config.data.aggregates
+                );
+                return [val == undefined ? d.value : d[val], d.timestamp];
+              }),
           }))
         );
       }, []),
@@ -831,6 +831,7 @@ export default class CogniteDatasource {
       stepinterpolation: 'stepInterpolation',
       step: 'stepInterpolation',
       continuousvariance: 'continousVariance', //spelling mistake is intended - will have to change in 0.6
+      continuousVariance: 'continousVariance',
       cv: 'continousVariance',
       discretevariance: 'discreteVariance',
       dv: 'discreteVariance',
