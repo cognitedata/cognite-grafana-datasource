@@ -82,5 +82,4 @@ export class CogniteQueryCtrl extends QueryCtrl {
     return "";
   }
 
-
 }

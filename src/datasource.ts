@@ -1,6 +1,7 @@
 ///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
+import Utils from "./utils";
 
 export interface TimeSeriesResponse {
   target: string,
@@ -164,6 +165,73 @@ type DataQueryError = {
     status: number
   }
 };
+
+export interface Annotation {
+  datasource: string;
+  enable: boolean;
+  hide: boolean;
+  iconColor: string;
+  limit: number;
+  name: string;
+  expr: string;
+  filter: string;
+  error: string;
+  type: string;
+  tags: string[];
+}
+
+interface AnnotationQueryOptions {
+  range: QueryRange;
+  rangeRaw: any;
+  annotation: Annotation;
+  dashboard: number;
+}
+
+interface AnnotationSearchQuery {
+  description: string;
+  type: string;
+  subtype: string;
+  minStartTime: number;
+  maxStartTime: number;
+  minEndTime: number;
+  maxEndTime: number;
+  minCreatedTime: number;
+  maxCreatedTime: number;
+  minLastUpdatedTime: number;
+  maxLastUpdatedTime: number;
+  // format is {"k1": "v1", "k2": "v2"}
+  metadata: string;
+  assetIds: number[];
+  assetSubtrees: number[];
+  sort: 'startTime' | 'endTime' | 'createdTime' | 'lastUpdatedTime';
+  dir: 'asc' | 'desc';
+  limit: number;
+  offset: 0;
+}
+
+export interface Event {
+  id: number;
+  startTime: number;
+  endTime: number;
+  description: string;
+  type: string;
+  subtype: string;
+  assetIds: number[];
+  source: string;
+  sourceId: string;
+}
+
+ export interface Events {
+  items: Event[];
+}
+
+ export interface DataEvents {
+  data: Events;
+}
+
+interface AnnotationQueryRequestResponse {
+  data: DataEvents;
+}
 
 interface TimeseriesSearchQuery {
   q: string;
@@ -388,8 +456,49 @@ export default class CogniteDatasource {
     };
   }
 
-  annotationQuery(options: any) {
-    throw new Error("Annotation Support not implemented yet.");
+  public async annotationQuery(options: AnnotationQueryOptions) {
+    const { range, annotation } = options;
+    const { expr, filter, error } = annotation;
+    const startTime = Math.ceil(dateMath.parse(range.from));
+    const endTime = Math.ceil(dateMath.parse(range.to));
+    if (annotation.error) return [];
+
+    const queryOptions = this.parse(expr,ParseType.Event);
+    const filterOptions = this.parse(filter || '',ParseType.Event);
+
+    // need to have just equality
+    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
+    if (equalCheck) {
+      return [{value: "ERROR: Query can only use '='"}];
+    }
+
+    // use maxStartTime and minEndTime so that we include events that are partially in range
+    const queryParams = {
+      limit: 1000,
+      maxStartTime: endTime,
+      minEndTime: startTime,
+      ...queryOptions.filters.reduce((obj, filter) => {
+        return obj[filter.property] = filter.value, obj;
+      },{})
+    };
+
+    let result = await this.backendSrv.datasourceRequest({
+      url: this.url + `/cogniteapi/${this.project}/events/search?` + Utils.getQueryString(queryParams),
+      method: "GET",
+    });
+    const events = result.data.data.items;
+    if (!events) return [];
+
+    this.applyFilters(filterOptions.filters, events);
+
+    return events.filter(e => e.selected === true).map( event=> ({
+      annotation,
+      isRegion: true,
+      text: event.description,
+      time: event.startTime,
+      timeEnd: event.endTime,
+      title: event.type,
+    }))
   }
 
   // this function is for getting metrics (template variables)
@@ -413,9 +522,7 @@ export default class CogniteDatasource {
       }
     }
     if (options) {
-      for (let option in options) {
-        urlEnd += "&" + option + "=" + options[option];
-      }
+      urlEnd += "&" + Utils.getQueryString(options);
     }
 
     return this.backendSrv.datasourceRequest({
@@ -461,18 +568,8 @@ export default class CogniteDatasource {
   }
 
   getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>) : TimeSeriesResponseItem[] {
-    const stringified = Object.keys(searchQuery)
-    .filter(k => searchQuery[k] !== undefined)
-    .map(
-      k =>
-        Array.isArray(searchQuery[k])
-          ? `${k}=[${encodeURIComponent(searchQuery[k])}]`
-          : `${k}=${encodeURIComponent(searchQuery[k])}`
-    )
-    .join('&');
-
     return this.backendSrv.datasourceRequest({
-      url: this.url + `/cogniteapi/${this.project}/timeseries?` + stringified,
+      url: this.url + `/cogniteapi/${this.project}/timeseries?` + Utils.getQueryString(searchQuery),
       method: "GET",
     }).then((result: { data: TimeSeriesResponse }) => {
       return result.data.data.items.filter(ts => ts.isString === false);
@@ -489,38 +586,7 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    for (let ts of target.assetQuery.timeseries) {
-      ts.selected = true;
-      for (let filter of filterOptions.filters) {
-        if (filter.type === "=~") {
-          const val = _.get(ts,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || !val.match(regex)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "!~") {
-          const val = _.get(ts,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || val.match(regex)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "!=") {
-          const val = _.get(ts,filter.property);
-          if (val === undefined || (val == filter.value)) {
-            ts.selected = false;
-            break;
-          }
-        } else if (filter.type === "=") {
-          const val = _.get(ts,filter.property);
-          if (val === undefined || (val != filter.value)) {
-            ts.selected = false;
-            break;
-          }
-        }
-      }
-    }
+    this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
 
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
@@ -537,55 +603,23 @@ export default class CogniteDatasource {
       return [{value: "ERROR: Query can only use '='"}];
     }
 
-    let url = this.url + urlEnd;
-    for (let param of queryOptions.filters) {
-      url += param.property + '=' + param.value + "&";
-    }
+    const queryParams = {
+      limit:1000,
+      ...queryOptions.filters.reduce((obj, filter) => {
+        obj[filter.property] = filter.value;
+        return obj;
+      },{})
+    };
 
     let result = await this.backendSrv.datasourceRequest({
-      url: url + "limit=1000",
+      url: this.url + urlEnd + Utils.getQueryString(queryParams),
       method: "GET",
     });
     const assets = result.data.data.items;
 
     // now filter over these assets with the rest of the filters
-    const filteredAssets = [];
-    for (let asset of assets) {
-      let add = true;
-      for (let filter of filterOptions.filters) {
-        if (filter.type === "=~") {
-          const val = _.get(asset,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || !val.match(regex)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "!~") {
-          const val = _.get(asset,filter.property);
-          const regex = "^" + filter.value + "$";
-          if (val === undefined || val.match(regex)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "!=") {
-          const val = _.get(asset,filter.property);
-          if (val === undefined || (val == filter.value)) {
-            add = false;
-            break;
-          }
-        } else if (filter.type === "=") {
-          const val = _.get(asset,filter.property);
-          if (val === undefined || (val != filter.value)) {
-            add = false;
-            break;
-          }
-        } else {
-          add = false;
-          break;
-        }
-      }
-      if (add) filteredAssets.push(asset);
-    }
+    this.applyFilters(filterOptions.filters, assets);
+    const filteredAssets = assets.filter(asset => asset.selected === true);
 
     return filteredAssets.map( asset => (
       {
@@ -615,7 +649,7 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = customQuery.match(timeseriesRegex);
-    const assetRegex = /^(?:asset|filter)\{(.*)\}$/;
+    const assetRegex = /^(?:asset|event|filter)\{(.*)\}$/;
     const assetMatch = customQuery.match(assetRegex);
 
     let splitfilters: string[];
@@ -666,6 +700,41 @@ export default class CogniteDatasource {
     return filtersOptions;
   }
 
+  private applyFilters(filters, objects) {
+    for (let obj of objects) {
+      obj.selected = true;
+      for (let filter of filters) {
+        if (filter.type === "=~") {
+          const val = _.get(obj,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || !val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "!~") {
+          const val = _.get(obj,filter.property);
+          const regex = "^" + filter.value + "$";
+          if (val === undefined || val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "!=") {
+          const val = _.get(obj,filter.property);
+          if (val === undefined || (val == filter.value)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === "=") {
+          const val = _.get(obj,filter.property);
+          if (val === undefined || (val != filter.value)) {
+            obj.selected = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+
   private getDatasourceValueString(aggregation:string): string {
     const mapping = {
       undefined: 'value',
@@ -686,7 +755,7 @@ export default class CogniteDatasource {
   }
 
   private getTimeseriesLabel(label, timeseries) {
-    // matches with any text within {{ }} 
+    // matches with any text within {{ }}
     const variableRegex = /{{([^{}]*)}}/g;
     return label.replace(variableRegex, function(full,group) {
       return _.get(timeseries,group,full);
