@@ -2,6 +2,7 @@ import _ from 'lodash';
 
 export default class Utils {
   //Converts an object to a query string, ignores properties with undefined/null values
+  // TODO: maybe clean this up a bit, might break easily
   static getQueryString(obj: any) {
     return _.reduce(
       obj,

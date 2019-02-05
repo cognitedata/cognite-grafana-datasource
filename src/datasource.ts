@@ -488,12 +488,12 @@ export default class CogniteDatasource {
               : aggregationPrefix + item.name,
             datapoints: item.datapoints
               .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-              .map(d => [
-                d[
-                  this.getDatasourceValueString(response.config.data.aggregates)
-                ] || d.value,
-                d.timestamp,
-              ]),
+              .map(d => {
+                const val = this.getDatasourceValueString(
+                  response.config.data.aggregates
+                );
+                return [val === undefined ? d.value : d[val], d.timestamp];
+              }),
           }))
         );
       }, []),
@@ -517,16 +517,14 @@ export default class CogniteDatasource {
     }
 
     // use maxStartTime and minEndTime so that we include events that are partially in range
-    const queryParams = Object.assign(
-      {
-        limit: 1000,
-        maxStartTime: endTime,
-        minEndTime: startTime,
-      },
-      queryOptions.filters.reduce((obj, filter) => {
+    const queryParams = {
+      limit: 1000,
+      maxStartTime: endTime,
+      minEndTime: startTime,
+      ...queryOptions.filters.reduce((obj, filter) => {
         return (obj[filter.property] = filter.value), obj;
-      }, {})
-    );
+      }, {}),
+    };
 
     let result = await this.backendSrv.datasourceRequest({
       url:
@@ -681,12 +679,13 @@ export default class CogniteDatasource {
       return [{ value: "ERROR: Query can only use '='" }];
     }
 
-    const queryParams = Object.assign(
-      { limit: 1000 },
-      queryOptions.filters.reduce((obj, filter) => {
-        return (obj[filter.property] = filter.value), obj;
-      }, {})
-    );
+    const queryParams = {
+      limit: 1000,
+      ...queryOptions.filters.reduce((obj, filter) => {
+        obj[filter.property] = filter.value;
+        return obj;
+      }, {}),
+    };
 
     let result = await this.backendSrv.datasourceRequest({
       url: this.url + urlEnd + Utils.getQueryString(queryParams),
@@ -831,6 +830,7 @@ export default class CogniteDatasource {
       stepinterpolation: 'stepInterpolation',
       step: 'stepInterpolation',
       continuousvariance: 'continousVariance', //spelling mistake is intended - will have to change in 0.6
+      continuousVariance: 'continousVariance',
       cv: 'continousVariance',
       discretevariance: 'discreteVariance',
       dv: 'discreteVariance',
