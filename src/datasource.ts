@@ -468,13 +468,14 @@ export default class CogniteDatasource {
     }
 
     // use maxStartTime and minEndTime so that we include events that are partially in range
-    const queryParams = Object.assign({
+    const queryParams = {
       limit: 1000,
       maxStartTime: endTime,
       minEndTime: startTime,
-    }, queryOptions.filters.reduce((obj, filter) => {
-      return obj[filter.property] = filter.value, obj;
-    },{}));
+      ...queryOptions.filters.reduce((obj, filter) => {
+        return obj[filter.property] = filter.value, obj;
+      },{})
+    };
 
     let result = await this.backendSrv.datasourceRequest({
       url: this.url + `/cogniteapi/${this.project}/events/search?` + Utils.getQueryString(queryParams),
@@ -597,9 +598,13 @@ export default class CogniteDatasource {
       return [{value: "ERROR: Query can only use '='"}];
     }
 
-    const queryParams = Object.assign({limit:1000},queryOptions.filters.reduce((obj, filter) => {
-      return obj[filter.property] = filter.value, obj;
-    },{}));
+    const queryParams = {
+      limit:1000,
+      ...queryOptions.filters.reduce((obj, filter) => {
+        obj[filter.property] = filter.value;
+        return obj;
+      },{})
+    };
 
     let result = await this.backendSrv.datasourceRequest({
       url: this.url + urlEnd + Utils.getQueryString(queryParams),
