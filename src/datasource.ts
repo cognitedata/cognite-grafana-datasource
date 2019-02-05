@@ -298,7 +298,7 @@ export default class CogniteDatasource {
     target: QueryTarget,
     options: QueryOptions
   ): Promise<DataQueryRequestItem[]> {
-    if (target.tab === Tab.Timeseries || target.tab == undefined) {
+    if (target.tab === Tab.Timeseries || target.tab === undefined) {
       const query: DataQueryRequestItem = {
         name: target.target,
       };
@@ -335,7 +335,7 @@ export default class CogniteDatasource {
         if (
           !target ||
           target.hide ||
-          ((target.tab === Tab.Timeseries || target.tab == undefined) &&
+          ((target.tab === Tab.Timeseries || target.tab === undefined) &&
             (!target.target || target.target === 'Start typing tag id here')) ||
           ((target.tab === Tab.Asset || target.tab === Tab.Custom) &&
             (!target.assetQuery || target.assetQuery.target === ''))
@@ -398,14 +398,18 @@ export default class CogniteDatasource {
         const idRegex = /\[\d*\]/g; //look for [number]
         for (let q of queryList) {
           const matches = q.function.match(idRegex);
-          if (!matches) break;
+          if (!matches) {
+            break;
+          }
           const idsObj = {};
           for (let match of matches) {
             idsObj[match.substr(1, match.length - 2)] = true;
           }
           ids += Object.keys(idsObj).length;
         }
-        if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+        if (ids === 0) {
+          ids = 1; // will fail anyways, just show the api error message
+        }
         queryReq.limit = Math.floor(100_000 / ids);
       } else {
         queryReq.limit = Math.floor(
@@ -415,8 +419,10 @@ export default class CogniteDatasource {
       queries.push(queryReq);
 
       // assign labels to each timeseries
-      if (target.tab === Tab.Timeseries || target.tab == undefined) {
-        if (!target.label) target.label = '';
+      if (target.tab === Tab.Timeseries || target.tab === undefined) {
+        if (!target.label) {
+          target.label = '';
+        }
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
@@ -505,7 +511,9 @@ export default class CogniteDatasource {
     const { expr, filter, error } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
-    if (annotation.error) return [];
+    if (annotation.error) {
+      return [];
+    }
 
     const queryOptions = this.parse(expr, ParseType.Event);
     const filterOptions = this.parse(filter || '', ParseType.Event);
@@ -534,7 +542,9 @@ export default class CogniteDatasource {
       method: 'GET',
     });
     const events = result.data.data.items;
-    if (!events) return [];
+    if (!events) {
+      return [];
+    }
 
     this.applyFilters(filterOptions.filters, events);
 
@@ -562,13 +572,13 @@ export default class CogniteDatasource {
   ): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset) {
-      if (query.length == 0) {
+      if (query.length === 0) {
         urlEnd = `/cogniteapi/${this.project}/assets?`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`;
       }
     } else if (type === Tab.Timeseries) {
-      if (query.length == 0) {
+      if (query.length === 0) {
         urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`;
@@ -611,8 +621,9 @@ export default class CogniteDatasource {
     //check if assetId has changed, if not we do not need to perform this query again
     if (
       target.assetQuery.old &&
-      assetId == target.assetQuery.old.target &&
-      target.assetQuery.includeSubtrees == target.assetQuery.old.includeSubtrees
+      assetId === target.assetQuery.old.target &&
+      target.assetQuery.includeSubtrees ===
+        target.assetQuery.old.includeSubtrees
     ) {
       return Promise.resolve();
     } else {
@@ -742,7 +753,9 @@ export default class CogniteDatasource {
     }
 
     for (let f of splitfilters) {
-      if (f == '') continue;
+      if (f === '') {
+        continue;
+      }
       const filter: any = {};
       let i: number;
       f = _.trim(f, ' ');
@@ -806,13 +819,13 @@ export default class CogniteDatasource {
           }
         } else if (filter.type === '!=') {
           const val = _.get(obj, filter.property);
-          if (val === undefined || val == filter.value) {
+          if (val === undefined || val === filter.value) {
             obj.selected = false;
             break;
           }
         } else if (filter.type === '=') {
           const val = _.get(obj, filter.property);
-          if (val === undefined || val != filter.value) {
+          if (val === undefined || val !== filter.value) {
             obj.selected = false;
             break;
           }
