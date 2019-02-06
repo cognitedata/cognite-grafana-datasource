@@ -165,7 +165,7 @@
     Instead, specify aggregations on each individual timeseries by using [ID,aggregation] or [ID,aggregation,granularity].
   Examples: timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}
             timeseries{ function = [ID] - [ID,avg,24h] }
-            timeseries{ function = [ID,step] - [123456789,step] }      
+            timeseries{ function = [ID,step] - [123456789,step] }
       </pre>
   </div>
 </script>
