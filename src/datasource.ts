@@ -125,6 +125,13 @@ export interface DataDatapoints {
   data: Datapoints;
 }
 
+interface DataQueryAlias {
+  alias: string;
+  id: number;
+  aggregate?: string;
+  granularity?: string;
+}
+
 interface DataQueryRequestItem {
   name: string;
   start?: string | number;
@@ -133,6 +140,7 @@ interface DataQueryRequestItem {
   granularity?: string;
   aggregates?: string;
   function?: string;
+  aliases?: DataQueryAlias[];
 }
 
 interface DataQueryRequest {
@@ -315,6 +323,26 @@ export default class CogniteDatasource {
         };
         if (target.tab === Tab.Custom && target.assetQuery.func) {
           query.function = target.assetQuery.func.replace(/ID/g, String(ts.id));
+          const regexSearch = /\[.*?\]/g;
+          const regexMatches = query.function.match(regexSearch);
+          query.aliases = [];
+          for (const match of regexMatches) {
+            // format is id, aggregation, granularity
+            const aliasParts = match
+              .substr(1, match.length - 2)
+              .split(',')
+              .map(x => _.trim(x, ' \'"'));
+            if (aliasParts.length === 1) continue;
+            const alias: DataQueryAlias = {
+              alias: `alias${aliasParts.join('_')}`,
+              id: Number(aliasParts[0]),
+            };
+            alias.aggregate = aliasParts[1];
+            alias.granularity = aliasParts[2] || this.intervalToGranularity(options.intervalMs);
+            query.function = query.function.replace(match, `[${alias.alias}]`);
+            if (query.aliases.find(x => x.alias === alias.alias)) continue;
+            query.aliases.push(alias);
+          }
         }
         return queries.concat(query);
       }, []);
@@ -379,7 +407,7 @@ export default class CogniteDatasource {
       }
       if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
         let ids = 0;
-        const idRegex = /\[\d*\]/g; // look for [number]
+        const idRegex = /\[.*?\]/g; // look for [something]
         for (const q of queryList) {
           const matches = q.function.match(idRegex);
           if (!matches) break;
@@ -390,7 +418,11 @@ export default class CogniteDatasource {
           ids += Object.keys(idsObj).length;
         }
         if (ids === 0) ids = 1; // will fail anyways, just show the api error message
-        queryReq.limit = Math.floor(100_000 / ids);
+
+        // check if any aggregates are being used
+        const usesAggregations = queryList.some(item => item.aliases.length > 0);
+
+        queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / ids);
       } else {
         queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / queryList.length);
       }
@@ -689,7 +721,8 @@ export default class CogniteDatasource {
 
     let splitfilters: string[];
     if (timeseriesMatch) {
-      splitfilters = timeseriesMatch[1].split(',');
+      // regex finds commas that are not followed by a closed bracket
+      splitfilters = _.split(timeseriesMatch[1], /,(?![^\(\[]*[\]\)])/g);
     } else if (assetMatch) {
       splitfilters = assetMatch[1].split(',');
     } else {
