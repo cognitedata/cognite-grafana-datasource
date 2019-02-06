@@ -9,7 +9,7 @@ podTemplate(
   containers: [
     containerTemplate(
       name: 'node',
-      image: 'node:9',
+      image: 'node:10',
       resourceLimitCpu: '2000m',
       resourceLimitMemory: '1000Mi',
       ttyEnabled: true
