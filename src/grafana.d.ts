@@ -14,8 +14,8 @@ declare module 'app/core/utils/datemath' {
 }
 
 declare module 'app/plugins/sdk' {
-  export class PanelCtrl{
-    constructor($scope:any, $injector: any);
+  export class PanelCtrl {
+    constructor($scope: any, $injector: any);
     panel: any;
     error: any;
     row: any;
@@ -63,8 +63,8 @@ declare module 'app/plugins/sdk' {
     getInfoContent(options: any): void;
     openInspector(): void;
   }
-  export class MetricsPanelCtrl extends PanelCtrl{
-    constructor($scope:any, $injector: any);
+  export class MetricsPanelCtrl extends PanelCtrl {
+    constructor($scope: any, $injector: any);
     scope: any;
     loading: boolean;
     datasource: any;
@@ -85,21 +85,21 @@ declare module 'app/plugins/sdk' {
     dataSubscription: any;
     dataList: any;
     nextRefId: string;
-    setTimeQueryStart() :void
-    setTimeQueryEnd() :void
-    updateTimeRange(datasource?) :void
-    calculateInterval() :void
-    applyPanelTimeOverrides() :void
-    issueQueries(datasource) :void
-    handleQueryResult(result) :void
-    handleDataStream(stream) :void
-    setDatasource(datasource) :void
-    addQuery(target) :void
-    removeQuery(target) :void
-    moveQuery(target, direction) :void;
+    setTimeQueryStart(): void;
+    setTimeQueryEnd(): void;
+    updateTimeRange(datasource?): void;
+    calculateInterval(): void;
+    applyPanelTimeOverrides(): void;
+    issueQueries(datasource): void;
+    handleQueryResult(result): void;
+    handleDataStream(stream): void;
+    setDatasource(datasource): void;
+    addQuery(target): void;
+    removeQuery(target): void;
+    moveQuery(target, direction): void;
   }
-  export class QueryCtrl{
-    constructor($scope:any, $injector: any);
+  export class QueryCtrl {
+    constructor($scope: any, $injector: any);
     target: any;
     panelCtrl: any;
     panel: any;
