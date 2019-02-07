@@ -8,7 +8,10 @@
   "scripts": {
     "build": "rm -rf dist && npx tsc && cp -r src/plugin.json src/css src/partials src/img dist/",
     "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 cognite-grafana",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "tslint": "tslint -c tslint.json --project tsconfig.json",
+    "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
+    "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""
   },
   "devDependencies": {
     "@types/jest": "^23.3.13",
@@ -35,6 +38,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,css,md}": [
+      "tslint -c tslint.json --fix",
       "prettier --write",
       "git add"
     ]

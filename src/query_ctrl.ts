@@ -2,8 +2,7 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'app/plugins/sdk';
 import './css/query_editor.css!';
-import CogniteDatasource from './datasource';
-import { Tab } from './datasource';
+import CogniteDatasource, { Tab } from './datasource';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -62,8 +61,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
     _.defaultsDeep(this.target, this.defaults);
 
-    this.currentTabIndex =
-      this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
   }
 
   getOptions(query: string, type: string) {
@@ -81,16 +79,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   getCollapsedText() {
     if (this.target.tab === Tab.Timeseries) {
-      return 'Timeseries: ' + this.target.target + ' ' + this.target.error;
-    } else if (this.target.tab === Tab.Asset) {
-      return (
-        'Timeseries from Asset: ' +
-        this.target.assetQuery.target +
-        ' ' +
-        this.target.error
-      );
-    } else if (this.target.tab === Tab.Custom) {
-      return 'Custom Query: ' + this.target.expr + ' ' + this.target.error;
+      return `Timeseries: ${this.target.target} ${this.target.error}`;
+    }
+    if (this.target.tab === Tab.Asset) {
+      return `Timeseries from Asset: ${this.target.assetQuery.target} ${this.target.error}`;
+    }
+    if (this.target.tab === Tab.Custom) {
+      return `Custom Query: ${this.target.expr} ${this.target.error}`;
     }
     return '';
   }

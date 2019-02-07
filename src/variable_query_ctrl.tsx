@@ -33,9 +33,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
     return (
       <div>
         <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">
-            Query
-          </span>
+          <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
           <input
             type="text"
             className="gf-form-input"
@@ -47,9 +45,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
           />
         </div>
         <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">
-            Filter
-          </span>
+          <span className="gf-form-label query-keyword fix-query-keyword width-10">Filter</span>
           <input
             type="text"
             className="gf-form-input"

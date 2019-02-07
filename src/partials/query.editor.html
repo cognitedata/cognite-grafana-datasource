@@ -162,7 +162,10 @@
   Example: timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h] <br>
   Functions can also be applied to the results by adding a function property. Use '[ID]' to access the timeseries values.
     Note: No aggregates can be used when using functions.
-  Example: timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}
+    Instead, specify aggregations on each individual timeseries by using [ID,aggregation] or [ID,aggregation,granularity].
+  Examples: timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}
+            timeseries{ function = [ID] - [ID,avg,24h] }
+            timeseries{ function = [ID,step] - [123456789,step] }
       </pre>
   </div>
 </script>
