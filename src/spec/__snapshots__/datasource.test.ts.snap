@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CogniteDatasource Datasource Query should return data given an older query target format 1`] = `
+Object {
+  "data": Object {
+    "aggregates": "average",
+    "end": 1549338475000,
+    "granularity": "30s",
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query should return data given an older query target format 2`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          1,
+          1549336675000,
+        ],
+        Array [
+          2,
+          1549337275000,
+        ],
+        Array [
+          0,
+          1549337875000,
+        ],
+        Array [
+          1,
+          1549338475000,
+        ],
+      ],
+      "target": "average Timeseries123",
+    },
+  ],
+}
+`;

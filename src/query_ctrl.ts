@@ -25,7 +25,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'discreteVariance', name: 'Discrete Variance' },
     { value: 'totalVariation', name: 'Total Variation' },
   ];
-  defaults = {};
   tabs = [
     {
       value: Tab.Timeseries,
@@ -40,6 +39,22 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
   ];
   currentTabIndex: number;
+  defaults = {
+    target: 'Start typing tag id here',
+    type: 'timeserie',
+    aggregation: 'average',
+    granularity: '',
+    label: '',
+    tab: Tab.Timeseries,
+    expr: '',
+    assetQuery: {
+      target: '',
+      old: {},
+      timeseries: [],
+      includeSubtrees: false,
+      func: '',
+    },
+  };
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -47,22 +62,8 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
     _.defaultsDeep(this.target, this.defaults);
 
-    this.target.target = this.target.target || 'Start typing tag id here';
-    this.target.type = this.target.type || 'timeserie';
-    this.target.aggregation = this.target.aggregation || 'average';
-    this.target.granularity = this.target.granularity || '';
-    this.target.label = this.target.label || '';
-    this.target.tab = this.target.tab || Tab.Timeseries;
     this.currentTabIndex =
       this.tabs.findIndex(x => x.value === this.target.tab) || 0;
-    this.target.expr = this.target.expr || '';
-    this.target.assetQuery = this.target.assetQuery || {
-      target: '',
-      old: {},
-      timeseries: [],
-      includeSubtrees: false,
-      func: '',
-    };
   }
 
   getOptions(query: string, type: string) {
