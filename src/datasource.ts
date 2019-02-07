@@ -331,7 +331,9 @@ export default class CogniteDatasource {
             const aliasParts = match
               .substr(1, match.length - 2)
               .split(',')
+              .filter(string => string.length)
               .map(x => _.trim(x, ' \'"'));
+            // if we only get [ID], then there is no need to make an alias
             if (aliasParts.length === 1) continue;
             const alias: DataQueryAlias = {
               alias: `alias${aliasParts.join('_')}`,
@@ -722,9 +724,11 @@ export default class CogniteDatasource {
     let splitfilters: string[];
     if (timeseriesMatch) {
       // regex finds commas that are not followed by a closed bracket
-      splitfilters = _.split(timeseriesMatch[1], /,(?![^\(\[]*[\]\)])/g);
+      splitfilters = _.split(timeseriesMatch[1], /,(?![^\(\[]*[\]\)])/g).filter(
+        string => string.length
+      );
     } else if (assetMatch) {
-      splitfilters = assetMatch[1].split(',');
+      splitfilters = assetMatch[1].split(',').filter(string => string.length);
     } else {
       return filtersOptions;
     }
