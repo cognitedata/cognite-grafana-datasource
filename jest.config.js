@@ -6,7 +6,4 @@ module.exports = {
   testEnvironment: "node",
   testRegex: "(/spec/.*|(\\.|/)(test|spec))\\.tsx?$",
   moduleFileExtensions: ["d.ts", "ts", "tsx", "js", "jsx", "json", "node"]
-  // moduleNameMapper: {
-  //   // "app/core/utils/datemath": "<rootDir>/src/spec/__mocks__/datemath.mock.ts"
-  // }
 };
