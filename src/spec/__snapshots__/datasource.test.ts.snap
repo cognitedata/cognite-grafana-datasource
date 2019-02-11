@@ -1,6 +1,562 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CogniteDatasource Datasource Query should return data given an older query target format 1`] = `
+exports[`CogniteDatasource Annotations Query Given an annotation query should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&assetIds=%5B123%5D&type=type%201",
+}
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query should return the correct events 1`] = `
+Array [
+  Object {
+    "annotation": Object {
+      "expr": "event{assetIds = [123], type= 'type 1' }",
+    },
+    "isRegion": true,
+    "text": "event 1",
+    "time": "1549336675000",
+    "timeEnd": "1549336775000",
+    "title": "type 1",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{assetIds = [123], type= 'type 1' }",
+    },
+    "isRegion": true,
+    "text": "time out of bounds",
+    "time": "1549336600000",
+    "timeEnd": "1549338500000",
+    "title": "type 1",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with an incomplete event expression should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse expression event{ ",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect event expression should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Query can only use '='",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect filter expression should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse expression foo",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000",
+}
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with filters should return the correct events 1`] = `
+Array [
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+      "filter": "filter{description=~event.*, type!= 'type 1', }",
+    },
+    "isRegion": true,
+    "text": "event 2",
+    "time": "1549336775000",
+    "timeEnd": "1549336875000",
+    "title": "type 2",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+      "filter": "filter{description=~event.*, type!= 'type 1', }",
+    },
+    "isRegion": true,
+    "text": "event 3",
+    "time": "1549336875000",
+    "timeEnd": "1549336975000",
+    "title": "type 3",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+      "filter": "filter{description=~event.*, type!= 'type 1', }",
+    },
+    "isRegion": true,
+    "text": "event 4",
+    "time": "1549336975000",
+    "timeEnd": "1549337075000",
+    "title": "type 4",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&assetIds=%5B123%5D",
+}
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with variables should return the correct events 1`] = `Array []`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query without any filters should return all events 1`] = `
+Array [
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+    },
+    "isRegion": true,
+    "text": "event 1",
+    "time": "1549336675000",
+    "timeEnd": "1549336775000",
+    "title": "type 1",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+    },
+    "isRegion": true,
+    "text": "event 2",
+    "time": "1549336775000",
+    "timeEnd": "1549336875000",
+    "title": "type 2",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+    },
+    "isRegion": true,
+    "text": "event 3",
+    "time": "1549336875000",
+    "timeEnd": "1549336975000",
+    "title": "type 3",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+    },
+    "isRegion": true,
+    "text": "event 4",
+    "time": "1549336975000",
+    "timeEnd": "1549337075000",
+    "title": "type 4",
+  },
+  Object {
+    "annotation": Object {
+      "expr": "event{}",
+    },
+    "isRegion": true,
+    "text": "time out of bounds",
+    "time": "1549336600000",
+    "timeEnd": "1549338500000",
+    "title": "type 1",
+  },
+]
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=789&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+Object {
+  "data": Object {
+    "aggregates": "min",
+    "end": 1549338475000,
+    "granularity": "20m",
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+      Object {
+        "name": "Timeseries456",
+      },
+    ],
+    "limit": 5000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+Object {
+  "data": Object {
+    "aggregates": "max",
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+      Object {
+        "name": "Timeseries456",
+      },
+      Object {
+        "name": "Timeseries789",
+      },
+    ],
+    "limit": 3333,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "min Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "min Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesA-Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB-Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC-Timeseries789",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?q=Timeseries789&limit=1",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
+Object {
+  "data": Object {
+    "aggregates": "count",
+    "end": 1549338475000,
+    "granularity": "20m",
+    "items": Array [
+      Object {
+        "name": "Timeseries456",
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "aggregates": "step",
+    "end": 1549338475000,
+    "granularity": "1s",
+    "items": Array [
+      Object {
+        "name": "Timeseries789",
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "count Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseries-Timeseries789",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 1`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 2`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given an older queryTarget format should generate the correct query 1`] = `
 Object {
   "data": Object {
     "aggregates": "average",
@@ -19,25 +575,25 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query should return data given an older query target format 2`] = `
+exports[`CogniteDatasource Datasource Query Given an older queryTarget format should return datapoints and the default label 1`] = `
 Object {
   "data": Array [
     Object {
       "datapoints": Array [
         Array [
-          1,
+          0,
           1549336675000,
         ],
         Array [
-          2,
+          1,
           1549337275000,
         ],
         Array [
-          0,
+          2,
           1549337875000,
         ],
         Array [
-          1,
+          3,
           1549338475000,
         ],
       ],
@@ -45,4 +601,1382 @@ Object {
     },
   ],
 }
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries1",
+      },
+      Object {
+        "name": "Timeseries2",
+      },
+      Object {
+        "name": "Timeseries3",
+      },
+      Object {
+        "name": "Timeseries4",
+      },
+      Object {
+        "name": "Timeseries5",
+      },
+      Object {
+        "name": "Test",
+      },
+    ],
+    "limit": 16666,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
+Object {
+  "data": Object {
+    "aggregates": "cv",
+    "end": 1549338475000,
+    "granularity": "10d",
+    "items": Array [
+      Object {
+        "name": "Timeseries4",
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
+Object {
+  "data": Object {
+    "aggregates": "dv",
+    "end": 1549338475000,
+    "granularity": "24h",
+    "items": Array [
+      Object {
+        "name": "Timeseries4",
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries1",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries2",
+      },
+      Object {
+        "name": "Timeseries3",
+      },
+      Object {
+        "name": "Timeseries4",
+      },
+      Object {
+        "name": "Timeseries5",
+      },
+      Object {
+        "name": "Test",
+      },
+    ],
+    "limit": 20000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries3",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries5",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Test",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "continousVariance Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "discreteVariance Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesD value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesE value2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesF value1",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [],
+        "function": "[12]",
+        "name": "Timeseries1",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[34]",
+        "name": "Timeseries2",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[56]",
+        "name": "Timeseries3",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[78]",
+        "name": "Timeseries4",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[90]",
+        "name": "Timeseries5",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[123]",
+        "name": "Test",
+      },
+    ],
+    "limit": 16666,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [],
+        "function": "[12] + [12] + [123]",
+        "name": "Timeseries1",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[34] + [34] + [123]",
+        "name": "Timeseries2",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[56] + [56] + [123]",
+        "name": "Timeseries3",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[78] + [78] + [123]",
+        "name": "Timeseries4",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[90] + [90] + [123]",
+        "name": "Timeseries5",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "[123] + [123] + [123]",
+        "name": "Test",
+      },
+    ],
+    "limit": 9090,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias12_average",
+            "granularity": "10d",
+            "id": 12,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias12_average_10s",
+            "granularity": "10s",
+            "id": 12,
+          },
+        ],
+        "function": "[12] * [alias12_average] - [alias12_average_10s] + [alias12_average_10s]",
+        "name": "Timeseries1",
+      },
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias34_average",
+            "granularity": "10d",
+            "id": 34,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias34_average_10s",
+            "granularity": "10s",
+            "id": 34,
+          },
+        ],
+        "function": "[34] * [alias34_average] - [alias34_average_10s] + [alias34_average_10s]",
+        "name": "Timeseries2",
+      },
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias56_average",
+            "granularity": "10d",
+            "id": 56,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias56_average_10s",
+            "granularity": "10s",
+            "id": 56,
+          },
+        ],
+        "function": "[56] * [alias56_average] - [alias56_average_10s] + [alias56_average_10s]",
+        "name": "Timeseries3",
+      },
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias78_average",
+            "granularity": "10d",
+            "id": 78,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias78_average_10s",
+            "granularity": "10s",
+            "id": 78,
+          },
+        ],
+        "function": "[78] * [alias78_average] - [alias78_average_10s] + [alias78_average_10s]",
+        "name": "Timeseries4",
+      },
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias90_average",
+            "granularity": "10d",
+            "id": 90,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias90_average_10s",
+            "granularity": "10s",
+            "id": 90,
+          },
+        ],
+        "function": "[90] * [alias90_average] - [alias90_average_10s] + [alias90_average_10s]",
+        "name": "Timeseries5",
+      },
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias123_average",
+            "granularity": "10d",
+            "id": 123,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias123_average_10s",
+            "granularity": "10s",
+            "id": 123,
+          },
+        ],
+        "function": "[123] * [alias123_average] - [alias123_average_10s] + [alias123_average_10s]",
+        "name": "Test",
+      },
+    ],
+    "limit": 555,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [
+          Object {
+            "aggregate": "average",
+            "alias": "alias12_average",
+            "granularity": "10d",
+            "id": 12,
+          },
+          Object {
+            "aggregate": "average",
+            "alias": "alias12_average_10m",
+            "granularity": "10m",
+            "id": 12,
+          },
+        ],
+        "function": "[12] * [alias12_average] - [alias12_average_10m]",
+        "name": "Timeseries1",
+      },
+    ],
+    "limit": 3333,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Timeseries1",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Timeseries2",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Timeseries3",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Timeseries4",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Timeseries5",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "1+1",
+        "name": "Test",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries3",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries5",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Test",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries3",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries5",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Test",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesD value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesE value2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesF value1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for asset options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?query=asset",
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for asset options should return the assets with asset in their name 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+  Object {
+    "text": "asset 2 (test asset 2)",
+    "value": "456",
+  },
+  Object {
+    "text": "asset 3 (test asset 3)",
+    "value": "789",
+  },
+]
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for asset options with additional options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?query=asset&metadata=%7B%22key1%22%3A%22value1%22%7D",
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for asset options with additional options should return the assets with asset in their name and metadata.key1 = value1 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+]
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for timeseries options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search?query=Timeseries",
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given a request for timeseries options should return timeseries with Timeseries in their name 1`] = `
+Array [
+  Object {
+    "text": "Timeseries1 (testA)",
+    "value": "Timeseries1",
+  },
+  Object {
+    "text": "Timeseries2 (testB)",
+    "value": "Timeseries2",
+  },
+  Object {
+    "text": "Timeseries3 (testC)",
+    "value": "Timeseries3",
+  },
+  Object {
+    "text": "Timeseries4 (testD)",
+    "value": "Timeseries4",
+  },
+  Object {
+    "text": "Timeseries5 (testE)",
+    "value": "Timeseries5",
+  },
+]
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given an empty request for asset options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets?",
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given an empty request for asset options should return all assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+  Object {
+    "text": "asset 2 (test asset 2)",
+    "value": "456",
+  },
+  Object {
+    "text": "asset 3 (test asset 3)",
+    "value": "789",
+  },
+  Object {
+    "text": "foo (bar)",
+    "value": "999",
+  },
+]
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?limit=1000",
+}
+`;
+
+exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should return all timeseries 1`] = `
+Array [
+  Object {
+    "text": "Timeseries1 (testA)",
+    "value": "Timeseries1",
+  },
+  Object {
+    "text": "Timeseries2 (testB)",
+    "value": "Timeseries2",
+  },
+  Object {
+    "text": "Timeseries3 (testC)",
+    "value": "Timeseries3",
+  },
+  Object {
+    "text": "Timeseries4 (testD)",
+    "value": "Timeseries4",
+  },
+  Object {
+    "text": "Timeseries5 (testE)",
+    "value": "Timeseries5",
+  },
+  Object {
+    "text": "Test",
+    "value": "Test",
+  },
+]
+`;
+
+exports[`CogniteDatasource Login When given login info should log the user in 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteloginstatus",
+}
+`;
+
+exports[`CogniteDatasource Login When given login info should log the user in 2`] = `
+Object {
+  "message": "Your Cognite credentials are valid",
+  "status": "success",
+  "title": "Success",
+}
+`;
+
+exports[`CogniteDatasource Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000",
+}
+`;
+
+exports[`CogniteDatasource Metrics Query Given a metrics query with filters should return the correct assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000",
+}
+`;
+
+exports[`CogniteDatasource Metrics Query Given a metrics query with no options should return all assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 2",
+    "value": 456,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+  Object {
+    "text": "foo",
+    "value": 999,
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given a simple metrics query should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000&name=asset",
+}
+`;
+
+exports[`CogniteDatasource Metrics Query Given a simple metrics query should return the correct assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 2",
+    "value": 456,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given an empty metrics query should return a parse error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse expression ",
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given an incomplete metrics query should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse expression asset{",
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse expression filter{",
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 1`] = `
+Array [
+  Object {
+    "value": "ERROR: Query can only use '='",
+  },
+]
 `;

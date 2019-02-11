@@ -16,4 +16,23 @@ export default class Utils {
       ''
     ).slice(0, -1);
   }
+
+  static getDatasourceValueString(aggregation: string): string {
+    const mapping = {
+      undefined: 'value',
+      none: 'value',
+      avg: 'average',
+      int: 'interpolation',
+      stepinterpolation: 'stepInterpolation',
+      step: 'stepInterpolation',
+      continuousvariance: 'continousVariance', // spelling mistake is intended - will have to change in 0.6
+      continuousVariance: 'continousVariance',
+      cv: 'continousVariance',
+      discretevariance: 'discreteVariance',
+      dv: 'discreteVariance',
+      totalvariation: 'totalVariation',
+      tv: 'totalVariation',
+    };
+    return mapping[aggregation] || aggregation;
+  }
 }
