@@ -125,14 +125,14 @@ export interface DataDatapoints {
   data: Datapoints;
 }
 
-interface DataQueryAlias {
+export interface DataQueryAlias {
   alias: string;
   id: number;
   aggregate?: string;
   granularity?: string;
 }
 
-interface DataQueryRequestItem {
+export interface DataQueryRequestItem {
   name: string;
   start?: string | number;
   end?: string | number;
@@ -143,7 +143,7 @@ interface DataQueryRequestItem {
   aliases?: DataQueryAlias[];
 }
 
-interface DataQueryRequest {
+export interface DataQueryRequest {
   items: DataQueryRequestItem[];
   start: string | number;
   end: string | number;
@@ -309,6 +309,7 @@ export default class CogniteDatasource {
       };
       return [query];
     }
+
     if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
       await this.findAssetTimeseries(target);
       if (target.tab === Tab.Custom) {
@@ -326,24 +327,26 @@ export default class CogniteDatasource {
           const regexSearch = /\[.*?\]/g;
           const regexMatches = query.function.match(regexSearch);
           query.aliases = [];
-          for (const match of regexMatches) {
-            // format is id, aggregation, granularity
-            const aliasParts = match
-              .substr(1, match.length - 2)
-              .split(',')
-              .filter(string => string.length)
-              .map(x => _.trim(x, ' \'"'));
-            // if we only get [ID], then there is no need to make an alias
-            if (aliasParts.length === 1) continue;
-            const alias: DataQueryAlias = {
-              alias: `alias${aliasParts.join('_')}`,
-              id: Number(aliasParts[0]),
-            };
-            alias.aggregate = aliasParts[1];
-            alias.granularity = aliasParts[2] || this.intervalToGranularity(options.intervalMs);
-            query.function = query.function.replace(match, `[${alias.alias}]`);
-            if (query.aliases.find(x => x.alias === alias.alias)) continue;
-            query.aliases.push(alias);
+          if (regexMatches) {
+            for (const match of regexMatches) {
+              // format is id, aggregation, granularity
+              const aliasParts = match
+                .substr(1, match.length - 2)
+                .split(',')
+                .filter(string => string.length)
+                .map(x => _.trim(x, ' \'"'));
+              // if we only get [ID], then there is no need to make an alias
+              if (aliasParts.length === 1) continue;
+              const alias: DataQueryAlias = {
+                alias: `alias${aliasParts.join('_')}`,
+                id: Number(aliasParts[0]),
+              };
+              alias.aggregate = aliasParts[1];
+              alias.granularity = aliasParts[2] || this.intervalToGranularity(options.intervalMs);
+              query.function = query.function.replace(match, `[${alias.alias}]`);
+              if (query.aliases.find(x => x.alias === alias.alias)) continue;
+              query.aliases.push(alias);
+            }
           }
         }
         return queries.concat(query);
@@ -397,17 +400,21 @@ export default class CogniteDatasource {
         start: timeFrom,
         end: timeTo,
       };
-      if (target.aggregation && target.aggregation.length > 0 && target.aggregation !== 'none') {
+      if (target.aggregation && target.aggregation !== 'none') {
         queryReq.aggregates = target.aggregation;
-      } else {
-        target.granularity = '';
-      }
-      if (!target.granularity) {
-        queryReq.granularity = this.intervalToGranularity(options.intervalMs);
-      } else {
-        queryReq.granularity = target.granularity;
+        if (!target.granularity) {
+          queryReq.granularity = this.intervalToGranularity(options.intervalMs);
+        } else {
+          queryReq.granularity = target.granularity;
+        }
       }
       if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
+        if (queryReq.aggregates) {
+          target.error =
+            '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
+          targetQueriesCount.pop();
+          continue;
+        }
         let ids = 0;
         const idRegex = /\[.*?\]/g; // look for [something]
         for (const q of queryList) {
@@ -450,6 +457,7 @@ export default class CogniteDatasource {
       } else {
         target.assetQuery.timeseries.forEach(ts => {
           if (ts.selected) {
+            if (!target.label) target.label = '';
             labels.push(this.getTimeseriesLabel(target.label, ts));
           }
         });
@@ -472,7 +480,6 @@ export default class CogniteDatasource {
     try {
       timeseries = await Promise.all(queryRequests);
     } catch (error) {
-      console.error(error);
       return { data: [] };
     }
     let count = 0;
@@ -499,8 +506,8 @@ export default class CogniteDatasource {
             datapoints: item.datapoints
               .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
               .map(d => {
-                const val = this.getDatasourceValueString(response.config.data.aggregates);
-                return [val === undefined ? d.value : d[val], d.timestamp];
+                const val = Utils.getDatasourceValueString(response.config.data.aggregates);
+                return [d[val] === undefined ? d.value : d[val], d.timestamp];
               }),
           }))
         );
@@ -513,15 +520,15 @@ export default class CogniteDatasource {
     const { expr, filter, error } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
-    if (annotation.error) return [];
+    if (error || !expr) return [];
 
     const queryOptions = this.parse(expr, ParseType.Event);
+    if (queryOptions.error) {
+      return [{ value: queryOptions.error }];
+    }
     const filterOptions = this.parse(filter || '', ParseType.Event);
-
-    // need to have just equality
-    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
-    if (equalCheck) {
-      return [{ value: "ERROR: Query can only use '='" }];
+    if (filter && filterOptions.error) {
+      return [{ value: filterOptions.error }];
     }
 
     // use maxStartTime and minEndTime so that we include events that are partially in range
@@ -542,7 +549,7 @@ export default class CogniteDatasource {
       method: 'GET',
     });
     const events = result.data.data.items;
-    if (!events) return [];
+    if (!events || events.length === 0) return [];
 
     this.applyFilters(filterOptions.filters, events);
 
@@ -593,7 +600,9 @@ export default class CogniteDatasource {
       })
       .then((result: { data: TimeSeriesResponse }) =>
         result.data.data.items.map(timeSeriesResponseItem => ({
-          text: timeSeriesResponseItem.name,
+          text: timeSeriesResponseItem.description
+            ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
+            : timeSeriesResponseItem.name,
           value:
             type === Tab.Asset ? String(timeSeriesResponseItem.id) : timeSeriesResponseItem.name,
         }))
@@ -664,14 +673,14 @@ export default class CogniteDatasource {
 
   async getAssetsForMetrics(query: VariableQueryData) {
     const queryOptions = this.parse(query.query, ParseType.Asset);
-    const filterOptions = this.parse(query.filter, ParseType.Asset);
-    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
-
-    // need to have just equality
-    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
-    if (equalCheck) {
-      return [{ value: "ERROR: Query can only use '='" }];
+    if (queryOptions.error) {
+      return [{ value: queryOptions.error }];
     }
+    const filterOptions = this.parse(query.filter, ParseType.Asset);
+    if (query.filter && filterOptions.error) {
+      return [{ value: filterOptions.error }];
+    }
+    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 
     const queryParams = {
       limit: 1000,
@@ -685,6 +694,7 @@ export default class CogniteDatasource {
       url: this.url + urlEnd + Utils.getQueryString(queryParams),
       method: 'GET',
     });
+
     const assets = result.data.data.items;
 
     // now filter over these assets with the rest of the filters
@@ -711,6 +721,7 @@ export default class CogniteDatasource {
       filters: [],
       granularity: '',
       aggregation: '',
+      error: '',
     };
 
     // Format: timeseries{ options }
@@ -718,26 +729,32 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = query.match(timeseriesRegex);
-    const assetRegex = /^(?:asset|event|filter)\{(.*)\}$/;
+    const assetRegex = /^(?:asset|event)\{(.*)\}$/;
     const assetMatch = query.match(assetRegex);
+    const filterRegex = /^filter\{(.*)\}$/;
+    const filterMatch = query.match(filterRegex);
 
     let splitfilters: string[];
     if (timeseriesMatch) {
       // regex finds commas that are not followed by a closed bracket
-      splitfilters = _.split(timeseriesMatch[1], /,(?![^\(\[]*[\]\)])/g).filter(
-        string => string.length
-      );
+      splitfilters = Utils.splitFilters(timeseriesMatch[1], filtersOptions, false);
     } else if (assetMatch) {
-      splitfilters = assetMatch[1].split(',').filter(string => string.length);
+      splitfilters = Utils.splitFilters(assetMatch[1], filtersOptions, true);
+    } else if (filterMatch) {
+      splitfilters = Utils.splitFilters(filterMatch[1], filtersOptions, false);
     } else {
+      filtersOptions.error = `ERROR: Unable to parse expression ${query}`;
+    }
+
+    if (filtersOptions.error) {
       return filtersOptions;
     }
 
     for (let f of splitfilters) {
+      f = _.trim(f, ' ');
       if (f === '') continue;
       const filter: any = {};
       let i: number;
-      f = _.trim(f, ' ');
       if ((i = f.indexOf('=~')) > -1) {
         filter.property = _.trim(f.substr(0, i), ' \'"');
         filter.value = _.trim(f.substr(i + 2), ' \'"');
@@ -806,25 +823,6 @@ export default class CogniteDatasource {
         }
       }
     }
-  }
-
-  private getDatasourceValueString(aggregation: string): string {
-    const mapping = {
-      undefined: 'value',
-      none: 'value',
-      avg: 'average',
-      int: 'interpolation',
-      stepinterpolation: 'stepInterpolation',
-      step: 'stepInterpolation',
-      continuousvariance: 'continousVariance', // spelling mistake is intended - will have to change in 0.6
-      continuousVariance: 'continousVariance',
-      cv: 'continousVariance',
-      discretevariance: 'discreteVariance',
-      dv: 'discreteVariance',
-      totalvariation: 'totalVariation',
-      tv: 'totalVariation',
-    };
-    return mapping[aggregation] || aggregation;
   }
 
   private getTimeseriesLabel(label, timeseries) {
