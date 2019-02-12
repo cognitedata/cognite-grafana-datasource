@@ -531,12 +531,6 @@ export default class CogniteDatasource {
       return [{ value: filterOptions.error }];
     }
 
-    // need to have just equality
-    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
-    if (equalCheck) {
-      return [{ value: "ERROR: Query can only use '='" }];
-    }
-
     // use maxStartTime and minEndTime so that we include events that are partially in range
     const queryParams = {
       limit: 1000,
@@ -555,7 +549,7 @@ export default class CogniteDatasource {
       method: 'GET',
     });
     const events = result.data.data.items;
-    if (!events) return [];
+    if (!events || events.length === 0) return [];
 
     this.applyFilters(filterOptions.filters, events);
 
@@ -688,12 +682,6 @@ export default class CogniteDatasource {
     }
     const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 
-    // need to have just equality
-    const equalCheck = queryOptions.filters.find(x => x.type !== '=');
-    if (equalCheck) {
-      return [{ value: "ERROR: Query can only use '='" }];
-    }
-
     const queryParams = {
       limit: 1000,
       ...queryOptions.filters.reduce((obj, filter) => {
@@ -741,18 +729,24 @@ export default class CogniteDatasource {
     // regex pulls out the options string, as well as the aggre/gran string (if it exists)
     const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
     const timeseriesMatch = query.match(timeseriesRegex);
-    const assetRegex = /^(?:asset|event|filter)\{(.*)\}$/;
+    const assetRegex = /^(?:asset|event)\{(.*)\}$/;
     const assetMatch = query.match(assetRegex);
+    const filterRegex = /^filter\{(.*)\}$/;
+    const filterMatch = query.match(filterRegex);
 
     let splitfilters: string[];
     if (timeseriesMatch) {
       // regex finds commas that are not followed by a closed bracket
-      splitfilters = _.split(timeseriesMatch[1], /,(?![^\(\[]*[\]\)])/g);
+      splitfilters = Utils.splitFilters(timeseriesMatch[1], filtersOptions, false);
     } else if (assetMatch) {
-      splitfilters = assetMatch[1].split(',');
+      splitfilters = Utils.splitFilters(assetMatch[1], filtersOptions, true);
+    } else if (filterMatch) {
+      splitfilters = Utils.splitFilters(filterMatch[1], filtersOptions, false);
     } else {
       filtersOptions.error = `ERROR: Unable to parse expression ${query}`;
+    }
 
+    if (filtersOptions.error) {
       return filtersOptions;
     }
 

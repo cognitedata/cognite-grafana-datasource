@@ -12,7 +12,6 @@ import CogniteDatasource, {
 import Utils from '../utils';
 
 function getDataqueryResponse(request: DataQueryRequest) {
-  // console.log(request)
   const items = request.items;
   const itemsArr = [];
   const aggregation = Utils.getDatasourceValueString(request.aggregates);
@@ -54,7 +53,6 @@ function getTimeseriesResponse(items) {
 }
 
 describe('CogniteDatasource', () => {
-  console.error = jest.fn();
   const ctx: any = {};
   const instanceSettings = {
     id: 1,
@@ -74,8 +72,6 @@ describe('CogniteDatasource', () => {
       { name: 'AssetVariable', current: { text: 'asset1', value: '123' } },
       { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
     ],
-    getAdhocFilters: () => [],
-    replace: jest.fn(str => str),
   };
 
   const assetsResponse = {
@@ -651,7 +647,7 @@ describe('CogniteDatasource', () => {
               endTime: '1549338500000',
               type: 'type 1',
               subtype: 'subtype 2',
-              metadata: { key1: 'value1' },
+              metadata: { key1: 'value1', key2: 'value2' },
             },
           ],
         },
@@ -767,6 +763,68 @@ describe('CogniteDatasource', () => {
       });
     });
 
+    describe('Given an annotation query with a metadata request', () => {
+      let result;
+      const annotationOption = {
+        range: {
+          from: '1549336675000',
+          to: '1549338475000',
+        },
+        annotation: {
+          expr: 'event{ metadata={"key1":"value1","key2":"value2"} }',
+        },
+      };
+      const response = _.cloneDeep(annotationResponse);
+      response.data.data.items = annotationResponse.data.data.items.filter(item => item.metadata);
+
+      beforeAll(async () => {
+        ctx.ds.backendSrv.datasourceRequest = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve(response));
+        result = await ctx.ds.annotationQuery(annotationOption);
+      });
+
+      it('should generate the correct request', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      });
+
+      it('should return the correct event', () => {
+        expect(result).toMatchSnapshot();
+      });
+    });
+
+    describe('Given an annotation query where nothing is returned', () => {
+      let result;
+      const annotationOption = {
+        range: {
+          from: '1549336675000',
+          to: '1549338475000',
+        },
+        annotation: {
+          expr: "event{type= 'non-existant type'}",
+        },
+      };
+      const response = _.cloneDeep(annotationResponse);
+      response.data.data.items = [];
+
+      beforeAll(async () => {
+        ctx.ds.backendSrv.datasourceRequest = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve(response));
+        result = await ctx.ds.annotationQuery(annotationOption);
+      });
+
+      it('should generate the correct request', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      });
+
+      it('should return the correct events', () => {
+        expect(result).toEqual([]);
+      });
+    });
+
     describe('Given an annotation query with filters', () => {
       let result;
       const annotationOption = {
@@ -854,6 +912,29 @@ describe('CogniteDatasource', () => {
       });
     });
 
+    describe('Given an annotation query with an incomplete event expression', () => {
+      let result;
+      const annotationOption = {
+        range: {
+          from: '1549336675000',
+          to: '1549338475000',
+        },
+        annotation: {
+          expr: 'event{ metadata={}}}',
+        },
+      };
+      beforeAll(async () => {
+        ctx.backendSrvMock.datasourceRequest.mockReset();
+        result = await ctx.ds.annotationQuery(annotationOption);
+      });
+      it('should not generate any requests', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
+      });
+      it('should return an error', () => {
+        expect(result).toMatchSnapshot();
+      });
+    });
+
     describe('Given an annotation query with an incorrect event expression', () => {
       let result;
       const annotationOption = {
@@ -873,7 +954,28 @@ describe('CogniteDatasource', () => {
       });
       it('should return an error', () => {
         expect(result).toMatchSnapshot();
-        expect(console.error).toHaveBeenCalled();
+      });
+    });
+
+    describe('Given an annotation query with an incorrect event expression', () => {
+      let result;
+      const annotationOption = {
+        range: {
+          from: '1549336675000',
+          to: '1549338475000',
+        },
+        annotation: {
+          expr: 'event{foo}',
+        },
+      };
+      beforeAll(async () => {
+        result = await ctx.ds.annotationQuery(annotationOption);
+      });
+      it('should not generate any requests', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
+      });
+      it('should return an error', () => {
+        expect(result).toMatchSnapshot();
       });
     });
 
@@ -1018,7 +1120,24 @@ describe('CogniteDatasource', () => {
     describe('Given an incorrect metrics query', () => {
       let result;
       const variableQuery: VariableQueryData = {
-        query: 'asset{name=~asset.*, foo}',
+        query: 'asset{name=~asset.*}',
+        filter: '',
+      };
+      beforeAll(async () => {
+        result = await ctx.ds.metricFindQuery(variableQuery);
+      });
+      it('should not generate a request', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
+      });
+      it('should return an error', () => {
+        expect(result).toMatchSnapshot();
+      });
+    });
+
+    describe('Given an incorrect metrics query', () => {
+      let result;
+      const variableQuery: VariableQueryData = {
+        query: 'asset{name="asset}',
         filter: '',
       };
       beforeAll(async () => {
@@ -1048,7 +1167,23 @@ describe('CogniteDatasource', () => {
         expect(result).toMatchSnapshot();
       });
     });
-    // no variables
+
+    describe('Given an incorrect filter query', () => {
+      let result;
+      const variableQuery: VariableQueryData = {
+        query: 'asset{name=foo}',
+        filter: 'filter{foo}',
+      };
+      beforeAll(async () => {
+        result = await ctx.ds.metricFindQuery(variableQuery);
+      });
+      it('should not generate a request', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
+      });
+      it('should return an error', () => {
+        expect(result).toMatchSnapshot();
+      });
+    });
   });
 
   describe('Dropdown Options Query', () => {

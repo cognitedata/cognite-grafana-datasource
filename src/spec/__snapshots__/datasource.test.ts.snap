@@ -32,6 +32,35 @@ Array [
 ]
 `;
 
+exports[`CogniteDatasource Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&type=non-existant%20type",
+}
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&metadata=%7B%22key1%22%3A%22value1%22%2C%22key2%22%3A%22value2%22%7D",
+}
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with a metadata request should return the correct event 1`] = `
+Array [
+  Object {
+    "annotation": Object {
+      "expr": "event{ metadata={\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"} }",
+    },
+    "isRegion": true,
+    "text": "time out of bounds",
+    "time": "1549336600000",
+    "timeEnd": "1549338500000",
+    "title": "type 1",
+  },
+]
+`;
+
 exports[`CogniteDatasource Annotations Query Given an annotation query with an incomplete event expression should return an error 1`] = `
 Array [
   Object {
@@ -40,10 +69,26 @@ Array [
 ]
 `;
 
+exports[`CogniteDatasource Annotations Query Given an annotation query with an incomplete event expression should return an error 2`] = `
+Array [
+  Object {
+    "value": "ERROR: Unexpected character ' } ' while parsing ' metadata={}}'.",
+  },
+]
+`;
+
 exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect event expression should return an error 1`] = `
 Array [
   Object {
-    "value": "ERROR: Query can only use '='",
+    "value": "ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed.",
+  },
+]
+`;
+
+exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect event expression should return an error 2`] = `
+Array [
+  Object {
+    "value": "ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed.",
   },
 ]
 `;
@@ -1973,10 +2018,26 @@ Array [
 ]
 `;
 
+exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 2`] = `
+Array [
+  Object {
+    "value": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
+  },
+]
+`;
+
 exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 1`] = `
 Array [
   Object {
-    "value": "ERROR: Query can only use '='",
+    "value": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
+  },
+]
+`;
+
+exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 2`] = `
+Array [
+  Object {
+    "value": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
   },
 ]
 `;
