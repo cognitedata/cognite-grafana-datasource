@@ -15,7 +15,6 @@ export class CogniteAnnotationsQueryCtrl {
       this.annotation.error = `Error: Query expression required.`;
     } else {
       const match = this.annotation.expr.match(/^event\{(.*)\}$/);
-      console.log('q', match);
       if (!match) {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.expr
@@ -27,7 +26,6 @@ export class CogniteAnnotationsQueryCtrl {
     // check the filter expression (if it exists)
     if (!this.annotation.error && this.annotation.filter) {
       const match = this.annotation.filter.match(/^filter\{(.*)\}$/);
-      console.log('f', match);
       if (!match) {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.filter
