@@ -53,8 +53,7 @@ podTemplate(
         }
 
         stage('Test') {
-          // TODO: Implement tests
-          sh('echo "/shrug"')
+          sh('yarn test')
         }
       }
 
