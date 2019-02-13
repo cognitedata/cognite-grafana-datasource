@@ -33,7 +33,7 @@ module.exports = {
       { from: "plugin.json", to: "." },
       { from: "../README.md", to: "." },
       { from: "partials/*", to: "." },
-      { from: "images/*", to: "." },
+      { from: "img/*", to: "." },
       { from: "css/*", to: "." }
     ])
   ],
