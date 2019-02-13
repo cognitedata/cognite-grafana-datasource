@@ -1,8 +1,13 @@
-///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
 import React from 'react';
 import { VariableQueryData } from './datasource';
-import { VariableQueryProps } from 'app/types/plugins';
+
+interface VariableQueryProps {
+  query: any;
+  onChange: (query: any, definition: string) => void;
+  datasource: any;
+  templateSrv: any;
+}
 
 export class CogniteVariableQueryCtrl extends React.PureComponent<
   VariableQueryProps,

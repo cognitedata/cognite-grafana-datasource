@@ -1,7 +1,6 @@
-///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
-import { QueryCtrl } from 'app/plugins/sdk';
-import './css/query_editor.css!';
+import { QueryCtrl } from 'grafana/app/plugins/sdk';
+import './css/query_editor.css';
 import CogniteDatasource, { Tab } from './datasource';
 
 export class CogniteQueryCtrl extends QueryCtrl {

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import q from 'q';
 
-jest.mock('app/core/utils/datemath');
+jest.mock('grafana/app/core/utils/datemath');
 
 import CogniteDatasource, {
   DataQueryRequest,
