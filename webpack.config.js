@@ -14,6 +14,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     libraryTarget: "amd"
   },
+  devtool: "source-map",
   externals: [
     // remove the line below if you don't want to use buildin versions
     // "moment",
