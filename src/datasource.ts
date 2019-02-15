@@ -1,6 +1,5 @@
-///<reference path="./grafana.d.ts" />
 import _ from 'lodash';
-import * as dateMath from 'app/core/utils/datemath';
+import * as dateMath from 'grafana/app/core/utils/datemath';
 import Utils from './utils';
 
 export interface TimeSeriesResponse {
