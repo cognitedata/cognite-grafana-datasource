@@ -2,6 +2,9 @@ const path = require("path");
 const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const CleanWebpackPlugin = require("clean-webpack-plugin");
+const ReplaceInFileWebpackPlugin = require("replace-in-file-webpack-plugin");
+
+const packageJson = require("./package.json");
 
 module.exports = {
   node: {
@@ -36,6 +39,22 @@ module.exports = {
       { from: "partials/*", to: "." },
       { from: "img/*", to: "." },
       { from: "css/*", to: "." }
+    ]),
+    new ReplaceInFileWebpackPlugin([
+      {
+        dir: "dist",
+        files: ["plugin.json"],
+        rules: [
+          {
+            search: "%VERSION%",
+            replace: packageJson.version
+          },
+          {
+            search: "%TODAY%",
+            replace: new Date().toISOString().substring(0, 10)
+          }
+        ]
+      }
     ])
   ],
   resolve: {
