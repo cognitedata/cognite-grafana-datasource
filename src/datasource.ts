@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import Utils from './utils';
+import cache from './cache';
 
 export interface TimeSeriesResponse {
   target: string;
@@ -11,8 +12,9 @@ export interface QueryResponse {
   data: TimeSeriesResponse[];
 }
 
-export class MetricDescription {
-  constructor(readonly text: string, readonly value: number) {}
+export interface MetricDescription {
+  readonly text: string;
+  readonly value: number | string;
 }
 
 export type MetricFindQueryResponse = MetricDescription[];
@@ -253,7 +255,7 @@ export interface VariableQueryData {
   filter: string;
 }
 
-function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
+export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
@@ -380,20 +382,23 @@ export default class CogniteDatasource {
     const targetQueriesCount = [];
     const labels = [];
 
-    const queries: DataQueryRequest[] = [];
+    const dataQueryRequestPromises = [];
     for (const target of queryTargets) {
-      // create query requests
-      const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(
-        target,
-        options
-      );
+      dataQueryRequestPromises.push(this.getDataQueryRequestItems(target, options));
+    }
+    const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
+
+    const queries: DataQueryRequest[] = [];
+    for (const [target, queryList] of dataQueryRequestItems.map((ql, i) => [queryTargets[i], ql])) {
       if (queryList.length === 0) {
         continue;
       }
+      // keep track of target lengths so we can assign errors later
       targetQueriesCount.push({
         refId: target.refId,
         count: queryList.length,
       });
+      // create query requests
       const queryReq: DataQueryRequest = {
         items: queryList,
         start: timeFrom,
@@ -464,12 +469,15 @@ export default class CogniteDatasource {
     }
 
     const queryRequests = queries.map(q =>
-      this.backendSrv
-        .datasourceRequest({
-          url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
-          method: 'POST',
-          data: q,
-        })
+      cache
+        .getQuery(
+          {
+            url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
+            method: 'POST',
+            data: q,
+          },
+          this.backendSrv
+        )
         .catch(error => {
           return { error };
         })
@@ -541,12 +549,15 @@ export default class CogniteDatasource {
       }, {}),
     };
 
-    const result = await this.backendSrv.datasourceRequest({
-      url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
-        queryParams
-      )}`,
-      method: 'GET',
-    });
+    const result = await cache.getQuery(
+      {
+        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
+          queryParams
+        )}`,
+        method: 'GET',
+      },
+      this.backendSrv
+    );
     const events = result.data.data.items;
     if (!events || events.length === 0) return [];
 
@@ -569,7 +580,7 @@ export default class CogniteDatasource {
     return this.getAssetsForMetrics(query);
   }
 
-  public getOptionsForDropdown(
+  public async getOptionsForDropdown(
     query: string,
     type?: string,
     options?: any
@@ -592,11 +603,14 @@ export default class CogniteDatasource {
       urlEnd += `&${Utils.getQueryString(options)}`;
     }
 
-    return this.backendSrv
-      .datasourceRequest({
-        url: this.url + urlEnd,
-        method: 'GET',
-      })
+    return cache
+      .getQuery(
+        {
+          url: this.url + urlEnd,
+          method: 'GET',
+        },
+        this.backendSrv
+      )
       .then((result: { data: TimeSeriesResponse }) =>
         result.data.data.items.map(timeSeriesResponseItem => ({
           text: timeSeriesResponseItem.description
@@ -641,14 +655,19 @@ export default class CogniteDatasource {
     });
   }
 
-  getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>): TimeSeriesResponseItem[] {
-    return this.backendSrv
-      .datasourceRequest({
-        url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
-          searchQuery
-        )}`,
-        method: 'GET',
-      })
+  async getTimeseries(
+    searchQuery: Partial<TimeseriesSearchQuery>
+  ): Promise<TimeSeriesResponseItem[]> {
+    return cache
+      .getQuery(
+        {
+          url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
+            searchQuery
+          )}`,
+          method: 'GET',
+        },
+        this.backendSrv
+      )
       .then((result: { data: TimeSeriesResponse }) => {
         return result.data.data.items.filter(ts => !ts.isString);
       });
@@ -689,10 +708,13 @@ export default class CogniteDatasource {
       }, {}),
     };
 
-    const result = await this.backendSrv.datasourceRequest({
-      url: this.url + urlEnd + Utils.getQueryString(queryParams),
-      method: 'GET',
-    });
+    const result = await cache.getQuery(
+      {
+        url: this.url + urlEnd + Utils.getQueryString(queryParams),
+        method: 'GET',
+      },
+      this.backendSrv
+    );
 
     const assets = result.data.data.items;
 

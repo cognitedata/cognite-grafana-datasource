@@ -89,6 +89,7 @@
     </div>
     <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
       <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+      <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
       <info-popover mode="right-absolute">
           The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
       </info-popover>

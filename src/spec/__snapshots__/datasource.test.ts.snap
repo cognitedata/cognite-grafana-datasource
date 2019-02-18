@@ -657,6 +657,34 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
 Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
+Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -687,7 +715,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
     "aggregates": "cv",
@@ -706,7 +734,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "aggregates": "dv",
@@ -725,7 +753,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -742,7 +770,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1081,6 +1109,41 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
 Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
+Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -1123,7 +1186,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1167,7 +1230,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1289,7 +1352,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1321,7 +1384,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1766,6 +1829,153 @@ Object {
         ],
       ],
       "target": "Timeseries1",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[123]&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 3`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 5`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+      Object {
+        "name": "Timeseries456",
+      },
+    ],
+    "limit": 50000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 2`] = `
+Object {
+  "data": Array [],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 3`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries123",
+    },
+  ],
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 4`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries456",
     },
   ],
 }
