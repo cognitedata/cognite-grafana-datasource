@@ -1,12 +1,12 @@
 {
   "type": "datasource",
   "name": "Cognite Data Platform",
-  "id": "cognitedata-platform-datasource",
+  "id": "cognite-datasource",
 
   "info": {
     "description": "Cognite Data Platform datasource",
     "author": {
-      "name": "Cognite AS",
+      "name": "Cognite",
       "url": "https://cognite.com"
     },
     "keywords": ["cognite", "timeseries", "iot"],
