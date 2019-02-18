@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import q from 'q';
 
 jest.mock('grafana/app/core/utils/datemath');
+jest.mock('../cache');
 
 import CogniteDatasource, {
   DataQueryRequest,
@@ -409,23 +410,27 @@ describe('CogniteDatasource', () => {
         expr: 'timeseries{}',
       };
       const targetB: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         expr:
           "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2'}[cv,10d]",
+        refId: 'B',
       };
       const targetC: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         expr:
           "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2',}[dv]",
+        refId: 'C',
       };
       const targetD: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         expr: 'timeseries{name=[[TimeseriesVariable]]}[none]',
+        refId: 'D',
       };
       const targetE: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         expr: 'timeseries{name!=$TimeseriesVariable}[]',
         label: '{{description}} {{metadata.key1}}',
+        refId: 'E',
       };
       const tsResponse = getTimeseriesResponse([
         {
@@ -465,14 +470,18 @@ describe('CogniteDatasource', () => {
         ctx.options.targets = [targetA, targetB, targetC, targetD, targetE];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
-          .mockImplementationOnce(() => Promise.resolve(tsResponse))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(6);
-        for (let i = 0; i < 6; ++i) {
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(10);
+        for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
       });
@@ -502,30 +511,30 @@ describe('CogniteDatasource', () => {
         expr: 'timeseries{function=[ID]}',
       };
       const targetB: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         refId: 'B',
         expr: 'timeseries{function=[ID] + [ID] + [123]}',
       };
       const targetC: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         refId: 'C',
         expr: 'timeseries{function=[ID] * [ID,average] - [ID,average,10s] + [ID,average,10s]}[]',
         label: '{{description}} {{metadata.key1}}',
       };
       const targetD: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         refId: 'D',
         expr:
           'timeseries{name=[[TimeseriesVariable]],function=[ID] * [ID,average] - [ID,average,10m]}[none]',
       };
       const targetE: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         refId: 'E',
         expr:
           'timeseries{name=[[TimeseriesVariable]],function=[ID] * [ID,average] - [ID,average,10m]}[average]',
       };
       const targetF: QueryTarget = {
-        ...targetA,
+        ..._.cloneDeep(targetA),
         refId: 'F',
         expr: 'timeseries{function=1+1}[]',
       };
@@ -574,7 +583,12 @@ describe('CogniteDatasource', () => {
         ctx.options.targets = [targetA, targetB, targetC, targetD, targetE, targetF];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
-          .mockImplementationOnce(() => Promise.resolve(tsResponse))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
@@ -584,8 +598,8 @@ describe('CogniteDatasource', () => {
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(6);
-        for (let i = 0; i < 6; ++i) {
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(11);
+        for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
       });
@@ -599,6 +613,84 @@ describe('CogniteDatasource', () => {
         expect(targetE.error).not.toHaveLength(0);
         expect(targetF.error).toBeDefined();
         expect(targetF.error).not.toHaveLength(0);
+      });
+    });
+
+    describe('Given multiple "Select Timeseries from Asset" queries in a row', () => {
+      const results = [];
+      const targetA: QueryTarget = {
+        aggregation: 'none',
+        refId: 'A',
+        target: '',
+        granularity: undefined,
+        label: undefined,
+        tab: Tab.Asset,
+        error: undefined,
+        hide: undefined,
+        assetQuery: {
+          target: '123',
+          timeseries: [],
+          includeSubtrees: false,
+          func: undefined,
+        },
+        expr: undefined,
+      };
+      const targetB: QueryTarget = {
+        ...targetA,
+        assetQuery: {
+          target: '123',
+          timeseries: [],
+          includeSubtrees: true,
+          func: undefined,
+        },
+      };
+      const targetC: QueryTarget = {
+        ...targetA,
+        assetQuery: {
+          target: '456',
+          timeseries: [],
+          includeSubtrees: true,
+          func: undefined,
+        },
+      };
+
+      const tsResponseA = getTimeseriesResponse([
+        { name: 'Timeseries123', description: 'test timeseries' },
+      ]);
+      const tsResponseB = getTimeseriesResponse([
+        { name: 'Timeseries123', description: 'test timeseries' },
+        { name: 'Timeseries456', description: 'test timeseries' },
+      ]);
+      const tsResponseEmpty = getTimeseriesResponse([]);
+
+      beforeAll(async () => {
+        ctx.options.intervalMs = 360000;
+        ctx.options.targets = [targetA];
+        ctx.ds.backendSrv.datasourceRequest = jest
+          .fn()
+          .mockImplementationOnce(() => Promise.resolve(tsResponseEmpty))
+          .mockImplementationOnce(() => Promise.resolve(tsResponseA))
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+          .mockImplementationOnce(() => Promise.resolve(tsResponseB))
+          .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+        results.push(await ctx.ds.query(ctx.options));
+        results.push(await ctx.ds.query(ctx.options));
+        ctx.options.targets = [targetB];
+        results.push(await ctx.ds.query(ctx.options));
+        ctx.options.targets = [targetC];
+        results.push(await ctx.ds.query(ctx.options));
+      });
+
+      it('should generate the correct queries and not requery for asset timeseries', () => {
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(5);
+        for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
+          expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
+        }
+      });
+      it('should return correct datapoints and labels', () => {
+        for (const result of results) {
+          expect(result).toMatchSnapshot();
+        }
       });
     });
   });
