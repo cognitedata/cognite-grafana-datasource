@@ -1427,14 +1427,16 @@ describe('CogniteDatasource', () => {
       ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
-    describe('When given login info', () => {
+    describe('When given valid login info', () => {
       let result;
       const response = {
         data: {
-          user: 'string',
-          loggedIn: true,
-          project: 'string',
-          projectId: 0,
+          data: {
+            user: 'string',
+            loggedIn: true,
+            project: 'string',
+            projectId: 0,
+          },
         },
         status: 200,
       };
@@ -1446,6 +1448,33 @@ describe('CogniteDatasource', () => {
       });
 
       it('should log the user in', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+        expect(result).toMatchSnapshot();
+      });
+    });
+
+    describe('When given invalid login info', () => {
+      let result;
+      const response = {
+        data: {
+          data: {
+            user: 'string',
+            loggedIn: false,
+            project: 'string',
+            projectId: 0,
+          },
+        },
+        status: 200,
+      };
+      beforeAll(async () => {
+        ctx.ds.backendSrv.datasourceRequest = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve(response));
+        result = await ctx.ds.testDatasource();
+      });
+
+      it('should display an error message', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
         expect(result).toMatchSnapshot();
