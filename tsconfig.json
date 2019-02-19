@@ -9,8 +9,8 @@
       "es2015",
       "dom"
     ],
-    "declaration": true /* Generates corresponding '.d.ts' file. */,
-    "declarationMap": true /* Generates a sourcemap for each corresponding '.d.ts' file. */,
+    "declaration": false /* Generates corresponding '.d.ts' file. */,
+    // "declarationMap": true,                /* Generates a sourcemap for each corresponding '.d.ts' file. */
     "sourceMap": true /* Generates corresponding '.map' file. */,
     "outDir": "dist/" /* Redirect output structure to the directory. */,
     // "isolatedModules": true,               /* Transpile each file as a separate module (similar to 'ts.transpileModule'). */
@@ -40,5 +40,6 @@
     // "emitDecoratorMetadata": true             /* Enables experimental support for emitting type metadata for decorators. */
     "jsx": "react"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/__mocks__", "src/spec"]
 }
