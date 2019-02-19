@@ -47,7 +47,7 @@ To set up CDP, do the following:
 - Give the data source a name, provide the name of the project and your API key.
 - Hit "Save & Test"
 
-![Configuring Data Source](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img1.png)
+![Configuring Data Source](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img1.png)
 
 You're now ready to start using the datasource!
 
@@ -66,7 +66,7 @@ If you only want to see the data from one specific timeseries.
 - Choose your desired aggregation, and add a granularity if desired (otherwise one will be selected for you based on the time interval displayed).
 - You can also set a custom label and use the format `{{property}}` to pull data from the timeseries. E.g. `{{name}} - {{description}}`
 
-![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img2.png)
+![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img2.png)
 
 ##### Select Timeseries from Asset
 
@@ -76,7 +76,7 @@ If you want to get a few timeseries associated with an asset
 - Select timeseries from the list
 - Set your desired aggregation, as well as a granularity and custom label if desired.
 
-![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img3.png)
+![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img3.png)
 
 ##### Custom Query
 
@@ -86,7 +86,7 @@ If you want more fine-grained control.
 - Then filter on these timeseries. Click on the help icon for more details about the syntax.
 - If you want to apply custom functions to the timeseries (e.g. for unit conversions), you can specify a function by adding `function=` to your query.
 
-![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img4.png)
+![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img4.png)
 
 ## Templating / Variables
 
@@ -96,9 +96,9 @@ In order to perform templating, we enable the use of variables via `$Variable` o
 - Make sure the "Type" is set to "Query", and then set your Cognite Data Source as the Data Source.
 - You can then specify the query to pull assets from CDP, and also filter on these assets.
 
-![Variable Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img7.png)
+![Variable Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img7.png)
 
-![Variable as root asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img8.png)
+![Variable as root asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img8.png)
 
 ## Annotations / Events
 
@@ -108,9 +108,9 @@ Events from CDP can also be shown in Grafana via annotations.
 - Choose your Cognite Data Source as the Data Source.
 - You can then specify the query to pull events from CDP, and also filter on these events.
 
-![Annotation Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img5.png)
+![Annotation Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img5.png)
 
-![Annotation Labels](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/beta-release/images/img6.png)
+![Annotation Labels](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img6.png)
 
 ### Feedback
 
