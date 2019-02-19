@@ -53,14 +53,10 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx,js,json,css}": [
+    "*.{ts,tsx,js,json,css,md}": [
       "tslint -c tslint.json --fix",
       "prettier --write",
-      "git add -f"
-    ],
-    "*.md": [
-      "prettier --write",
-      "git add -f"
+      "git add"
     ]
   }
 }
