@@ -133,7 +133,7 @@ in `data/plugins` that points to this directory.
 
 ```shell
 cd /path/to/grafana/data/plugins
-ln -s /path/to/cognite-grafana-datasource cognitedata-platform-datasource
+ln -s /path/to/cognite-grafana-datasource cognite-datasource
 ```
 
 #### Building
