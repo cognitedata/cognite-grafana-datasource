@@ -862,10 +862,17 @@ export default class CogniteDatasource {
       })
       .then(response => {
         if (response.status === 200) {
+          if (response.data.data.loggedIn) {
+            return {
+              status: 'success',
+              message: 'Your Cognite credentials are valid',
+              title: 'Success',
+            };
+          }
           return {
-            status: 'success',
-            message: 'Your Cognite credentials are valid',
-            title: 'Success',
+            status: 'error',
+            message: 'Your Cognite credentials are invalid',
+            title: 'Error',
           };
         }
       });
