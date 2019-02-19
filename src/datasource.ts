@@ -669,7 +669,7 @@ export default class CogniteDatasource {
         this.backendSrv
       )
       .then((result: { data: TimeSeriesResponse }) => {
-        return result.data.data.items.filter(ts => !ts.isString);
+        return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
       });
   }
 
