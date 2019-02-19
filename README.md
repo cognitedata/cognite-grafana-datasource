@@ -16,7 +16,7 @@
 
 #### Via Grafana Plugin Store
 
-The easiest way to install this plugin is to go to [https://grafana.com/plugins/cognite-datasource](https://grafana.com/plugins/cognite-datasource), and follow the installation instructions there.
+The easiest way to install this plugin is to go to [https://grafana.com/plugins/cognitedata-datasource](https://grafana.com/plugins/cognitedata-datasource), and follow the installation instructions there.
 
 #### Docker
 
@@ -133,7 +133,7 @@ in `data/plugins` that points to this directory.
 
 ```shell
 cd /path/to/grafana/data/plugins
-ln -s /path/to/cognite-grafana-datasource cognite-datasource
+ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 ```
 
 #### Building

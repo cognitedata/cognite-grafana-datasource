@@ -1,7 +1,7 @@
 {
   "type": "datasource",
   "name": "Cognite Data Platform",
-  "id": "cognite-datasource",
+  "id": "cognitedata-datasource",
 
   "info": {
     "description": "Cognite Data Platform datasource",
