@@ -942,11 +942,17 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
               })
               .then(function(e) {
                 if (200 === e.status)
-                  return {
-                    status: "success",
-                    message: "Your Cognite credentials are valid",
-                    title: "Success"
-                  };
+                  return e.data.data.loggedIn
+                    ? {
+                        status: "success",
+                        message: "Your Cognite credentials are valid",
+                        title: "Success"
+                      }
+                    : {
+                        status: "error",
+                        message: "Your Cognite credentials are invalid",
+                        title: "Error"
+                      };
               });
           }),
           e
@@ -2079,10 +2085,10 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
                         s = !0;
                     }
                 }
-              if (s) return n(o, t, "" === r ? "." + $(t, 0) : r), 1;
+              if (s) return n(o, t, "" === r ? "." + I(t, 0) : r), 1;
               if (((s = 0), (r = "" === r ? "." : r + ":"), Array.isArray(t)))
                 for (var l = 0; l < t.length; l++) {
-                  var c = r + $((u = t[l]), l);
+                  var c = r + I((u = t[l]), l);
                   s += e(u, c, n, o);
                 }
               else if (
@@ -2095,7 +2101,7 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
                 "function" == typeof c)
               )
                 for (t = c.call(t), l = 0; !(u = t.next()).done; )
-                  s += e((u = u.value), (c = r + $(u, l++)), n, o);
+                  s += e((u = u.value), (c = r + I(u, l++)), n, o);
               else
                 "object" === u &&
                   g(
@@ -2108,7 +2114,7 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
               return s;
             })(e, "", t, r);
       }
-      function $(e, t) {
+      function I(e, t) {
         return "object" == typeof e && null !== e && null != e.key
           ? (function(e) {
               var t = { "=": "=0", ":": "=2" };
@@ -2121,7 +2127,7 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
             })(e.key)
           : t.toString(36);
       }
-      function I(e, t) {
+      function $(e, t) {
         e.func.call(e.context, t, e.count++);
       }
       function U(e, t, r) {
@@ -2172,7 +2178,7 @@ define(["lodash", "app/core/utils/datemath", "app/plugins/sdk"], function(
             },
             forEach: function(e, t, r) {
               if (null == e) return e;
-              q(e, I, (t = M(null, null, t, r))), P(t);
+              q(e, $, (t = M(null, null, t, r))), P(t);
             },
             count: function(e) {
               return q(
