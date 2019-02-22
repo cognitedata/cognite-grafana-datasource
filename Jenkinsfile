@@ -78,7 +78,7 @@ podTemplate(
           stage('Push to GCR') {
             sh("docker tag ${imageName}:${shortSha} ${imageName}")
             sh("docker push ${imageName}:${shortSha}")
-            sh("docker push ${imageName}")
+            sh("docker push ${imageName}:latest")
           }
         }
       }
