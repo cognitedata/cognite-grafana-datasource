@@ -76,9 +76,9 @@ podTemplate(
 
         } else if (env.BRANCH_NAME == 'master') {
           stage('Push to GCR') {
-            sh("docker tag ${imageName}:${shortSha} ${imageName}")
+            sh("docker tag ${imageName}:${shortSha} ${imageName}:latest")
             sh("docker push ${imageName}:${shortSha}")
-            sh("docker push ${imageName}")
+            sh("docker push ${imageName}:latest")
           }
         }
       }
