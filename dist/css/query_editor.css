@@ -1,0 +1,33 @@
+.min-width-10 {
+  min-width: 10rem;
+}
+
+.min-width-12 {
+  min-width: 12rem;
+}
+
+.min-width-20 {
+  min-width: 20rem;
+}
+
+.gf-form-select-wrapper select.gf-form-input {
+  height: 2.64rem;
+}
+
+.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {
+  right: 0.775rem;
+}
+
+.gf-tabs-cognite.active:before,
+.gf-tabs-cognite.active:focus:before,
+.gf-tabs-cognite.active:hover:before {
+  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);
+}
+
+input[type="checkbox"] {
+  margin: 4px;
+}
+
+.custom-query {
+  font-family: monospace;
+}
