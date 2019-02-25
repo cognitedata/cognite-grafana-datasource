@@ -234,11 +234,18 @@ Object {
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -255,7 +262,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
 Object {
   "data": Object {
     "aggregates": "min",
@@ -277,7 +284,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
 Object {
   "data": Object {
     "aggregates": "max",
@@ -295,6 +302,25 @@ Object {
       },
     ],
     "limit": 3333,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
+Object {
+  "data": Object {
+    "aggregates": "tv",
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "name": "Timeseries123",
+      },
+    ],
+    "limit": 10000,
     "start": 1549336675000,
   },
   "method": "POST",
@@ -430,6 +456,27 @@ Object {
         ],
       ],
       "target": "test timeseriesC-Timeseries789",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseries",
     },
   ],
 }

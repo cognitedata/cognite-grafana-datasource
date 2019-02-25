@@ -312,9 +312,9 @@ export default class CogniteDatasource {
     }
 
     if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
-      await this.findAssetTimeseries(target);
+      await this.findAssetTimeseries(target, options);
       if (target.tab === Tab.Custom) {
-        this.filterOnAssetTimeseries(target); // apply the search expression
+        this.filterOnAssetTimeseries(target, options); // apply the search expression
       }
       return target.assetQuery.timeseries.reduce((queries, ts) => {
         if (!ts.selected) {
@@ -622,13 +622,9 @@ export default class CogniteDatasource {
       );
   }
 
-  async findAssetTimeseries(target) {
+  async findAssetTimeseries(target, options) {
     // replace variables with their values
-    let assetId = target.assetQuery.target;
-    for (const templateVariable of this.templateSrv.variables) {
-      assetId = assetId.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
-      assetId = assetId.replace(`$${templateVariable.name}`, templateVariable.current.value);
-    }
+    const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
 
     // check if assetId has changed, if not we do not need to perform this query again
     if (
@@ -673,8 +669,8 @@ export default class CogniteDatasource {
       });
   }
 
-  filterOnAssetTimeseries(target) {
-    const filterOptions = this.parse(target.expr, ParseType.Timeseries);
+  filterOnAssetTimeseries(target, options) {
+    const filterOptions = this.parse(target.expr, ParseType.Timeseries, options);
     const func = filterOptions.filters.find(x => x.property === 'function');
     if (func) {
       filterOptions.filters = filterOptions.filters.filter(x => x.property !== 'function');
@@ -728,13 +724,17 @@ export default class CogniteDatasource {
     }));
   }
 
-  parse(customQuery, type) {
+  parse(customQuery, type, options?) {
     let query = customQuery;
     if (type === ParseType.Timeseries || type === ParseType.Event) {
       // replace variables with their values
-      for (const templateVariable of this.templateSrv.variables) {
-        query = query.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
-        query = query.replace(`$${templateVariable.name}`, templateVariable.current.value);
+      if (options) {
+        query = this.templateSrv.replace(query, options.scopedVars);
+      } else {
+        for (const templateVariable of this.templateSrv.variables) {
+          query = query.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
+          query = query.replace(`$${templateVariable.name}`, templateVariable.current.value);
+        }
       }
     }
 
