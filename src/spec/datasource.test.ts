@@ -73,6 +73,14 @@ describe('CogniteDatasource', () => {
       { name: 'AssetVariable', current: { text: 'asset1', value: '123' } },
       { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
     ],
+    replace: jest.fn((q, options) => {
+      let query = q;
+      for (const templateVariable of ctx.templateSrvMock.variables) {
+        query = query.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
+        query = query.replace(`$${templateVariable.name}`, templateVariable.current.value);
+      }
+      return query;
+    }),
   };
 
   const assetsResponse = {
@@ -338,6 +346,19 @@ describe('CogniteDatasource', () => {
           func: 'should not be evaluated',
         },
       };
+      const targetD: QueryTarget = {
+        ...targetA,
+        aggregation: 'tv',
+        refId: 'D',
+        target: '',
+        label: '{{description}}',
+        assetQuery: {
+          target: '[[AssetVariable]]',
+          timeseries: [],
+          includeSubtrees: false,
+          func: 'should not be evaluated',
+        },
+      };
       const targetEmpty: QueryTarget = {
         ...targetA,
         aggregation: 'average',
@@ -368,25 +389,32 @@ describe('CogniteDatasource', () => {
 
       beforeAll(async () => {
         ctx.options.intervalMs = 360000;
-        ctx.options.targets = [targetA, targetB, targetC, targetEmpty];
+        ctx.options.targets = [targetA, targetB, targetC, targetD, targetEmpty];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
           .mockImplementationOnce(() => Promise.resolve(tsResponseA))
           .mockImplementationOnce(() => Promise.resolve(tsResponseB))
           .mockImplementationOnce(() => Promise.resolve(tsResponseC))
+          .mockImplementationOnce(() => Promise.resolve(tsResponseA))
           .mockImplementationOnce(() => Promise.resolve(tsResponseEmpty))
           .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
+      afterAll(() => {
+        ctx.ds.templateSrv.replace.mockClear();
+      });
 
       it('should generate the correct queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(7);
-        for (let i = 0; i < 7; ++i) {
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(9);
+        for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
       });
       it('should return correct datapoints and labels', () => {
         expect(result).toMatchSnapshot();
+      });
+      it('should call templateSrv.replace the correct number of times', () => {
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(5);
       });
     });
 
@@ -432,6 +460,7 @@ describe('CogniteDatasource', () => {
         label: '{{description}} {{metadata.key1}}',
         refId: 'E',
       };
+      targetE.assetQuery.target = '$AssetVariable';
       const tsResponse = getTimeseriesResponse([
         {
           name: 'Timeseries1',
@@ -478,6 +507,9 @@ describe('CogniteDatasource', () => {
           .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
+      afterAll(() => {
+        ctx.ds.templateSrv.replace.mockClear();
+      });
 
       it('should generate the correct filtered queries', () => {
         expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(10);
@@ -488,6 +520,10 @@ describe('CogniteDatasource', () => {
 
       it('should return correct datapoints and labels', () => {
         expect(result).toMatchSnapshot();
+      });
+
+      it('should call templateSrv.replace the correct number of times', () => {
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(10);
       });
     });
 
