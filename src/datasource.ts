@@ -669,8 +669,12 @@ export default class CogniteDatasource {
       });
   }
 
-  filterOnAssetTimeseries(target, options) {
+  filterOnAssetTimeseries(target: QueryTarget, options: QueryOptions) {
     const filterOptions = this.parse(target.expr, ParseType.Timeseries, options);
+    if (filterOptions.error) {
+      target.error = filterOptions.error;
+      return;
+    }
     const func = filterOptions.filters.find(x => x.property === 'function');
     if (func) {
       filterOptions.filters = filterOptions.filters.filter(x => x.property !== 'function');
