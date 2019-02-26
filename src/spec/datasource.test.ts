@@ -119,7 +119,11 @@ describe('CogniteDatasource', () => {
         intervalMs: 30000,
         maxDataPoints: 760,
         format: 'json',
+        panelId: 1,
       };
+    });
+    beforeEach(() => {
+      ctx.options.panelId += 1;
     });
 
     describe('Given no targets', () => {
@@ -141,7 +145,6 @@ describe('CogniteDatasource', () => {
         expr: '',
         assetQuery: {
           target: '',
-          timeseries: [],
           includeSubtrees: false,
           func: '',
         },
@@ -314,9 +317,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: {
           target: '123',
-          timeseries: [],
           includeSubtrees: false,
-          func: undefined,
         },
         expr: undefined,
       };
@@ -328,7 +329,6 @@ describe('CogniteDatasource', () => {
         granularity: '20m',
         assetQuery: {
           target: '456',
-          timeseries: [],
           includeSubtrees: true,
           func: undefined,
         },
@@ -341,7 +341,6 @@ describe('CogniteDatasource', () => {
         label: '{{description}}-{{name}}',
         assetQuery: {
           target: '789',
-          timeseries: [],
           includeSubtrees: false,
           func: 'should not be evaluated',
         },
@@ -354,7 +353,6 @@ describe('CogniteDatasource', () => {
         label: '{{description}}',
         assetQuery: {
           target: '[[AssetVariable]]',
-          timeseries: [],
           includeSubtrees: false,
           func: 'should not be evaluated',
         },
@@ -362,12 +360,11 @@ describe('CogniteDatasource', () => {
       const targetEmpty: QueryTarget = {
         ...targetA,
         aggregation: 'average',
-        refId: 'D',
+        refId: 'E',
         target: '',
         label: '{{description}}-{{name}}',
         assetQuery: {
           target: '000',
-          timeseries: [],
           includeSubtrees: true,
           func: undefined,
         },
@@ -431,7 +428,6 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: {
           target: '123',
-          timeseries: [],
           includeSubtrees: false,
           func: undefined,
         },
@@ -540,7 +536,6 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: {
           target: '123',
-          timeseries: [],
           includeSubtrees: false,
           func: undefined,
         },
@@ -665,9 +660,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: {
           target: '123',
-          timeseries: [],
           includeSubtrees: false,
-          func: undefined,
         },
         expr: undefined,
       };
@@ -675,18 +668,14 @@ describe('CogniteDatasource', () => {
         ...targetA,
         assetQuery: {
           target: '123',
-          timeseries: [],
           includeSubtrees: true,
-          func: undefined,
         },
       };
       const targetC: QueryTarget = {
         ...targetA,
         assetQuery: {
           target: '456',
-          timeseries: [],
           includeSubtrees: true,
-          func: undefined,
         },
       };
 

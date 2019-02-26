@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
 import CogniteDatasource, { Tab } from './datasource';
+import cache from './cache';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -74,6 +75,15 @@ export class CogniteQueryCtrl extends QueryCtrl {
   changeTab(index: number) {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
+  }
+
+  getTimeseries() {
+    const options = {
+      dashboardId: this.panelCtrl.dashboard.id,
+      panelId: this.panelCtrl.panel.id,
+    };
+    const target = { refId: this.target.refId };
+    return cache.getTimeseries(target, options);
   }
 
   getCollapsedText() {

@@ -106,7 +106,7 @@
   </div>
   <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px">
     <ul>
-      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries">
+      <li ng-repeat="timeseries in ctrl.getTimeseries()">
         <input type="checkbox" ng-model="timeseries.selected" ng-change="ctrl.onChangeInternal()"> {{timeseries.name}}
       </li>
     </ul>

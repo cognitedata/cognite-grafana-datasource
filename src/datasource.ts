@@ -79,9 +79,8 @@ export interface QueryRange {
 export interface AssetQuery {
   target: string;
   old?: AssetQuery;
-  timeseries: TimeSeriesResponseItem[];
   includeSubtrees: boolean;
-  func: string;
+  func?: string;
 }
 
 export interface QueryTarget {
@@ -106,6 +105,9 @@ export interface QueryOptions {
   format: QueryFormat;
   maxDataPoints: number;
   intervalMs: number;
+  scopedVars: any;
+  dashboardId: number;
+  panelId: number;
 }
 
 export interface TimeSeriesDatapoint {
@@ -316,7 +318,8 @@ export default class CogniteDatasource {
       if (target.tab === Tab.Custom) {
         this.filterOnAssetTimeseries(target, options); // apply the search expression
       }
-      return target.assetQuery.timeseries.reduce((queries, ts) => {
+      const targetTimeseries = cache.getTimeseries(target, options);
+      return targetTimeseries.reduce((queries, ts) => {
         if (!ts.selected) {
           return queries;
         }
@@ -459,7 +462,8 @@ export default class CogniteDatasource {
           labels.push(target.label);
         }
       } else {
-        target.assetQuery.timeseries.forEach(ts => {
+        const targetTimeseries = cache.getTimeseries(target, options);
+        targetTimeseries.forEach(ts => {
           if (ts.selected) {
             if (!target.label) target.label = '';
             labels.push(this.getTimeseriesLabel(target.label, ts));
@@ -622,7 +626,7 @@ export default class CogniteDatasource {
       );
   }
 
-  async findAssetTimeseries(target, options) {
+  async findAssetTimeseries(target: QueryTarget, options: QueryOptions) {
     // replace variables with their values
     const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
 
@@ -630,13 +634,15 @@ export default class CogniteDatasource {
     if (
       target.assetQuery.old &&
       assetId === target.assetQuery.old.target &&
-      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees
+      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees &&
+      cache.getTimeseries(target, options)
     ) {
       return Promise.resolve();
     }
-    target.assetQuery.old = {};
-    target.assetQuery.old.target = String(assetId);
-    target.assetQuery.old.includeSubtrees = target.assetQuery.includeSubtrees;
+    target.assetQuery.old = {
+      target: String(assetId),
+      includeSubtrees: target.assetQuery.includeSubtrees,
+    };
 
     const searchQuery: Partial<TimeseriesSearchQuery> = {
       path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
@@ -644,11 +650,15 @@ export default class CogniteDatasource {
       limit: 10000,
     };
 
-    const ts = await this.getTimeseries(searchQuery);
-    target.assetQuery.timeseries = ts.map(ts => {
-      ts.selected = true;
-      return ts;
-    });
+    const targetTimeseries = await this.getTimeseries(searchQuery);
+    cache.setTimeseries(
+      target,
+      options,
+      targetTimeseries.map(ts => {
+        ts.selected = true;
+        return ts;
+      })
+    );
   }
 
   async getTimeseries(
@@ -683,7 +693,7 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
+    this.applyFilters(filterOptions.filters, cache.getTimeseries(target, options));
 
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
@@ -720,7 +730,9 @@ export default class CogniteDatasource {
 
     // now filter over these assets with the rest of the filters
     this.applyFilters(filterOptions.filters, assets);
-    const filteredAssets = assets.filter(asset => asset.selected === true);
+    const filteredAssets = assets
+      .filter(asset => asset.selected === true)
+      .sort((x, y) => x.name.localeCompare(y.name));
 
     return filteredAssets.map(asset => ({
       text: asset.name,
