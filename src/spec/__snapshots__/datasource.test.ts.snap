@@ -732,6 +732,13 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
 Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
+Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -762,7 +769,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "aggregates": "cv",
@@ -781,7 +788,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
     "aggregates": "dv",
@@ -800,7 +807,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -817,7 +824,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
     "end": 1549338475000,

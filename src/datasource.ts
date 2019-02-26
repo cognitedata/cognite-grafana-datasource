@@ -393,7 +393,7 @@ export default class CogniteDatasource {
 
     const queries: DataQueryRequest[] = [];
     for (const [target, queryList] of dataQueryRequestItems.map((ql, i) => [queryTargets[i], ql])) {
-      if (queryList.length === 0) {
+      if (queryList.length === 0 || target.error) {
         continue;
       }
       // keep track of target lengths so we can assign errors later

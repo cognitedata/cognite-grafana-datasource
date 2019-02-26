@@ -457,6 +457,11 @@ describe('CogniteDatasource', () => {
         refId: 'E',
       };
       targetE.assetQuery.target = '$AssetVariable';
+      const targetF: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'F',
+        expr: 'timeseries{name=~".*}[]',
+      };
       const tsResponse = getTimeseriesResponse([
         {
           name: 'Timeseries1',
@@ -492,9 +497,10 @@ describe('CogniteDatasource', () => {
 
       beforeAll(async () => {
         ctx.options.intervalMs = 86400000;
-        ctx.options.targets = [targetA, targetB, targetC, targetD, targetE];
+        ctx.options.targets = [targetA, targetB, targetC, targetD, targetE, targetF];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
@@ -508,7 +514,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(10);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(11);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
@@ -519,7 +525,12 @@ describe('CogniteDatasource', () => {
       });
 
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(10);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(12);
+      });
+
+      it('should display errors for malformed queries', () => {
+        expect(targetF.error).toBeDefined();
+        expect(targetF.error).not.toHaveLength(0);
       });
     });
 
