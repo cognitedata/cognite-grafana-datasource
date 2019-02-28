@@ -221,10 +221,13 @@ export default class CogniteDatasource {
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
-            const ts = await this.getTimeseries({
-              q: target.target,
-              limit: 1,
-            });
+            const ts = await this.getTimeseries(
+              {
+                q: target.target,
+                limit: 1,
+              },
+              target
+            );
             labels.push(this.getTimeseriesLabel(target.label, ts[0]));
           } catch {
             labels.push(target.label);
@@ -423,7 +426,7 @@ export default class CogniteDatasource {
       limit: 10000,
     };
 
-    const targetTimeseries = await this.getTimeseries(searchQuery);
+    const targetTimeseries = await this.getTimeseries(searchQuery, target);
     cache.setTimeseries(
       target,
       options,
@@ -435,7 +438,8 @@ export default class CogniteDatasource {
   }
 
   async getTimeseries(
-    searchQuery: Partial<TimeseriesSearchQuery>
+    searchQuery: Partial<TimeseriesSearchQuery>,
+    target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
     return cache
       .getQuery(
@@ -447,9 +451,19 @@ export default class CogniteDatasource {
         },
         this.backendSrv
       )
-      .then((result: { data: TimeSeriesResponse }) => {
-        return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
-      });
+      .then(
+        (result: { data: TimeSeriesResponse }) => {
+          return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
+        },
+        error => {
+          if (error.data && error.data.error) {
+            target.error = `[${error.status} ERROR] ${error.data.error.message}`;
+          } else {
+            target.error = 'Unknown error';
+          }
+          return [];
+        }
+      );
   }
 
   filterOnAssetTimeseries(target: QueryTarget, options: QueryOptions): void {
@@ -475,11 +489,11 @@ export default class CogniteDatasource {
   async getAssetsForMetrics(query: VariableQueryData): Promise<MetricFindQueryResponse> {
     const queryOptions = this.parse(query.query, ParseType.Asset);
     if (queryOptions.error) {
-      return [{ text: queryOptions.error, value: queryOptions.error }];
+      return [{ text: queryOptions.error, value: '-' }];
     }
     const filterOptions = this.parse(query.filter, ParseType.Asset);
     if (query.filter && filterOptions.error) {
-      return [{ text: filterOptions.error, value: filterOptions.error }];
+      return [{ text: filterOptions.error, value: '-' }];
     }
     const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 

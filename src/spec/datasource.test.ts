@@ -380,6 +380,14 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
       };
+      const targetError1: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'E',
+      };
+      const targetError2: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'F',
+      };
 
       const tsResponseA = getTimeseriesResponse([
         { name: 'Timeseries123', description: 'test timeseries' },
@@ -397,7 +405,15 @@ describe('CogniteDatasource', () => {
 
       beforeAll(async () => {
         ctx.options.intervalMs = 360000;
-        ctx.options.targets = [targetA, targetB, targetC, targetD, targetEmpty];
+        ctx.options.targets = [
+          targetA,
+          targetB,
+          targetC,
+          targetD,
+          targetEmpty,
+          targetError1,
+          targetError2,
+        ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
           .mockImplementationOnce(() => Promise.resolve(tsResponseA))
@@ -405,6 +421,8 @@ describe('CogniteDatasource', () => {
           .mockImplementationOnce(() => Promise.resolve(tsResponseC))
           .mockImplementationOnce(() => Promise.resolve(tsResponseA))
           .mockImplementationOnce(() => Promise.resolve(tsResponseEmpty))
+          .mockRejectedValueOnce(tsError)
+          .mockRejectedValueOnce({})
           .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
@@ -413,7 +431,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should generate the correct queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(9);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(11);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
@@ -422,7 +440,11 @@ describe('CogniteDatasource', () => {
         expect(result).toMatchSnapshot();
       });
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(5);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(7);
+      });
+      it('should display errors for malformed queries', () => {
+        expect(targetError1.error).toBe('[400 ERROR] error message');
+        expect(targetError2.error).toBe('Unknown error');
       });
     });
 

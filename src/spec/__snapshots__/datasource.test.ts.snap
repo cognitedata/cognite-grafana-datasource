@@ -207,6 +207,20 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
+Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -222,7 +236,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
 Object {
   "data": Object {
     "aggregates": "min",
@@ -244,7 +258,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 10`] = `
 Object {
   "data": Object {
     "aggregates": "max",
@@ -269,7 +283,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 11`] = `
 Object {
   "data": Object {
     "aggregates": "tv",
@@ -2237,7 +2251,7 @@ exports[`CogniteDatasource Metrics Query Given an empty metrics query should ret
 Array [
   Object {
     "text": "ERROR: Unable to parse expression ",
-    "value": "ERROR: Unable to parse expression ",
+    "value": "-",
   },
 ]
 `;
@@ -2246,7 +2260,7 @@ exports[`CogniteDatasource Metrics Query Given an incomplete metrics query shoul
 Array [
   Object {
     "text": "ERROR: Unable to parse expression asset{",
-    "value": "ERROR: Unable to parse expression asset{",
+    "value": "-",
   },
 ]
 `;
@@ -2255,7 +2269,7 @@ exports[`CogniteDatasource Metrics Query Given an incorrect filter query should 
 Array [
   Object {
     "text": "ERROR: Unable to parse expression filter{",
-    "value": "ERROR: Unable to parse expression filter{",
+    "value": "-",
   },
 ]
 `;
@@ -2264,7 +2278,7 @@ exports[`CogniteDatasource Metrics Query Given an incorrect filter query should 
 Array [
   Object {
     "text": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
-    "value": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
+    "value": "-",
   },
 ]
 `;
@@ -2273,7 +2287,7 @@ exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should
 Array [
   Object {
     "text": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
-    "value": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
+    "value": "-",
   },
 ]
 `;
@@ -2282,7 +2296,7 @@ exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should
 Array [
   Object {
     "text": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
-    "value": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
+    "value": "-",
   },
 ]
 `;
