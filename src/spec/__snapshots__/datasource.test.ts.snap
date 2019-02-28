@@ -61,46 +61,6 @@ Array [
 ]
 `;
 
-exports[`CogniteDatasource Annotations Query Given an annotation query with an incomplete event expression should return an error 1`] = `
-Array [
-  Object {
-    "value": "ERROR: Unable to parse expression event{ ",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with an incomplete event expression should return an error 2`] = `
-Array [
-  Object {
-    "value": "ERROR: Unexpected character ' } ' while parsing ' metadata={}}'.",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect event expression should return an error 1`] = `
-Array [
-  Object {
-    "value": "ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed.",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect event expression should return an error 2`] = `
-Array [
-  Object {
-    "value": "ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed.",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with an incorrect filter expression should return an error 1`] = `
-Array [
-  Object {
-    "value": "ERROR: Unable to parse expression foo",
-  },
-]
-`;
-
 exports[`CogniteDatasource Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
 Object {
   "method": "GET",
@@ -2276,6 +2236,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an empty metrics query should return a parse error 1`] = `
 Array [
   Object {
+    "text": "ERROR: Unable to parse expression ",
     "value": "ERROR: Unable to parse expression ",
   },
 ]
@@ -2284,6 +2245,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an incomplete metrics query should return an error 1`] = `
 Array [
   Object {
+    "text": "ERROR: Unable to parse expression asset{",
     "value": "ERROR: Unable to parse expression asset{",
   },
 ]
@@ -2292,6 +2254,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 1`] = `
 Array [
   Object {
+    "text": "ERROR: Unable to parse expression filter{",
     "value": "ERROR: Unable to parse expression filter{",
   },
 ]
@@ -2300,6 +2263,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 2`] = `
 Array [
   Object {
+    "text": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
     "value": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
   },
 ]
@@ -2308,6 +2272,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 1`] = `
 Array [
   Object {
+    "text": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
     "value": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
   },
 ]
@@ -2316,6 +2281,7 @@ Array [
 exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 2`] = `
 Array [
   Object {
+    "text": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
     "value": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
   },
 ]

@@ -1,4 +1,6 @@
-import { isError } from './datasource';
+import { QueryOptions, TimeSeriesResponseItem, isError } from './types';
+import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import { DataQuery } from '@grafana/ui';
 
 // Cache requests for 10 seconds
 const cacheTime = 1000 * 10;
@@ -8,7 +10,7 @@ const queries = {
   requests: new Map(),
 };
 
-export const getQuery = async (query, backendSrv) => {
+export const getQuery = async (query: object, backendSrv: BackendSrv) => {
   const stringQuery = JSON.stringify(query);
 
   if (queries.requests.has(stringQuery)) {
@@ -47,14 +49,18 @@ export const getQuery = async (query, backendSrv) => {
 };
 
 // store timeseries here instead of in the queryTarget object
-const timeseries = new Map();
+const timeseries = new Map<string, TimeSeriesResponseItem[]>();
 
-export const getTimeseries = (queryTarget, options) => {
+export const getTimeseries = (queryTarget: DataQuery, options: Partial<QueryOptions>) => {
   const id = `${options.dashboardId}-${options.panelId}-${queryTarget.refId}`;
   return timeseries.get(id);
 };
 
-export const setTimeseries = (queryTarget, options, timeseriesArr) => {
+export const setTimeseries = (
+  queryTarget: DataQuery,
+  options: QueryOptions,
+  timeseriesArr: TimeSeriesResponseItem[]
+) => {
   const id = `${options.dashboardId}-${options.panelId}-${queryTarget.refId}`;
   return timeseries.set(id, timeseriesArr);
 };

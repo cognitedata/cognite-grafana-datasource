@@ -4,12 +4,8 @@ import q from 'q';
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
 
-import CogniteDatasource, {
-  DataQueryRequest,
-  QueryTarget,
-  Tab,
-  VariableQueryData,
-} from '../datasource';
+import CogniteDatasource from '../datasource';
+import { DataQueryRequest, QueryTarget, Tab, VariableQueryData } from '../types';
 import Utils from '../utils';
 
 function getDataqueryResponse(request: DataQueryRequest) {
@@ -54,15 +50,30 @@ function getTimeseriesResponse(items) {
 }
 
 describe('CogniteDatasource', () => {
+  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   const ctx: any = {};
   const instanceSettings = {
     id: 1,
+    orgId: 1,
     name: 'Cognite Test Data',
+    typeLogoUrl: '',
     type: 'cognitedata-platform-datasource',
+    access: '',
     url: '/api/datasources/proxy/6',
+    password: '',
+    user: '',
+    database: '',
+    basicAuth: false,
+    basicAuthPassword: '',
+    basicAuthUser: '',
+    isDefault: true,
     jsonData: {
+      authType: '',
+      defaultRegion: '',
       cogniteProject: 'TestProject',
     },
+    readOnly: false,
+    withCredentials: false,
   };
 
   ctx.backendSrvMock = {
@@ -1032,11 +1043,13 @@ describe('CogniteDatasource', () => {
         ctx.backendSrvMock.datasourceRequest.mockReset();
         result = await ctx.ds.annotationQuery(annotationOption);
       });
+      afterAll(() => consoleErrorSpy.mockClear());
       it('should not generate any requests', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
       });
-      it('should return an error', () => {
-        expect(result).toMatchSnapshot();
+      it('should emit an error', () => {
+        expect(consoleErrorSpy.mock.calls[0][0]).toBe('ERROR: Unable to parse expression event{ ');
+        expect(result).toEqual([]);
       });
     });
 
@@ -1055,11 +1068,15 @@ describe('CogniteDatasource', () => {
         ctx.backendSrvMock.datasourceRequest.mockReset();
         result = await ctx.ds.annotationQuery(annotationOption);
       });
+      afterAll(() => consoleErrorSpy.mockClear());
       it('should not generate any requests', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
       });
-      it('should return an error', () => {
-        expect(result).toMatchSnapshot();
+      it('should emit an error', () => {
+        expect(consoleErrorSpy.mock.calls[0][0]).toBe(
+          "ERROR: Unexpected character ' } ' while parsing ' metadata={}}'."
+        );
+        expect(result).toEqual([]);
       });
     });
 
@@ -1077,11 +1094,15 @@ describe('CogniteDatasource', () => {
       beforeAll(async () => {
         result = await ctx.ds.annotationQuery(annotationOption);
       });
+      afterAll(() => consoleErrorSpy.mockClear());
       it('should not generate any requests', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
       });
-      it('should return an error', () => {
-        expect(result).toMatchSnapshot();
+      it('should emit an error', () => {
+        expect(consoleErrorSpy.mock.calls[0][0]).toBe(
+          "ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed."
+        );
+        expect(result).toEqual([]);
       });
     });
 
@@ -1099,11 +1120,15 @@ describe('CogniteDatasource', () => {
       beforeAll(async () => {
         result = await ctx.ds.annotationQuery(annotationOption);
       });
+      afterAll(() => consoleErrorSpy.mockClear());
       it('should not generate any requests', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
       });
-      it('should return an error', () => {
-        expect(result).toMatchSnapshot();
+      it('should emit an error', () => {
+        expect(consoleErrorSpy.mock.calls[0][0]).toBe(
+          "ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed."
+        );
+        expect(result).toEqual([]);
       });
     });
 
@@ -1122,11 +1147,13 @@ describe('CogniteDatasource', () => {
       beforeAll(async () => {
         result = await ctx.ds.annotationQuery(annotationOption);
       });
+      afterAll(() => consoleErrorSpy.mockClear());
       it('should not generate any requests', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(0);
       });
-      it('should return an error', () => {
-        expect(result).toMatchSnapshot();
+      it('should emit an error', () => {
+        expect(consoleErrorSpy.mock.calls[0][0]).toBe('ERROR: Unable to parse expression foo');
+        expect(result).toEqual([]);
       });
     });
   });
