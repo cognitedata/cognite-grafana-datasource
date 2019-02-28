@@ -78,15 +78,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.target.tab = this.tabs[index].value;
   }
 
-  getTimeseries() {
-    const options = {
-      dashboardId: this.panelCtrl.dashboard.id,
-      panelId: this.panelCtrl.panel.id,
-    };
-    const target = { refId: this.target.refId };
-    return cache.getTimeseries(target, options);
-  }
-
   getCollapsedText() {
     if (this.target.tab === Tab.Timeseries) {
       return `Timeseries: ${this.target.target} ${this.target.error}`;

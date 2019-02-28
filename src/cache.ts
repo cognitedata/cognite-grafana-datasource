@@ -48,27 +48,8 @@ export const getQuery = async (query: object, backendSrv: BackendSrv) => {
   return promise;
 };
 
-// store timeseries here instead of in the queryTarget object
-const timeseries = new Map<string, TimeSeriesResponseItem[]>();
-
-export const getTimeseries = (queryTarget: DataQuery, options: Partial<QueryOptions>) => {
-  const id = `${options.dashboardId}-${options.panelId}-${queryTarget.refId}`;
-  return timeseries.get(id);
-};
-
-export const setTimeseries = (
-  queryTarget: DataQuery,
-  options: QueryOptions,
-  timeseriesArr: TimeSeriesResponseItem[]
-) => {
-  const id = `${options.dashboardId}-${options.panelId}-${queryTarget.refId}`;
-  return timeseries.set(id, timeseriesArr);
-};
-
 const cache = {
   getQuery,
-  getTimeseries,
-  setTimeseries,
 };
 
 export default cache;

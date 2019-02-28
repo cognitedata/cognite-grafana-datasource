@@ -86,8 +86,7 @@ export default class CogniteDatasource {
       if (target.tab === Tab.Custom) {
         this.filterOnAssetTimeseries(target, options); // apply the search expression
       }
-      const targetTimeseries = cache.getTimeseries(target, options);
-      return targetTimeseries.reduce((queries, ts) => {
+      return target.assetQuery.timeseries.reduce((queries, ts) => {
         if (!ts.selected) {
           return queries;
         }
@@ -236,8 +235,7 @@ export default class CogniteDatasource {
           labels.push(target.label);
         }
       } else {
-        const targetTimeseries = cache.getTimeseries(target, options);
-        targetTimeseries.forEach(ts => {
+        target.assetQuery.timeseries.forEach(ts => {
           if (ts.selected) {
             if (!target.label) target.label = '';
             labels.push(this.getTimeseriesLabel(target.label, ts));
@@ -410,8 +408,7 @@ export default class CogniteDatasource {
     if (
       target.assetQuery.old &&
       assetId === target.assetQuery.old.target &&
-      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees &&
-      cache.getTimeseries(target, options)
+      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees
     ) {
       return Promise.resolve();
     }
@@ -426,15 +423,11 @@ export default class CogniteDatasource {
       limit: 10000,
     };
 
-    const targetTimeseries = await this.getTimeseries(searchQuery, target);
-    cache.setTimeseries(
-      target,
-      options,
-      targetTimeseries.map(ts => {
-        ts.selected = true;
-        return ts;
-      })
-    );
+    const ts = await this.getTimeseries(searchQuery, target);
+    target.assetQuery.timeseries = ts.map(ts => {
+      ts.selected = true;
+      return ts;
+    });
   }
 
   async getTimeseries(
@@ -480,7 +473,7 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    this.applyFilters(filterOptions.filters, cache.getTimeseries(target, options));
+    this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
 
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
@@ -517,9 +510,7 @@ export default class CogniteDatasource {
 
     // now filter over these assets with the rest of the filters
     this.applyFilters(filterOptions.filters, assets);
-    const filteredAssets = assets
-      .filter(asset => asset.selected === true)
-      .sort((x, y) => x.name.localeCompare(y.name));
+    const filteredAssets = assets.filter(asset => asset.selected === true);
 
     return filteredAssets.map(asset => ({
       text: asset.name,
