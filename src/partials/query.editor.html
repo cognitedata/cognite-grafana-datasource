@@ -79,7 +79,10 @@
       </gf-form-dropdown>
     </div>
     <div class="gf-form">
-      <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.onChangeInternal()">Include Subassets &nbsp;&nbsp;
+      <gf-form-switch class="gf-form"
+        label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
+        checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.onChangeInternal()">
+      </gf-form-switch>
     </div>
      <div class="gf-form">
       <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
@@ -132,7 +135,10 @@
       </gf-form-dropdown>
     </div>
     <div class="gf-form">
-      <input type="checkbox" ng-model="ctrl.target.assetQuery.includeSubtrees" ng-change="ctrl.onChangeInternal();">Include Subassets &nbsp;&nbsp;
+      <gf-form-switch class="gf-form"
+        label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
+        checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.onChangeInternal()">
+      </gf-form-switch>
     </div>
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label query-keyword fix-query-keyword">Label</label>

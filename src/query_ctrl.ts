@@ -1,12 +1,13 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
-import CogniteDatasource, { Tab } from './datasource';
+import CogniteDatasource from './datasource';
+import { Tab, QueryTarget } from './types';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
-  target: any;
+  target: QueryTarget;
   assetVals: any;
   datasource: CogniteDatasource;
   panelCtrl: any;

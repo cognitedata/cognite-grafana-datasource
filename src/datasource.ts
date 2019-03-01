@@ -2,262 +2,32 @@ import _ from 'lodash';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import Utils from './utils';
 import cache from './cache';
-
-export interface TimeSeriesResponse {
-  target: string;
-  datapoints: [number, number][];
-}
-
-export interface QueryResponse {
-  data: TimeSeriesResponse[];
-}
-
-export interface MetricDescription {
-  readonly text: string;
-  readonly value: number | string;
-}
-
-export type MetricFindQueryResponse = MetricDescription[];
-
-type HttpMethod = 'POST' | 'GET' | 'PATCH' | 'DELETE';
-
-export enum Tab {
-  Timeseries = 'Timeseries',
-  Asset = 'Asset',
-  Custom = 'Custom',
-}
-
-enum ParseType {
-  Timeseries = 'Timeseries',
-  Asset = 'Asset',
-  Event = 'Event',
-}
-
-interface DataSourceRequestOptions {
-  url: string;
-  method: HttpMethod;
-  retry?: number;
-  requestId?: string;
-  headers?: { [s: string]: string };
-  silent?: boolean;
-  data?: any;
-}
-
-interface BackendService {
-  get(url: string, params?: any);
-
-  datasourceRequest(options: DataSourceRequestOptions);
-}
-
-interface TimeSeriesResponseItem {
-  name: string;
-  isString?: boolean;
-  metadata?: object;
-  unit?: string;
-  assetId?: string;
-  isStep: boolean;
-  description?: string;
-  source?: string;
-  sourceId?: string;
-  id: number;
-  createdTime: number;
-  lastUpdatedTime: number;
-  selected: boolean;
-}
-
-export interface TimeSeriesResponse {
-  data: {
-    items: TimeSeriesResponseItem[];
-  };
-}
-
-export interface QueryRange {
-  from: string;
-  to: string;
-}
-
-export interface AssetQuery {
-  target: string;
-  old?: AssetQuery;
-  timeseries: TimeSeriesResponseItem[];
-  includeSubtrees: boolean;
-  func: string;
-}
-
-export interface QueryTarget {
-  refId: string;
-  target: string;
-  aggregation: string;
-  granularity: string;
-  error: string;
-  hide: boolean;
-  label: string;
-  tab: Tab;
-  assetQuery: AssetQuery;
-  expr: string;
-}
-
-export type QueryFormat = 'json';
-
-export interface QueryOptions {
-  range: QueryRange;
-  interval: string;
-  targets: QueryTarget[];
-  format: QueryFormat;
-  maxDataPoints: number;
-  intervalMs: number;
-}
-
-export interface TimeSeriesDatapoint {
-  timestamp: number;
-  value: string;
-}
-
-export interface Datapoint {
-  name: string;
-  datapoints: TimeSeriesDatapoint[];
-}
-
-export interface Datapoints {
-  items: Datapoint[];
-}
-
-export interface DataDatapoints {
-  data: Datapoints;
-}
-
-export interface DataQueryAlias {
-  alias: string;
-  id: number;
-  aggregate?: string;
-  granularity?: string;
-}
-
-export interface DataQueryRequestItem {
-  name: string;
-  start?: string | number;
-  end?: string | number;
-  limit?: number;
-  granularity?: string;
-  aggregates?: string;
-  function?: string;
-  aliases?: DataQueryAlias[];
-}
-
-export interface DataQueryRequest {
-  items: DataQueryRequestItem[];
-  start: string | number;
-  end: string | number;
-  limit?: number;
-  aggregates?: string;
-  granularity?: string;
-}
-
-interface DataQueryRequestResponse {
-  data: DataDatapoints;
-  config: {
-    data: {
-      aggregates: string;
-    };
-  };
-}
-
-type DataQueryError = {
-  error: {
-    data: {
-      error?: {
-        message: string;
-        notFound?: string[];
-      };
-    };
-    status: number;
-  };
-};
-
-export interface Annotation {
-  datasource: string;
-  enable: boolean;
-  hide: boolean;
-  iconColor: string;
-  limit: number;
-  name: string;
-  expr: string;
-  filter: string;
-  error: string;
-  type: string;
-  tags: string[];
-}
-
-interface AnnotationQueryOptions {
-  range: QueryRange;
-  rangeRaw: any;
-  annotation: Annotation;
-  dashboard: number;
-}
-
-interface AnnotationSearchQuery {
-  description: string;
-  type: string;
-  subtype: string;
-  minStartTime: number;
-  maxStartTime: number;
-  minEndTime: number;
-  maxEndTime: number;
-  minCreatedTime: number;
-  maxCreatedTime: number;
-  minLastUpdatedTime: number;
-  maxLastUpdatedTime: number;
-  // format is {"k1": "v1", "k2": "v2"}
-  metadata: string;
-  assetIds: number[];
-  assetSubtrees: number[];
-  sort: 'startTime' | 'endTime' | 'createdTime' | 'lastUpdatedTime';
-  dir: 'asc' | 'desc';
-  limit: number;
-  offset: 0;
-}
-
-export interface Event {
-  id: number;
-  startTime: number;
-  endTime: number;
-  description: string;
-  type: string;
-  subtype: string;
-  assetIds: number[];
-  source: string;
-  sourceId: string;
-}
-
-export interface Events {
-  items: Event[];
-}
-
-export interface DataEvents {
-  data: Events;
-}
-
-interface AnnotationQueryRequestResponse {
-  data: DataEvents;
-}
-
-interface TimeseriesSearchQuery {
-  q: string;
-  description: string;
-  limit: number;
-  includeMetadata: boolean;
-  path: string[];
-  assetId: string;
-}
-
-export interface VariableQueryData {
-  query: string;
-  filter: string;
-}
-
-export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
-  return (<DataQueryError>maybeError).error !== undefined;
-}
+import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import {
+  AnnotationQueryOptions,
+  AnnotationResponse,
+  CogniteDataSourceSettings,
+  DataQueryAlias,
+  DataQueryError,
+  DataQueryRequest,
+  DataQueryRequestItem,
+  DataQueryRequestResponse,
+  Filter,
+  FilterOptions,
+  FilterType,
+  MetricFindQueryResponse,
+  ParseType,
+  QueryOptions,
+  QueryResponse,
+  QueryTarget,
+  Tab,
+  TimeSeriesResponse,
+  TimeSeriesResponseItem,
+  TimeseriesSearchQuery,
+  VariableQueryData,
+  isError,
+} from './types';
 
 export default class CogniteDatasource {
   id: number;
@@ -268,10 +38,10 @@ export default class CogniteDatasource {
 
   /** @ngInject */
   constructor(
-    instanceSettings: any,
+    instanceSettings: CogniteDataSourceSettings,
     private $q: any,
-    private backendSrv: BackendService,
-    private templateSrv: any
+    private backendSrv: BackendSrv,
+    private templateSrv: TemplateSrv
   ) {
     this.id = instanceSettings.id;
     this.url = instanceSettings.url;
@@ -382,15 +152,18 @@ export default class CogniteDatasource {
     const targetQueriesCount = [];
     const labels = [];
 
-    const dataQueryRequestPromises = [];
+    const dataQueryRequestPromises: Promise<DataQueryRequestItem[]>[] = [];
     for (const target of queryTargets) {
       dataQueryRequestPromises.push(this.getDataQueryRequestItems(target, options));
     }
     const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
 
     const queries: DataQueryRequest[] = [];
-    for (const [target, queryList] of dataQueryRequestItems.map((ql, i) => [queryTargets[i], ql])) {
-      if (queryList.length === 0) {
+    for (const { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
+      target: queryTargets[i],
+      queryList: ql,
+    }))) {
+      if (queryList.length === 0 || target.error) {
         continue;
       }
       // keep track of target lengths so we can assign errors later
@@ -447,10 +220,13 @@ export default class CogniteDatasource {
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
-            const ts = await this.getTimeseries({
-              q: target.target,
-              limit: 1,
-            });
+            const ts = await this.getTimeseries(
+              {
+                q: target.target,
+                limit: 1,
+              },
+              target
+            );
             labels.push(this.getTimeseriesLabel(target.label, ts[0]));
           } catch {
             labels.push(target.label);
@@ -522,7 +298,7 @@ export default class CogniteDatasource {
     };
   }
 
-  public async annotationQuery(options: AnnotationQueryOptions) {
+  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const { range, annotation } = options;
     const { expr, filter, error } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
@@ -531,11 +307,13 @@ export default class CogniteDatasource {
 
     const queryOptions = this.parse(expr, ParseType.Event);
     if (queryOptions.error) {
-      return [{ value: queryOptions.error }];
+      console.error(queryOptions.error);
+      return [];
     }
     const filterOptions = this.parse(filter || '', ParseType.Event);
     if (filter && filterOptions.error) {
-      return [{ value: filterOptions.error }];
+      console.error(filterOptions.error);
+      return [];
     }
 
     // use maxStartTime and minEndTime so that we include events that are partially in range
@@ -576,7 +354,7 @@ export default class CogniteDatasource {
   }
 
   // this function is for getting metrics (template variables)
-  async metricFindQuery(query: VariableQueryData) {
+  async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
     return this.getAssetsForMetrics(query);
   }
 
@@ -622,7 +400,7 @@ export default class CogniteDatasource {
       );
   }
 
-  async findAssetTimeseries(target, options) {
+  async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
     // replace variables with their values
     const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
 
@@ -634,9 +412,10 @@ export default class CogniteDatasource {
     ) {
       return Promise.resolve();
     }
-    target.assetQuery.old = {};
-    target.assetQuery.old.target = String(assetId);
-    target.assetQuery.old.includeSubtrees = target.assetQuery.includeSubtrees;
+    target.assetQuery.old = {
+      target: String(assetId),
+      includeSubtrees: target.assetQuery.includeSubtrees,
+    };
 
     const searchQuery: Partial<TimeseriesSearchQuery> = {
       path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
@@ -644,7 +423,7 @@ export default class CogniteDatasource {
       limit: 10000,
     };
 
-    const ts = await this.getTimeseries(searchQuery);
+    const ts = await this.getTimeseries(searchQuery, target);
     target.assetQuery.timeseries = ts.map(ts => {
       ts.selected = true;
       return ts;
@@ -652,7 +431,8 @@ export default class CogniteDatasource {
   }
 
   async getTimeseries(
-    searchQuery: Partial<TimeseriesSearchQuery>
+    searchQuery: Partial<TimeseriesSearchQuery>,
+    target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
     return cache
       .getQuery(
@@ -664,13 +444,27 @@ export default class CogniteDatasource {
         },
         this.backendSrv
       )
-      .then((result: { data: TimeSeriesResponse }) => {
-        return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
-      });
+      .then(
+        (result: { data: TimeSeriesResponse }) => {
+          return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
+        },
+        error => {
+          if (error.data && error.data.error) {
+            target.error = `[${error.status} ERROR] ${error.data.error.message}`;
+          } else {
+            target.error = 'Unknown error';
+          }
+          return [];
+        }
+      );
   }
 
-  filterOnAssetTimeseries(target, options) {
+  filterOnAssetTimeseries(target: QueryTarget, options: QueryOptions): void {
     const filterOptions = this.parse(target.expr, ParseType.Timeseries, options);
+    if (filterOptions.error) {
+      target.error = filterOptions.error;
+      return;
+    }
     const func = filterOptions.filters.find(x => x.property === 'function');
     if (func) {
       filterOptions.filters = filterOptions.filters.filter(x => x.property !== 'function');
@@ -685,14 +479,14 @@ export default class CogniteDatasource {
     target.granularity = filterOptions.granularity;
   }
 
-  async getAssetsForMetrics(query: VariableQueryData) {
+  async getAssetsForMetrics(query: VariableQueryData): Promise<MetricFindQueryResponse> {
     const queryOptions = this.parse(query.query, ParseType.Asset);
     if (queryOptions.error) {
-      return [{ value: queryOptions.error }];
+      return [{ text: queryOptions.error, value: '-' }];
     }
     const filterOptions = this.parse(query.filter, ParseType.Asset);
     if (query.filter && filterOptions.error) {
-      return [{ value: filterOptions.error }];
+      return [{ text: filterOptions.error, value: '-' }];
     }
     const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 
@@ -724,7 +518,7 @@ export default class CogniteDatasource {
     }));
   }
 
-  parse(customQuery, type, options?) {
+  parse(customQuery: string, type: ParseType, options?: QueryOptions): FilterOptions {
     let query = customQuery;
     if (type === ParseType.Timeseries || type === ParseType.Event) {
       // replace variables with their values
@@ -776,22 +570,22 @@ export default class CogniteDatasource {
       if (f === '') continue;
       const filter: any = {};
       let i: number;
-      if ((i = f.indexOf('=~')) > -1) {
+      if ((i = f.indexOf(FilterType.RegexEquals)) > -1) {
         filter.property = _.trim(f.substr(0, i), ' \'"');
         filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = '=~';
-      } else if ((i = f.indexOf('!~')) > -1) {
+        filter.type = FilterType.RegexEquals;
+      } else if ((i = f.indexOf(FilterType.RegexNotEquals)) > -1) {
         filter.property = _.trim(f.substr(0, i), ' \'"');
         filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = '!~';
-      } else if ((i = f.indexOf('!=')) > -1) {
+        filter.type = FilterType.RegexNotEquals;
+      } else if ((i = f.indexOf(FilterType.NotEquals)) > -1) {
         filter.property = _.trim(f.substr(0, i), ' \'"');
         filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = '!=';
-      } else if ((i = f.indexOf('=')) > -1) {
+        filter.type = FilterType.NotEquals;
+      } else if ((i = f.indexOf(FilterType.Equals)) > -1) {
         filter.property = _.trim(f.substr(0, i), ' \'"');
         filter.value = _.trim(f.substr(i + 1), ' \'"');
-        filter.type = '=';
+        filter.type = FilterType.Equals;
       } else {
         console.error(`Error parsing ${f}`);
       }
@@ -811,31 +605,31 @@ export default class CogniteDatasource {
     return filtersOptions;
   }
 
-  private applyFilters(filters, objects) {
+  private applyFilters(filters: Filter[], objects: any): void {
     for (const obj of objects) {
       obj.selected = true;
       for (const filter of filters) {
-        if (filter.type === '=~') {
+        if (filter.type === FilterType.RegexEquals) {
           const val = _.get(obj, filter.property);
           const regex = `^${filter.value}$`;
           if (val === undefined || !val.match(regex)) {
             obj.selected = false;
             break;
           }
-        } else if (filter.type === '!~') {
+        } else if (filter.type === FilterType.RegexNotEquals) {
           const val = _.get(obj, filter.property);
           const regex = `^${filter.value}$`;
           if (val === undefined || val.match(regex)) {
             obj.selected = false;
             break;
           }
-        } else if (filter.type === '!=') {
+        } else if (filter.type === FilterType.NotEquals) {
           const val = _.get(obj, filter.property);
           if (val === undefined || String(val) === filter.value) {
             obj.selected = false;
             break;
           }
-        } else if (filter.type === '=') {
+        } else if (filter.type === FilterType.Equals) {
           const val = _.get(obj, filter.property);
           if (val === undefined || String(val) !== filter.value) {
             obj.selected = false;
@@ -846,7 +640,7 @@ export default class CogniteDatasource {
     }
   }
 
-  private getTimeseriesLabel(label, timeseries) {
+  private getTimeseriesLabel(label: string, timeseries: TimeSeriesResponseItem): string {
     // matches with any text within {{ }}
     const variableRegex = /{{([^{}]*)}}/g;
     return label.replace(variableRegex, (full, group) => {
