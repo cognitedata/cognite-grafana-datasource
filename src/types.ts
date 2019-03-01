@@ -75,6 +75,18 @@ export type QueryFormat = 'json';
 
 export type QueryOptions = DataQueryOptions<QueryTarget>;
 
+export type HttpMethod = 'POST' | 'GET' | 'PATCH' | 'DELETE';
+
+export interface DataSourceRequestOptions {
+  url: string;
+  method: HttpMethod;
+  retry?: number;
+  requestId?: string;
+  headers?: { [s: string]: string };
+  silent?: boolean;
+  data?: DataQueryRequest;
+}
+
 export interface TimeSeriesDatapoint {
   timestamp: number;
   value: string;

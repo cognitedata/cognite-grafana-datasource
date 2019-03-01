@@ -1,6 +1,5 @@
-import { QueryOptions, TimeSeriesResponseItem, isError } from './types';
+import { DataSourceRequestOptions, isError } from './types';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
-import { DataQuery } from '@grafana/ui';
 
 // Cache requests for 10 seconds
 const cacheTime = 1000 * 10;
@@ -10,7 +9,7 @@ const queries = {
   requests: new Map(),
 };
 
-export const getQuery = async (query: object, backendSrv: BackendSrv) => {
+export const getQuery = async (query: DataSourceRequestOptions, backendSrv: BackendSrv) => {
   const stringQuery = JSON.stringify(query);
 
   if (queries.requests.has(stringQuery)) {

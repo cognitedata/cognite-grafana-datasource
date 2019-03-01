@@ -3,7 +3,6 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
 import { Tab, QueryTarget } from './types';
-import cache from './cache';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
