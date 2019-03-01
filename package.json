@@ -8,7 +8,7 @@
   "scripts": {
     "build": "webpack --config webpack.config.prod.js",
     "dev": "webpack --config webpack.config.js --mode development",
-    "run-docker": "docker build -t cognite-grafana . && docker run -p 3000:3000 cognite-grafana",
+    "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
     "test": "jest --coverage",
     "tslint": "tslint -c tslint.json --project tsconfig.json",
     "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
