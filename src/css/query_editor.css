@@ -31,3 +31,7 @@ input[type='checkbox'] {
 .custom-query {
   font-family: monospace;
 }
+
+.cognite-timeseries-list-checkbox {
+  margin-top: 10px;
+}
