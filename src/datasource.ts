@@ -264,8 +264,10 @@ export default class CogniteDatasource {
           labels.push(target.label);
         }
       } else {
+        let count = 0;
         target.assetQuery.timeseries.forEach(ts => {
-          if (ts.selected) {
+          if (ts.selected && count < queryList.length) {
+            count += 1;
             if (!target.label) target.label = '';
             labels.push(this.getTimeseriesLabel(target.label, ts));
           }
