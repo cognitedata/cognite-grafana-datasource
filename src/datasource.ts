@@ -108,7 +108,7 @@ export default class CogniteDatasource {
                 .split(',')
                 .filter(string => string.length)
                 .map(x => _.trim(x, ' \'"'));
-              if (aliasParts.length === 0) {
+              if (aliasParts.length === 1) {
                 sumString += `[${selectedTs.map(ts => ts.id).join('] + [')}])`;
               } else {
                 sumString += `[${selectedTs
