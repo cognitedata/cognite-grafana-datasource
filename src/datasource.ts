@@ -86,15 +86,44 @@ export default class CogniteDatasource {
       if (target.tab === Tab.Custom) {
         this.filterOnAssetTimeseries(target, options); // apply the search expression
       }
-      return target.assetQuery.timeseries.reduce((queries, ts) => {
-        if (!ts.selected) {
+      let breakEarly = false;
+      return target.assetQuery.timeseries.slice(0).reduce((queries, ts) => {
+        if (!ts.selected || breakEarly) {
           return queries;
         }
         const query: DataQueryRequestItem = {
           name: ts.name,
         };
         if (target.tab === Tab.Custom && target.assetQuery.func) {
-          query.function = target.assetQuery.func.replace(/ID/g, String(ts.id));
+          query.function = target.assetQuery.func;
+          // test if contains sum function
+          if (/.*\[SUM.*\].*/.test(target.assetQuery.func)) {
+            // construct sum string
+            const selectedTs = target.assetQuery.timeseries.filter(ts => ts.selected);
+            const regexMatches = query.function.match(/\[SUM.*?\]/g);
+            for (const match of regexMatches) {
+              let sumString = '(';
+              const aliasParts = match
+                .substr(1, match.length - 2)
+                .split(',')
+                .filter(string => string.length)
+                .map(x => _.trim(x, ' \'"'));
+              if (aliasParts.length === 0) {
+                sumString += `[${selectedTs.map(ts => ts.id).join('] + [')}])`;
+              } else {
+                sumString += `[${selectedTs
+                  .map(ts => `${ts.id},${aliasParts[1]},${aliasParts[2] || ''}`)
+                  .join('] + [')}])`;
+              }
+              query.function = query.function.replace(match, sumString);
+            }
+            // check if not contains ID, in which case we would want break early
+            if (!/.*\[ID.*?\]/.test(target.assetQuery.func)) {
+              breakEarly = true;
+            }
+          }
+          query.function = query.function.replace(/ID/g, String(ts.id));
+
           const regexSearch = /\[.*?\]/g;
           const regexMatches = query.function.match(regexSearch);
           query.aliases = [];
