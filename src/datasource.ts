@@ -34,19 +34,16 @@ export default class CogniteDatasource {
   url: string;
   name: string;
   project: string;
-  q: any;
 
   /** @ngInject */
   constructor(
     instanceSettings: CogniteDataSourceSettings,
-    private $q: any,
     private backendSrv: BackendSrv,
     private templateSrv: TemplateSrv
   ) {
     this.id = instanceSettings.id;
     this.url = instanceSettings.url;
     this.project = instanceSettings.jsonData.cogniteProject;
-    this.q = $q;
     this.name = instanceSettings.name;
   }
 

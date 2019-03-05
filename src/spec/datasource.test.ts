@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import q from 'q';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
@@ -119,7 +118,7 @@ describe('CogniteDatasource', () => {
 
   describe('Datasource Query', () => {
     beforeAll(() => {
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
       ctx.options = {
         targets: [],
         range: {
@@ -831,7 +830,7 @@ describe('CogniteDatasource', () => {
     };
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty annotation query', () => {
@@ -1198,7 +1197,7 @@ describe('CogniteDatasource', () => {
   describe('Metrics Query', () => {
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty metrics query', () => {
@@ -1407,7 +1406,7 @@ describe('CogniteDatasource', () => {
 
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty request for asset options', () => {
@@ -1524,7 +1523,7 @@ describe('CogniteDatasource', () => {
   describe('Login', () => {
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('When given valid login info', () => {
