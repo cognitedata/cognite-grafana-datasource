@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import { Tab, QueryTarget } from './types';
+import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -54,6 +54,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
       func: '',
     },
   };
+  isAllSelected: boolean;
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -62,6 +63,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
     _.defaultsDeep(this.target, this.defaults);
 
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    this.isAllSelected =
+      this.target.assetQuery.timeseries &&
+      this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getOptions(query: string, type: string) {
@@ -75,6 +79,16 @@ export class CogniteQueryCtrl extends QueryCtrl {
   changeTab(index: number) {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
+  }
+
+  toggleCheckboxes() {
+    this.isAllSelected = !this.isAllSelected;
+    this.target.assetQuery.timeseries.forEach(ts => (ts.selected = this.isAllSelected));
+  }
+
+  selectOption(timeseries: TimeSeriesResponseItem) {
+    timeseries.selected = !timeseries.selected;
+    this.isAllSelected = this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getCollapsedText() {

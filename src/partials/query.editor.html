@@ -107,12 +107,17 @@
         </info-popover>
     </div>
   </div>
-  <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px">
+  <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px" ng-if="ctrl.target.assetQuery.timeseries && ctrl.target.assetQuery.timeseries.length > 0">
     <ul>
-      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option" style="max-height: 25px;">
+      <li class="gf-form-inline variable-option">
+        <input type="checkbox" ng-checked="ctrl.isAllSelected" ng-show="false">
+        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes;ctrl.onChangeInternal()"></span>
+        <a ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()">Select All</a>
+      </li>
+      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option">
         <input type="checkbox" ng-model="timeseries.selected" ng-show="false">
-        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="timeseries.selected = !timeseries.selected;ctrl.onChangeInternal()"></span>
-        <a ng-click="timeseries.selected = !timeseries.selected;ctrl.onChangeInternal()">{{timeseries.name}}</a>
+        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()"></span>
+        <a ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()">{{timeseries.name}}</a>
       </li>
     </ul>
   </div>
