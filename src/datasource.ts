@@ -96,32 +96,10 @@ export default class CogniteDatasource {
         };
         if (target.tab === Tab.Custom && target.assetQuery.func) {
           query.function = target.assetQuery.func;
-          // test if contains sum function
-          if (/.*\[SUM.*\].*/.test(target.assetQuery.func)) {
-            // construct sum string
-            const selectedTs = target.assetQuery.timeseries.filter(ts => ts.selected);
-            const regexMatches = query.function.match(/\[SUM.*?\]/g);
-            for (const match of regexMatches) {
-              let sumString = '(';
-              const aliasParts = match
-                .substr(1, match.length - 2)
-                .split(',')
-                .filter(string => string.length)
-                .map(x => _.trim(x, ' \'"'));
-              if (aliasParts.length === 1) {
-                sumString += `[${selectedTs.map(ts => ts.id).join('] + [')}])`;
-              } else {
-                sumString += `[${selectedTs
-                  .map(ts => `${ts.id},${aliasParts[1]},${aliasParts[2] || ''}`)
-                  .join('] + [')}])`;
-              }
-              query.function = query.function.replace(match, sumString);
-            }
-            // check if not contains ID, in which case we would want break early
-            if (!/.*\[ID.*?\]/.test(target.assetQuery.func)) {
-              breakEarly = true;
-            }
-          }
+          // we break early if we are only doing a special function
+          breakEarly =
+            this.createSpecialFunctionString(target, query) &&
+            !/.*\[ID.*?\]/.test(target.assetQuery.func);
           query.function = query.function.replace(/ID/g, String(ts.id));
 
           const regexSearch = /\[.*?\]/g;
@@ -154,6 +132,55 @@ export default class CogniteDatasource {
     }
 
     return [];
+  }
+
+  // returns whether or not a special function was found
+  private createSpecialFunctionString(target: QueryTarget, query: DataQueryRequestItem) {
+    let specialFunctionFound: boolean = false;
+    if (/.*\[SUM.*\].*/.test(target.assetQuery.func)) {
+      // construct sum string
+      const selectedTs = target.assetQuery.timeseries.filter(ts => ts.selected);
+      const regexMatches = query.function.match(/\[SUM.*?\]/g);
+      for (const match of regexMatches) {
+        let sumString = '(';
+        const aliasParts = match
+          .substr(1, match.length - 2)
+          .split(',')
+          .filter(string => string.length)
+          .map(x => _.trim(x, ' \'"'));
+        if (aliasParts.length === 1) {
+          sumString += `[${selectedTs.map(ts => ts.id).join('] + [')}])`;
+        } else {
+          sumString += `[${selectedTs
+            .map(ts => `${ts.id},${aliasParts[1]},${aliasParts[2] || ''}`)
+            .join('] + [')}])`;
+        }
+        query.function = query.function.replace(match, sumString);
+      }
+      specialFunctionFound = true;
+    }
+    if (/.*\[(MAX|MIN|AVG).*\].*/.test(target.assetQuery.func)) {
+      const selectedTs = target.assetQuery.timeseries.filter(ts => ts.selected);
+      const regexMatches = query.function.match(/\[(MAX|MIN|AVG).*?\]/g);
+      for (const match of regexMatches) {
+        const aliasParts = match
+          .substr(1, match.length - 2)
+          .split(',')
+          .filter(string => string.length)
+          .map(x => _.trim(x, ' \'"'));
+        let sumString = `${aliasParts[0]}(`;
+        if (aliasParts.length === 1) {
+          sumString += `[${selectedTs.map(ts => ts.id).join('],[')}])`;
+        } else {
+          sumString += `[${selectedTs
+            .map(ts => `${ts.id},${aliasParts[1]},${aliasParts[2] || ''}`)
+            .join('],[')}])`;
+        }
+        query.function = query.function.replace(match, sumString);
+      }
+      specialFunctionFound = true;
+    }
+    return specialFunctionFound;
   }
 
   public async query(options: QueryOptions): Promise<QueryResponse> {
