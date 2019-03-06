@@ -656,7 +656,7 @@ export default class CogniteDatasource {
       })
       .then(response => {
         if (response.status === 200) {
-          if (response.data.data.loggedIn) {
+          if (response.data.data.loggedIn && response.data.data.project === this.project) {
             return {
               status: 'success',
               message: 'Your Cognite credentials are valid',

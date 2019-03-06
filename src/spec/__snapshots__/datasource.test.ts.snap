@@ -2160,18 +2160,33 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Login When given valid login info should log the user in 1`] = `
+exports[`CogniteDatasource Login When given valid login info and correct project should log the user in 1`] = `
 Object {
   "method": "GET",
   "url": "/api/datasources/proxy/6/cogniteloginstatus",
 }
 `;
 
-exports[`CogniteDatasource Login When given valid login info should log the user in 2`] = `
+exports[`CogniteDatasource Login When given valid login info and correct project should log the user in 2`] = `
 Object {
   "message": "Your Cognite credentials are valid",
   "status": "success",
   "title": "Success",
+}
+`;
+
+exports[`CogniteDatasource Login When given valid login info but incorrect project should display an error message 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteloginstatus",
+}
+`;
+
+exports[`CogniteDatasource Login When given valid login info but incorrect project should display an error message 2`] = `
+Object {
+  "message": "Your Cognite credentials are invalid",
+  "status": "error",
+  "title": "Error",
 }
 `;
 
