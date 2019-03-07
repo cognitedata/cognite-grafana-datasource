@@ -96,10 +96,11 @@ export default class CogniteDatasource {
         };
         if (target.tab === Tab.Custom && target.assetQuery.func) {
           query.function = target.assetQuery.func;
-          // we break early if we are only doing a special function
+          // we break early if we are only doing a special function (function that combines many timeseries into one)
           breakEarly =
             this.createSpecialFunctionString(target, query) &&
             !/.*\[ID.*?\]/.test(target.assetQuery.func);
+
           query.function = query.function.replace(/ID/g, String(ts.id));
 
           const regexSearch = /\[.*?\]/g;
@@ -134,7 +135,7 @@ export default class CogniteDatasource {
     return [];
   }
 
-  // returns whether or not a special function was found
+  // returns whether or not a special function was found, replaces any special functions in query.function
   private createSpecialFunctionString(target: QueryTarget, query: DataQueryRequestItem) {
     let specialFunctionFound: boolean = false;
     if (/.*\[SUM.*\].*/.test(target.assetQuery.func)) {
@@ -336,6 +337,7 @@ export default class CogniteDatasource {
             errmsg = 'Unknown error';
           }
           target.error = errmsg;
+          count += targetQueriesCount[i].count; // skip over these labels
           return datapoints;
         }
 
