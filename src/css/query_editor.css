@@ -32,10 +32,6 @@ input[type='checkbox'] {
   font-family: monospace;
 }
 
-.cognite-timeseries-list-checkbox {
-  margin-top: 10px;
-}
-
 pre code {
   line-height: 2;
 }
