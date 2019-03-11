@@ -48,10 +48,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
     expr: '',
     assetQuery: {
       target: '',
-      old: {},
+      old: undefined,
       timeseries: [],
       includeSubtrees: false,
       func: '',
+      templatedTarget: '',
     },
   };
   isAllSelected: boolean;
@@ -63,6 +64,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
     _.defaultsDeep(this.target, this.defaults);
 
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    if (this.target.tab !== Tab.Asset) {
+      this.target.assetQuery.timeseries = [];
+      this.target.assetQuery.old = undefined;
+    }
     this.isAllSelected =
       this.target.assetQuery.timeseries &&
       this.target.assetQuery.timeseries.every(ts => ts.selected);
@@ -79,6 +84,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   changeTab(index: number) {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
+    this.refresh();
   }
 
   toggleCheckboxes() {

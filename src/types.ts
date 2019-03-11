@@ -58,6 +58,7 @@ export interface AssetQuery {
   old?: AssetQuery;
   timeseries?: TimeSeriesResponseItem[];
   func?: string;
+  templatedTarget?: string;
 }
 
 export interface QueryTarget extends DataQuery {
