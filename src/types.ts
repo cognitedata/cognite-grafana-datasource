@@ -70,6 +70,7 @@ export interface QueryTarget extends DataQuery {
   tab: Tab;
   assetQuery: AssetQuery;
   expr: string;
+  warning: string;
 }
 
 export type QueryFormat = 'json';

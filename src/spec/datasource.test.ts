@@ -161,6 +161,7 @@ describe('CogniteDatasource', () => {
         },
         error: undefined,
         hide: undefined,
+        warning: undefined,
       };
       const emptyAsset: QueryTarget = {
         ...emptyTimeseries,
@@ -196,6 +197,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
 
       beforeAll(async () => {
@@ -228,6 +230,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
       const tsTargetB: QueryTarget = {
         ...tsTargetA,
@@ -283,6 +286,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
       const tsTargetB = {
         ...tsTargetA,
@@ -333,6 +337,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: undefined,
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,
@@ -472,6 +477,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: 'timeseries{}',
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -592,6 +598,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: 'timeseries{function=[ID]}',
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -717,6 +724,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: undefined,
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,

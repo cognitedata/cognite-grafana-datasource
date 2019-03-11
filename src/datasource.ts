@@ -138,6 +138,7 @@ export default class CogniteDatasource {
   public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets: QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = '';
+      target.warning = '';
       if (
         !target ||
         target.hide ||
@@ -455,7 +456,15 @@ export default class CogniteDatasource {
       includeSubtrees: target.assetQuery.includeSubtrees,
     };
 
+    // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
+    //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
+    searchQuery.limit = 101;
     const ts = await this.getTimeseries(searchQuery, target);
+    if (ts.length === 101) {
+      target.warning =
+        "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+      ts.splice(-1);
+    }
     target.assetQuery.timeseries = ts.map(ts => {
       ts.selected = true;
       return ts;
