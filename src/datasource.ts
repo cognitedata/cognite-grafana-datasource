@@ -369,7 +369,7 @@ export default class CogniteDatasource {
       }
     } else if (type === Tab.Timeseries) {
       if (query.length === 0) {
-        urlEnd = `/cogniteapi/${this.project}/timeseries?limit=1000`;
+        urlEnd = `/cogniteapi/${this.project}/timeseries?`;
       } else {
         urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`;
       }

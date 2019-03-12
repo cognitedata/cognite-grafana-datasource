@@ -2112,7 +2112,7 @@ Array [
 exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?limit=1000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?",
 }
 `;
 
