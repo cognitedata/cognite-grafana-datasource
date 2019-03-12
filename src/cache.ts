@@ -6,6 +6,7 @@ import {
   QueryOptions,
 } from './types';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import Utils from './utils';
 
 // Cache requests for 10 seconds
 const cacheTime = 1000 * 10;
@@ -56,10 +57,7 @@ export const getQuery = async (query: DataSourceRequestOptions, backendSrv: Back
 const assetTimeseries = new Map<string, TimeSeriesResponseItem[]>();
 
 export const getTimeseries = (options: QueryOptions, target: QueryTarget) => {
-  const id: string = `${options.dashboardId}_${options.panelId}_${target.refId}_${
-    target.assetQuery.templatedTarget
-  }_${target.assetQuery.includeSubtrees}`;
-  return assetTimeseries.get(id);
+  return assetTimeseries.get(Utils.timeseriesHash(options, target));
 };
 
 export const setTimeseries = (
@@ -67,10 +65,7 @@ export const setTimeseries = (
   target: QueryTarget,
   timeseries: TimeSeriesResponseItem[]
 ) => {
-  const id: string = `${options.dashboardId}_${options.panelId}_${target.refId}_${
-    target.assetQuery.templatedTarget
-  }_${target.assetQuery.includeSubtrees}`;
-  assetTimeseries.set(id, timeseries);
+  assetTimeseries.set(Utils.timeseriesHash(options, target), timeseries);
 };
 
 const cache = {
