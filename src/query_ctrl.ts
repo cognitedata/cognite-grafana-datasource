@@ -69,7 +69,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
   getOptions(query: string, type: string) {
-    return this.datasource.getOptionsForDropdown(query || '', type);
+    return this.datasource.getOptionsForDropdown(query || '', type).then(options => {
+      _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
+      return options;
+    });
   }
 
   onChangeInternal() {
