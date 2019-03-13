@@ -18,9 +18,17 @@ export const parseExpression = (
   templateSrv: TemplateSrv
 ): DataQueryRequestItem[] => {
   // TODO first check if it is just a simple `timeseries{}[]`
+
+  // add special function name if only sum,avg,etc?
   const exprWithSpecialFunctions = parseSpecialFunctions(expr, options, timeseries, templateSrv);
 
-  return createDataQueryRequestItems(exprWithSpecialFunctions, options, timeseries, templateSrv);
+  return createDataQueryRequestItems(
+    exprWithSpecialFunctions,
+    options,
+    timeseries,
+    templateSrv,
+    ''
+  );
 };
 
 const parseSpecialFunctions = (
@@ -29,11 +37,12 @@ const parseSpecialFunctions = (
   timeseries: TimeSeriesResponseItem[],
   templateSrv: TemplateSrv
 ) => {
-  let newExpr = expr.toLowerCase();
-  // look for SUM()
-  const sumRegex = /sum\(.*?\)/g;
+  let newExpr = expr;
+  // look for sum() - case-insensitive
+  const sumRegex = /sum\(.*?\)/gi;
   let sumRegexMatches = newExpr.match(sumRegex);
   if (sumRegexMatches) {
+    // remove duplicates
     sumRegexMatches = sumRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of sumRegexMatches) {
       const timeseriesString = match.slice(4, -1);
@@ -55,10 +64,10 @@ const parseSpecialFunctions = (
   }
 
   // look for max(), min(), or avg()
-  const funcRegex = /(max|min|avg)\(.*?\)/g;
-  // match and remove duplicates
+  const funcRegex = /(max|min|avg)\(.*?\)/gi;
   let funcRegexMatches = newExpr.match(funcRegex);
   if (funcRegexMatches) {
+    // remove duplicates
     funcRegexMatches = funcRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of funcRegexMatches) {
       const timeseriesString = match.slice(4, -1);
@@ -88,18 +97,19 @@ const createDataQueryRequestItems = (
   options: QueryOptions,
   timeseries: TimeSeriesResponseItem[],
   templateSrv: TemplateSrv,
-  name?: string
+  name: string
 ): DataQueryRequestItem[] => {
   let dataItems: DataQueryRequestItem[] = [];
-  const timeseriesRegex = /timeseries\{.*?\}(?:\[.*?\])?/;
+  // match the last timeseries{}[] or timeseries{}
+  const timeseriesRegex = /.*(timeseries\{.*?\}(?:\[.*?\])?)/;
   const timeseriesMatch = expr.match(timeseriesRegex);
   if (!timeseriesMatch) {
     dataItems.push({
-      name: name || '',
+      name,
       function: expr,
     });
   } else {
-    const filterOptions = parse(timeseriesMatch[0], ParseType.Timeseries, templateSrv, options);
+    const filterOptions = parse(timeseriesMatch[1], ParseType.Timeseries, templateSrv, options);
     if (filterOptions.error) throw filterOptions.error;
     Utils.applyFilters(filterOptions.filters, timeseries);
     const selectedTs = timeseries.filter(ts => ts.selected);
@@ -111,11 +121,11 @@ const createDataQueryRequestItems = (
       replaceString += ']';
       dataItems = dataItems.concat(
         createDataQueryRequestItems(
-          expr.replace(timeseriesMatch[0], replaceString),
+          expr.replace(timeseriesMatch[1], replaceString),
           options,
           timeseries,
           templateSrv,
-          ts.name
+          name || ts.name
         )
       );
     }

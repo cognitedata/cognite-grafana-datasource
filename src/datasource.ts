@@ -231,12 +231,6 @@ export default class CogniteDatasource {
         }
       }
       if (target.tab === Tab.Custom) {
-        // if (queryReq.aggregates) {
-        //   target.error =
-        //     '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
-        //   targetQueriesCount.pop();
-        //   continue;
-        // }
         let ids = 0;
         const idRegex = /\[.*?\]/g; // look for [something]
         for (const q of queryList) {
@@ -281,13 +275,15 @@ export default class CogniteDatasource {
         }
       } else {
         let count = 0;
-        target.assetQuery.timeseries.forEach(ts => {
-          if (ts.selected && count < queryList.length) {
-            count += 1;
-            if (!target.label) target.label = '';
-            labels.push(this.getTimeseriesLabel(target.label, ts));
-          }
-        });
+        while (count < queryList.length) {
+          target.assetQuery.timeseries.forEach(ts => {
+            if (ts.selected && count < queryList.length) {
+              count += 1;
+              if (!target.label) target.label = '';
+              labels.push(this.getTimeseriesLabel(target.label, ts));
+            }
+          });
+        }
       }
     }
 
