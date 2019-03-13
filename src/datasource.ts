@@ -440,26 +440,6 @@ export default class CogniteDatasource {
       );
   }
 
-  filterOnAssetTimeseries(target: QueryTarget, options: QueryOptions): void {
-    const filterOptions = parse(target.expr, ParseType.Timeseries, this.templateSrv, options);
-    if (filterOptions.error) {
-      target.error = filterOptions.error;
-      return;
-    }
-    const func = filterOptions.filters.find(x => x.property === 'function');
-    if (func) {
-      filterOptions.filters = filterOptions.filters.filter(x => x.property !== 'function');
-      target.assetQuery.func = func.value;
-    } else {
-      target.assetQuery.func = '';
-    }
-
-    Utils.applyFilters(filterOptions.filters, cache.getTimeseries(options, target));
-
-    target.aggregation = filterOptions.aggregation;
-    target.granularity = filterOptions.granularity;
-  }
-
   // this function is for getting metrics (template variables)
   async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
     const queryOptions = parse(query.query, ParseType.Asset, this.templateSrv);

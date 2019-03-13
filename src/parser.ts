@@ -93,7 +93,7 @@ const parseSpecialFunctions = (
       if (selectedTs.length <= 1) {
         funcString = selectedTs.map(ts => `[${getTempAliasString(ts, filterOptions)}]`).join('');
       } else {
-        funcString = `${match.slice(0, 3)}([${selectedTs
+        funcString = `${match.slice(0, 3).toLowerCase()}([${selectedTs
           .map(ts => getTempAliasString(ts, filterOptions))
           .join('], [')}])`;
       }
