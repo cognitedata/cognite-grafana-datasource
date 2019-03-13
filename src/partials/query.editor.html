@@ -21,8 +21,11 @@
     </div>
 
     <!-- error messages -->
-    <div class="gf-form-inline panel-container">
-      <label class="gf-form-label--error">{{ ctrl.target.error }}</label>
+    <div class="gf-form panel-container" ng-if="ctrl.target.error">
+      <label class="text-error">{{ ctrl.target.error }}</label>
+    </div>
+    <div class="gf-form panel-container" ng-if="ctrl.target.warning">
+      <label class="text-warning">{{ ctrl.target.warning }}</label>
     </div>
   </div>
 </query-editor-row>
@@ -107,10 +110,17 @@
         </info-popover>
     </div>
   </div>
-  <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px">
+  <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px" ng-if="ctrl.target.assetQuery.timeseries && ctrl.target.assetQuery.timeseries.length > 0">
     <ul>
-      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries">
-        <input type="checkbox" ng-model="timeseries.selected" ng-change="ctrl.onChangeInternal()"> {{timeseries.name}}
+      <li class="gf-form-inline variable-option">
+        <input type="checkbox" ng-checked="ctrl.isAllSelected" ng-show="false">
+        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes;ctrl.onChangeInternal()"></span>
+        <a ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()">Select All</a>
+      </li>
+      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option">
+        <input type="checkbox" ng-model="timeseries.selected" ng-show="false">
+        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()"></span>
+        <a ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()">{{timeseries.name}}</a>
       </li>
     </ul>
   </div>

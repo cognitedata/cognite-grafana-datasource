@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Filter, FilterType } from './types';
+import { Filter, FilterType, QueryOptions, QueryTarget } from './types';
 
 export default class Utils {
   // Converts an object to a query string, ignores properties with undefined/null values
@@ -139,5 +139,11 @@ export default class Utils {
     }
     const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
     return `${days}d`;
+  }
+
+  static timeseriesHash(options: QueryOptions, target: QueryTarget) {
+    return `${options.dashboardId}_${options.panelId}_${target.refId}_${
+      target.assetQuery.templatedTarget
+    }_${target.assetQuery.includeSubtrees}`;
   }
 }

@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import q from 'q';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
@@ -119,7 +118,7 @@ describe('CogniteDatasource', () => {
 
   describe('Datasource Query', () => {
     beforeAll(() => {
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
       ctx.options = {
         targets: [],
         range: {
@@ -162,6 +161,7 @@ describe('CogniteDatasource', () => {
         },
         error: undefined,
         hide: undefined,
+        warning: undefined,
       };
       const emptyAsset: QueryTarget = {
         ...emptyTimeseries,
@@ -197,6 +197,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
 
       beforeAll(async () => {
@@ -229,6 +230,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
       const tsTargetB: QueryTarget = {
         ...tsTargetA,
@@ -284,6 +286,7 @@ describe('CogniteDatasource', () => {
         hide: undefined,
         assetQuery: undefined,
         expr: undefined,
+        warning: undefined,
       };
       const tsTargetB = {
         ...tsTargetA,
@@ -334,6 +337,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: undefined,
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,
@@ -473,6 +477,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: 'timeseries{}',
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -593,6 +598,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: 'timeseries{function=[ID]}',
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -743,6 +749,7 @@ describe('CogniteDatasource', () => {
           func: undefined,
         },
         expr: undefined,
+        warning: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,
@@ -856,7 +863,7 @@ describe('CogniteDatasource', () => {
     };
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty annotation query', () => {
@@ -1223,7 +1230,7 @@ describe('CogniteDatasource', () => {
   describe('Metrics Query', () => {
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty metrics query', () => {
@@ -1432,7 +1439,7 @@ describe('CogniteDatasource', () => {
 
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
     describe('Given an empty request for asset options', () => {
@@ -1549,17 +1556,17 @@ describe('CogniteDatasource', () => {
   describe('Login', () => {
     beforeAll(() => {
       ctx.backendSrvMock.datasourceRequest.mockReset();
-      ctx.ds = new CogniteDatasource(instanceSettings, q, ctx.backendSrvMock, ctx.templateSrvMock);
+      ctx.ds = new CogniteDatasource(instanceSettings, ctx.backendSrvMock, ctx.templateSrvMock);
     });
 
-    describe('When given valid login info', () => {
+    describe('When given valid login info and correct project', () => {
       let result;
       const response = {
         data: {
           data: {
-            user: 'string',
+            user: 'user',
             loggedIn: true,
-            project: 'string',
+            project: 'TestProject',
             projectId: 0,
           },
         },
@@ -1573,6 +1580,33 @@ describe('CogniteDatasource', () => {
       });
 
       it('should log the user in', () => {
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
+        expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+        expect(result).toMatchSnapshot();
+      });
+    });
+
+    describe('When given valid login info but incorrect project', () => {
+      let result;
+      const response = {
+        data: {
+          data: {
+            user: 'user',
+            loggedIn: true,
+            project: 'WrongProject',
+            projectId: 0,
+          },
+        },
+        status: 200,
+      };
+      beforeAll(async () => {
+        ctx.ds.backendSrv.datasourceRequest = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve(response));
+        result = await ctx.ds.testDatasource();
+      });
+
+      it('should display an error message', () => {
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls.length).toBe(1);
         expect(ctx.ds.backendSrv.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
         expect(result).toMatchSnapshot();
