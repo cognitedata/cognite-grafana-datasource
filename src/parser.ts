@@ -109,7 +109,7 @@ const createDataQueryRequestItems = (
       function: expr,
     });
   } else {
-    const filterOptions = parse(timeseriesMatch[1], ParseType.Timeseries, templateSrv, options);
+    const filterOptions = parse(timeseriesMatch[0], ParseType.Timeseries, templateSrv, options);
     if (filterOptions.error) throw filterOptions.error;
     Utils.applyFilters(filterOptions.filters, timeseries);
     const selectedTs = timeseries.filter(ts => ts.selected);
@@ -121,7 +121,7 @@ const createDataQueryRequestItems = (
       replaceString += ']';
       dataItems = dataItems.concat(
         createDataQueryRequestItems(
-          expr.replace(timeseriesMatch[1], replaceString),
+          expr.replace(timeseriesMatch[0], replaceString),
           options,
           timeseries,
           templateSrv,
