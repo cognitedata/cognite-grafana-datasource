@@ -58,6 +58,7 @@ export interface AssetQuery {
   old?: AssetQuery;
   timeseries?: TimeSeriesResponseItem[];
   func?: string;
+  templatedTarget?: string;
 }
 
 export interface QueryTarget extends DataQuery {
@@ -69,6 +70,7 @@ export interface QueryTarget extends DataQuery {
   tab: Tab;
   assetQuery: AssetQuery;
   expr: string;
+  warning: string;
 }
 
 export type QueryFormat = 'json';

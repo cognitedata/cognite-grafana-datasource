@@ -173,49 +173,49 @@ Array [
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=789&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=789&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
 }
 `;
 
@@ -1865,14 +1865,14 @@ Object {
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[123]&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[123]&limit=101",
 }
 `;
 
@@ -1896,7 +1896,7 @@ Object {
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=10000",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=101",
 }
 `;
 

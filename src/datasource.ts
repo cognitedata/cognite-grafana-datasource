@@ -78,19 +78,30 @@ export default class CogniteDatasource {
       return [query];
     }
 
-    if (target.tab === Tab.Asset || target.tab === Tab.Custom) {
+    if (target.tab === Tab.Asset) {
       await this.findAssetTimeseries(target, options);
-      if (target.tab === Tab.Custom) {
-        this.filterOnAssetTimeseries(target, options); // apply the search expression
-      }
       return target.assetQuery.timeseries.reduce((queries, ts) => {
+        if (!ts.selected) {
+          return queries;
+        }
+        return queries.concat({ name: ts.name });
+      }, []);
+    }
+
+    if (target.tab === Tab.Custom) {
+      await this.findAssetTimeseries(target, options);
+
+      // apply the search expression
+      this.filterOnAssetTimeseries(target, options);
+
+      return cache.getTimeseries(options, target).reduce((queries, ts) => {
         if (!ts.selected) {
           return queries;
         }
         const query: DataQueryRequestItem = {
           name: ts.name,
         };
-        if (target.tab === Tab.Custom && target.assetQuery.func) {
+        if (target.assetQuery.func) {
           query.function = target.assetQuery.func.replace(/ID/g, String(ts.id));
           const regexSearch = /\[.*?\]/g;
           const regexMatches = query.function.match(regexSearch);
@@ -127,6 +138,7 @@ export default class CogniteDatasource {
   public async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets: QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = '';
+      target.warning = '';
       if (
         !target ||
         target.hide ||
@@ -231,8 +243,15 @@ export default class CogniteDatasource {
         } else {
           labels.push(target.label);
         }
-      } else {
+      } else if (target.tab === Tab.Asset) {
         target.assetQuery.timeseries.forEach(ts => {
+          if (ts.selected) {
+            if (!target.label) target.label = '';
+            labels.push(this.getTimeseriesLabel(target.label, ts));
+          }
+        });
+      } else {
+        cache.getTimeseries(options, target).forEach(ts => {
           if (ts.selected) {
             if (!target.label) target.label = '';
             labels.push(this.getTimeseriesLabel(target.label, ts));
@@ -400,6 +419,29 @@ export default class CogniteDatasource {
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
     // replace variables with their values
     const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
+    const searchQuery: Partial<TimeseriesSearchQuery> = {
+      path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
+      assetId: !target.assetQuery.includeSubtrees ? assetId : undefined,
+      limit: 10000,
+    };
+
+    // for custom queries, use cache instead of storing in target object
+    if (target.tab === Tab.Custom) {
+      target.assetQuery.templatedTarget = assetId;
+      const timeseries = cache.getTimeseries(options, target);
+      if (!timeseries) {
+        const ts = await this.getTimeseries(searchQuery, target);
+        cache.setTimeseries(
+          options,
+          target,
+          ts.map(ts => {
+            ts.selected = true;
+            return ts;
+          })
+        );
+      }
+      return Promise.resolve();
+    }
 
     // check if assetId has changed, if not we do not need to perform this query again
     if (
@@ -414,13 +456,15 @@ export default class CogniteDatasource {
       includeSubtrees: target.assetQuery.includeSubtrees,
     };
 
-    const searchQuery: Partial<TimeseriesSearchQuery> = {
-      path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
-      assetId: !target.assetQuery.includeSubtrees ? assetId : undefined,
-      limit: 10000,
-    };
-
+    // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
+    //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
+    searchQuery.limit = 101;
     const ts = await this.getTimeseries(searchQuery, target);
+    if (ts.length === 101) {
+      target.warning =
+        "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+      ts.splice(-1);
+    }
     target.assetQuery.timeseries = ts.map(ts => {
       ts.selected = true;
       return ts;
@@ -470,7 +514,7 @@ export default class CogniteDatasource {
       target.assetQuery.func = '';
     }
 
-    this.applyFilters(filterOptions.filters, target.assetQuery.timeseries);
+    this.applyFilters(filterOptions.filters, cache.getTimeseries(options, target));
 
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;

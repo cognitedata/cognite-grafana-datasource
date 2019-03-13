@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { QueryOptions, QueryTarget } from './types';
 
 export default class Utils {
   // Converts an object to a query string, ignores properties with undefined/null values
@@ -83,5 +84,11 @@ export default class Utils {
       }
     }
     return filterStrings;
+  }
+
+  static timeseriesHash(options: QueryOptions, target: QueryTarget) {
+    return `${options.dashboardId}_${options.panelId}_${target.refId}_${
+      target.assetQuery.templatedTarget
+    }_${target.assetQuery.includeSubtrees}`;
   }
 }

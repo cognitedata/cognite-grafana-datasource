@@ -1,5 +1,12 @@
-import { DataSourceRequestOptions, isError } from './types';
+import {
+  DataSourceRequestOptions,
+  isError,
+  TimeSeriesResponseItem,
+  QueryTarget,
+  QueryOptions,
+} from './types';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import Utils from './utils';
 
 // Cache requests for 10 seconds
 const cacheTime = 1000 * 10;
@@ -47,8 +54,24 @@ export const getQuery = async (query: DataSourceRequestOptions, backendSrv: Back
   return promise;
 };
 
+const assetTimeseries = new Map<string, TimeSeriesResponseItem[]>();
+
+export const getTimeseries = (options: QueryOptions, target: QueryTarget) => {
+  return assetTimeseries.get(Utils.timeseriesHash(options, target));
+};
+
+export const setTimeseries = (
+  options: QueryOptions,
+  target: QueryTarget,
+  timeseries: TimeSeriesResponseItem[]
+) => {
+  assetTimeseries.set(Utils.timeseriesHash(options, target), timeseries);
+};
+
 const cache = {
   getQuery,
+  getTimeseries,
+  setTimeseries,
 };
 
 export default cache;
