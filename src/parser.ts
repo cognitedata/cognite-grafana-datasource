@@ -19,18 +19,22 @@ export const parseExpression = (
   templateSrv: TemplateSrv,
   target: QueryTarget
 ): DataQueryRequestItem[] => {
+  const trimmedExpr = expr.trim();
   // first check if it is just a simple `timeseries{}` or `timeseries{}[]`
-  const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
-  const timeseriesMatch = expr.match(timeseriesRegex);
-  if (timeseriesMatch) {
-    const filterOptions = getAndApplyFilterOptions(expr, templateSrv, options, timeseries);
+  if (isSimpleTimeseriesExpression(trimmedExpr)) {
+    const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
     target.aggregation = filterOptions.aggregation;
     target.granularity = filterOptions.granularity;
     return timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
   }
 
   // add special function name if only sum,avg,etc?
-  const exprWithSpecialFunctions = parseSpecialFunctions(expr, options, timeseries, templateSrv);
+  const exprWithSpecialFunctions = parseSpecialFunctions(
+    trimmedExpr,
+    options,
+    timeseries,
+    templateSrv
+  );
 
   return createDataQueryRequestItems(
     exprWithSpecialFunctions,
@@ -64,12 +68,7 @@ const parseSpecialFunctions = (
       );
       const selectedTs = timeseries.filter(ts => ts.selected);
       const sumString = `([${selectedTs
-        .map(
-          ts =>
-            `${ts.id}${filterOptions.aggregation ? `,${filterOptions.aggregation}` : ''}${
-              filterOptions.granularity ? `,${filterOptions.granularity}` : ''
-            }`
-        )
+        .map(ts => getTempAliasString(ts, filterOptions))
         .join('] + [')}])`;
       newExpr = newExpr.replace(match, sumString);
     }
@@ -90,14 +89,14 @@ const parseSpecialFunctions = (
         timeseries
       );
       const selectedTs = timeseries.filter(ts => ts.selected);
-      const funcString = `${match.slice(0, 3)}([${selectedTs
-        .map(
-          ts =>
-            `${ts.id}${filterOptions.aggregation ? `,${filterOptions.aggregation}` : ''}${
-              filterOptions.granularity ? `,${filterOptions.granularity}` : ''
-            }`
-        )
-        .join('], [')}])`;
+      let funcString = '';
+      if (selectedTs.length <= 1) {
+        funcString = selectedTs.map(ts => `[${getTempAliasString(ts, filterOptions)}]`).join('');
+      } else {
+        funcString = `${match.slice(0, 3)}([${selectedTs
+          .map(ts => getTempAliasString(ts, filterOptions))
+          .join('], [')}])`;
+      }
       newExpr = newExpr.replace(match, funcString);
     }
   }
@@ -132,10 +131,7 @@ const createDataQueryRequestItems = (
     const selectedTs = timeseries.filter(ts => ts.selected);
 
     for (const ts of selectedTs) {
-      let replaceString = `[${ts.id}`;
-      if (filterOptions.aggregation) replaceString += `,${filterOptions.aggregation}`;
-      if (filterOptions.granularity) replaceString += `,${filterOptions.granularity}`;
-      replaceString += ']';
+      const replaceString = `[${getTempAliasString(ts, filterOptions)}]`;
       dataItems = dataItems.concat(
         createDataQueryRequestItems(
           expr.replace(timeseriesMatch[0], replaceString),
@@ -164,6 +160,20 @@ const getAndApplyFilterOptions = (
   if (filterOptions.error) throw filterOptions.error;
   Utils.applyFilters(filterOptions.filters, timeseries);
   return filterOptions;
+};
+
+// puts in format: 'ID' or 'ID,aggr' or 'ID,aggr,gran'
+const getTempAliasString = (timeseries: TimeSeriesResponseItem, filterOptions: FilterOptions) => {
+  return `${timeseries.id}${filterOptions.aggregation ? `,${filterOptions.aggregation}` : ''}${
+    filterOptions.granularity ? `,${filterOptions.granularity}` : ''
+  }`;
+};
+
+const isSimpleTimeseriesExpression = (expr: string) => {
+  const timeseriesRegex = /^timeseries\{.*?\}(?:\[.*?\])?/;
+  const timeseriesMatch = expr.match(timeseriesRegex);
+  if (timeseriesMatch && timeseriesMatch[0] === expr) return true;
+  return false;
 };
 
 // take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with aliases
