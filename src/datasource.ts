@@ -103,7 +103,7 @@ export default class CogniteDatasource {
           queryReq.granularity = target.granularity;
         }
       }
-      if (target.tab === Tab.Custom) {
+      if (target.tab === Tab.Custom && queryList[0].function) {
         let ids = 0;
         const idRegex = /\[.*?\]/g; // look for [something]
         for (const q of queryList) {
@@ -247,7 +247,8 @@ export default class CogniteDatasource {
           target.expr,
           options,
           cache.getTimeseries(options, target),
-          this.templateSrv
+          this.templateSrv,
+          target
         );
       } catch (e) {
         target.error = e;

@@ -6,6 +6,7 @@ import {
   FilterType,
   TimeSeriesResponseItem,
   DataQueryAlias,
+  QueryTarget,
 } from './types';
 import Utils from './utils';
 import _ from 'lodash';
@@ -15,9 +16,18 @@ export const parseExpression = (
   expr: string,
   options: QueryOptions,
   timeseries: TimeSeriesResponseItem[],
-  templateSrv: TemplateSrv
+  templateSrv: TemplateSrv,
+  target: QueryTarget
 ): DataQueryRequestItem[] => {
-  // TODO first check if it is just a simple `timeseries{}[]`
+  // first check if it is just a simple `timeseries{}` or `timeseries{}[]`
+  const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
+  const timeseriesMatch = expr.match(timeseriesRegex);
+  if (timeseriesMatch) {
+    const filterOptions = getAndApplyFilterOptions(expr, templateSrv, options, timeseries);
+    target.aggregation = filterOptions.aggregation;
+    target.granularity = filterOptions.granularity;
+    return timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
+  }
 
   // add special function name if only sum,avg,etc?
   const exprWithSpecialFunctions = parseSpecialFunctions(expr, options, timeseries, templateSrv);
@@ -46,10 +56,12 @@ const parseSpecialFunctions = (
     sumRegexMatches = sumRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of sumRegexMatches) {
       const timeseriesString = match.slice(4, -1);
-      const filterOptions = parse(timeseriesString, ParseType.Timeseries, templateSrv, options);
-      if (filterOptions.error) throw filterOptions.error;
-      Utils.applyFilters(filterOptions.filters, timeseries);
-
+      const filterOptions = getAndApplyFilterOptions(
+        timeseriesString,
+        templateSrv,
+        options,
+        timeseries
+      );
       const selectedTs = timeseries.filter(ts => ts.selected);
       const sumString = `([${selectedTs
         .map(
@@ -71,10 +83,12 @@ const parseSpecialFunctions = (
     funcRegexMatches = funcRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of funcRegexMatches) {
       const timeseriesString = match.slice(4, -1);
-      const filterOptions = parse(timeseriesString, ParseType.Timeseries, templateSrv, options);
-      if (filterOptions.error) throw filterOptions.error;
-      Utils.applyFilters(filterOptions.filters, timeseries);
-
+      const filterOptions = getAndApplyFilterOptions(
+        timeseriesString,
+        templateSrv,
+        options,
+        timeseries
+      );
       const selectedTs = timeseries.filter(ts => ts.selected);
       const funcString = `${match.slice(0, 3)}([${selectedTs
         .map(
@@ -109,9 +123,12 @@ const createDataQueryRequestItems = (
       function: expr,
     });
   } else {
-    const filterOptions = parse(timeseriesMatch[0], ParseType.Timeseries, templateSrv, options);
-    if (filterOptions.error) throw filterOptions.error;
-    Utils.applyFilters(filterOptions.filters, timeseries);
+    const filterOptions = getAndApplyFilterOptions(
+      timeseriesMatch[0],
+      templateSrv,
+      options,
+      timeseries
+    );
     const selectedTs = timeseries.filter(ts => ts.selected);
 
     for (const ts of selectedTs) {
@@ -135,6 +152,18 @@ const createDataQueryRequestItems = (
     updateAliases(item, options);
     return item;
   });
+};
+
+const getAndApplyFilterOptions = (
+  timeseriesString: string,
+  templateSrv: TemplateSrv,
+  options: QueryOptions,
+  timeseries: TimeSeriesResponseItem[]
+) => {
+  const filterOptions = parse(timeseriesString, ParseType.Timeseries, templateSrv, options);
+  if (filterOptions.error) throw filterOptions.error;
+  Utils.applyFilters(filterOptions.filters, timeseries);
+  return filterOptions;
 };
 
 // take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with aliases
