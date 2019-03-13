@@ -100,8 +100,8 @@ const createDataQueryRequestItems = (
   name: string
 ): DataQueryRequestItem[] => {
   let dataItems: DataQueryRequestItem[] = [];
-  // match the last timeseries{}[] or timeseries{}
-  const timeseriesRegex = /.*(timeseries\{.*?\}(?:\[.*?\])?)/;
+  // match timeseries{}[] or timeseries{}
+  const timeseriesRegex = /timeseries\{.*?\}(?:\[.*?\])?/;
   const timeseriesMatch = expr.match(timeseriesRegex);
   if (!timeseriesMatch) {
     dataItems.push({
@@ -137,6 +137,7 @@ const createDataQueryRequestItems = (
   });
 };
 
+// take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with aliases
 const updateAliases = (queryItem: DataQueryRequestItem, options: QueryOptions) => {
   const regexSearch = /\[.*?\]/g;
   const regexMatches = queryItem.function.match(regexSearch);

@@ -242,12 +242,17 @@ export default class CogniteDatasource {
       await this.findAssetTimeseries(target, options);
       if (!target.expr) return [];
       // apply the search expression
-      return parseExpression(
-        target.expr,
-        options,
-        cache.getTimeseries(options, target),
-        this.templateSrv
-      );
+      try {
+        return parseExpression(
+          target.expr,
+          options,
+          cache.getTimeseries(options, target),
+          this.templateSrv
+        );
+      } catch (e) {
+        target.error = e;
+        return [];
+      }
     }
 
     return [];
@@ -306,11 +311,6 @@ export default class CogniteDatasource {
         timeEnd: event.endTime,
         title: event.type,
       }));
-  }
-
-  // this function is for getting metrics (template variables)
-  async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
-    return this.getAssetsForMetrics(query);
   }
 
   public async getOptionsForDropdown(
@@ -459,7 +459,8 @@ export default class CogniteDatasource {
     target.granularity = filterOptions.granularity;
   }
 
-  async getAssetsForMetrics(query: VariableQueryData): Promise<MetricFindQueryResponse> {
+  // this function is for getting metrics (template variables)
+  async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
     const queryOptions = parse(query.query, ParseType.Asset, this.templateSrv);
     if (queryOptions.error) {
       return [{ text: queryOptions.error, value: '-' }];
