@@ -186,7 +186,9 @@
             <code class="query-keyword">MAX(timeseries{}[average]) - MIN(timeseries{}[average])</code>
               ↪ yields the range of the timeseries aggregated by averages
             <code class="query-keyword">power(timeseries{} - AVG(timeseries{}), 2)</code>
-              ↪ yields the squared deviation of each timeseries from the average
+              ↪ yields the squared deviation of each timeseries from the average <br>
+  If you want to reference a specific timeseries (for example, a timeseries that is not associated with an asset), use `[ID]`, `[ID,aggregate]`, or `[ID,aggregate,granularity]`.
+  Example:  <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"}) - [123456,avg,12h]</code>
       </pre>
   </div>
 </script>
