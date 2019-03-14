@@ -28,6 +28,9 @@ export const parseExpression = (
     return timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
   }
 
+  target.aggregation = '';
+  target.granularity = '';
+
   // add special function name if only sum,avg,etc?
   const exprWithSpecialFunctions = parseSpecialFunctions(
     trimmedExpr,
@@ -114,16 +117,15 @@ const createDataQueryRequestItems = (
 ): DataQueryRequestItem[] => {
   let dataItems: DataQueryRequestItem[] = [];
   // match timeseries{}[] or timeseries{}
-  const timeseriesRegex = /timeseries\{.*?\}(?:\[.*?\])?/;
-  const timeseriesMatch = expr.match(timeseriesRegex);
-  if (!timeseriesMatch) {
+  const timeseriesString = findTimeseriesString(expr);
+  if (!timeseriesString) {
     dataItems.push({
       name,
       function: expr,
     });
   } else {
     const filterOptions = getAndApplyFilterOptions(
-      timeseriesMatch[0],
+      timeseriesString,
       templateSrv,
       options,
       timeseries
@@ -132,14 +134,30 @@ const createDataQueryRequestItems = (
 
     for (const ts of selectedTs) {
       const replaceString = `[${getTempAliasString(ts, filterOptions)}]`;
-      dataItems = dataItems.concat(
-        createDataQueryRequestItems(
-          expr.replace(timeseriesMatch[0], replaceString),
-          options,
-          timeseries,
+      let newExpr = expr.replace(timeseriesString, replaceString);
+
+      // we need to replace all similar timeseries requests
+      //  this is so that expressions like `timeseries{} - timeseries{}[avg]` work
+      // match all similar `timeseries{...}` and replace them
+      const tsFiltersString = findTimeseriesString(timeseriesString, false);
+      let index = newExpr.indexOf(tsFiltersString);
+      while (index >= 0) {
+        const similarTimeseriesString = findTimeseriesString(newExpr.substr(index));
+        const similarFilterOptions = getAndApplyFilterOptions(
+          similarTimeseriesString,
           templateSrv,
-          name || ts.name
-        )
+          options,
+          selectedTs
+        );
+        newExpr = newExpr.replace(
+          similarTimeseriesString,
+          `[${getTempAliasString(ts, similarFilterOptions)}]`
+        );
+        index = newExpr.indexOf(tsFiltersString);
+      }
+
+      dataItems = dataItems.concat(
+        createDataQueryRequestItems(newExpr, options, timeseries, templateSrv, name || ts.name)
       );
     }
   }
@@ -170,10 +188,42 @@ const getTempAliasString = (timeseries: TimeSeriesResponseItem, filterOptions: F
 };
 
 const isSimpleTimeseriesExpression = (expr: string) => {
-  const timeseriesRegex = /^timeseries\{.*?\}(?:\[.*?\])?/;
-  const timeseriesMatch = expr.match(timeseriesRegex);
-  if (timeseriesMatch && timeseriesMatch[0] === expr) return true;
+  if (findTimeseriesString(expr) === expr) return true;
   return false;
+};
+
+// finds and returns the first string of format 'timeseries{.*}' or 'timeseries{.*}[.*]', respecting brackets
+const findTimeseriesString = (expr: string, withAggregateAndGranularity: boolean = true) => {
+  const timeseriesIndex = expr.indexOf('timeseries{');
+  if (timeseriesIndex < 0) return '';
+  const startIndex = timeseriesIndex + 'timeseries{'.length;
+  let openBracketCount = 1;
+  let index = 0;
+
+  while (openBracketCount > 0) {
+    if (startIndex + index >= expr.length)
+      throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+    if (expr.charAt(startIndex + index) === '{') openBracketCount += 1;
+    else if (expr.charAt(startIndex + index) === '}') openBracketCount -= 1;
+    else if (expr.charAt(startIndex + index) === '"' || expr.charAt(startIndex + index) === "'") {
+      // skip ahead if we find a quote
+      const endQuote = expr.indexOf(expr.charAt(startIndex + index), startIndex + index + 1);
+      if (endQuote < 0) throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+      index = endQuote - startIndex;
+    }
+    index += 1;
+  }
+  if (
+    withAggregateAndGranularity &&
+    startIndex + index < expr.length &&
+    expr.charAt(startIndex + index) === '['
+  ) {
+    const closeBracketIndex = expr.indexOf(']', startIndex + index);
+    if (closeBracketIndex > 0) index = closeBracketIndex - startIndex + 1;
+    else throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+  }
+
+  return expr.substr(timeseriesIndex, index + 'timeseries{'.length);
 };
 
 // take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with aliases
