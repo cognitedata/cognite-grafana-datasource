@@ -84,7 +84,8 @@ If you want more fine-grained control.
 
 - First select an asset (with/without subassets) to pull timeseries from, or use a template variable with `$Variable` or `[[Variable]]`.
 - Then filter on these timeseries. Click on the help icon for more details about the syntax.
-- If you want to apply custom functions to the timeseries (e.g. for unit conversions), you can specify a function by adding `function=` to your query.
+- If you want to apply custom functions to the timeseries (e.g. for unit conversions), simply add your functions around `timeseries{}[]` -> For example: `(timeseries{name=~"Test.*"}[avg] + 10) / 5` 
+    - Click on the info icon next to the text box to see more examples
 
 ![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img4.png)
 

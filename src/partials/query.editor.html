@@ -177,21 +177,16 @@
     !~ (regex inequality) <br>
   Templated variables can also be used with [[variable]] or $variable.
   Example: <code class="query-keyword">timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h]</code> <br>
-  Functions can also be applied to the results by adding a function property. Use '[ID]' to access the timeseries values.
-    Note: No aggregates can be used when using functions.
-    Instead, specify aggregations on each individual timeseries by using [ID,aggregation] or [ID,aggregation,granularity].
-  Examples: <code class="query-keyword">timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}</code>
-            <code class="query-keyword">timeseries{ function = [ID] - [ID,avg,24h] }</code>
-            <code class="query-keyword">timeseries{ function = [ID,step] - [123456789,step] }</code> <br>
-  To apply a special function (SUM, MAX, MIN, AVG) to all the filtered timeseries, replace ID with the special function.
-  Examples: <code class="query-keyword">timeseries{metadata.type="TEMP", function=[SUM]}</code>
+  Custom functions can also be applied on one or multiple timeseries.
+  Examples: <code class="query-keyword">(timeseries{name=~'.*temp.*'}[avg] - 32) * 5/9</code>
+            <code class="query-keyword">timeseries{} - timeseries{}[avg,24h]</code><br>
+  Special functions (SUM, MAX, MIN, AVG) can also be applied to all filtered timeseries.
+  Examples: <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"})</code>
               ↪ yields one timeseries that is the sum of all temperature timeseries
-            <code class="query-keyword">timeseries{description=~".*Error", function=[AVG,count,10m]}</code>
-              ↪ yields the average number of datapoints over ten minutes of all timeseries that are errors
-            <code class="query-keyword">timeseries{function=[MAX,average] - [MIN,average]}</code>
+            <code class="query-keyword">MAX(timeseries{}[average]) - MIN(timeseries{}[average])</code>
               ↪ yields the range of the timeseries aggregated by averages
-            <code class="query-keyword">timeseries{function=[ID] - [AVG]}</code>
-              ↪ yields the deviation of each timeseries from the average
+            <code class="query-keyword">power(timeseries{} - AVG(timeseries{}), 2)</code>
+              ↪ yields the squared deviation of each timeseries from the average
       </pre>
   </div>
 </script>

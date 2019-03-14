@@ -31,7 +31,6 @@ export const parseExpression = (
   target.aggregation = '';
   target.granularity = '';
 
-  // add special function name if only sum,avg,etc?
   const exprWithSpecialFunctions = parseSpecialFunctions(
     trimmedExpr,
     options,
@@ -188,8 +187,7 @@ const getTempAliasString = (timeseries: TimeSeriesResponseItem, filterOptions: F
 };
 
 const isSimpleTimeseriesExpression = (expr: string) => {
-  if (findTimeseriesString(expr) === expr) return true;
-  return false;
+  return findTimeseriesString(expr) === expr;
 };
 
 // finds and returns the first string of format 'timeseries{.*}' or 'timeseries{.*}[.*]', respecting brackets
@@ -201,8 +199,9 @@ const findTimeseriesString = (expr: string, withAggregateAndGranularity: boolean
   let index = 0;
 
   while (openBracketCount > 0) {
-    if (startIndex + index >= expr.length)
+    if (startIndex + index >= expr.length) {
       throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+    }
     if (expr.charAt(startIndex + index) === '{') openBracketCount += 1;
     else if (expr.charAt(startIndex + index) === '}') openBracketCount -= 1;
     else if (expr.charAt(startIndex + index) === '"' || expr.charAt(startIndex + index) === "'") {
