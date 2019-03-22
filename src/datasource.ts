@@ -168,61 +168,67 @@ export default class CogniteDatasource {
     const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
 
     const queries: DataQueryRequest[] = [];
-    for (const { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
+    for (let { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
       target: queryTargets[i],
       queryList: ql,
     }))) {
       if (queryList.length === 0 || target.error) {
         continue;
       }
-      // keep track of target lengths so we can assign errors later
-      targetQueriesCount.push({
-        refId: target.refId,
-        count: queryList.length,
-      });
-      // create query requests
-      const queryReq: DataQueryRequest = {
-        items: queryList,
-        start: timeFrom,
-        end: timeTo,
-      };
-      if (target.aggregation && target.aggregation !== 'none') {
-        queryReq.aggregates = target.aggregation;
-        if (!target.granularity) {
-          queryReq.granularity = this.intervalToGranularity(options.intervalMs);
-        } else {
-          queryReq.granularity = target.granularity;
-        }
-      }
-      if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
-        if (queryReq.aggregates) {
-          target.error =
-            '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
-          targetQueriesCount.pop();
-          continue;
-        }
-        let ids = 0;
-        const idRegex = /\[.*?\]/g; // look for [something]
-        for (const q of queryList) {
-          const matches = q.function.match(idRegex);
-          if (!matches) break;
-          const idsObj = {};
-          for (const match of matches) {
-            idsObj[match.substr(1, match.length - 2)] = true;
+
+      // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
+      while (queryList.length > 0) {
+        const slicedQl = queryList.slice(0, 100); // only get first 100 items
+
+        // keep track of target lengths so we can assign errors later
+        targetQueriesCount.push({
+          refId: target.refId,
+          count: slicedQl.length,
+        });
+        // create query requests
+        const queryReq: DataQueryRequest = {
+          items: slicedQl,
+          start: timeFrom,
+          end: timeTo,
+        };
+        if (target.aggregation && target.aggregation !== 'none') {
+          queryReq.aggregates = target.aggregation;
+          if (!target.granularity) {
+            queryReq.granularity = this.intervalToGranularity(options.intervalMs);
+          } else {
+            queryReq.granularity = target.granularity;
           }
-          ids += Object.keys(idsObj).length;
         }
-        if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+        if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
+          if (queryReq.aggregates) {
+            target.error =
+              '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
+            targetQueriesCount.pop();
+            continue;
+          }
+          let ids = 0;
+          const idRegex = /\[.*?\]/g; // look for [something]
+          for (const q of slicedQl) {
+            const matches = q.function.match(idRegex);
+            if (!matches) break;
+            const idsObj = {};
+            for (const match of matches) {
+              idsObj[match.substr(1, match.length - 2)] = true;
+            }
+            ids += Object.keys(idsObj).length;
+          }
+          if (ids === 0) ids = 1; // will fail anyways, just show the api error message
 
-        // check if any aggregates are being used
-        const usesAggregations = queryList.some(item => item.aliases.length > 0);
+          // check if any aggregates are being used
+          const usesAggregations = slicedQl.some(item => item.aliases.length > 0);
 
-        queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / ids);
-      } else {
-        queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / queryList.length);
+          queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / ids);
+        } else {
+          queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / slicedQl.length);
+        }
+        queries.push(queryReq);
+        queryList = queryList.slice(100); // get the rest of the items
       }
-      queries.push(queryReq);
-
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries || target.tab === undefined) {
         if (!target.label) target.label = '';
