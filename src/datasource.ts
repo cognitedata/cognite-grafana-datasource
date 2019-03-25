@@ -168,7 +168,7 @@ export default class CogniteDatasource {
     const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
 
     const queries: DataQueryRequest[] = [];
-    for (let { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
+    for (const { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
       target: queryTargets[i],
       queryList: ql,
     }))) {
@@ -177,17 +177,17 @@ export default class CogniteDatasource {
       }
 
       // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
-      while (queryList.length > 0) {
-        const slicedQl = queryList.slice(0, 100); // only get first 100 items
-
+      // may want to change how much we split into, but for now, 100 seems like the best
+      const qlChunks = _.chunk(queryList, 100);
+      for (const qlChunk of qlChunks) {
         // keep track of target lengths so we can assign errors later
         targetQueriesCount.push({
           refId: target.refId,
-          count: slicedQl.length,
+          count: qlChunk.length,
         });
         // create query requests
         const queryReq: DataQueryRequest = {
-          items: slicedQl,
+          items: qlChunk,
           start: timeFrom,
           end: timeTo,
         };
@@ -205,33 +205,33 @@ export default class CogniteDatasource {
               '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
             break;
           }
-          let ids = 0;
+          let idsCount = 0;
           const idRegex = /\[.*?\]/g; // look for [something]
-          for (const q of slicedQl) {
+          for (const q of qlChunk) {
             const matches = q.function.match(idRegex);
             if (!matches) break;
             const idsObj = {};
             for (const match of matches) {
               idsObj[match.substr(1, match.length - 2)] = true;
             }
-            ids += Object.keys(idsObj).length;
+            idsCount += Object.keys(idsObj).length;
           }
-          if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+          if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
 
           // check if any aggregates are being used
-          const usesAggregations = slicedQl.some(item => item.aliases.length > 0);
+          const usesAggregations = qlChunk.some(item => item.aliases.length > 0);
 
-          queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / ids);
+          queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / idsCount);
         } else {
-          queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / slicedQl.length);
+          queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
         }
         queries.push(queryReq);
-        queryList = queryList.slice(100); // get the rest of the items
       }
       if (target.error) {
         targetQueriesCount.pop();
         continue;
       }
+
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries || target.tab === undefined) {
         if (!target.label) target.label = '';
