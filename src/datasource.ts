@@ -2,20 +2,17 @@ import _ from 'lodash';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import Utils from './utils';
 import cache from './cache';
+import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
   AnnotationQueryOptions,
   AnnotationResponse,
   CogniteDataSourceSettings,
-  DataQueryAlias,
   DataQueryError,
   DataQueryRequest,
   DataQueryRequestItem,
   DataQueryRequestResponse,
-  Filter,
-  FilterOptions,
-  FilterType,
   MetricFindQueryResponse,
   ParseType,
   QueryOptions,
@@ -45,94 +42,6 @@ export default class CogniteDatasource {
     this.url = instanceSettings.url;
     this.project = instanceSettings.jsonData.cogniteProject;
     this.name = instanceSettings.name;
-  }
-
-  private intervalToGranularity(intervalMs: number): string {
-    const seconds = Math.round(intervalMs / 1000.0);
-    if (seconds <= 60) {
-      if (seconds <= 1) {
-        return '1s';
-      }
-      return `${seconds}s`;
-    }
-    const minutes = Math.round(intervalMs / 1000.0 / 60.0);
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    const hours = Math.round(intervalMs / 1000.0 / 60.0 / 60.0);
-    if (hours <= 24) {
-      return `${hours}h`;
-    }
-    const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
-    return `${days}d`;
-  }
-
-  private async getDataQueryRequestItems(
-    target: QueryTarget,
-    options: QueryOptions
-  ): Promise<DataQueryRequestItem[]> {
-    if (target.tab === Tab.Timeseries || target.tab === undefined) {
-      const query: DataQueryRequestItem = {
-        name: target.target,
-      };
-      return [query];
-    }
-
-    if (target.tab === Tab.Asset) {
-      await this.findAssetTimeseries(target, options);
-      return target.assetQuery.timeseries.reduce((queries, ts) => {
-        if (!ts.selected) {
-          return queries;
-        }
-        return queries.concat({ name: ts.name });
-      }, []);
-    }
-
-    if (target.tab === Tab.Custom) {
-      await this.findAssetTimeseries(target, options);
-
-      // apply the search expression
-      this.filterOnAssetTimeseries(target, options);
-
-      return cache.getTimeseries(options, target).reduce((queries, ts) => {
-        if (!ts.selected) {
-          return queries;
-        }
-        const query: DataQueryRequestItem = {
-          name: ts.name,
-        };
-        if (target.assetQuery.func) {
-          query.function = target.assetQuery.func.replace(/ID/g, String(ts.id));
-          const regexSearch = /\[.*?\]/g;
-          const regexMatches = query.function.match(regexSearch);
-          query.aliases = [];
-          if (regexMatches) {
-            for (const match of regexMatches) {
-              // format is id, aggregation, granularity
-              const aliasParts = match
-                .substr(1, match.length - 2)
-                .split(',')
-                .filter(string => string.length)
-                .map(x => _.trim(x, ' \'"'));
-              // if we only get [ID], then there is no need to make an alias
-              if (aliasParts.length === 1) continue;
-              const alias: DataQueryAlias = {
-                alias: `alias${aliasParts.join('_')}`,
-                id: Number(aliasParts[0]),
-              };
-              alias.aggregate = aliasParts[1];
-              alias.granularity = aliasParts[2] || this.intervalToGranularity(options.intervalMs);
-              query.function = query.function.replace(match, `[${alias.alias}]`);
-              if (query.aliases.find(x => x.alias === alias.alias)) continue;
-              query.aliases.push(alias);
-            }
-          }
-        }
-        return queries.concat(query);
-      }, []);
-    }
-
-    return [];
   }
 
   public async query(options: QueryOptions): Promise<QueryResponse> {
@@ -189,18 +98,12 @@ export default class CogniteDatasource {
       if (target.aggregation && target.aggregation !== 'none') {
         queryReq.aggregates = target.aggregation;
         if (!target.granularity) {
-          queryReq.granularity = this.intervalToGranularity(options.intervalMs);
+          queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
         } else {
           queryReq.granularity = target.granularity;
         }
       }
-      if (target.assetQuery && target.assetQuery.func && target.tab === Tab.Custom) {
-        if (queryReq.aggregates) {
-          target.error =
-            '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
-          targetQueriesCount.pop();
-          continue;
-        }
+      if (target.tab === Tab.Custom && queryList[0].function) {
         let ids = 0;
         const idRegex = /\[.*?\]/g; // look for [something]
         for (const q of queryList) {
@@ -215,9 +118,9 @@ export default class CogniteDatasource {
         if (ids === 0) ids = 1; // will fail anyways, just show the api error message
 
         // check if any aggregates are being used
-        const usesAggregations = queryList.some(item => item.aliases.length > 0);
+        const usesAggregates = queryList.some(item => item.aliases.length > 0);
 
-        queryReq.limit = Math.floor((usesAggregations ? 10_000 : 100_000) / ids);
+        queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / ids);
       } else {
         queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / queryList.length);
       }
@@ -251,12 +154,16 @@ export default class CogniteDatasource {
           }
         });
       } else {
-        cache.getTimeseries(options, target).forEach(ts => {
-          if (ts.selected) {
-            if (!target.label) target.label = '';
-            labels.push(this.getTimeseriesLabel(target.label, ts));
-          }
-        });
+        let count = 0;
+        while (count < queryList.length) {
+          cache.getTimeseries(options, target).forEach(ts => {
+            if (ts.selected && count < queryList.length) {
+              count += 1;
+              if (!target.label) target.label = '';
+              labels.push(this.getTimeseriesLabel(target.label, ts));
+            }
+          });
+        }
       }
     }
 
@@ -294,6 +201,7 @@ export default class CogniteDatasource {
             errmsg = 'Unknown error';
           }
           target.error = errmsg;
+          count += targetQueriesCount[i].count; // skip over these labels
           return datapoints;
         }
 
@@ -314,6 +222,43 @@ export default class CogniteDatasource {
     };
   }
 
+  private async getDataQueryRequestItems(
+    target: QueryTarget,
+    options: QueryOptions
+  ): Promise<DataQueryRequestItem[]> {
+    if (target.tab === Tab.Timeseries || target.tab === undefined) {
+      const query: DataQueryRequestItem = {
+        name: target.target,
+      };
+      return [query];
+    }
+
+    if (target.tab === Tab.Asset) {
+      await this.findAssetTimeseries(target, options);
+      return target.assetQuery.timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
+    }
+
+    if (target.tab === Tab.Custom) {
+      await this.findAssetTimeseries(target, options);
+      if (!target.expr) return [];
+      // apply the search expression
+      try {
+        return parseExpression(
+          target.expr,
+          options,
+          cache.getTimeseries(options, target),
+          this.templateSrv,
+          target
+        );
+      } catch (e) {
+        target.error = e;
+        return [];
+      }
+    }
+
+    return [];
+  }
+
   public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const { range, annotation } = options;
     const { expr, filter, error } = annotation;
@@ -321,12 +266,12 @@ export default class CogniteDatasource {
     const endTime = Math.ceil(dateMath.parse(range.to));
     if (error || !expr) return [];
 
-    const queryOptions = this.parse(expr, ParseType.Event);
+    const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
     if (queryOptions.error) {
       console.error(queryOptions.error);
       return [];
     }
-    const filterOptions = this.parse(filter || '', ParseType.Event);
+    const filterOptions = parse(filter || '', ParseType.Event, this.templateSrv);
     if (filter && filterOptions.error) {
       console.error(filterOptions.error);
       return [];
@@ -355,7 +300,7 @@ export default class CogniteDatasource {
     const events = result.data.data.items;
     if (!events || events.length === 0) return [];
 
-    this.applyFilters(filterOptions.filters, events);
+    Utils.applyFilters(filterOptions.filters, events);
 
     return events
       .filter(e => e.selected === true)
@@ -367,11 +312,6 @@ export default class CogniteDatasource {
         timeEnd: event.endTime,
         title: event.type,
       }));
-  }
-
-  // this function is for getting metrics (template variables)
-  async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
-    return this.getAssetsForMetrics(query);
   }
 
   public async getOptionsForDropdown(
@@ -500,32 +440,13 @@ export default class CogniteDatasource {
       );
   }
 
-  filterOnAssetTimeseries(target: QueryTarget, options: QueryOptions): void {
-    const filterOptions = this.parse(target.expr, ParseType.Timeseries, options);
-    if (filterOptions.error) {
-      target.error = filterOptions.error;
-      return;
-    }
-    const func = filterOptions.filters.find(x => x.property === 'function');
-    if (func) {
-      filterOptions.filters = filterOptions.filters.filter(x => x.property !== 'function');
-      target.assetQuery.func = func.value;
-    } else {
-      target.assetQuery.func = '';
-    }
-
-    this.applyFilters(filterOptions.filters, cache.getTimeseries(options, target));
-
-    target.aggregation = filterOptions.aggregation;
-    target.granularity = filterOptions.granularity;
-  }
-
-  async getAssetsForMetrics(query: VariableQueryData): Promise<MetricFindQueryResponse> {
-    const queryOptions = this.parse(query.query, ParseType.Asset);
+  // this function is for getting metrics (template variables)
+  async metricFindQuery(query: VariableQueryData): Promise<MetricFindQueryResponse> {
+    const queryOptions = parse(query.query, ParseType.Asset, this.templateSrv);
     if (queryOptions.error) {
       return [{ text: queryOptions.error, value: '-' }];
     }
-    const filterOptions = this.parse(query.filter, ParseType.Asset);
+    const filterOptions = parse(query.filter, ParseType.Asset, this.templateSrv);
     if (query.filter && filterOptions.error) {
       return [{ text: filterOptions.error, value: '-' }];
     }
@@ -550,135 +471,13 @@ export default class CogniteDatasource {
     const assets = result.data.data.items;
 
     // now filter over these assets with the rest of the filters
-    this.applyFilters(filterOptions.filters, assets);
+    Utils.applyFilters(filterOptions.filters, assets);
     const filteredAssets = assets.filter(asset => asset.selected === true);
 
     return filteredAssets.map(asset => ({
       text: asset.name,
       value: asset.id,
     }));
-  }
-
-  parse(customQuery: string, type: ParseType, options?: QueryOptions): FilterOptions {
-    let query = customQuery;
-    if (type === ParseType.Timeseries || type === ParseType.Event) {
-      // replace variables with their values
-      if (options) {
-        query = this.templateSrv.replace(query, options.scopedVars);
-      } else {
-        for (const templateVariable of this.templateSrv.variables) {
-          query = query.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
-          query = query.replace(`$${templateVariable.name}`, templateVariable.current.value);
-        }
-      }
-    }
-
-    const filtersOptions = {
-      filters: [],
-      granularity: '',
-      aggregation: '',
-      error: '',
-    };
-
-    // Format: timeseries{ options }
-    //     or  timeseries{ options }[aggregation, granularity]
-    // regex pulls out the options string, as well as the aggre/gran string (if it exists)
-    const timeseriesRegex = /^timeseries\{(.*)\}(?:\[(.*)\])?$/;
-    const timeseriesMatch = query.match(timeseriesRegex);
-    const assetRegex = /^(?:asset|event)\{(.*)\}$/;
-    const assetMatch = query.match(assetRegex);
-    const filterRegex = /^filter\{(.*)\}$/;
-    const filterMatch = query.match(filterRegex);
-
-    let splitfilters: string[];
-    if (timeseriesMatch) {
-      // regex finds commas that are not followed by a closed bracket
-      splitfilters = Utils.splitFilters(timeseriesMatch[1], filtersOptions, false);
-    } else if (assetMatch) {
-      splitfilters = Utils.splitFilters(assetMatch[1], filtersOptions, true);
-    } else if (filterMatch) {
-      splitfilters = Utils.splitFilters(filterMatch[1], filtersOptions, false);
-    } else {
-      filtersOptions.error = `ERROR: Unable to parse expression ${query}`;
-    }
-
-    if (filtersOptions.error) {
-      return filtersOptions;
-    }
-
-    for (let f of splitfilters) {
-      f = _.trim(f, ' ');
-      if (f === '') continue;
-      const filter: any = {};
-      let i: number;
-      if ((i = f.indexOf(FilterType.RegexEquals)) > -1) {
-        filter.property = _.trim(f.substr(0, i), ' \'"');
-        filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = FilterType.RegexEquals;
-      } else if ((i = f.indexOf(FilterType.RegexNotEquals)) > -1) {
-        filter.property = _.trim(f.substr(0, i), ' \'"');
-        filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = FilterType.RegexNotEquals;
-      } else if ((i = f.indexOf(FilterType.NotEquals)) > -1) {
-        filter.property = _.trim(f.substr(0, i), ' \'"');
-        filter.value = _.trim(f.substr(i + 2), ' \'"');
-        filter.type = FilterType.NotEquals;
-      } else if ((i = f.indexOf(FilterType.Equals)) > -1) {
-        filter.property = _.trim(f.substr(0, i), ' \'"');
-        filter.value = _.trim(f.substr(i + 1), ' \'"');
-        filter.type = FilterType.Equals;
-      } else {
-        console.error(`Error parsing ${f}`);
-      }
-      filtersOptions.filters.push(filter);
-    }
-
-    if (timeseriesMatch) {
-      const aggregation = timeseriesMatch[2];
-      if (aggregation) {
-        const splitAggregation = aggregation.split(',');
-        filtersOptions.aggregation = _.trim(splitAggregation[0], ' \'"').toLowerCase();
-        filtersOptions.granularity =
-          splitAggregation.length > 1 ? _.trim(splitAggregation[1], ' \'"') : '';
-      }
-    }
-
-    return filtersOptions;
-  }
-
-  private applyFilters(filters: Filter[], objects: any): void {
-    for (const obj of objects) {
-      obj.selected = true;
-      for (const filter of filters) {
-        if (filter.type === FilterType.RegexEquals) {
-          const val = _.get(obj, filter.property);
-          const regex = `^${filter.value}$`;
-          if (val === undefined || !val.match(regex)) {
-            obj.selected = false;
-            break;
-          }
-        } else if (filter.type === FilterType.RegexNotEquals) {
-          const val = _.get(obj, filter.property);
-          const regex = `^${filter.value}$`;
-          if (val === undefined || val.match(regex)) {
-            obj.selected = false;
-            break;
-          }
-        } else if (filter.type === FilterType.NotEquals) {
-          const val = _.get(obj, filter.property);
-          if (val === undefined || String(val) === filter.value) {
-            obj.selected = false;
-            break;
-          }
-        } else if (filter.type === FilterType.Equals) {
-          const val = _.get(obj, filter.property);
-          if (val === undefined || String(val) !== filter.value) {
-            obj.selected = false;
-            break;
-          }
-        }
-      }
-    }
   }
 
   private getTimeseriesLabel(label: string, timeseries: TimeSeriesResponseItem): string {

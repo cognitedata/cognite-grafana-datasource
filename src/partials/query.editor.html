@@ -167,22 +167,28 @@
   </div>
   <div class="gf-form--grow" ng-show="showHelp">
       <pre>
-  Format: timeseries{options}
-      or  timeseries{options}[aggregation,granularity] <br>
+  Format: <code class="query-keyword">timeseries{options}</code>
+      or  <code class="query-keyword">timeseries{options}[aggregation,granularity]</code> <br>
   Options are of the form: property comparator value <br>
   Comparator can be either
     =  (strict equality),
     != (strict inequality),
     =~ (regex equality),
     !~ (regex inequality) <br>
-  Templated variables can also be used with [[variable]] or $variable <br>
-  Example: timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h] <br>
-  Functions can also be applied to the results by adding a function property. Use '[ID]' to access the timeseries values.
-    Note: No aggregates can be used when using functions.
-    Instead, specify aggregations on each individual timeseries by using [ID,aggregation] or [ID,aggregation,granularity].
-  Examples: timeseries{name=~'.*temp.*', function = ([ID] - 32) * 5/9}
-            timeseries{ function = [ID] - [ID,avg,24h] }
-            timeseries{ function = [ID,step] - [123456789,step] }
+  Templated variables can also be used with [[variable]] or $variable.
+  Example: <code class="query-keyword">timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h]</code> <br>
+  Custom functions can also be applied on one or multiple timeseries.
+  Examples: <code class="query-keyword">(timeseries{name=~'.*temp.*'}[avg] - 32) * 5/9</code>
+            <code class="query-keyword">timeseries{} - timeseries{}[avg,24h]</code><br>
+  Special functions (SUM, MAX, MIN, AVG) can also be applied to all filtered timeseries.
+  Examples: <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"})</code>
+              ↪ yields one timeseries that is the sum of all temperature timeseries
+            <code class="query-keyword">MAX(timeseries{}[average]) - MIN(timeseries{}[average])</code>
+              ↪ yields the range of the timeseries aggregated by averages
+            <code class="query-keyword">power(timeseries{} - AVG(timeseries{}), 2)</code>
+              ↪ yields the squared deviation of each timeseries from the average <br>
+  If you want to reference a specific timeseries (for example, a timeseries that is not associated with an asset), use `[ID]`, `[ID,aggregate]`, or `[ID,aggregate,granularity]`.
+  Example:  <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"}) - [123456,avg,12h]</code>
       </pre>
   </div>
 </script>
