@@ -203,8 +203,7 @@ export default class CogniteDatasource {
           if (queryReq.aggregates) {
             target.error =
               '[ERROR] To use aggregations with functions, use [ID,aggregation,granularity] or [ID,aggregation]';
-            targetQueriesCount.pop();
-            continue;
+            break;
           }
           let ids = 0;
           const idRegex = /\[.*?\]/g; // look for [something]
@@ -228,6 +227,10 @@ export default class CogniteDatasource {
         }
         queries.push(queryReq);
         queryList = queryList.slice(100); // get the rest of the items
+      }
+      if (target.error) {
+        targetQueriesCount.pop();
+        continue;
       }
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries || target.tab === undefined) {
