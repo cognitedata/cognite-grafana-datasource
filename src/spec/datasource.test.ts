@@ -508,6 +508,21 @@ describe('CogniteDatasource', () => {
         refId: 'F',
         expr: 'timeseries{name=~".*}[]',
       };
+      const targetG: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'G',
+        expr: 'timeseries{name=~".*"}[avg',
+      };
+      const targetH: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'H',
+        expr: 'timeseries{name=~".*"',
+      };
+      const targetI: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'I',
+        expr: '',
+      };
       const tsResponse = getTimeseriesResponse([
         {
           name: 'Timeseries1',
@@ -543,7 +558,17 @@ describe('CogniteDatasource', () => {
 
       beforeAll(async () => {
         ctx.options.intervalMs = 86400000;
-        ctx.options.targets = [targetA, targetB, targetC, targetD, targetE, targetF];
+        ctx.options.targets = [
+          targetA,
+          targetB,
+          targetC,
+          targetD,
+          targetE,
+          targetF,
+          targetG,
+          targetH,
+          targetI,
+        ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
@@ -552,7 +577,13 @@ describe('CogniteDatasource', () => {
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
-          .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementation(x => {
+            if ('FGH'.includes(x.refId)) return Promise.reject(tsError);
+            return Promise.resolve(getDataqueryResponse(x.data));
+          });
         result = await ctx.ds.query(ctx.options);
       });
       afterAll(() => {
@@ -560,7 +591,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(11);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(14);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
@@ -571,12 +602,14 @@ describe('CogniteDatasource', () => {
       });
 
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(12);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(14);
       });
 
       it('should display errors for malformed queries', () => {
         expect(targetF.error).toBeDefined();
         expect(targetF.error).not.toHaveLength(0);
+        expect(targetG.error).toBeDefined();
+        expect(targetG.error).not.toHaveLength(0);
       });
     });
 
@@ -597,36 +630,47 @@ describe('CogniteDatasource', () => {
           includeSubtrees: false,
           func: undefined,
         },
-        expr: 'timeseries{function=[ID]}',
+        expr: 'timeseries{}',
         warning: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
         refId: 'B',
-        expr: 'timeseries{function=[ID] + [ID] + [123]}',
+        expr: '       timeseries{} + timeseries{} + [123]   ',
       };
       const targetC: QueryTarget = {
         ..._.cloneDeep(targetA),
         refId: 'C',
-        expr: 'timeseries{function=[ID] * [ID,average] - [ID,average,10s] + [ID,average,10s]}[]',
+        expr: 'timeseries{}[] * timeseries{}[average]- timeseries{}[average,10s]',
         label: '{{description}} {{metadata.key1}}',
       };
       const targetD: QueryTarget = {
         ..._.cloneDeep(targetA),
         refId: 'D',
         expr:
-          'timeseries{name=[[TimeseriesVariable]],function=[ID] * [ID,average] - [ID,average,10m]}[none]',
+          'timeseries{name=[[TimeseriesVariable]]}[none] * timeseries{name=[[TimeseriesVariable]]}[average] - timeseries{name=[[TimeseriesVariable]]}[average,10m]',
       };
       const targetE: QueryTarget = {
         ..._.cloneDeep(targetA),
         refId: 'E',
-        expr:
-          'timeseries{name=[[TimeseriesVariable]],function=[ID] * [ID,average] - [ID,average,10m]}[average]',
+        expr: 'timeseries{asdaklj}',
       };
       const targetF: QueryTarget = {
         ..._.cloneDeep(targetA),
         refId: 'F',
-        expr: 'timeseries{function=1+1}[]',
+        expr: '1+1',
+      };
+      const targetG: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'G',
+        expr: 'SUM(timeseries{})',
+        label: 'SUM',
+      };
+      const targetH: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'H',
+        expr:
+          'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{name="nonexistant"}) - avg(timeseries{name="Timeseries1"}[avg]) - 3*timeseries{}[]',
       };
 
       const tsResponse = getTimeseriesResponse([
@@ -670,7 +714,16 @@ describe('CogniteDatasource', () => {
 
       beforeAll(async () => {
         ctx.options.intervalMs = 900000000;
-        ctx.options.targets = [targetA, targetB, targetC, targetD, targetE, targetF];
+        ctx.options.targets = [
+          targetA,
+          targetB,
+          targetC,
+          targetD,
+          targetE,
+          targetF,
+          targetG,
+          targetH,
+        ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
@@ -679,16 +732,20 @@ describe('CogniteDatasource', () => {
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-          .mockRejectedValueOnce(tsError);
+          .mockRejectedValueOnce(tsError)
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(11);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(15);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
