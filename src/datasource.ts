@@ -165,7 +165,14 @@ export default class CogniteDatasource {
           cache.getTimeseries(options, target).forEach(ts => {
             if (ts.selected && count < queryList.length) {
               count += 1;
-              if (!target.label) target.label = '';
+              if (!target.label) {
+                if (queryList[0].function) {
+                  // if using custom functions and no label is specified just use the name of the last timeseries in the function
+                  labels.push(ts.name);
+                  return;
+                }
+                target.label = '';
+              }
               labels.push(this.getTimeseriesLabel(target.label, ts));
             }
           });

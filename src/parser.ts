@@ -23,13 +23,10 @@ export const parseExpression = (
   // first check if it is just a simple `timeseries{}` or `timeseries{}[]`
   if (isSimpleTimeseriesExpression(trimmedExpr)) {
     const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
-    target.aggregation = filterOptions.aggregation;
+    target.aggregation = Utils.getAggregationDropdownString(filterOptions.aggregation);
     target.granularity = filterOptions.granularity;
     return timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
   }
-
-  target.aggregation = '';
-  target.granularity = '';
 
   const exprWithSpecialFunctions = parseSpecialFunctions(
     trimmedExpr,

@@ -767,7 +767,7 @@ Object {
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
-    "aggregates": "cv",
+    "aggregates": "continuousVariance",
     "end": 1549338475000,
     "granularity": "10d",
     "items": Array [
@@ -786,7 +786,7 @@ Object {
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
-    "aggregates": "dv",
+    "aggregates": "discreteVariance",
     "end": 1549338475000,
     "granularity": "24h",
     "items": Array [
