@@ -1,0 +1,66 @@
+{
+  "type": "datasource",
+  "name": "Cognite Data Platform",
+  "id": "cognitedata-datasource",
+
+  "info": {
+    "description": "Cognite Data Platform datasource",
+    "author": {
+      "name": "Cognite",
+      "url": "https://cognite.com"
+    },
+    "keywords": ["cognite", "timeseries", "iot"],
+    "logos": {
+      "small": "img/Cognite_logo.svg",
+      "large": "img/Cognite_logo.svg"
+    },
+    "links": [
+      {
+        "name": "Project site",
+        "url": "https://github.com/cognitedata/cognite-grafana-datasource"
+      },
+      {
+        "name": "Apache License",
+        "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
+      }
+    ],
+    "version": "1.0.0",
+    "updated": "2019-03-26"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "5.4.x",
+    "plugins": []
+  },
+
+  "routes": [
+    {
+      "path": "cogniteapi",
+      "url": "https://api.cognitedata.com/api/0.5/projects",
+      "headers": [
+        {
+          "name": "api-key",
+          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        }
+      ]
+    },
+    {
+      "path": "cogniteloginstatus",
+      "method": "GET",
+      "url": "https://api.cognitedata.com/login/status",
+      "headers": [
+        {
+          "name": "api-key",
+          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        }
+      ]
+    }
+  ],
+
+  "queryOptions": {
+    "maxDataPoints": true
+  },
+
+  "metrics": true,
+  "annotations": true
+}
