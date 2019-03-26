@@ -20,6 +20,7 @@ export default class Utils {
 
   static getDatasourceValueString(aggregation: string): string {
     const mapping = {
+      '': 'value',
       undefined: 'value',
       none: 'value',
       avg: 'average',
@@ -35,6 +36,14 @@ export default class Utils {
       tv: 'totalVariation',
     };
     return mapping[aggregation] || aggregation;
+  }
+
+  static getAggregationDropdownString(aggregation: string): string {
+    let val = Utils.getDatasourceValueString(aggregation);
+    if (val === 'continousVariance') val = 'continuousVariance';
+    // temp 0.5 fix
+    else if (val === 'value') val = 'none';
+    return val;
   }
 
   static splitFilters(filterString: string, filtersOptions: any, onlyAllowEquals: boolean) {
