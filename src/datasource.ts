@@ -84,47 +84,53 @@ export default class CogniteDatasource {
       if (queryList.length === 0 || target.error) {
         continue;
       }
-      // keep track of target lengths so we can assign errors later
-      targetQueriesCount.push({
-        refId: target.refId,
-        count: queryList.length,
-      });
-      // create query requests
-      const queryReq: DataQueryRequest = {
-        items: queryList,
-        start: timeFrom,
-        end: timeTo,
-      };
-      if (target.aggregation && target.aggregation !== 'none') {
-        queryReq.aggregates = target.aggregation;
-        if (!target.granularity) {
-          queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
-        } else {
-          queryReq.granularity = target.granularity;
-        }
-      }
-      if (target.tab === Tab.Custom && queryList[0].function) {
-        let ids = 0;
-        const idRegex = /\[.*?\]/g; // look for [something]
-        for (const q of queryList) {
-          const matches = q.function.match(idRegex);
-          if (!matches) break;
-          const idsObj = {};
-          for (const match of matches) {
-            idsObj[match.substr(1, match.length - 2)] = true;
+
+      // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
+      // may want to change how much we split into, but for now, 100 seems like the best
+      const qlChunks = _.chunk(queryList, 100);
+      for (const qlChunk of qlChunks) {
+        // keep track of target lengths so we can assign errors later
+        targetQueriesCount.push({
+          refId: target.refId,
+          count: qlChunk.length,
+        });
+        // create query requests
+        const queryReq: DataQueryRequest = {
+          items: qlChunk,
+          start: timeFrom,
+          end: timeTo,
+        };
+        if (target.aggregation && target.aggregation !== 'none') {
+          queryReq.aggregates = target.aggregation;
+          if (!target.granularity) {
+            queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
+          } else {
+            queryReq.granularity = target.granularity;
           }
-          ids += Object.keys(idsObj).length;
         }
-        if (ids === 0) ids = 1; // will fail anyways, just show the api error message
+        if (target.tab === Tab.Custom && qlChunk[0].function) {
+          let idsCount = 0;
+          const idRegex = /\[.*?\]/g; // look for [something]
+          for (const q of qlChunk) {
+            const matches = q.function.match(idRegex);
+            if (!matches) break;
+            const idsObj = {};
+            for (const match of matches) {
+              idsObj[match.substr(1, match.length - 2)] = true;
+            }
+            idsCount += Object.keys(idsObj).length;
+          }
+          if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
 
-        // check if any aggregates are being used
-        const usesAggregates = queryList.some(item => item.aliases.length > 0);
+          // check if any aggregates are being used
+          const usesAggregates = qlChunk.some(item => item.aliases.length > 0);
 
-        queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / ids);
-      } else {
-        queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / queryList.length);
+          queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / idsCount);
+        } else {
+          queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
+        }
+        queries.push(queryReq);
       }
-      queries.push(queryReq);
 
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries || target.tab === undefined) {
