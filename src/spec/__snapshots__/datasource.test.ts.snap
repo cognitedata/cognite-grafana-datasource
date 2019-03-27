@@ -1207,6 +1207,13 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
 Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
+Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -1237,7 +1244,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1281,7 +1288,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1403,7 +1410,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1441,7 +1448,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1460,7 +1467,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1479,7 +1486,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 16`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -2213,6 +2220,50 @@ Object {
 }
 `;
 
+exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 17`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "aliases": Array [],
+        "function": "max(max([12],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Timeseries1",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "max(max([34],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Timeseries2",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "max(max([56],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Timeseries3",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "max(max([78],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Timeseries4",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "max(max([90],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Timeseries5",
+      },
+      Object {
+        "aliases": Array [],
+        "function": "max(max([123],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "name": "Test",
+      },
+    ],
+    "limit": 2777,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [
@@ -2635,6 +2686,132 @@ Object {
         ],
       ],
       "target": "SUM",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries2",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries3",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries4",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Timeseries5",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "Test",
     },
     Object {
       "datapoints": Array [

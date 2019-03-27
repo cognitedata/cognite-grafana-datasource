@@ -51,36 +51,20 @@ const parseSpecialFunctions = (
   templateSrv: TemplateSrv
 ) => {
   let newExpr = expr;
-  // look for sum() - case-insensitive
-  const sumRegex = /sum\(.*?\)/gi;
-  let sumRegexMatches = newExpr.match(sumRegex);
-  if (sumRegexMatches) {
-    // remove duplicates
-    sumRegexMatches = sumRegexMatches.filter((match, i, a) => i === a.indexOf(match));
-    for (const match of sumRegexMatches) {
-      const timeseriesString = match.slice(4, -1);
-      const filterOptions = getAndApplyFilterOptions(
-        timeseriesString,
-        templateSrv,
-        options,
-        timeseries
-      );
-      const selectedTs = timeseries.filter(ts => ts.selected);
-      const sumString = `([${selectedTs
-        .map(ts => getTempAliasString(ts, filterOptions))
-        .join('] + [')}])`;
-      newExpr = newExpr.replace(match, sumString);
-    }
-  }
-
-  // look for max(), min(), or avg()
-  const funcRegex = /(max|min|avg)\(.*?\)/gi;
+  // look for sum(), max(), min(), or avg() with timeseries{} in it
+  const funcRegex = /(sum|max|min|avg)\(timeseries.*?\)/gi;
   let funcRegexMatches = newExpr.match(funcRegex);
   if (funcRegexMatches) {
     // remove duplicates
     funcRegexMatches = funcRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of funcRegexMatches) {
-      const timeseriesString = match.slice(4, -1);
+      // the match might match too much, so we need to parse the string more
+      const matchIndex = newExpr.indexOf(match);
+      if (matchIndex < 0) continue;
+      const exprFromMatch = newExpr.substr(matchIndex);
+      const timeseriesString = findTimeseriesString(exprFromMatch);
+      if (exprFromMatch.charAt(4 + timeseriesString.length) !== ')') continue;
+      const actualMatchString = `${match.substr(0, 4)}${timeseriesString})`;
       const filterOptions = getAndApplyFilterOptions(
         timeseriesString,
         templateSrv,
@@ -89,14 +73,20 @@ const parseSpecialFunctions = (
       );
       const selectedTs = timeseries.filter(ts => ts.selected);
       let funcString = '';
-      if (selectedTs.length <= 1) {
-        funcString = selectedTs.map(ts => `[${getTempAliasString(ts, filterOptions)}]`).join('');
-      } else {
-        funcString = `${match.slice(0, 3).toLowerCase()}([${selectedTs
+      if (match.substr(0, 3).toLowerCase() === 'sum') {
+        funcString = `([${selectedTs
           .map(ts => getTempAliasString(ts, filterOptions))
-          .join('], [')}])`;
+          .join('] + [')}])`;
+      } else {
+        if (selectedTs.length <= 1) {
+          funcString = selectedTs.map(ts => `[${getTempAliasString(ts, filterOptions)}]`).join('');
+        } else {
+          funcString = `${match.slice(0, 3).toLowerCase()}([${selectedTs
+            .map(ts => getTempAliasString(ts, filterOptions))
+            .join('], [')}])`;
+        }
       }
-      newExpr = newExpr.replace(match, funcString);
+      newExpr = newExpr.replace(actualMatchString, funcString);
     }
   }
 
