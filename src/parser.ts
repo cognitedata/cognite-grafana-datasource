@@ -51,7 +51,7 @@ const parseSpecialFunctions = (
   templateSrv: TemplateSrv
 ) => {
   let newExpr = expr;
-  // look for sum(), max(), min(), or avg() with timeseries{} in it
+  // look for sum(), max(), min(), or avg() with timeseries in it
   const funcRegex = /(sum|max|min|avg)\(timeseries.*?\)/gi;
   let funcRegexMatches = newExpr.match(funcRegex);
   if (funcRegexMatches) {
@@ -61,9 +61,9 @@ const parseSpecialFunctions = (
       // the match might match too much, so we need to parse the string more
       const matchIndex = newExpr.indexOf(match);
       if (matchIndex < 0) continue;
-      const exprFromMatch = newExpr.substr(matchIndex);
-      const timeseriesString = findTimeseriesString(exprFromMatch);
-      if (exprFromMatch.charAt(4 + timeseriesString.length) !== ')') continue;
+      const timeseriesString = findTimeseriesString(newExpr.substr(matchIndex));
+      // make sure that we have func(timeseries{}[]) and not a use of the function eg max(timeseries{}, 0)
+      if (match.charAt(4 + timeseriesString.length) !== ')') continue;
       const actualMatchString = `${match.substr(0, 4)}${timeseriesString})`;
       const filterOptions = getAndApplyFilterOptions(
         timeseriesString,
