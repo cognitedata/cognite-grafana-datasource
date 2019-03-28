@@ -112,6 +112,7 @@ export interface DataQueryRequestResponse {
   config: {
     data: {
       aggregates: string;
+      limit: number;
     };
   };
 }
