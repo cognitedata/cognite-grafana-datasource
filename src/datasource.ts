@@ -253,6 +253,11 @@ export default class CogniteDatasource {
 
     if (target.tab === Tab.Custom) {
       await this.findAssetTimeseries(target, options);
+      // if we don't have any timeseries just return
+      if (cache.getTimeseries(options, target).length === 0) {
+        target.warning = '[WARNING] No timeseries found.';
+        return [];
+      }
       if (!target.expr) return [];
       // apply the search expression
       try {

@@ -114,7 +114,7 @@
     <ul>
       <li class="gf-form-inline variable-option">
         <input type="checkbox" ng-checked="ctrl.isAllSelected" ng-show="false">
-        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes;ctrl.onChangeInternal()"></span>
+        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()"></span>
         <a ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()">Select All</a>
       </li>
       <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option">

@@ -523,6 +523,11 @@ describe('CogniteDatasource', () => {
         refId: 'I',
         expr: '',
       };
+      const targetJ: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'J',
+        expr: '-',
+      };
       const tsResponse = getTimeseriesResponse([
         {
           name: 'Timeseries1',
@@ -568,6 +573,7 @@ describe('CogniteDatasource', () => {
           targetG,
           targetH,
           targetI,
+          targetJ,
         ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
@@ -580,6 +586,7 @@ describe('CogniteDatasource', () => {
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
+          .mockImplementationOnce(() => Promise.resolve(getTimeseriesResponse([])))
           .mockImplementation(x => {
             if ('FGH'.includes(x.refId)) return Promise.reject(tsError);
             return Promise.resolve(getDataqueryResponse(x.data));
@@ -591,7 +598,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(14);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(15);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
@@ -602,7 +609,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(14);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(15);
       });
 
       it('should display errors for malformed queries', () => {
@@ -610,6 +617,8 @@ describe('CogniteDatasource', () => {
         expect(targetF.error).not.toHaveLength(0);
         expect(targetG.error).toBeDefined();
         expect(targetG.error).not.toHaveLength(0);
+        expect(targetH.error).toBeDefined();
+        expect(targetH.error).not.toHaveLength(0);
       });
     });
 
