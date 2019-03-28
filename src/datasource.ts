@@ -221,15 +221,21 @@ export default class CogniteDatasource {
         const aggregation = response.config.data.aggregates;
         const aggregationPrefix = aggregation ? `${aggregation} ` : '';
         return datapoints.concat(
-          response.data.data.items.map(item => ({
-            target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
-            datapoints: item.datapoints
-              .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-              .map(d => {
-                const val = Utils.getDatasourceValueString(response.config.data.aggregates);
-                return [d[val] === undefined ? d.value : d[val], d.timestamp];
-              }),
-          }))
+          response.data.data.items.map(item => {
+            if (item.datapoints.length >= response.config.data.limit) {
+              target.warning =
+                '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+            }
+            return {
+              target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
+              datapoints: item.datapoints
+                .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
+                .map(d => {
+                  const val = Utils.getDatasourceValueString(response.config.data.aggregates);
+                  return [d[val] === undefined ? d.value : d[val], d.timestamp];
+                }),
+            };
+          })
         );
       }, []),
     };
