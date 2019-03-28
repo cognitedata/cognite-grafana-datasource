@@ -681,6 +681,11 @@ describe('CogniteDatasource', () => {
         expr:
           'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{name="nonexistant"}) - avg(timeseries{name="Timeseries1"}[avg]) - 3*timeseries{}[]',
       };
+      const targetI: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'I',
+        expr: 'max(max(timeseries{},5),5) + max(timeseries{})',
+      };
 
       const tsResponse = getTimeseriesResponse([
         {
@@ -732,9 +737,11 @@ describe('CogniteDatasource', () => {
           targetF,
           targetG,
           targetH,
+          targetI,
         ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
@@ -749,12 +756,13 @@ describe('CogniteDatasource', () => {
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockRejectedValueOnce(tsError)
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(15);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(17);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
