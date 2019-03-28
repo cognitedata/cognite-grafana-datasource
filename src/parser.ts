@@ -53,10 +53,8 @@ const parseSpecialFunctions = (
   let newExpr = expr;
   // look for sum(), max(), min(), or avg() with timeseries in it
   const funcRegex = /(sum|max|min|avg)\(timeseries.*?\)/gi;
-  let funcRegexMatches = newExpr.match(funcRegex);
+  const funcRegexMatches = newExpr.match(funcRegex);
   if (funcRegexMatches) {
-    // remove duplicates
-    funcRegexMatches = funcRegexMatches.filter((match, i, a) => i === a.indexOf(match));
     for (const match of funcRegexMatches) {
       // the match might match too much, so we need to parse the string more
       const matchIndex = newExpr.indexOf(match);
