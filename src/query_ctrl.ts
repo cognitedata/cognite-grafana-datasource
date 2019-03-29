@@ -1,12 +1,13 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
-import CogniteDatasource, { Tab } from './datasource';
+import CogniteDatasource from './datasource';
+import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
-  target: any;
+  target: QueryTarget;
   assetVals: any;
   datasource: CogniteDatasource;
   panelCtrl: any;
@@ -47,12 +48,14 @@ export class CogniteQueryCtrl extends QueryCtrl {
     expr: '',
     assetQuery: {
       target: '',
-      old: {},
+      old: undefined,
       timeseries: [],
       includeSubtrees: false,
       func: '',
+      templatedTarget: '',
     },
   };
+  isAllSelected: boolean;
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -61,10 +64,20 @@ export class CogniteQueryCtrl extends QueryCtrl {
     _.defaultsDeep(this.target, this.defaults);
 
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    if (this.target.tab !== Tab.Asset) {
+      this.target.assetQuery.timeseries = [];
+      this.target.assetQuery.old = undefined;
+    }
+    this.isAllSelected =
+      this.target.assetQuery.timeseries &&
+      this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getOptions(query: string, type: string) {
-    return this.datasource.getOptionsForDropdown(query || '', type);
+    return this.datasource.getOptionsForDropdown(query || '', type).then(options => {
+      _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
+      return options;
+    });
   }
 
   onChangeInternal() {
@@ -74,6 +87,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
   changeTab(index: number) {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
+    this.refresh();
+  }
+
+  toggleCheckboxes() {
+    this.isAllSelected = !this.isAllSelected;
+    this.target.assetQuery.timeseries.forEach(ts => (ts.selected = this.isAllSelected));
+  }
+
+  selectOption(timeseries: TimeSeriesResponseItem) {
+    timeseries.selected = !timeseries.selected;
+    this.isAllSelected = this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getCollapsedText() {

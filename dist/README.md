@@ -84,7 +84,8 @@ If you want more fine-grained control.
 
 - First select an asset (with/without subassets) to pull timeseries from, or use a template variable with `$Variable` or `[[Variable]]`.
 - Then filter on these timeseries. Click on the help icon for more details about the syntax.
-- If you want to apply custom functions to the timeseries (e.g. for unit conversions), you can specify a function by adding `function=` to your query.
+- If you want to apply custom functions to the timeseries (e.g. for unit conversions), simply add your functions around `timeseries{}[]` -> For example: `(timeseries{name=~"Test.*"}[avg] + 10) / 5` 
+    - Click on the info icon next to the text box to see more examples
 
 ![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img4.png)
 
@@ -145,6 +146,17 @@ For debugging and development, use `yarn dev`, and for testing use `yarn test`.
 ---
 
 #### Changelog
+
+##### v1.0.0
+
+- Fixing templating so that repeated panels/rows work properly
+- Changing checkboxes to grafana checkboxes and adding 'Select All' option
+- Fixing data source configuration to verify the project name
+- Breaking Changes: `function= ` inside of `timeseries{ ... }` no longer works for custom queries
+    - Instead, functions are now applied outside of `timeseries{}[]` such as:
+    - `(timeseries{description=~".*TEMP.*"}[avg] - 32) * 5/9`
+    - `sum(timeseries{name=~".*VALUE"}[count,1d])`
+    - `max(timeseries{metadata.on="True"}[count,5m]) - min(timeseries{metadata.on="True"}[count,5m])`
 
 ##### v0.0.1 (beta)
 

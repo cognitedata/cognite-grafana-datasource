@@ -1,4 +1,12 @@
-import { isError } from './datasource';
+import {
+  DataSourceRequestOptions,
+  isError,
+  TimeSeriesResponseItem,
+  QueryTarget,
+  QueryOptions,
+} from './types';
+import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import Utils from './utils';
 
 // Cache requests for 10 seconds
 const cacheTime = 1000 * 10;
@@ -8,7 +16,7 @@ const queries = {
   requests: new Map(),
 };
 
-export const getQuery = async (query, backendSrv) => {
+export const getQuery = async (query: DataSourceRequestOptions, backendSrv: BackendSrv) => {
   const stringQuery = JSON.stringify(query);
 
   if (queries.requests.has(stringQuery)) {
@@ -46,8 +54,24 @@ export const getQuery = async (query, backendSrv) => {
   return promise;
 };
 
+const assetTimeseries = new Map<string, TimeSeriesResponseItem[]>();
+
+export const getTimeseries = (options: QueryOptions, target: QueryTarget) => {
+  return assetTimeseries.get(Utils.timeseriesHash(options, target));
+};
+
+export const setTimeseries = (
+  options: QueryOptions,
+  target: QueryTarget,
+  timeseries: TimeSeriesResponseItem[]
+) => {
+  assetTimeseries.set(Utils.timeseriesHash(options, target), timeseries);
+};
+
 const cache = {
   getQuery,
+  getTimeseries,
+  setTimeseries,
 };
 
 export default cache;

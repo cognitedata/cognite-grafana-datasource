@@ -11,8 +11,8 @@
     },
     "keywords": ["cognite", "timeseries", "iot"],
     "logos": {
-      "small": "img/Cognite_logo_RGB.png",
-      "large": "img/Cognite_logo_RGB.png"
+      "small": "img/Cognite_logo.svg",
+      "large": "img/Cognite_logo.svg"
     },
     "links": [
       {
@@ -24,8 +24,8 @@
         "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
       }
     ],
-    "version": "0.0.1",
-    "updated": "2019-02-25"
+    "version": "1.0.0",
+    "updated": "2019-03-28"
   },
 
   "dependencies": {

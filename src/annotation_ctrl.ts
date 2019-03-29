@@ -1,4 +1,4 @@
-import { Annotation } from './datasource';
+import { Annotation } from './types';
 import Utils from './utils';
 
 export class CogniteAnnotationsQueryCtrl {

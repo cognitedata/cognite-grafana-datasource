@@ -22,6 +22,7 @@ module.exports = {
     // remove the line below if you don't want to use buildin versions
     // "moment",
     "lodash",
+    "react",
     function(context, request, callback) {
       var prefix = "grafana/";
       if (request.indexOf(prefix) === 0) {

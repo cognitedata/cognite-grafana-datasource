@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { Filter, FilterType, QueryOptions, QueryTarget } from './types';
 
 export default class Utils {
   // Converts an object to a query string, ignores properties with undefined/null values
@@ -19,6 +20,7 @@ export default class Utils {
 
   static getDatasourceValueString(aggregation: string): string {
     const mapping = {
+      '': 'value',
       undefined: 'value',
       none: 'value',
       avg: 'average',
@@ -34,6 +36,14 @@ export default class Utils {
       tv: 'totalVariation',
     };
     return mapping[aggregation] || aggregation;
+  }
+
+  static getAggregationDropdownString(aggregation: string): string {
+    let val = Utils.getDatasourceValueString(aggregation);
+    if (val === 'continousVariance') val = 'continuousVariance';
+    // temp 0.5 fix
+    else if (val === 'value') val = 'none';
+    return val;
   }
 
   static splitFilters(filterString: string, filtersOptions: any, onlyAllowEquals: boolean) {
@@ -83,5 +93,66 @@ export default class Utils {
       }
     }
     return filterStrings;
+  }
+
+  static applyFilters(filters: Filter[], objects: any): void {
+    for (const obj of objects) {
+      obj.selected = true;
+      for (const filter of filters) {
+        if (filter.type === FilterType.RegexEquals) {
+          const val = _.get(obj, filter.property);
+          const regex = `^${filter.value}$`;
+          if (val === undefined || !val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === FilterType.RegexNotEquals) {
+          const val = _.get(obj, filter.property);
+          const regex = `^${filter.value}$`;
+          if (val === undefined || val.match(regex)) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === FilterType.NotEquals) {
+          const val = _.get(obj, filter.property);
+          if (val === undefined || String(val) === filter.value) {
+            obj.selected = false;
+            break;
+          }
+        } else if (filter.type === FilterType.Equals) {
+          const val = _.get(obj, filter.property);
+          if (val === undefined || String(val) !== filter.value) {
+            obj.selected = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  static intervalToGranularity(intervalMs: number): string {
+    const seconds = Math.round(intervalMs / 1000.0);
+    if (seconds <= 60) {
+      if (seconds <= 1) {
+        return '1s';
+      }
+      return `${seconds}s`;
+    }
+    const minutes = Math.round(intervalMs / 1000.0 / 60.0);
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.round(intervalMs / 1000.0 / 60.0 / 60.0);
+    if (hours <= 24) {
+      return `${hours}h`;
+    }
+    const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
+    return `${days}d`;
+  }
+
+  static timeseriesHash(options: QueryOptions, target: QueryTarget) {
+    return `${options.dashboardId}_${options.panelId}_${target.refId}_${
+      target.assetQuery.templatedTarget
+    }_${target.assetQuery.includeSubtrees}`;
   }
 }

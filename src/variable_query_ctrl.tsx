@@ -1,13 +1,6 @@
 import _ from 'lodash';
 import React from 'react';
-import { VariableQueryData } from './datasource';
-
-interface VariableQueryProps {
-  query: any;
-  onChange: (query: any, definition: string) => void;
-  datasource: any;
-  templateSrv: any;
-}
+import { VariableQueryData, VariableQueryProps } from './types';
 
 export class CogniteVariableQueryCtrl extends React.PureComponent<
   VariableQueryProps,
