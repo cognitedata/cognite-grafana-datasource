@@ -451,7 +451,7 @@ describe('CogniteDatasource', () => {
         expect(result).toMatchSnapshot();
       });
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(7);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(20);
       });
       it('should display errors for malformed queries', () => {
         expect(targetError1.error).toBe('[400 ERROR] error message');
@@ -609,7 +609,7 @@ describe('CogniteDatasource', () => {
       });
 
       it('should call templateSrv.replace the correct number of times', () => {
-        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(15);
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(37);
       });
 
       it('should display errors for malformed queries', () => {
@@ -686,6 +686,12 @@ describe('CogniteDatasource', () => {
         refId: 'I',
         expr: 'max(max(timeseries{},5),5) + max(timeseries{})',
       };
+      const targetJ: QueryTarget = {
+        ..._.cloneDeep(targetA),
+        refId: 'I',
+        expr: 'timeseries{name=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
+        label: '{{description}} : [[TimeseriesVariable]]',
+      };
 
       const tsResponse = getTimeseriesResponse([
         {
@@ -738,9 +744,11 @@ describe('CogniteDatasource', () => {
           targetG,
           targetH,
           targetI,
+          targetJ,
         ];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
+          .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
           .mockImplementationOnce(() => Promise.resolve(_.cloneDeep(tsResponse)))
@@ -757,12 +765,13 @@ describe('CogniteDatasource', () => {
           .mockRejectedValueOnce(tsError)
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
 
       it('should generate the correct filtered queries', () => {
-        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(17);
+        expect(ctx.backendSrvMock.datasourceRequest.mock.calls.length).toBe(19);
         for (let i = 0; i < ctx.backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
           expect(ctx.backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
         }
@@ -770,6 +779,10 @@ describe('CogniteDatasource', () => {
 
       it('should return correct datapoints and labels', () => {
         expect(result).toMatchSnapshot();
+      });
+
+      it('should call templateSrv.replace the correct number of times', () => {
+        expect(ctx.templateSrvMock.replace.mock.calls.length).toBe(89);
       });
 
       it('should display errors for malformed queries', () => {
