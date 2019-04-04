@@ -688,7 +688,7 @@ describe('CogniteDatasource', () => {
       };
       const targetJ: QueryTarget = {
         ..._.cloneDeep(targetA),
-        refId: 'I',
+        refId: 'J',
         expr: 'timeseries{name=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
         label: '{{description}} : [[TimeseriesVariable]]',
       };
