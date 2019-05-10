@@ -1,22 +1,30 @@
 # Cognite Data Source for Grafana
 
-[Grafana](https://grafana.com/) datasource for the [Cognite Data Platform](https://cognite.com/).
+[Grafana](https://grafana.com/) datasource for [Cognite Data Fusion](https://cognite.com/).
 
 ---
 
 ## Features
 
-- Easily create graphs with timeseries from the Cognite Data Platform
+- Easily create graphs with timeseries from Cognite Data Fusion
 - Perform custom queries to filter for specific timeseries
 - Use variables to create templated dashboards
 - Add event annotations to graphs
 - Apply custom functions to timeseries
 
+### Quick Start
+
+For a quick start on how to start using the Cognite Data Fusion plugin with Grafana, check out the videos we have published!
+
+[Part 1](https://www.youtube.com/watch?v=wdrJuE1KXUM): Introduction to setting up Grafana with the Cognite Data Source plugin and how to display timeseries.
+
+[Part 2](https://www.youtube.com/watch?v=JvpPzAT5wDQ): More advanced guide on custom querying, templating, and using other panels.
+
 ## Installation
 
 #### Via Grafana Plugin Store
 
-The easiest way to install this plugin is to go to [https://grafana.com/plugins/cognitedata-datasource](https://grafana.com/plugins/cognitedata-datasource), and follow the installation instructions there.
+The easiest way to install this plugin is to go to [https://grafana.com/plugins/cognitedata-datasource/installation](https://grafana.com/plugins/cognitedata-datasource/installation), and follow the installation instructions there.
 
 #### Docker
 
@@ -35,15 +43,15 @@ Run the Docker image using this volume:
 Now you can access Grafana at http://localhost:3000
 
 Standard username/password for logging in is admin/admin. See
-http://docs.grafana.org/installation/docker/ for configuration details.
+[http://docs.grafana.org/installation/docker/](http://docs.grafana.org/installation/docker/) for configuration details.
 
 For more help with Docker, see the [step-by-step guide](./instructions.md).
 
 ## Adding the Data Source
 
-To set up CDP, do the following:
+To set up CDF, do the following:
 
-- Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Platform.
+- Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Fusion.
 - Give the data source a name, provide the name of the project and your API key.
 - Hit "Save & Test"
 
@@ -95,7 +103,7 @@ In order to perform templating, we enable the use of variables via `$Variable` o
 
 - To add variables, go to your dashboard's settings, and then select "Variables" from the right side.
 - Make sure the "Type" is set to "Query", and then set your Cognite Data Source as the Data Source.
-- You can then specify the query to pull assets from CDP, and also filter on these assets.
+- You can then specify the query to pull assets from CDF, and also filter on these assets.
 
 ![Variable Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img7.png)
 
@@ -103,11 +111,11 @@ In order to perform templating, we enable the use of variables via `$Variable` o
 
 ## Annotations / Events
 
-Events from CDP can also be shown in Grafana via annotations.
+Events from CDF can also be shown in Grafana via annotations.
 
 - To add annotations, go to your dashboard's settings, and then select "Annotations" from the right side.
 - Choose your Cognite Data Source as the Data Source.
-- You can then specify the query to pull events from CDP, and also filter on these events.
+- You can then specify the query to pull events from CDF, and also filter on these events.
 
 ![Annotation Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img5.png)
 
