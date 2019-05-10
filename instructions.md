@@ -1,6 +1,6 @@
 # Step-by-step guide to how to get started with Grafana
 
-1. Use the virtual machine Docker to access the Grafana data source for the Cognite Data Platform. Download it here: https://www.docker.com/get-started
+1. Use the virtual machine Docker to access the Grafana data source for Cognite Data Fusion. Download it here: https://www.docker.com/get-started
 
 ![Docker download](./images/image1.png)
 
@@ -30,13 +30,13 @@ The download from cognite/grafana-cdp will start immediately.
 
 Standard username/password for logging in is admin/admin.
 
-Once logged in you can see that CDP is installed.
+Once logged in you can see that CDF is installed.
 
 ![Opening Grafana](./images/image6.png)
 
-5. To set up CDP, do the following:
+5. To set up CDF, do the following:
 
-Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Platform as "Type". Give the data source a name, provide the name of the project and your API key.
+Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Fusion as "Type". Give the data source a name, provide the name of the project and your API key.
 
 ![Configuration](./images/image9.png)
 

@@ -1,7 +1,7 @@
 {
   "name": "@cognite/cognite-grafana-datasource",
   "version": "1.0.0",
-  "description": "Cognite Data Platform datasource",
+  "description": "Cognite Data Fusion datasource",
   "repository": "https://github.com/cognitedata/cognite-grafana-datasource",
   "author": "Cognite AS",
   "license": "Apache-2.0",
