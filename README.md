@@ -12,6 +12,14 @@
 - Add event annotations to graphs
 - Apply custom functions to timeseries
 
+### Quick Start
+
+For a quick start on how to start using the Cognite Data Fusion plugin with Grafana, check out the videos we have published!
+
+[Part 1](https://www.youtube.com/watch?v=wdrJuE1KXUM): Introduction to setting up Grafana with the Cognite Data Source plugin and how to display timeseries.
+
+[Part 2](https://www.youtube.com/watch?v=JvpPzAT5wDQ): More advanced guide on custom querying, templating, and using other panels.
+
 ## Installation
 
 #### Via Grafana Plugin Store
