@@ -45,4 +45,23 @@
       </a>
     </div>
   </div>
+  <div class="gf-form-inline">
+    <div class="gf-form">
+      <span class="gf-form-label width-9">API url</span>
+      <input
+        type="text"
+        class="gf-form-input"
+        ng-model="ctrl.current.jsonData.cogniteApiUrl"
+        placeholder="api.cognitedata.com"
+      >
+      <info-popover mode="right-absolute">
+        <p>This is the URL used to reach the API.
+          If the project is deployed on the default multi-tenant installation (most are),
+          then keep the default value and do not change the URL.
+          If the project is deployed on a separate custom cluster,
+          then change the URL to point at the API server for that cluster.
+          If unsure, leave the URL as default.</p>
+      </info-popover>
+    </div>
+  </div>
 </div>
