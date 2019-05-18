@@ -68,7 +68,7 @@ export default class CogniteDatasource {
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
     const targetQueriesCount = [];
-    const labels = [];
+    let labels = [];
 
     const dataQueryRequestPromises: Promise<DataQueryRequestItem[]>[] = [];
     for (const target of queryTargets) {
@@ -179,6 +179,8 @@ export default class CogniteDatasource {
         }
       }
     }
+    // replace variables in labels as well
+    labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
     const queryRequests = queries.map(q =>
       cache
