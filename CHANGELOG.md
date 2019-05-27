@@ -1,5 +1,12 @@
 #### Changelog
 
+##### v1.0.1
+
+- Renaming Cognite Data Platform to Cognite Data Fusion
+- Allowing for templating variables to be used anywhere in custom queries
+    - This is useful for `Text box` variables, for example: `timeseries{}$Variable` will allow for a user to set `$Variable` to ` * 1000` or `[avg,1d]`
+- Allowing for the base url to be modified when adding a new datasource
+
 ##### v1.0.0
 
 - Fixing templating so that repeated panels/rows work properly
