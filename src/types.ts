@@ -119,6 +119,7 @@ export interface DataQueryRequestResponse {
 
 export type DataQueryError = {
   error: {
+    cancelled?: boolean;
     data: {
       error?: {
         message: string;

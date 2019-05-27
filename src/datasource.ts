@@ -189,6 +189,7 @@ export default class CogniteDatasource {
             url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
             method: 'POST',
             data: q,
+            requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
           },
           this.backendSrv
         )
@@ -209,13 +210,16 @@ export default class CogniteDatasource {
         const refId = targetQueriesCount[i].refId;
         const target = queryTargets.find(x => x.refId === refId);
         if (isError(response)) {
-          let errmsg: string;
-          if (response.error.data && response.error.data.error) {
-            errmsg = `[${response.error.status} ERROR] ${response.error.data.error.message}`;
-          } else {
-            errmsg = 'Unknown error';
+          // if response was cancelled, no need to show error message
+          if (!response.error.cancelled) {
+            let errmsg: string;
+            if (response.error.data && response.error.data.error) {
+              errmsg = `[${response.error.status} ERROR] ${response.error.data.error.message}`;
+            } else {
+              errmsg = 'Unknown error';
+            }
+            target.error = errmsg;
           }
-          target.error = errmsg;
           count += targetQueriesCount[i].count; // skip over these labels
           return datapoints;
         }
