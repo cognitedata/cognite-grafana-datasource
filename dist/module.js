@@ -678,24 +678,27 @@ define([
                     case 4:
                       return b++, [3, 2];
                     case 5:
-                      (x = m.map(function(e) {
-                        return f.default
-                          .getQuery(
-                            {
-                              url:
-                                O.url +
-                                "/cogniteapi/" +
-                                O.project +
-                                "/timeseries/dataquery",
-                              method: "POST",
-                              data: e
-                            },
-                            O.backendSrv
-                          )
-                          .catch(function(e) {
-                            return { error: e };
-                          });
+                      (o = o.map(function(t) {
+                        return O.templateSrv.replace(t, e.scopedVars);
                       })),
+                        (x = m.map(function(e) {
+                          return f.default
+                            .getQuery(
+                              {
+                                url:
+                                  O.url +
+                                  "/cogniteapi/" +
+                                  O.project +
+                                  "/timeseries/dataquery",
+                                method: "POST",
+                                data: e
+                              },
+                              O.backendSrv
+                            )
+                            .catch(function(e) {
+                              return { error: e };
+                            });
+                        })),
                         (j.label = 6);
                     case 6:
                       return j.trys.push([6, 8, , 9]), [4, Promise.all(x)];
@@ -1339,7 +1342,7 @@ define([
         i = n(r(2)),
         o = n(r(1));
       t.parseExpression = function(e, t, r, n, a) {
-        var o = e.trim();
+        var o = n.replace(e.trim(), t.scopedVars);
         if (f(o)) {
           var c = l(o, n, t, r);
           return (
@@ -1752,7 +1755,7 @@ define([
     function(e, t, r) {
       (e.exports = r(12)(!0)).push([
         e.i,
-        ".min-width-10 {\n  min-width: 10rem;\n}\n\n.min-width-12 {\n  min-width: 12rem;\n}\n\n.min-width-20 {\n  min-width: 20rem;\n}\n\n.gf-form-select-wrapper select.gf-form-input {\n  height: 2.64rem;\n}\n\n.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {\n  right: 0.775rem;\n}\n\n.gf-tabs-cognite.active:before,\n.gf-tabs-cognite.active:focus:before,\n.gf-tabs-cognite.active:hover:before {\n  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);\n}\n\ninput[type='checkbox'] {\n  margin: 4px;\n}\n\n.custom-query {\n  font-family: monospace;\n}\n\npre code {\n  line-height: 2;\n}\n\n.cognite-timeseries-list-checkbox {\n  margin-right: 10px;\n}\n",
+        ".min-width-10 {\r\n  min-width: 10rem;\r\n}\r\n\r\n.min-width-12 {\r\n  min-width: 12rem;\r\n}\r\n\r\n.min-width-20 {\r\n  min-width: 20rem;\r\n}\r\n\r\n.gf-form-select-wrapper select.gf-form-input {\r\n  height: 2.64rem;\r\n}\r\n\r\n.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {\r\n  right: 0.775rem;\r\n}\r\n\r\n.gf-tabs-cognite.active:before,\r\n.gf-tabs-cognite.active:focus:before,\r\n.gf-tabs-cognite.active:hover:before {\r\n  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);\r\n}\r\n\r\ninput[type='checkbox'] {\r\n  margin: 4px;\r\n}\r\n\r\n.custom-query {\r\n  font-family: monospace;\r\n}\r\n\r\npre code {\r\n  line-height: 2;\r\n}\r\n\r\n.cognite-timeseries-list-checkbox {\r\n  margin-right: 10px;\r\n}\r\n",
         "",
         {
           version: 3,
@@ -1762,7 +1765,7 @@ define([
             "AAAA;EACE,gBAAgB;AAClB;;AAEA;EACE,gBAAgB;AAClB;;AAEA;EACE,gBAAgB;AAClB;;AAEA;EACE,eAAe;AACjB;;AAEA;EACE,eAAe;AACjB;;AAEA;;;EAGE,yEAAyE;AAC3E;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,sBAAsB;AACxB;;AAEA;EACE,cAAc;AAChB;;AAEA;EACE,kBAAkB;AACpB",
           file: "query_editor.css",
           sourcesContent: [
-            ".min-width-10 {\n  min-width: 10rem;\n}\n\n.min-width-12 {\n  min-width: 12rem;\n}\n\n.min-width-20 {\n  min-width: 20rem;\n}\n\n.gf-form-select-wrapper select.gf-form-input {\n  height: 2.64rem;\n}\n\n.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {\n  right: 0.775rem;\n}\n\n.gf-tabs-cognite.active:before,\n.gf-tabs-cognite.active:focus:before,\n.gf-tabs-cognite.active:hover:before {\n  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);\n}\n\ninput[type='checkbox'] {\n  margin: 4px;\n}\n\n.custom-query {\n  font-family: monospace;\n}\n\npre code {\n  line-height: 2;\n}\n\n.cognite-timeseries-list-checkbox {\n  margin-right: 10px;\n}\n"
+            ".min-width-10 {\r\n  min-width: 10rem;\r\n}\r\n\r\n.min-width-12 {\r\n  min-width: 12rem;\r\n}\r\n\r\n.min-width-20 {\r\n  min-width: 20rem;\r\n}\r\n\r\n.gf-form-select-wrapper select.gf-form-input {\r\n  height: 2.64rem;\r\n}\r\n\r\n.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {\r\n  right: 0.775rem;\r\n}\r\n\r\n.gf-tabs-cognite.active:before,\r\n.gf-tabs-cognite.active:focus:before,\r\n.gf-tabs-cognite.active:hover:before {\r\n  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);\r\n}\r\n\r\ninput[type='checkbox'] {\r\n  margin: 4px;\r\n}\r\n\r\n.custom-query {\r\n  font-family: monospace;\r\n}\r\n\r\npre code {\r\n  line-height: 2;\r\n}\r\n\r\n.cognite-timeseries-list-checkbox {\r\n  margin-right: 10px;\r\n}\r\n"
           ]
         }
       ]);

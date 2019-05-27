@@ -1,10 +1,10 @@
 {
   "type": "datasource",
-  "name": "Cognite Data Platform",
+  "name": "Cognite Data Fusion",
   "id": "cognitedata-datasource",
 
   "info": {
-    "description": "Cognite Data Platform datasource",
+    "description": "Cognite Data Fusion datasource",
     "author": {
       "name": "Cognite",
       "url": "https://cognite.com"
@@ -24,8 +24,8 @@
         "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
       }
     ],
-    "version": "1.0.0",
-    "updated": "2019-03-28"
+    "version": "1.0.1",
+    "updated": "2019-05-27"
   },
 
   "dependencies": {
@@ -36,7 +36,7 @@
   "routes": [
     {
       "path": "cogniteapi",
-      "url": "https://api.cognitedata.com/api/0.5/projects",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/0.5/projects",
       "headers": [
         {
           "name": "api-key",
@@ -47,7 +47,7 @@
     {
       "path": "cogniteloginstatus",
       "method": "GET",
-      "url": "https://api.cognitedata.com/login/status",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/login/status",
       "headers": [
         {
           "name": "api-key",

@@ -19,7 +19,8 @@ export const parseExpression = (
   templateSrv: TemplateSrv,
   target: QueryTarget
 ): DataQueryRequestItem[] => {
-  const trimmedExpr = expr.trim();
+  // trim and replace all variables here (will also replace variables outside of timeseries{} filters)
+  const trimmedExpr = templateSrv.replace(expr.trim(), options.scopedVars);
   // first check if it is just a simple `timeseries{}` or `timeseries{}[]`
   if (isSimpleTimeseriesExpression(trimmedExpr)) {
     const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
