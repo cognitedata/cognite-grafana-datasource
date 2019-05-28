@@ -17,7 +17,7 @@ const queries = {
 };
 
 export const getQuery = async (query: DataSourceRequestOptions, backendSrv: BackendSrv) => {
-  const stringQuery = JSON.stringify(query);
+  const stringQuery = JSON.stringify({ ...query, requestId: undefined });
 
   if (queries.requests.has(stringQuery)) {
     return queries.requests.get(stringQuery);
