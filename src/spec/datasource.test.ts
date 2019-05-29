@@ -130,6 +130,7 @@ describe('CogniteDatasource', () => {
         maxDataPoints: 760,
         format: 'json',
         panelId: 1,
+        dashboardId: 1,
       };
     });
     beforeEach(() => {

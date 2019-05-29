@@ -155,4 +155,9 @@ export default class Utils {
       target.assetQuery.templatedTarget
     }_${target.assetQuery.includeSubtrees}`;
   }
+
+  // used for generating the options.requestId
+  static getRequestId(options: QueryOptions, target: QueryTarget) {
+    return `${options.dashboardId}_${options.panelId}_${target.refId}`;
+  }
 }
