@@ -160,4 +160,16 @@ export default class Utils {
   static getRequestId(options: QueryOptions, target: QueryTarget) {
     return `${options.dashboardId}_${options.panelId}_${target.refId}`;
   }
+
+  static getFilterVal(filter: string) {
+    if (filter.length === 0) return filter;
+    // check if it array-like
+    if (filter.slice(0, 1) === '[' && filter.slice(-1) === ']') {
+      try {
+        return JSON.parse(filter);
+      } catch {}
+    }
+
+    return filter;
+  }
 }

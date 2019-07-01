@@ -319,7 +319,7 @@ export default class CogniteDatasource {
       maxStartTime: endTime,
       minEndTime: startTime,
       ...queryOptions.filters.reduce((obj, filter) => {
-        obj[filter.property] = filter.value;
+        obj[filter.property] = Utils.getFilterVal(filter.value);
         return obj;
       }, {}),
     };
@@ -502,25 +502,41 @@ export default class CogniteDatasource {
     if (query.filter && filterOptions.error) {
       return [{ text: filterOptions.error, value: '-' }];
     }
-    const urlEnd = `/oldcogniteapi/${this.project}/assets/search?`;
+    const urlEnd = `/cogniteapi/${this.project}/assets/search`;
 
-    const queryParams = {
+    // TODO (v1 migration)
+    // if we want to keep supporting things like `asset{assetSubtrees=[123456789]}`
+    //  then we need to implement something here to get all the subassets, and then
+    //  replace that filter with "parentIds": [list of ids]
+
+    const queryParams: any = {
       limit: 1000,
-      ...queryOptions.filters.reduce((obj, filter) => {
-        obj[filter.property] = filter.value;
-        return obj;
-      }, {}),
+      filter: {
+        ...queryOptions.filters.reduce((obj, filter) => {
+          obj[filter.property] = Utils.getFilterVal(filter.value);
+          return obj;
+        }, {}),
+      },
+      search: {},
     };
+
+    for (const searchItem of ['query', 'name', 'description']) {
+      if (searchItem in queryParams.filter) {
+        queryParams.search[searchItem] = queryParams.filter[searchItem];
+        delete queryParams.filter[searchItem];
+      }
+    }
 
     const result = await cache.getQuery(
       {
-        url: this.url + urlEnd + Utils.getQueryString(queryParams),
-        method: 'GET',
+        url: this.url + urlEnd,
+        data: queryParams,
+        method: 'POST',
       },
       this.backendSrv
     );
 
-    const assets = result.data.data.items;
+    const assets = result.data.items;
 
     // now filter over these assets with the rest of the filters
     Utils.applyFilters(filterOptions.filters, assets);
