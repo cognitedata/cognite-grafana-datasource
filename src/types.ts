@@ -47,9 +47,7 @@ export interface TimeSeriesResponseItem {
 }
 
 export interface TimeSeriesResponse {
-  data: {
-    items: TimeSeriesResponseItem[];
-  };
+  items: TimeSeriesResponseItem[];
 }
 
 export interface AssetQuery {

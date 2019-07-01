@@ -24,6 +24,7 @@ import {
   TimeseriesSearchQuery,
   VariableQueryData,
   isError,
+  HttpMethod,
 } from './types';
 
 export default class CogniteDatasource {
@@ -186,7 +187,7 @@ export default class CogniteDatasource {
       cache
         .getQuery(
           {
-            url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
+            url: `${this.url}/oldcogniteapi/${this.project}/timeseries/dataquery`,
             method: 'POST',
             data: q,
             requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
@@ -320,7 +321,7 @@ export default class CogniteDatasource {
 
     const result = await cache.getQuery(
       {
-        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
+        url: `${this.url}/oldcogniteapi/${this.project}/events/search?${Utils.getQueryString(
           queryParams
         )}`,
         method: 'GET',
@@ -350,33 +351,50 @@ export default class CogniteDatasource {
     options?: any
   ): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
+    let method: HttpMethod = 'GET';
+    let postBody: any = {};
     if (type === Tab.Asset) {
       if (query.length === 0) {
         urlEnd = `/cogniteapi/${this.project}/assets?`;
       } else {
-        urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`;
+        urlEnd = `/cogniteapi/${this.project}/assets/search`;
+        method = 'POST';
+        // assets/search doesn't support query yet
+        // TODO: implement parallel calls to check for name and description, and then join results
+        postBody = {
+          search: {
+            name: query,
+          },
+        };
       }
     } else if (type === Tab.Timeseries) {
       if (query.length === 0) {
         urlEnd = `/cogniteapi/${this.project}/timeseries?`;
       } else {
-        urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`;
+        urlEnd = `/cogniteapi/${this.project}/timeseries/search`;
+        method = 'POST';
+        postBody = {
+          search: {
+            query: query,
+          },
+        };
       }
     }
-    if (options) {
+    if (options && method === 'GET') {
       urlEnd += `&${Utils.getQueryString(options)}`;
     }
 
     return cache
       .getQuery(
         {
+          method,
           url: this.url + urlEnd,
-          method: 'GET',
+          data: postBody || null,
         },
         this.backendSrv
       )
       .then((result: { data: TimeSeriesResponse }) =>
-        result.data.data.items.map(timeSeriesResponseItem => ({
+        result.data.items.map(timeSeriesResponseItem => ({
           text: timeSeriesResponseItem.description
             ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
             : timeSeriesResponseItem.name,
@@ -448,7 +466,7 @@ export default class CogniteDatasource {
     return cache
       .getQuery(
         {
-          url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
+          url: `${this.url}/oldcogniteapi/${this.project}/timeseries?${Utils.getQueryString(
             searchQuery
           )}`,
           method: 'GET',
@@ -457,7 +475,7 @@ export default class CogniteDatasource {
       )
       .then(
         (result: { data: TimeSeriesResponse }) => {
-          return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
+          return _.cloneDeep(result.data.items.filter(ts => !ts.isString));
         },
         error => {
           if (error.data && error.data.error) {
@@ -480,7 +498,7 @@ export default class CogniteDatasource {
     if (query.filter && filterOptions.error) {
       return [{ text: filterOptions.error, value: '-' }];
     }
-    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
+    const urlEnd = `/oldcogniteapi/${this.project}/assets/search?`;
 
     const queryParams = {
       limit: 1000,
