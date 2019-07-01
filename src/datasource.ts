@@ -308,6 +308,11 @@ export default class CogniteDatasource {
       return [];
     }
 
+    // TODO (v1 migration)
+    // if we want to keep supporting things like `event{assetSubtrees=[$VAL_WELLS]}`
+    //  then we need to implement something here to get all the subassets, and then
+    //  replace that filter with "assetIds": [list of ids]
+
     // use maxStartTime and minEndTime so that we include events that are partially in range
     const queryParams = {
       limit: 1000,
@@ -321,9 +326,7 @@ export default class CogniteDatasource {
 
     const result = await cache.getQuery(
       {
-        url: `${this.url}/oldcogniteapi/${this.project}/events/search?${Utils.getQueryString(
-          queryParams
-        )}`,
+        url: `${this.url}/cogniteapi/${this.project}/events?${Utils.getQueryString(queryParams)}`,
         method: 'GET',
       },
       this.backendSrv
@@ -359,8 +362,9 @@ export default class CogniteDatasource {
       } else {
         urlEnd = `/cogniteapi/${this.project}/assets/search`;
         method = 'POST';
+        // TODO (v1 migration)
         // assets/search doesn't support query yet
-        // TODO: implement parallel calls to check for name and description, and then join results
+        // -> implement parallel calls to check for name and description, and then join results
         postBody = {
           search: {
             name: query,
@@ -375,7 +379,7 @@ export default class CogniteDatasource {
         method = 'POST';
         postBody = {
           search: {
-            query: query,
+            query,
           },
         };
       }
