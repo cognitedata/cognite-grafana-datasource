@@ -48,6 +48,7 @@ export interface TimeSeriesResponseItem {
 
 export interface TimeSeriesResponse {
   items: TimeSeriesResponseItem[];
+  nextCursor: string;
 }
 
 export interface AssetQuery {
@@ -243,6 +244,14 @@ export interface TimeseriesSearchQuery {
   includeMetadata: boolean;
   path: string[];
   assetId: string;
+}
+
+export interface TimeseriesListQuery {
+  limit?: number;
+  includeMetadata?: boolean;
+  cursor?: string;
+  assetIds?: number[];
+  rootAssetIds?: number[];
 }
 
 export interface VariableQueryData {

@@ -25,6 +25,7 @@ import {
   VariableQueryData,
   isError,
   HttpMethod,
+  TimeseriesListQuery,
 } from './types';
 
 export default class CogniteDatasource {
@@ -139,13 +140,22 @@ export default class CogniteDatasource {
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
-            const ts = await this.getTimeseries(
+            // TODO: need to clean up all queries + cursoring to a common file
+            const response = await cache.getQuery(
               {
-                q: target.target,
-                limit: 1,
+                url: `${this.url}/cogniteapi/${
+                  this.project
+                }/timeseries/search?${Utils.getQueryString({
+                  search: {
+                    name: target.target,
+                  },
+                  limit: 1,
+                })}`,
+                method: 'POST',
               },
-              target
+              this.backendSrv
             );
+            const ts = response.data.items;
             labels.push(this.getTimeseriesLabel(target.label, ts[0]));
           } catch {
             labels.push(target.label);
@@ -265,6 +275,7 @@ export default class CogniteDatasource {
     }
 
     if (target.tab === Tab.Custom) {
+      if (!target.expr) return [];
       await this.findAssetTimeseries(target, options);
       // if we don't have any timeseries just return
       if (cache.getTimeseries(options, target).length === 0) {
@@ -411,18 +422,31 @@ export default class CogniteDatasource {
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
     // replace variables with their values
     const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
-    const searchQuery: Partial<TimeseriesSearchQuery> = {
-      path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
-      assetId: !target.assetQuery.includeSubtrees ? assetId : undefined,
-      limit: 10000,
-    };
+
+    // first get the required assetIds
+    let assetIds = [assetId];
+    if (target.assetQuery.includeSubtrees) {
+      assetIds = await this.getAssetSubassets(assetId, target);
+    }
+    // construct the search queries, limited to 100 assetIds per query
+    const searchQueries: Partial<TimeseriesListQuery>[] = [];
+    for (let i = 0; i < assetIds.length; i += 100) {
+      searchQueries.push({
+        assetIds: assetIds.slice(i, i + 100),
+        limit: 1000,
+      });
+    }
 
     // for custom queries, use cache instead of storing in target object
     if (target.tab === Tab.Custom) {
       target.assetQuery.templatedTarget = assetId;
       const timeseries = cache.getTimeseries(options, target);
       if (!timeseries) {
-        const ts = await this.getTimeseries(searchQuery, target);
+        const promises = [];
+        for (const searchQuery of searchQueries) {
+          promises.push(this.getTimeseries(searchQuery, target));
+        }
+        const ts = _.flatten(await Promise.all(promises));
         cache.setTimeseries(
           options,
           target,
@@ -434,6 +458,7 @@ export default class CogniteDatasource {
       }
       return Promise.resolve();
     }
+    // else target.tab === Tab.Asset
 
     // check if assetId has changed, if not we do not need to perform this query again
     if (
@@ -450,12 +475,16 @@ export default class CogniteDatasource {
 
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
-    searchQuery.limit = 101;
-    const ts = await this.getTimeseries(searchQuery, target);
-    if (ts.length === 101) {
+    const promises = [];
+    for (const searchQuery of searchQueries) {
+      searchQuery.limit = 101;
+      promises.push(this.getTimeseries(searchQuery, target));
+    }
+    const ts = _.flatten(await Promise.all(promises));
+    if (ts.length >= 101) {
       target.warning =
         "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
-      ts.splice(-1);
+      ts.splice(100);
     }
     target.assetQuery.timeseries = ts.map(ts => {
       ts.selected = true;
@@ -464,32 +493,91 @@ export default class CogniteDatasource {
   }
 
   async getTimeseries(
-    searchQuery: Partial<TimeseriesSearchQuery>,
+    searchQuery: Partial<TimeseriesListQuery>,
     target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
-    return cache
-      .getQuery(
-        {
-          url: `${this.url}/oldcogniteapi/${this.project}/timeseries?${Utils.getQueryString(
-            searchQuery
-          )}`,
-          method: 'GET',
-        },
-        this.backendSrv
-      )
-      .then(
-        (result: { data: TimeSeriesResponse }) => {
-          return _.cloneDeep(result.data.items.filter(ts => !ts.isString));
-        },
-        error => {
-          if (error.data && error.data.error) {
-            target.error = `[${error.status} ERROR] ${error.data.error.message}`;
-          } else {
-            target.error = 'Unknown error';
-          }
-          return [];
+    let timeseries = [];
+    try {
+      do {
+        const response = await cache.getQuery(
+          {
+            url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
+              searchQuery
+            )}`,
+            method: 'GET',
+          },
+          this.backendSrv
+        );
+        timeseries = timeseries.concat(_.cloneDeep(response.data.items.filter(ts => !ts.isString)));
+        // TODO: limit on how many timeseries to get?? - currently using 10000 as this was the 0.5 limit
+        if (timeseries.length > 10000) {
+          target.warning =
+            '[WARNING] Fetching a lot of timeseries - not all timeseries might be returned (try choosing a deeper asset as the root).';
+          return timeseries;
         }
-      );
+        searchQuery.cursor = response.data.nextCursor;
+      } while (searchQuery.cursor);
+    } catch (error) {
+      if (error.data && error.data.error) {
+        target.error = `[${error.status} ERROR] ${error.data.error.message}`;
+      } else {
+        target.error = 'Unknown error';
+      }
+      return [];
+    }
+
+    return timeseries;
+  }
+
+  async getAssetSubassets(assetId: number, target: QueryTarget) {
+    let assets = [assetId];
+    let i = 0;
+    while (i < assets.length) {
+      const nextI = Math.min(i + 100, assets.length);
+      const parentIds = assets.slice(i, nextI);
+      const searchQuery = {
+        parentIds,
+        limit: 1000,
+        cursor: undefined,
+      };
+
+      try {
+        do {
+          const response = await cache.getQuery(
+            {
+              url: `${this.url}/cogniteapi/${this.project}/assets?${Utils.getQueryString(
+                searchQuery
+              )}`,
+              method: 'GET',
+            },
+            this.backendSrv,
+            -1 // this is expensive, so let's keep it in cache
+          );
+          const subassets = response.data.items.map(asset => asset.id);
+          assets = assets.concat(subassets);
+
+          // TODO: limit on how many assets to get?? - currently using 10000 as this was the 0.5 limit
+          if (assets.length > 10000) {
+            target.warning =
+              '[WARNING] Fetching a lot of subassets - limiting to 10000 assets (try choosing a deeper asset as the root).';
+            return assets;
+          }
+
+          searchQuery.cursor = response.data.nextCursor;
+        } while (searchQuery.cursor); // TODO: use better cursor endpoint when available
+      } catch (error) {
+        if (error.data && error.data.error) {
+          target.error = `[${error.status} ERROR] ${error.data.error.message}`;
+        } else {
+          target.error = 'Unknown error';
+        }
+        return [];
+      }
+
+      i = nextI;
+    }
+
+    return assets;
   }
 
   // this function is for getting metrics (template variables)

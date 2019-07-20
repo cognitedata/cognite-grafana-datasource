@@ -8,15 +8,16 @@ import {
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import Utils from './utils';
 
-// Cache requests for 10 seconds
-const cacheTime = 1000 * 10;
-
 const queries = {
   results: new Map(),
   requests: new Map(),
 };
 
-export const getQuery = async (query: DataSourceRequestOptions, backendSrv: BackendSrv) => {
+export const getQuery = async (
+  query: DataSourceRequestOptions,
+  backendSrv: BackendSrv,
+  cacheTime: number = 1000 * 10 // Cache requests for 10 seconds (can set to < 0 to keep forever)
+) => {
   const stringQuery = JSON.stringify({ ...query, requestId: undefined });
 
   if (queries.requests.has(stringQuery)) {
@@ -35,10 +36,12 @@ export const getQuery = async (query: DataSourceRequestOptions, backendSrv: Back
       if (!isError(asset)) {
         queries.results.set(stringQuery, asset);
         // set a timeout to clear the cache
-        setTimeout(() => {
-          queries.results.delete(stringQuery);
-          queries.requests.delete(stringQuery);
-        }, cacheTime);
+        if (cacheTime >= 0) {
+          setTimeout(() => {
+            queries.results.delete(stringQuery);
+            queries.requests.delete(stringQuery);
+          }, cacheTime);
+        }
       }
       queries.requests.delete(stringQuery);
       return asset;
