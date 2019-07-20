@@ -71,6 +71,7 @@ export default class CogniteDatasource {
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
     const targetQueriesCount = [];
     let labels = [];
+    const requestIds = [];
 
     const dataQueryRequestPromises: Promise<DataQueryRequestItem[]>[] = [];
     for (const target of queryTargets) {
@@ -90,6 +91,7 @@ export default class CogniteDatasource {
       // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
       // may want to change how much we split into, but for now, 100 seems like the best
       const qlChunks = _.chunk(queryList, 100);
+      let index = 0;
       for (const qlChunk of qlChunks) {
         // keep track of target lengths so we can assign errors later
         targetQueriesCount.push({
@@ -132,6 +134,11 @@ export default class CogniteDatasource {
           queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
         }
         queries.push(queryReq);
+        // TODO: this doesn't quite work for /dataquery calls that go over 100 items since all the calls
+        //  would have the same requestId.. for now we can append the index in qlChunks so that normal calls
+        //  can still be cancelled
+        requestIds.push(`${Utils.getRequestId(options, target)}_${index}`);
+        index += 1;
       }
 
       // assign labels to each timeseries
@@ -200,7 +207,7 @@ export default class CogniteDatasource {
             url: `${this.url}/oldcogniteapi/${this.project}/timeseries/dataquery`,
             method: 'POST',
             data: q,
-            requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
+            requestId: requestIds.shift(),
           },
           this.backendSrv
         )
