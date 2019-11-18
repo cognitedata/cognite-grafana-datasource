@@ -15,7 +15,7 @@
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""
   },
   "devDependencies": {
-    "@grafana/ui": "^6.0.1-alpha.0",
+    "@grafana/ui": "^6.4.2",
     "@types/grafana": "https://git@github.com/CorpGlory/types-grafana.git",
     "@types/jest": "23.3.13",
     "@types/lodash": "^4.14.120",
@@ -43,7 +43,10 @@
     "webpack": "^4.29.3",
     "webpack-cli": "^3.2.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@grafana/data": "^6.4.2",
+    "react-tabs": "^3.0.0"
+  },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
