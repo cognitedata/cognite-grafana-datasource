@@ -1,14 +1,21 @@
-import {
-  DataQueryOptions,
-  DataQuery,
-  TimeSeries,
-  TimeRange,
-  RawTimeRange,
-  DataSourceSettings,
-} from '@grafana/ui';
+import { DataQuery, DataSourceJsonData, DataQueryRequest } from '@grafana/ui';
+
+export interface Annotation {
+  datasource: string;
+  enable: boolean;
+  hide: boolean;
+  iconColor: string;
+  limit: number;
+  name: string;
+  expr: string;
+  filter: string;
+  error: string;
+  type: string;
+  tags: string[];
+}
 
 export interface QueryResponse {
-  data: TimeSeries[];
+  data: any;
 }
 
 export interface MetricDescription {
@@ -71,22 +78,23 @@ export interface QueryTarget extends DataQuery {
   assetQuery: AssetQuery;
   expr: string;
   warning: string;
+  filter?: string;
 }
 
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<QueryTarget>;
+export type QueryOptions = DataQueryRequest<QueryTarget>;
 
 export type HttpMethod = 'POST' | 'GET' | 'PATCH' | 'DELETE';
 
-export interface DataSourceRequestOptions {
+export interface CogniteDataSourceRequestOptions {
   url: string;
   method: HttpMethod;
   retry?: number;
   requestId?: string;
   headers?: { [s: string]: string };
   silent?: boolean;
-  data?: DataQueryRequest;
+  data?: CogniteDataQueryRequest;
 }
 
 export interface TimeSeriesDatapoint {
@@ -107,7 +115,7 @@ export interface DataDatapoints {
   data: Datapoints;
 }
 
-export interface DataQueryRequestResponse {
+export interface CogniteDataQueryRequestResponse {
   data: DataDatapoints;
   config: {
     data: {
@@ -117,7 +125,7 @@ export interface DataQueryRequestResponse {
   };
 }
 
-export type DataQueryError = {
+export type CogniteDataQueryError = {
   error: {
     cancelled?: boolean;
     data: {
@@ -130,8 +138,8 @@ export type DataQueryError = {
   };
 };
 
-export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
-  return (<DataQueryError>maybeError).error !== undefined;
+export function isError(maybeError: CogniteDataQueryError | any): maybeError is CogniteDataQueryError {
+  return (maybeError as CogniteDataQueryError).error !== undefined;
 }
 
 export interface DataQueryAlias {
@@ -141,7 +149,7 @@ export interface DataQueryAlias {
   granularity?: string;
 }
 
-export interface DataQueryRequestItem {
+export interface CogniteDataQueryRequestItem {
   name: string;
   start?: string | number;
   end?: string | number;
@@ -152,44 +160,13 @@ export interface DataQueryRequestItem {
   aliases?: DataQueryAlias[];
 }
 
-export interface DataQueryRequest {
-  items: DataQueryRequestItem[];
+export interface CogniteDataQueryRequest {
+  items: CogniteDataQueryRequestItem[];
   start: string | number;
   end: string | number;
   limit?: number;
   aggregates?: string;
   granularity?: string;
-}
-
-export interface Annotation {
-  datasource: string;
-  enable: boolean;
-  hide: boolean;
-  iconColor: string;
-  limit: number;
-  name: string;
-  expr: string;
-  filter: string;
-  error: string;
-  type: string;
-  tags: string[];
-}
-
-export interface AnnotationQueryOptions {
-  range: TimeRange;
-  rangeRaw: RawTimeRange;
-  annotation: Annotation;
-  dashboard: number;
-}
-
-export interface AnnotationResponse {
-  annotation: Annotation;
-  title: string;
-  time: number;
-  timeEnd?: number;
-  text: string;
-  tags?: string[];
-  isRegion?: boolean;
 }
 
 export interface AnnotationSearchQuery {
@@ -259,12 +236,13 @@ export interface VariableQueryProps {
   templateSrv: any;
 }
 
-export interface CogniteDataSourceSettings extends DataSourceSettings {
-  jsonData: {
-    authType: string;
-    defaultRegion: string;
-    cogniteProject: string;
-  };
+export interface CogniteOptions extends DataSourceJsonData {
+  cogniteProject: string;
+  // copied from prometheus datasource, not sure if useful?
+  timeInterval?: string;
+  queryTimeout?: string;
+  httpMethod?: string;
+  directUrl?: string;
 }
 
 export enum FilterType {

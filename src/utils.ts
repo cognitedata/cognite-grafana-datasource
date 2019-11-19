@@ -11,7 +11,11 @@ export default class Utils {
         return _.isNil(val)
           ? result
           : _.isArray(val)
-          ? `${result + [key, val].map(encodeURIComponent).join('=[')}]&`
+          ? `${result +
+              val
+                .concat([key])
+                .map(encodeURIComponent)
+                .join('=[')}]&`
           : `${result + [key, val].map(encodeURIComponent).join('=')}&` + '';
       },
       ''
@@ -40,9 +44,11 @@ export default class Utils {
 
   static getAggregationDropdownString(aggregation: string): string {
     let val = Utils.getDatasourceValueString(aggregation);
-    if (val === 'continousVariance') val = 'continuousVariance';
-    // temp 0.5 fix
-    else if (val === 'value') val = 'none';
+    if (val === 'continousVariance') {
+      val = 'continuousVariance';
+    } else if (val === 'value') {
+      val = 'none';
+    }
     return val;
   }
 
@@ -78,17 +84,13 @@ export default class Utils {
           i = c;
           continue;
         } else {
-          filtersOptions.error = `ERROR: Could not find closing ' ${
-            closeChars[o]
-          } ' while parsing '${filterString.substring(start)}'.`;
+          filtersOptions.error = `ERROR: Could not find closing ' ${closeChars[o]} ' while parsing '${filterString.substring(start)}'.`;
           return undefined;
         }
       }
       const c = closeChars.findIndex(x => x === filterString[i]);
       if (c >= 0) {
-        filtersOptions.error = `ERROR: Unexpected character ' ${
-          closeChars[c]
-        } ' while parsing '${filterString.substring(start)}'.`;
+        filtersOptions.error = `ERROR: Unexpected character ' ${closeChars[c]} ' while parsing '${filterString.substring(start)}'.`;
         return undefined;
       }
     }
@@ -151,9 +153,7 @@ export default class Utils {
   }
 
   static timeseriesHash(options: QueryOptions, target: QueryTarget) {
-    return `${options.dashboardId}_${options.panelId}_${target.refId}_${
-      target.assetQuery.templatedTarget
-    }_${target.assetQuery.includeSubtrees}`;
+    return `${options.dashboardId}_${options.panelId}_${target.refId}_${target.assetQuery.templatedTarget}_${target.assetQuery.includeSubtrees}`;
   }
 
   // used for generating the options.requestId

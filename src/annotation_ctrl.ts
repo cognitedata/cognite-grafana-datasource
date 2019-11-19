@@ -2,7 +2,7 @@ import { Annotation } from './types';
 import Utils from './utils';
 
 export class CogniteAnnotationsQueryCtrl {
-  public static templateUrl = 'partials/annotations.editor.html';
+  static templateUrl = 'partials/annotations.editor.html';
   annotation: Annotation;
 
   verify() {
@@ -16,9 +16,7 @@ export class CogniteAnnotationsQueryCtrl {
     } else {
       const match = this.annotation.expr.match(/^event\{(.*)\}$/);
       if (!match) {
-        this.annotation.error = `Error: Unable to parse ${
-          this.annotation.expr
-        } | Expected format: event{param=value,...}`;
+        this.annotation.error = `Error: Unable to parse ${this.annotation.expr} | Expected format: event{param=value,...}`;
       } else if (!Utils.splitFilters(match[1], errorObj, true)) {
         this.annotation.error = `${errorObj.error} | Expected format: event{param=value,...}`;
       }
@@ -27,13 +25,9 @@ export class CogniteAnnotationsQueryCtrl {
     if (!this.annotation.error && this.annotation.filter) {
       const match = this.annotation.filter.match(/^filter\{(.*)\}$/);
       if (!match) {
-        this.annotation.error = `Error: Unable to parse ${
-          this.annotation.filter
-        } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
+        this.annotation.error = `Error: Unable to parse ${this.annotation.filter} | Expected format: filter{property [=|!=|=~|!~] value,...}`;
       } else if (!Utils.splitFilters(match[1], errorObj, false)) {
-        this.annotation.error = `${
-          errorObj.error
-        } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
+        this.annotation.error = `${errorObj.error} | Expected format: filter{property [=|!=|=~|!~] value,...}`;
       }
     }
   }

@@ -1,10 +1,4 @@
-import {
-  DataSourceRequestOptions,
-  isError,
-  TimeSeriesResponseItem,
-  QueryTarget,
-  QueryOptions,
-} from './types';
+import { CogniteDataSourceRequestOptions, isError, TimeSeriesResponseItem, QueryTarget, QueryOptions } from './types';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import Utils from './utils';
 
@@ -16,7 +10,7 @@ const queries = {
   requests: new Map(),
 };
 
-export const getQuery = async (query: DataSourceRequestOptions, backendSrv: BackendSrv) => {
+export const getQuery = async (query: CogniteDataSourceRequestOptions, backendSrv: BackendSrv) => {
   const stringQuery = JSON.stringify({ ...query, requestId: undefined });
 
   if (queries.requests.has(stringQuery)) {
@@ -60,11 +54,7 @@ export const getTimeseries = (options: QueryOptions, target: QueryTarget) => {
   return assetTimeseries.get(Utils.timeseriesHash(options, target));
 };
 
-export const setTimeseries = (
-  options: QueryOptions,
-  target: QueryTarget,
-  timeseries: TimeSeriesResponseItem[]
-) => {
+export const setTimeseries = (options: QueryOptions, target: QueryTarget, timeseries: TimeSeriesResponseItem[]) => {
   assetTimeseries.set(Utils.timeseriesHash(options, target), timeseries);
 };
 

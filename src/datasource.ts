@@ -6,13 +6,11 @@ import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
-  AnnotationQueryOptions,
-  AnnotationResponse,
-  CogniteDataSourceSettings,
-  DataQueryError,
-  DataQueryRequest,
-  DataQueryRequestItem,
-  DataQueryRequestResponse,
+  CogniteDataQueryError,
+  CogniteDataQueryRequest,
+  CogniteDataQueryRequestItem,
+  CogniteDataQueryRequestResponse,
+  CogniteOptions,
   MetricFindQueryResponse,
   ParseType,
   QueryOptions,
@@ -25,36 +23,34 @@ import {
   VariableQueryData,
   isError,
 } from './types';
+import { AnnotationQueryRequest, DataSourceApi, DataSourceInstanceSettings } from '@grafana/ui';
+import { AnnotationEvent } from '@grafana/data';
 
-export default class CogniteDatasource {
+export default class CogniteDatasource extends DataSourceApi<QueryTarget, CogniteOptions> {
   id: number;
   url: string;
   name: string;
   project: string;
+  // should be using getBackendSrv from @grafana/runtime
 
   /** @ngInject */
-  constructor(
-    instanceSettings: CogniteDataSourceSettings,
-    private backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv
-  ) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteOptions>, private backendSrv: BackendSrv, private templateSrv: TemplateSrv) {
+    super(instanceSettings);
     this.id = instanceSettings.id;
     this.url = instanceSettings.url;
     this.project = instanceSettings.jsonData.cogniteProject;
     this.name = instanceSettings.name;
   }
 
-  public async query(options: QueryOptions): Promise<QueryResponse> {
+  async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets: QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = '';
       target.warning = '';
       if (
         !target ||
         target.hide ||
-        ((target.tab === Tab.Timeseries || target.tab === undefined) &&
-          (!target.target || target.target === 'Start typing tag id here')) ||
-        ((target.tab === Tab.Asset || target.tab === Tab.Custom) &&
-          (!target.assetQuery || target.assetQuery.target === ''))
+        ((target.tab === Tab.Timeseries || target.tab === undefined) && (!target.target || target.target === 'Start typing tag id here')) ||
+        ((target.tab === Tab.Asset || target.tab === Tab.Custom) && (!target.assetQuery || target.assetQuery.target === ''))
       ) {
         return targets;
       }
@@ -70,13 +66,13 @@ export default class CogniteDatasource {
     const targetQueriesCount = [];
     let labels = [];
 
-    const dataQueryRequestPromises: Promise<DataQueryRequestItem[]>[] = [];
+    const dataQueryRequestPromises: Array<Promise<CogniteDataQueryRequestItem[]>> = [];
     for (const target of queryTargets) {
       dataQueryRequestPromises.push(this.getDataQueryRequestItems(target, options));
     }
     const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
 
-    const queries: DataQueryRequest[] = [];
+    const queries: CogniteDataQueryRequest[] = [];
     for (const { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
       target: queryTargets[i],
       queryList: ql,
@@ -95,7 +91,7 @@ export default class CogniteDatasource {
           count: qlChunk.length,
         });
         // create query requests
-        const queryReq: DataQueryRequest = {
+        const queryReq: CogniteDataQueryRequest = {
           items: qlChunk,
           start: timeFrom,
           end: timeTo,
@@ -113,14 +109,18 @@ export default class CogniteDatasource {
           const idRegex = /\[.*?\]/g; // look for [something]
           for (const q of qlChunk) {
             const matches = q.function.match(idRegex);
-            if (!matches) break;
+            if (!matches) {
+              break;
+            }
             const idsObj = {};
             for (const match of matches) {
               idsObj[match.substr(1, match.length - 2)] = true;
             }
             idsCount += Object.keys(idsObj).length;
           }
-          if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
+          if (idsCount === 0) {
+            idsCount = 1;
+          } // will fail anyways, just show the api error message
 
           // check if any aggregates are being used
           const usesAggregates = qlChunk.some(item => item.aliases.length > 0);
@@ -134,7 +134,9 @@ export default class CogniteDatasource {
 
       // assign labels to each timeseries
       if (target.tab === Tab.Timeseries || target.tab === undefined) {
-        if (!target.label) target.label = '';
+        if (!target.label) {
+          target.label = '';
+        }
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
@@ -155,7 +157,9 @@ export default class CogniteDatasource {
       } else if (target.tab === Tab.Asset) {
         target.assetQuery.timeseries.forEach(ts => {
           if (ts.selected) {
-            if (!target.label) target.label = '';
+            if (!target.label) {
+              target.label = '';
+            }
             labels.push(this.getTimeseriesLabel(target.label, ts));
           }
         });
@@ -198,7 +202,7 @@ export default class CogniteDatasource {
         })
     );
 
-    let timeseries: (DataQueryRequestResponse | DataQueryError)[];
+    let timeseries: Array<CogniteDataQueryRequestResponse | CogniteDataQueryError>;
     try {
       timeseries = await Promise.all(queryRequests);
     } catch (error) {
@@ -230,7 +234,8 @@ export default class CogniteDatasource {
           response.data.data.items.map(item => {
             if (item.datapoints.length >= response.config.data.limit) {
               target.warning =
-                '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+                '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. \
+                 Try increasing the granularity, or choose a smaller time range.';
             }
             return {
               target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
@@ -247,12 +252,9 @@ export default class CogniteDatasource {
     };
   }
 
-  private async getDataQueryRequestItems(
-    target: QueryTarget,
-    options: QueryOptions
-  ): Promise<DataQueryRequestItem[]> {
+  private async getDataQueryRequestItems(target: QueryTarget, options: QueryOptions): Promise<CogniteDataQueryRequestItem[]> {
     if (target.tab === Tab.Timeseries || target.tab === undefined) {
-      const query: DataQueryRequestItem = {
+      const query: CogniteDataQueryRequestItem = {
         name: target.target,
       };
       return [query];
@@ -270,16 +272,12 @@ export default class CogniteDatasource {
         target.warning = '[WARNING] No timeseries found.';
         return [];
       }
-      if (!target.expr) return [];
+      if (!target.expr) {
+        return [];
+      }
       // apply the search expression
       try {
-        return parseExpression(
-          target.expr,
-          options,
-          cache.getTimeseries(options, target),
-          this.templateSrv,
-          target
-        );
+        return parseExpression(target.expr, options, cache.getTimeseries(options, target), this.templateSrv, target);
       } catch (e) {
         target.error = e;
         return [];
@@ -289,12 +287,14 @@ export default class CogniteDatasource {
     return [];
   }
 
-  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
+  async annotationQuery(options: AnnotationQueryRequest<QueryTarget>): Promise<AnnotationEvent[]> {
     const { range, annotation } = options;
     const { expr, filter, error } = annotation;
     const startTime = Math.ceil(dateMath.parse(range.from));
     const endTime = Math.ceil(dateMath.parse(range.to));
-    if (error || !expr) return [];
+    if (error || !expr) {
+      return [];
+    }
 
     const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
     if (queryOptions.error) {
@@ -320,15 +320,15 @@ export default class CogniteDatasource {
 
     const result = await cache.getQuery(
       {
-        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
-          queryParams
-        )}`,
+        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(queryParams)}`,
         method: 'GET',
       },
       this.backendSrv
     );
     const events = result.data.data.items;
-    if (!events || events.length === 0) return [];
+    if (!events || events.length === 0) {
+      return [];
+    }
 
     Utils.applyFilters(filterOptions.filters, events);
 
@@ -344,11 +344,7 @@ export default class CogniteDatasource {
       }));
   }
 
-  public async getOptionsForDropdown(
-    query: string,
-    type?: string,
-    options?: any
-  ): Promise<MetricFindQueryResponse> {
+  async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
     let urlEnd: string;
     if (type === Tab.Asset) {
       if (query.length === 0) {
@@ -380,8 +376,7 @@ export default class CogniteDatasource {
           text: timeSeriesResponseItem.description
             ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
             : timeSeriesResponseItem.name,
-          value:
-            type === Tab.Asset ? String(timeSeriesResponseItem.id) : timeSeriesResponseItem.name,
+          value: type === Tab.Asset ? String(timeSeriesResponseItem.id) : timeSeriesResponseItem.name,
         }))
       );
   }
@@ -431,8 +426,7 @@ export default class CogniteDatasource {
     searchQuery.limit = 101;
     const ts = await this.getTimeseries(searchQuery, target);
     if (ts.length === 101) {
-      target.warning =
-        "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+      target.warning = "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
       ts.splice(-1);
     }
     target.assetQuery.timeseries = ts.map(ts => {
@@ -441,16 +435,11 @@ export default class CogniteDatasource {
     });
   }
 
-  async getTimeseries(
-    searchQuery: Partial<TimeseriesSearchQuery>,
-    target: QueryTarget
-  ): Promise<TimeSeriesResponseItem[]> {
+  async getTimeseries(searchQuery: Partial<TimeseriesSearchQuery>, target: QueryTarget): Promise<TimeSeriesResponseItem[]> {
     return cache
       .getQuery(
         {
-          url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
-            searchQuery
-          )}`,
+          url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(searchQuery)}`,
           method: 'GET',
         },
         this.backendSrv

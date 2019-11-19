@@ -6,10 +6,14 @@
   "author": "Cognite AS",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "webpack --config webpack.config.prod.js",
-    "dev": "webpack --config webpack.config.js --mode development",
+    "build": "grafana-toolkit plugin:build",
+    "test": "grafana-toolkit plugin:test",
+    "dev": "grafana-toolkit plugin:dev",
+    "watch": "grafana-toolkit plugin:dev --watch",
+    "build-old": "webpack --config webpack.config.prod.js",
+    "dev-old": "webpack --config webpack.config.js --mode development",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
-    "test": "jest --coverage",
+    "test-old": "jest --coverage",
     "tslint": "tslint -c tslint.json --project tsconfig.json",
     "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""
@@ -21,7 +25,7 @@
     "@types/lodash": "^4.14.120",
     "@types/node": "^10.12.21",
     "@types/react": "^16.7.22",
-    "babel-core": "^6.26.3",
+    "babel-core": "^7.0.0-0",
     "babel-loader": "7",
     "babel-preset-env": "^1.7.0",
     "clean-webpack-plugin": "^1.0.1",
@@ -36,20 +40,16 @@
     "style-loader": "^0.23.1",
     "ts-jest": "^23.10.5",
     "ts-loader": "^5.3.3",
-    "tslint": "^5.12.1",
-    "tslint-config-airbnb": "^5.11.1",
-    "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.0.1",
     "webpack": "^4.29.3",
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
     "@grafana/data": "^6.4.2",
-    "react-tabs": "^3.0.0"
+    "@grafana/toolkit": "^6.4.4"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
     }
   },
   "lint-staged": {

@@ -21,10 +21,10 @@
     </div>
 
     <!-- error messages -->
-    <div class="gf-form panel-container" ng-if="ctrl.target.error">
+    <div class="gf-form panel-container" ng-show="ctrl.target.error">
       <label class="text-error">{{ ctrl.target.error }}</label>
     </div>
-    <div class="gf-form panel-container" ng-if="ctrl.target.warning">
+    <div class="gf-form panel-container" ng-show="ctrl.target.warning">
       <label class="text-warning">{{ ctrl.target.warning }}</label>
     </div>
   </div>
