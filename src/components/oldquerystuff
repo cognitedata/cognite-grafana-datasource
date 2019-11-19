@@ -1,0 +1,272 @@
+
+//   <div>
+//   <div>
+//     <PromQueryField
+//       datasource={datasource}
+//       query={query}
+//       onRunQuery={this.onRunQuery}
+//       onChange={this.onFieldChange}
+//       history={[]}
+//       panelData={panelData}
+//       queryResponse={queryResponse}
+//       datasourceStatus={DataSourceStatus.Connected} // TODO: replace with real DataSourceStatus
+//     />
+
+//     <div className="gf-form-inline">
+//       <div className="gf-form">
+//         <FormLabel
+//           width={7}
+//           tooltip="Controls the name of the time series, using name or pattern. For example
+//     {{hostname}} will be replaced with label value for the label hostname."
+//         >
+//           Legend
+//         </FormLabel>
+//         <input
+//           type="text"
+//           className="gf-form-input"
+//           placeholder="legend format"
+//           value={legendFormat}
+//           onChange={this.onLegendChange}
+//           onBlur={this.onRunQuery}
+//         />
+//       </div>
+
+//       <div className="gf-form">
+//         <FormLabel
+//           width={7}
+//           tooltip="Leave blank for auto handling based on time range and panel width.
+//         Note that the actual dates used in the query will be adjusted
+//     to a multiple of the interval step."
+//         >
+//           Min step
+//         </FormLabel>
+//         <input
+//           type="text"
+//           className="gf-form-input width-8"
+//           placeholder={interval}
+//           onChange={this.onIntervalChange}
+//           onBlur={this.onRunQuery}
+//           value={interval}
+//         />
+//       </div>
+
+//       <div className="gf-form">
+//         <div className="gf-form-label">Resolution</div>
+//         <Select
+//           isSearchable={false}
+//           options={INTERVAL_FACTOR_OPTIONS}
+//           onChange={this.onIntervalFactorChange}
+//           value={intervalFactorOption}
+//         />
+//       </div>
+
+//       <div className="gf-form">
+//         <div className="gf-form-label">Format</div>
+//         <Select isSearchable={false} options={FORMAT_OPTIONS} onChange={this.onFormatChange} value={formatOption} />
+//         <Switch label="Instant" checked={instant} onChange={this.onInstantChange} />
+
+//         <FormLabel width={10} tooltip="Link to Graph in Prometheus">
+//           <PromLink
+//             datasource={datasource}
+//             query={this.query} // Use modified query
+//             panelData={panelData}
+//           />
+//         </FormLabel>
+//       </div>
+//     </div>
+//   </div>
+//   <query-editor-row query-ctrl="ctrl" can-collapse="true">
+//   <div class="gf-form-group">
+//     <!-- tabs -->
+//     <div class="tabbed-view-header">
+//       <ul class="gf-tabs">
+//         <li class="gf-tabs-item" ng-repeat="tab in ctrl.tabs">
+//           <a
+//             class="gf-tabs-link gf-tabs-cognite"
+//             ng-click="ctrl.changeTab($index)"
+//             ng-class="{active: ctrl.currentTabIndex === $index}"
+//           >
+//             {{ tab.name }}
+//           </a>
+//         </li>
+//       </ul>
+//     </div>
+
+//     {/* <!-- body --> */}
+//     <div ng-repeat="tab in ctrl.tabs" ng-if="ctrl.currentTabIndex == $index">
+//       <div ng-include src="tab.src" class="share-modal-body"></div>
+//     </div>
+
+//     {/* <!-- error messages --> */}
+//     <div class="gf-form panel-container" ng-show="ctrl.target.error">
+//       <label class="text-error">{{ ctrl.target.error }}</label>
+//     </div>
+//     <div class="gf-form panel-container" ng-show="ctrl.target.warning">
+//       <label class="text-warning">{{ ctrl.target.warning }}</label>
+//     </div>
+//   </div>
+// </query-editor-row>
+
+// {/* <!-- Timeseries Tab --> */}
+// <script type="text/ng-template" id="timeseriestab.html">
+//   <div class="gf-form-inline">
+//      <div class="gf-form">
+//        <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
+//        <gf-form-dropdown model="ctrl.target.target"
+//          css-class="gf-size-auto"
+//          allow-custom="false"
+//          lookup-text="true"
+//          get-options="ctrl.getOptions($query,'Timeseries')"
+//          on-change="ctrl.onChangeInternal()">
+//        </gf-form-dropdown>
+//      </div>
+//      <div class="gf-form">
+//        <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+//        <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
+//        <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+//        </select>
+//      </div>
+//      <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
+//        <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+//        <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
+//        <info-popover mode="right-absolute">
+//            The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
+//        </info-popover>
+//      </div>
+//      <div class="gf-form gf-form--grow">
+//        <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+//        <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+//        <info-popover mode="right-absolute">
+//          <span ng-non-bindable>
+//            Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+//          </span>
+//        </info-popover>
+//      </div>
+//    </div>
+// </script>
+
+// {/* <!-- Select Timeseries from Asset tab --> */}
+// <script type="text/ng-template" id="assettab.html">
+//   <div class="gf-form-inline">
+//     <div class="gf-form">
+//       <label class="gf-form-label query-keyword fix-query-keyword">Asset Tag</label>
+//       <gf-form-dropdown model="ctrl.target.assetQuery.target"
+//         css-class="gf-size-auto"
+//         allow-custom="false"
+//         lookup-text="true"
+//         get-options="ctrl.getOptions($query,'Asset')"
+//         on-change="ctrl.onChangeInternal()">
+//       </gf-form-dropdown>
+//     </div>
+//     <div class="gf-form">
+//       <gf-form-switch class="gf-form"
+//         label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
+//         checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.onChangeInternal()">
+//       </gf-form-switch>
+//     </div>
+//      <div class="gf-form">
+//       <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+//       <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.onChangeInternal()">
+//       <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+//       </select>
+//     </div>
+//     <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
+//       <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+//       <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
+//       <info-popover mode="right-absolute">
+//           The granularity of the aggregate values. Valid entries are: 'day/d, hour/h, minute/m, second/s'. Example: 12hour.
+//       </info-popover>
+//     </div>
+//     <div class="gf-form gf-form--grow">
+//         <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+//         <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+//         <info-popover mode="right-absolute">
+//           <span ng-non-bindable>
+//             Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+//           </span>
+//         </info-popover>
+//     </div>
+//   </div>
+//   <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px" ng-if="ctrl.target.assetQuery.timeseries && ctrl.target.assetQuery.timeseries.length > 0">
+//     <ul>
+//       <li class="gf-form-inline variable-option">
+//         <input type="checkbox" ng-checked="ctrl.isAllSelected" ng-show="false">
+//         <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()"></span>
+//         <a ng-click="ctrl.toggleCheckboxes();ctrl.onChangeInternal()">Select All</a>
+//       </li>
+//       <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option">
+//         <input type="checkbox" ng-model="timeseries.selected" ng-show="false">
+//         <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()"></span>
+//         <a ng-click="ctrl.selectOption(timeseries);ctrl.onChangeInternal()">{{timeseries.name}}</a>
+//       </li>
+//     </ul>
+//   </div>
+// </script>
+
+// {/* <!-- Custom Query Tab --> */}
+// <script type="text/ng-template" id="customtab.html">
+//   <div class="gf-form-inline">
+//     <div class="gf-form">
+//       <div class="gf-form">
+//         <label class="gf-form-label query-keyword fix-query-keyword width-8">Root Asset</label>
+//         <info-popover mode="right-absolute">
+//             Select an asset to pull timeseries from. (Variables can also be used via [[variable]] or $variable)
+//         </info-popover>
+//       </div>
+//       <gf-form-dropdown model="ctrl.target.assetQuery.target"
+//         css-class="gf-size-auto"
+//         allow-custom="false"
+//         lookup-text="true"
+//         get-options="ctrl.getOptions($query,'Asset')"
+//         on-change="ctrl.onChangeInternal();">
+//       </gf-form-dropdown>
+//     </div>
+//     <div class="gf-form">
+//       <gf-form-switch class="gf-form"
+//         label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
+//         checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.onChangeInternal()">
+//       </gf-form-switch>
+//     </div>
+//     <div class="gf-form gf-form--grow">
+//       <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+//       <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+//       <info-popover mode="right-absolute">
+//         <span ng-non-bindable>
+//           Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+//         </span>
+//       </info-popover>
+//     </div>
+//   </div>
+//   <div class="gf-form" ng-init>
+//       <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
+//       <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
+//       <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
+//   </div>
+//   <div class="gf-form--grow" ng-show="showHelp">
+//       <pre>
+//   Format: <code class="query-keyword">timeseries{options}</code>
+//       or  <code class="query-keyword">timeseries{options}[aggregation,granularity]</code> <br>
+//   Options are of the form: property comparator value <br>
+//   Comparator can be either
+//     =  (strict equality),
+//     != (strict inequality),
+//     =~ (regex equality),
+//     !~ (regex inequality) <br>
+//   Templated variables can also be used with [[variable]] or $variable.
+//   Example: <code class="query-keyword">timeseries{assetId=[[asset]],metadata.key1 =~ ".*test.*",isStep=1}[average,12h]</code> <br>
+//   Custom functions can also be applied on one or multiple timeseries.
+//   Examples: <code class="query-keyword">(timeseries{name=~'.*temp.*'}[avg] - 32) * 5/9</code>
+//             <code class="query-keyword">timeseries{} - timeseries{}[avg,24h]</code><br>
+//   Special functions (SUM, MAX, MIN, AVG) can also be applied to all filtered timeseries.
+//   Examples: <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"})</code>
+//               ↪ yields one timeseries that is the sum of all temperature timeseries
+//             <code class="query-keyword">MAX(timeseries{}[average]) - MIN(timeseries{}[average])</code>
+//               ↪ yields the range of the timeseries aggregated by averages
+//             <code class="query-keyword">power(timeseries{} - AVG(timeseries{}), 2)</code>
+//               ↪ yields the squared deviation of each timeseries from the average <br>
+//   If you want to reference a specific timeseries (for example, a timeseries that is not associated with an asset), use `[ID]`, `[ID,aggregate]`, or `[ID,aggregate,granularity]`.
+//   Example:  <code class="query-keyword">SUM(timeseries{metadata.type="TEMP"}) - [123456,avg,12h]</code>
+//       </pre>
+//   </div>
+// </script>
+// </div>
