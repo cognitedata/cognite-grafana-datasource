@@ -24,7 +24,7 @@ import {
   isError,
 } from './types';
 import { AnnotationQueryRequest, DataSourceApi, DataSourceInstanceSettings } from '@grafana/ui';
-import { AnnotationEvent } from '@grafana/data';
+import { AnnotationEvent, SelectableValue } from '@grafana/data';
 
 export default class CogniteDatasource extends DataSourceApi<QueryTarget, CogniteOptions> {
   id: number;
@@ -43,6 +43,7 @@ export default class CogniteDatasource extends DataSourceApi<QueryTarget, Cognit
   }
 
   async query(options: QueryOptions): Promise<QueryResponse> {
+    console.log("!query", options);
     const queryTargets: QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = '';
       target.warning = '';
@@ -344,7 +345,7 @@ export default class CogniteDatasource extends DataSourceApi<QueryTarget, Cognit
       }));
   }
 
-  async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<MetricFindQueryResponse> {
+  async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<SelectableValue<string>[]> {
     let urlEnd: string;
     if (type === Tab.Asset) {
       if (query.length === 0) {
@@ -373,7 +374,7 @@ export default class CogniteDatasource extends DataSourceApi<QueryTarget, Cognit
       )
       .then((result: { data: TimeSeriesResponse }) =>
         result.data.data.items.map(timeSeriesResponseItem => ({
-          text: timeSeriesResponseItem.description
+          label: timeSeriesResponseItem.description
             ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
             : timeSeriesResponseItem.name,
           value: type === Tab.Asset ? String(timeSeriesResponseItem.id) : timeSeriesResponseItem.name,

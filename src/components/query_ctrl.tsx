@@ -9,6 +9,7 @@ import { SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 
 import { QueryTarget, CogniteOptions, Tab } from '../types';
+import { CogniteQuerySection } from './query_sections';
 
 export type Props = QueryEditorProps<CogniteDatasource, QueryTarget, CogniteOptions>;
 
@@ -24,7 +25,7 @@ export type Props = QueryEditorProps<CogniteDatasource, QueryTarget, CogniteOpti
 // }));
 
 interface State {
-  selectedTab: SelectableValue<string>;
+  selectedTab: SelectableValue<Tab>;
   // legendFormat: string;
   // formatOption: SelectableValue<string>;
   // interval: string;
@@ -35,33 +36,33 @@ interface State {
 export class CogniteQueryEditor extends PureComponent<Props, State> {
   // Query target to be modified and used for queries
   query: QueryTarget;
-  aggregation = [
-    { value: 'none', name: 'None' },
-    { value: 'average', name: 'Average' },
-    { value: 'max', name: 'Max' },
-    { value: 'min', name: 'Min' },
-    { value: 'count', name: 'Count' },
-    { value: 'sum', name: 'Sum' },
-    { value: 'interpolation', name: 'Interpolation' },
-    { value: 'stepInterpolation', name: 'Step Interpolation' },
-    { value: 'continuousVariance', name: 'Continuous Variance' },
-    { value: 'discreteVariance', name: 'Discrete Variance' },
-    { value: 'totalVariation', name: 'Total Variation' },
+  aggregates: SelectableValue<string>[] = [
+    { value: 'none', label: 'None', name: 'None' },
+    { value: 'average', label: 'Average', name: 'Average' },
+    { value: 'max', label: 'Max', name: 'Max' },
+    { value: 'min', label: 'Min', name: 'Min' },
+    { value: 'count', label: 'Count', name: 'Count' },
+    { value: 'sum', label: 'Sum', name: 'Sum' },
+    { value: 'interpolation', label: 'Interpolation', name: 'Interpolation' },
+    { value: 'stepInterpolation', label: 'Step Interpolation', name: 'Step Interpolation' },
+    { value: 'continuousVariance', label: 'Continuous Variance', name: 'Continuous Variance' },
+    { value: 'discreteVariance', label: 'Discrete Variance', name: 'Discrete Variance' },
+    { value: 'totalVariation', label: 'Total Variation', name: 'Total Variation' },
   ];
-  tabs: Array<SelectableValue<string>> = [
+  tabs: SelectableValue<Tab>[] = [
     {
       value: Tab.Timeseries,
-      name: 'Select Timeseries',
+      label: 'Select Timeseries',
       // src: 'timeseriestab.html',
     },
     {
       value: Tab.Asset,
-      name: 'Select Timeseries from Asset',
+      label: 'Select Timeseries from Asset',
       // src: 'assettab.html',
     },
     {
       value: Tab.Custom,
-      name: 'Custom Query',
+      label: 'Custom Query',
       // src: 'customtab.html',
     },
   ];
@@ -108,17 +109,47 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
       // // Switch options
       // instant: Boolean(query.instant),
     };
+    this.changeTab = this.changeTab.bind(this);
   }
 
-  changeTab(option: SelectableValue<string>) {
-    // this.currentTabIndex = index;
-    // this.query.tab = this.tabs[index].value;
+  changeTab(option: SelectableValue<Tab>) {
+    this.currentTabIndex = this.tabs.findIndex(x => x.value === option.value) || 0;
+    this.query.tab = option.value;
+    this.setState({selectedTab:{...option}}, this.onRunQuery);
     // this.refresh();
   }
 
   onFieldChange = (query: QueryTarget, override?: any) => {
     this.query.expr = query.expr;
   };
+
+  update = (queryTarget) => {
+    // console.log('update', this.query, queryTarget);
+    // this.query = queryTarget;
+    const { onChange, onRunQuery } = this.props;
+    if (onChange) {
+      onChange(queryTarget);
+      if (onRunQuery) {
+        onRunQuery();
+      }
+    }
+    // // console.log('>update', this.query, queryTarget);
+    // this.onRunQuery();
+  }
+
+  onRunQuery = () => {
+    const { query } = this;
+    this.props.onChange(query);
+    this.props.onRunQuery();
+  };
+
+  // getOptions = (query: string, type: string) => {
+  //   return this.datasource.getOptionsForDropdown(query || '', type);
+  //   // .then(options => {
+  //   //   _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
+  //   //   return options;
+  //   // });
+  // }
 
   // onFormatChange = (option: SelectableValue<string>) => {
   //   this.query.format = option.value;
@@ -159,10 +190,16 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
     const { selectedTab /*formatOption, instant, interval, intervalFactorOption, legendFormat*/ } = this.state;
 
     return (
+      <div>
       <div className="gf-form-inline gf-form-inline--nowrap">
-        <div className="gf-from flex-shrink-0">
+        <div className="gf-form flex-shrink-0">
           <Select isSearchable={false} options={this.tabs} onChange={this.changeTab} value={selectedTab}></Select>
         </div>
+        <div className="gf-form-label">Other global options go here (instant, table vs ts, include points outside, etc)</div>
+      </div>
+      <div>
+        <CogniteQuerySection aggregates={this.aggregates} queryTarget={this.query} datasource={datasource} update={this.update}></CogniteQuerySection>
+      </div>
       </div>
     );
   }
