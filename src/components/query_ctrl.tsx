@@ -36,7 +36,7 @@ interface State {
 export class CogniteQueryEditor extends PureComponent<Props, State> {
   // Query target to be modified and used for queries
   query: QueryTarget;
-  aggregates: SelectableValue<string>[] = [
+  aggregates: Array<SelectableValue<string>> = [
     { value: 'none', label: 'None', name: 'None' },
     { value: 'average', label: 'Average', name: 'Average' },
     { value: 'max', label: 'Max', name: 'Max' },
@@ -49,7 +49,7 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
     { value: 'discreteVariance', label: 'Discrete Variance', name: 'Discrete Variance' },
     { value: 'totalVariation', label: 'Total Variation', name: 'Total Variation' },
   ];
-  tabs: SelectableValue<Tab>[] = [
+  tabs: Array<SelectableValue<Tab>> = [
     {
       value: Tab.Timeseries,
       label: 'Select Timeseries',
@@ -115,7 +115,7 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
   changeTab(option: SelectableValue<Tab>) {
     this.currentTabIndex = this.tabs.findIndex(x => x.value === option.value) || 0;
     this.query.tab = option.value;
-    this.setState({selectedTab:{...option}}, this.onRunQuery);
+    this.setState({ selectedTab: { ...option } }, this.onRunQuery);
     // this.refresh();
   }
 
@@ -123,7 +123,7 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
     this.query.expr = query.expr;
   };
 
-  update = (queryTarget) => {
+  update = queryTarget => {
     // console.log('update', this.query, queryTarget);
     // this.query = queryTarget;
     const { onChange, onRunQuery } = this.props;
@@ -135,7 +135,7 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
     }
     // // console.log('>update', this.query, queryTarget);
     // this.onRunQuery();
-  }
+  };
 
   onRunQuery = () => {
     const { query } = this;
@@ -191,15 +191,20 @@ export class CogniteQueryEditor extends PureComponent<Props, State> {
 
     return (
       <div>
-      <div className="gf-form-inline gf-form-inline--nowrap">
-        <div className="gf-form flex-shrink-0">
-          <Select isSearchable={false} options={this.tabs} onChange={this.changeTab} value={selectedTab}></Select>
+        <div className="gf-form-inline gf-form-inline--nowrap">
+          <div className="gf-form flex-shrink-0">
+            <Select isSearchable={false} options={this.tabs} onChange={this.changeTab} value={selectedTab}></Select>
+          </div>
+          <div className="gf-form-label">Other global options go here (instant, table vs ts, include points outside, etc)</div>
         </div>
-        <div className="gf-form-label">Other global options go here (instant, table vs ts, include points outside, etc)</div>
-      </div>
-      <div>
-        <CogniteQuerySection aggregates={this.aggregates} queryTarget={this.query} datasource={datasource} update={this.update}></CogniteQuerySection>
-      </div>
+        <div>
+          <CogniteQuerySection
+            aggregates={this.aggregates}
+            queryTarget={this.query}
+            datasource={datasource}
+            update={this.update}
+          ></CogniteQuerySection>
+        </div>
       </div>
     );
   }

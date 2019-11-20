@@ -43,7 +43,7 @@ export default class CogniteDatasource extends DataSourceApi<QueryTarget, Cognit
   }
 
   async query(options: QueryOptions): Promise<QueryResponse> {
-    console.log("!query", options);
+    console.log('!query', options);
     const queryTargets: QueryTarget[] = options.targets.reduce((targets, target) => {
       target.error = '';
       target.warning = '';
@@ -345,7 +345,7 @@ export default class CogniteDatasource extends DataSourceApi<QueryTarget, Cognit
       }));
   }
 
-  async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<SelectableValue<string>[]> {
+  async getOptionsForDropdown(query: string, type?: string, options?: any): Promise<Array<SelectableValue<string>>> {
     let urlEnd: string;
     if (type === Tab.Asset) {
       if (query.length === 0) {
