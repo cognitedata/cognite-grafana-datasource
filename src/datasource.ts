@@ -65,122 +65,124 @@ export default class CogniteDatasource {
       return Promise.resolve({ data: [] });
     }
 
+    const queries: Promise<QueryResponse>[] = [];
+    for (const target of queryTargets) {
+      queries.push(this.processTarget(target, options));
+    }
+
+    const queryResponses: QueryResponse[] = await Promise.all(queries);
+
+    return _.reduce(queryResponses, (prev, curr) => {
+      return {
+        data: prev.data.concat(curr.data),
+      };
+    });
+  }
+
+  private async processTarget(target: QueryTarget, options: QueryOptions): Promise<QueryResponse> {
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
-    const targetQueriesCount = [];
-    let labels = [];
-
-    const dataQueryRequestPromises: Promise<DataQueryRequestItem[]>[] = [];
-    for (const target of queryTargets) {
-      dataQueryRequestPromises.push(this.getDataQueryRequestItems(target, options));
-    }
-    const dataQueryRequestItems = await Promise.all(dataQueryRequestPromises);
-
     const queries: DataQueryRequest[] = [];
-    for (const { target, queryList } of dataQueryRequestItems.map((ql, i) => ({
-      target: queryTargets[i],
-      queryList: ql,
-    }))) {
-      if (queryList.length === 0 || target.error) {
-        continue;
-      }
+    let label = undefined;
 
-      // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
-      // may want to change how much we split into, but for now, 100 seems like the best
-      const qlChunks = _.chunk(queryList, 100);
-      for (const qlChunk of qlChunks) {
-        // keep track of target lengths so we can assign errors later
-        targetQueriesCount.push({
-          refId: target.refId,
-          count: qlChunk.length,
-        });
-        // create query requests
-        const queryReq: DataQueryRequest = {
-          items: qlChunk,
-          start: timeFrom,
-          end: timeTo,
-        };
-        if (target.aggregation && target.aggregation !== 'none') {
-          queryReq.aggregates = target.aggregation;
-          if (!target.granularity) {
-            queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
-          } else {
-            queryReq.granularity = target.granularity;
-          }
-        }
-        if (target.tab === Tab.Custom && qlChunk[0].function) {
-          let idsCount = 0;
-          const idRegex = /\[.*?\]/g; // look for [something]
-          for (const q of qlChunk) {
-            const matches = q.function.match(idRegex);
-            if (!matches) break;
-            const idsObj = {};
-            for (const match of matches) {
-              idsObj[match.substr(1, match.length - 2)] = true;
-            }
-            idsCount += Object.keys(idsObj).length;
-          }
-          if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
+    const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
+    if (queryList.length === 0 || target.error) {
+      return Promise.resolve({ data: [] });
+    }
 
-          // check if any aggregates are being used
-          const usesAggregates = qlChunk.some(item => item.aliases.length > 0);
-
-          queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / idsCount);
+    // /dataquery is limited to 100 items, so we need to add new calls if we go over 100 items
+    // may want to change how much we split into, but for now, 100 seems like the best
+    const qlChunks = _.chunk(queryList, 100);
+    for (const qlChunk of qlChunks) {
+      // create query requests
+      const queryReq: DataQueryRequest = {
+        items: qlChunk,
+        start: timeFrom,
+        end: timeTo,
+      };
+      if (target.aggregation && target.aggregation !== 'none') {
+        queryReq.aggregates = target.aggregation;
+        if (!target.granularity) {
+          queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
         } else {
-          queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
+          queryReq.granularity = target.granularity;
         }
-        queries.push(queryReq);
       }
-
-      // assign labels to each timeseries
-      if (target.tab === Tab.Timeseries || target.tab === undefined) {
-        if (!target.label) target.label = '';
-        if (target.label.match(/{{.*}}/)) {
-          try {
-            // need to fetch the timeseries
-            const ts = await this.getTimeseries(
-              {
-                q: target.target,
-                limit: 1,
-              },
-              target
-            );
-            labels.push(this.getTimeseriesLabel(target.label, ts[0]));
-          } catch {
-            labels.push(target.label);
+      if (target.tab === Tab.Custom && qlChunk[0].function) {
+        let idsCount = 0;
+        const idRegex = /\[.*?\]/g; // look for [something]
+        for (const q of qlChunk) {
+          const matches = q.function.match(idRegex);
+          if (!matches) break;
+          const idsObj = {};
+          for (const match of matches) {
+            idsObj[match.substr(1, match.length - 2)] = true;
           }
-        } else {
-          labels.push(target.label);
+          idsCount += Object.keys(idsObj).length;
         }
-      } else if (target.tab === Tab.Asset) {
-        target.assetQuery.timeseries.forEach(ts => {
-          if (ts.selected) {
-            if (!target.label) target.label = '';
-            labels.push(this.getTimeseriesLabel(target.label, ts));
-          }
-        });
+        if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
+
+        // check if any aggregates are being used
+        const usesAggregates = qlChunk.some(item => item.aliases.length > 0);
+
+        queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / idsCount);
       } else {
-        let count = 0;
-        while (count < queryList.length) {
-          cache.getTimeseries(options, target).forEach(ts => {
-            if (ts.selected && count < queryList.length) {
-              count += 1;
-              if (!target.label) {
-                if (queryList[0].function) {
-                  // if using custom functions and no label is specified just use the name of the last timeseries in the function
-                  labels.push(ts.name);
-                  return;
-                }
-                target.label = '';
-              }
-              labels.push(this.getTimeseriesLabel(target.label, ts));
-            }
-          });
+        queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
+      }
+      queries.push(queryReq);
+    }
+
+    // get the label to each timeseries
+    if (target.tab === Tab.Timeseries || target.tab === undefined) {
+      if (!target.label) target.label = '';
+      if (target.label.match(/{{.*}}/)) {
+        try {
+          // need to fetch the timeseries
+          const ts = await this.getTimeseries(
+            {
+              q: target.target,
+              limit: 1,
+            },
+            target
+          );
+          label = this.getTimeseriesLabel(target.label, ts[0]);
+        } catch {
+          label = target.label;
         }
+      } else {
+        label = target.label;
+      }
+    } else if (target.tab === Tab.Asset) {
+      target.assetQuery.timeseries.forEach(ts => {
+        if (ts.selected) {
+          if (!target.label) target.label = '';
+          label = this.getTimeseriesLabel(target.label, ts);
+        }
+      });
+    } else {
+      let count = 0;
+      while (count < queryList.length) {
+        cache.getTimeseries(options, target).forEach(ts => {
+          if (ts.selected && count < queryList.length) {
+            count += 1;
+            if (!target.label) {
+              if (queryList[0].function) {
+                // if using custom functions and no label is specified just use the name of the last timeseries in the function
+                label = ts.name;
+                return;
+              }
+              target.label = '';
+            }
+            label = this.getTimeseriesLabel(target.label, ts);
+          }
+        });
       }
     }
+
     // replace variables in labels as well
-    labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
+    if (label) {
+      label = this.templateSrv.replace(label, options.scopedVars);
+    }
 
     const queryRequests = queries.map(q =>
       cache
@@ -189,7 +191,7 @@ export default class CogniteDatasource {
             url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
             method: 'POST',
             data: q,
-            requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
+            requestId: Utils.getRequestId(options, target),
           },
           this.backendSrv
         )
@@ -204,11 +206,8 @@ export default class CogniteDatasource {
     } catch (error) {
       return { data: [] };
     }
-    let count = 0;
     return {
-      data: timeseries.reduce((datapoints, response, i) => {
-        const refId = targetQueriesCount[i].refId;
-        const target = queryTargets.find(x => x.refId === refId);
+      data: timeseries.reduce((datapoints, response) => {
         if (isError(response)) {
           // if response was cancelled, no need to show error message
           if (!response.error.cancelled) {
@@ -220,7 +219,6 @@ export default class CogniteDatasource {
             }
             target.error = errmsg;
           }
-          count += targetQueriesCount[i].count; // skip over these labels
           return datapoints;
         }
 
@@ -233,7 +231,7 @@ export default class CogniteDatasource {
                 '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
             }
             return {
-              target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
+              target: label ? label : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                 .map(d => {
