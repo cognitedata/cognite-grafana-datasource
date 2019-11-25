@@ -11,7 +11,7 @@ export default class Utils {
         return _.isNil(val)
           ? result
           : _.isArray(val)
-          ? `${result + [key, val].map(encodeURIComponent).join('=[')}]&`
+          ? `${result + encodeURIComponent(key)}=[${encodeURIComponent(val.join(','))}]&`
           : `${result + [key, val].map(encodeURIComponent).join('=')}&` + '';
       },
       ''
