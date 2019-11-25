@@ -83,7 +83,7 @@ export default class CogniteDatasource {
     const timeFrom = Math.ceil(dateMath.parse(options.range.from));
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
     const queries: DataQueryRequest[] = [];
-    let label = undefined;
+    let labels = [];
 
     const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
     if (queryList.length === 0 || target.error) {
@@ -145,18 +145,18 @@ export default class CogniteDatasource {
             },
             target
           );
-          label = this.getTimeseriesLabel(target.label, ts[0]);
+          labels.push(this.getTimeseriesLabel(target.label, ts[0]));
         } catch {
-          label = target.label;
+          labels.push(target.label);
         }
       } else {
-        label = target.label;
+        labels.push(target.label);
       }
     } else if (target.tab === Tab.Asset) {
       target.assetQuery.timeseries.forEach(ts => {
         if (ts.selected) {
           if (!target.label) target.label = '';
-          label = this.getTimeseriesLabel(target.label, ts);
+          labels.push(this.getTimeseriesLabel(target.label, ts));
         }
       });
     } else {
@@ -168,21 +168,19 @@ export default class CogniteDatasource {
             if (!target.label) {
               if (queryList[0].function) {
                 // if using custom functions and no label is specified just use the name of the last timeseries in the function
-                label = ts.name;
+                labels.push(ts.name);
                 return;
               }
               target.label = '';
             }
-            label = this.getTimeseriesLabel(target.label, ts);
+            labels.push(this.getTimeseriesLabel(target.label, ts));
           }
         });
       }
     }
 
     // replace variables in labels as well
-    if (label) {
-      label = this.templateSrv.replace(label, options.scopedVars);
-    }
+    labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
     const queryRequests = queries.map(q =>
       cache
@@ -206,6 +204,8 @@ export default class CogniteDatasource {
     } catch (error) {
       return { data: [] };
     }
+
+    let count = 0;
     return {
       data: timeseries.reduce((datapoints, response) => {
         if (isError(response)) {
@@ -219,6 +219,7 @@ export default class CogniteDatasource {
             }
             target.error = errmsg;
           }
+          count += 100; // skip over entire batch
           return datapoints;
         }
 
@@ -231,7 +232,7 @@ export default class CogniteDatasource {
                 '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
             }
             return {
-              target: label ? label : aggregationPrefix + item.name,
+              target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                 .map(d => {

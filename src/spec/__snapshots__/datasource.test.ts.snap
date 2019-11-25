@@ -462,13 +462,6 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?q=Timeseries789&limit=1",
-}
-`;
-
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
-Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
@@ -485,7 +478,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
 Object {
   "data": Object {
     "aggregates": "count",
@@ -502,6 +495,13 @@ Object {
   "method": "POST",
   "requestId": "1_5_B",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+}
+`;
+
+exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?q=Timeseries789&limit=1",
 }
 `;
 
@@ -1496,7 +1496,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_E",
+  "requestId": "1_18_F",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
 }
 `;
@@ -1516,7 +1516,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_F",
+  "requestId": "1_18_G",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
 }
 `;
@@ -2251,7 +2251,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_G",
+  "requestId": "1_18_H",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
 }
 `;
@@ -2296,7 +2296,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_H",
+  "requestId": "1_18_I",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
 }
 `;
@@ -2316,7 +2316,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_I",
+  "requestId": "1_18_J",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
 }
 `;

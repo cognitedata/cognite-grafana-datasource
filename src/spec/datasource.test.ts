@@ -257,8 +257,10 @@ describe('CogniteDatasource', () => {
         ctx.options.targets = [tsTargetA, tsTargetB, tsTargetC];
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
           .mockImplementationOnce(() => Promise.resolve(tsResponse))
-          .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+          .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)));
         result = await ctx.ds.query(ctx.options);
       });
 
