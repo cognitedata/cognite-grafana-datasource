@@ -36,6 +36,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
       src: 'assettab.html',
     },
     { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
+    {
+      value: Tab.Event,
+      name: 'Select Events for a Table',
+      src: 'events.html',
+    },
   ];
   currentTabIndex: number;
   defaults = {
@@ -53,6 +58,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
       includeSubtrees: false,
       func: '',
       templatedTarget: '',
+    },
+    eventQuery: {
+      expr: '',
+      filter: '',
+      columns: '',
     },
   };
   isAllSelected: boolean;

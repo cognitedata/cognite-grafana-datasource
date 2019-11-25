@@ -163,6 +163,7 @@ describe('CogniteDatasource', () => {
         error: undefined,
         hide: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
       const emptyAsset: QueryTarget = {
         ...emptyTimeseries,
@@ -199,6 +200,7 @@ describe('CogniteDatasource', () => {
         assetQuery: undefined,
         expr: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
 
       beforeAll(async () => {
@@ -232,6 +234,7 @@ describe('CogniteDatasource', () => {
         assetQuery: undefined,
         expr: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
       const tsTargetB: QueryTarget = {
         ...tsTargetA,
@@ -290,6 +293,7 @@ describe('CogniteDatasource', () => {
         assetQuery: undefined,
         expr: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
       const tsTargetB = {
         ...tsTargetA,
@@ -341,6 +345,7 @@ describe('CogniteDatasource', () => {
         },
         expr: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,
@@ -481,6 +486,7 @@ describe('CogniteDatasource', () => {
         },
         expr: 'timeseries{}',
         warning: undefined,
+        eventQuery: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -644,6 +650,7 @@ describe('CogniteDatasource', () => {
         },
         expr: 'timeseries{}',
         warning: undefined,
+        eventQuery: undefined,
       };
       const targetB: QueryTarget = {
         ..._.cloneDeep(targetA),
@@ -815,6 +822,7 @@ describe('CogniteDatasource', () => {
         },
         expr: undefined,
         warning: undefined,
+        eventQuery: undefined,
       };
       const targetB: QueryTarget = {
         ...targetA,

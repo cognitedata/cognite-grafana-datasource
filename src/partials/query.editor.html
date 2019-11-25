@@ -192,3 +192,84 @@
       </pre>
   </div>
 </script>
+
+  <!-- Events Query Tab -->
+<script type="text/ng-template" id="events.html">
+  <div class="gf-form-group">
+    <div>
+      <div class="gf-form gf-form--grow">
+        <label class="gf-form-label query-keyword fix-query-keyword width-8"
+          >Query</label
+        >
+        <input
+          type="text"
+          class="gf-form-input custom-query width-auto"
+          ng-model="ctrl.target.eventQuery.expr"
+          ng-blur="ctrl.onChangeInternal()"
+          placeholder="event{type='WORKORDER',assetSubtrees=[12,345,6,7890]}"
+        />
+        <info-popover
+          mode="right-absolute"
+          ng-click="showHelpQuery = !showHelpQuery"
+          >Click for help</info-popover
+        >
+      </div>
+      <div class="gf-form--grow" ng-show="showHelpQuery">
+        <pre>
+    Query for events using the 'events/search' endpoint.
+      Format is: event{param=value,...} <br>
+      Example: event{type="WORKORDER",assetSubtrees=[12,345,6,7890]} <br>
+    Templated variables can also be used with [[variable]] or $variable
+      Example: event{assetSubtrees=[$Variable]}</pre>
+      </div>
+      <div class="gf-form gf-form--grow">
+        <label class="gf-form-label query-keyword fix-query-keyword width-8"
+          >Filter</label
+        >
+        <input
+          type="text"
+          class="gf-form-input custom-query width-auto"
+          ng-model="ctrl.target.eventQuery.filter"
+          ng-blur="ctrl.onChangeInternal()"
+          placeholder="filter{metadata.key1=~''.*test', subtype!='ABC'}"
+        />
+        <info-popover
+          mode="right-absolute"
+          ng-click="showHelpFilter = !showHelpFilter"
+          >Click for help</info-popover
+        >
+      </div>
+      <div class="gf-form--grow" ng-show="showHelpFilter">
+        <pre>
+    Filter on the queried events
+      Format is: filter{property comparator value,...}
+      Comparator can be =, !=, =~, !~ <br>
+      Example: filter{metadata.key1=~".*test", subtype!="ABC"}</pre>
+      </div>
+      <div class="gf-form gf-form--grow">
+        <label class="gf-form-label query-keyword fix-query-keyword width-8"
+          >Columns</label
+        >
+        <input
+          type="text"
+          class="gf-form-input custom-query width-auto"
+          ng-model="ctrl.target.eventQuery.columns"
+          ng-blur="ctrl.onChangeInternal()"
+          placeholder="createdTime;type;subtype;metadata.well"
+        />
+        <info-popover
+          mode="right-absolute"
+          ng-click="showHelpColumn = !showHelpColumn"
+          >Click for help</info-popover
+        >
+      </div>
+      <div class="gf-form--grow" ng-show="showHelpColumn">
+        <pre>
+    Choose the columns of the table, separated by semicolons.
+    e.g. description;createdTime;type;subtype;metadata.well;
+    Use the `Column Styles` under Visualization options for further customization
+   </pre>
+      </div>
+    </div>
+  </div>
+</script>

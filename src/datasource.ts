@@ -24,6 +24,7 @@ import {
   TimeseriesSearchQuery,
   VariableQueryData,
   isError,
+  Table,
 } from './types';
 
 export default class CogniteDatasource {
@@ -84,6 +85,10 @@ export default class CogniteDatasource {
     const timeTo = Math.ceil(dateMath.parse(options.range.to));
     const queries: DataQueryRequest[] = [];
     let labels = [];
+
+    if (target.tab === Tab.Event) {
+      return this.processEventTarget(target, options, timeFrom, timeTo);
+    }
 
     const queryList: DataQueryRequestItem[] = await this.getDataQueryRequestItems(target, options);
     if (queryList.length === 0 || target.error) {
@@ -288,6 +293,48 @@ export default class CogniteDatasource {
     return [];
   }
 
+  private async processEventTarget(
+    target: QueryTarget,
+    options: QueryOptions,
+    startTime: number,
+    endTime: number
+  ): Promise<QueryResponse> {
+    const { expr, filter, columns } = target.eventQuery;
+    if (!expr || !columns) return Promise.resolve({ data: [] });
+
+    const events = await this.getEvents(expr, filter, startTime, endTime);
+
+    const columnsList = columns.split(';').filter(column => column !== '');
+
+    const table: Table = {
+      columns: columnsList.map(column => {
+        return { text: column };
+      }),
+      rows: [],
+      type: 'table',
+    };
+
+    events
+      .filter(e => e.selected === true)
+      .forEach(event => {
+        const row = columnsList.map(field => {
+          const value = _.get(event, field);
+          if (!value) {
+            return null;
+          }
+          return value;
+        });
+        table.rows.push(row);
+      });
+
+    console.log(events.filter(e => e.selected === true));
+    console.log(table);
+
+    return {
+      data: [table],
+    };
+  }
+
   public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const { range, annotation } = options;
     const { expr, filter, error } = annotation;
@@ -295,6 +342,21 @@ export default class CogniteDatasource {
     const endTime = Math.ceil(dateMath.parse(range.to));
     if (error || !expr) return [];
 
+    const events = await this.getEvents(expr, filter, startTime, endTime);
+
+    return events
+      .filter(e => e.selected === true)
+      .map(event => ({
+        annotation,
+        isRegion: true,
+        text: event.description,
+        time: event.startTime,
+        timeEnd: event.endTime,
+        title: event.type,
+      }));
+  }
+
+  private async getEvents(expr: string, filter: string, startTime: number, endTime: number) {
     const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
     if (queryOptions.error) {
       console.error(queryOptions.error);
@@ -331,16 +393,7 @@ export default class CogniteDatasource {
 
     Utils.applyFilters(filterOptions.filters, events);
 
-    return events
-      .filter(e => e.selected === true)
-      .map(event => ({
-        annotation,
-        isRegion: true,
-        text: event.description,
-        time: event.startTime,
-        timeEnd: event.endTime,
-        title: event.type,
-      }));
+    return events;
   }
 
   public async getOptionsForDropdown(

@@ -8,7 +8,19 @@ import {
 } from '@grafana/ui';
 
 export interface QueryResponse {
-  data: TimeSeries[];
+  data: (TimeSeries | Table)[];
+}
+export interface Table {
+  columns: TableColumn[];
+  rows: any[][];
+  type: 'table';
+}
+
+export interface TableColumn {
+  text: string;
+  type?: string;
+  sort?: boolean;
+  desc?: boolean;
 }
 
 export interface MetricDescription {
@@ -22,6 +34,7 @@ export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Event = 'Event',
 }
 
 export enum ParseType {
@@ -61,6 +74,12 @@ export interface AssetQuery {
   templatedTarget?: string;
 }
 
+export interface EventQuery {
+  expr: string;
+  filter: string;
+  columns: string;
+}
+
 export interface QueryTarget extends DataQuery {
   target: string;
   aggregation: string;
@@ -69,6 +88,7 @@ export interface QueryTarget extends DataQuery {
   label: string;
   tab: Tab;
   assetQuery: AssetQuery;
+  eventQuery: EventQuery;
   expr: string;
   warning: string;
 }
