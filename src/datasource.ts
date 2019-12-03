@@ -322,6 +322,10 @@ export default class CogniteDatasource {
           if (!value) {
             return null;
           }
+          if (!isNaN(value)) {
+            // if the value is numeric, convert it
+            return +value;
+          }
           return value;
         });
         table.rows.push(row);
