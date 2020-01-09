@@ -7,9 +7,7 @@ import {
   DataSourceSettings,
 } from '@grafana/ui';
 
-export interface QueryResponse {
-  data: TimeSeries[];
-}
+export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -46,9 +44,7 @@ export interface TimeSeriesResponseItem {
   selected: boolean;
 }
 
-export interface TimeSeriesResponse {
-  items: TimeSeriesResponseItem[];
-}
+export type TimeSeriesResponse = ItemsResponse<TimeSeriesResponseItem>;
 
 export interface AssetQuery {
   target: string;
@@ -84,7 +80,7 @@ export interface DataSourceRequestOptions {
   requestId?: string;
   headers?: { [s: string]: string };
   silent?: boolean;
-  data?: DataQueryRequest;
+  data?: object;
 }
 
 export interface TimeSeriesDatapoint {
@@ -97,12 +93,9 @@ export interface Datapoint {
   datapoints: TimeSeriesDatapoint[];
 }
 
-export interface Datapoints {
-  items: Datapoint[];
-}
+export type Datapoints = ItemsResponse<Datapoint>;
 
-export interface DataQueryRequestResponse {
-  data: Datapoints;
+export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
     data: {
       aggregates: string;
@@ -227,25 +220,34 @@ export interface Event {
   sourceId: string;
 }
 
-export interface Events {
-  items: Event[];
+export type Events = ItemsResponse<Event>;
+
+export type DataEvents = DataResponse<Events>;
+
+export type AnnotationQueryRequestResponse = DataResponse<DataEvents>;
+
+export interface DataResponse<T> {
+  data: T;
 }
 
-export interface DataEvents {
-  data: Events;
-}
+export type ItemsResponse<T> = {
+  items: T[];
+};
 
-export interface AnnotationQueryRequestResponse {
-  data: DataEvents;
-}
+export type Response<T> = DataResponse<{
+  items: T[];
+}>;
 
-export interface TimeseriesSearchQuery {
-  q: string;
-  description: string;
-  limit: number;
-  includeMetadata: boolean;
-  path: string[];
-  assetId: string;
+// todo: FIX THIS TYPE
+export interface TimeseriesFilterQuery {
+  q?: string;
+  description?: string;
+  limit?: number;
+  filter?: {
+    assetSubtreeIds?: IdEither[];
+    assetIds?: string[];
+  };
+  includeMetadata?: boolean;
 }
 
 export interface VariableQueryData {

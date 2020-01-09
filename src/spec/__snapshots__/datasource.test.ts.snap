@@ -172,50 +172,110 @@ Array [
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetSubtreeIds": Array [
+        Object {
+          "id": "456",
+        },
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=789&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "789",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[000]&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetSubtreeIds": Array [
+        Object {
+          "id": "000",
+        },
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -693,71 +753,151 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -1189,71 +1329,151 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=10000",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 10000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -3039,15 +3259,33 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?assetId=123&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[123]&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetSubtreeIds": Array [
+        Object {
+          "id": "123",
+        },
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -3071,8 +3309,18 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?path=[456]&limit=101",
+  "data": Object {
+    "filter": Object {
+      "assetSubtreeIds": Array [
+        Object {
+          "id": "456",
+        },
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -3188,8 +3436,13 @@ Object {
 
 exports[`CogniteDatasource Dropdown Options Query Given a request for asset options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?query=asset",
+  "data": Object {
+    "search": Object {
+      "query": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
 }
 `;
 
@@ -3212,8 +3465,13 @@ Array [
 
 exports[`CogniteDatasource Dropdown Options Query Given a request for asset options with additional options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?query=asset&metadata=%7B%22key1%22%3A%22value1%22%7D",
+  "data": Object {
+    "search": Object {
+      "query": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search&metadata=%7B%22key1%22%3A%22value1%22%7D",
 }
 `;
 
@@ -3260,8 +3518,9 @@ Array [
 
 exports[`CogniteDatasource Dropdown Options Query Given an empty request for asset options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets?",
+  "data": Object {},
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
 }
 `;
 
