@@ -179,7 +179,6 @@ export default class CogniteDatasource {
         }
       }
     }
-    debugger;
     // replace variables in labels as well
     labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
