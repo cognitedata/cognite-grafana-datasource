@@ -27,9 +27,9 @@ export default class Utils {
       int: 'interpolation',
       stepinterpolation: 'stepInterpolation',
       step: 'stepInterpolation',
-      continuousvariance: 'continousVariance', // spelling mistake is intended - will have to change in 0.6
-      continuousVariance: 'continousVariance',
-      cv: 'continousVariance',
+      continuousvariance: 'continuousVariance',
+      continuousVariance: 'continuousVariance',
+      cv: 'continuousVariance',
       discretevariance: 'discreteVariance',
       dv: 'discreteVariance',
       totalvariation: 'totalVariation',

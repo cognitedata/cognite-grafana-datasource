@@ -10,6 +10,7 @@
     "dev": "webpack --config webpack.config.js --mode development",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
     "test": "jest --coverage",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "tslint": "tslint -c tslint.json --project tsconfig.json",
     "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""

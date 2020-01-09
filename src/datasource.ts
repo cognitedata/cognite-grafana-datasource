@@ -101,7 +101,7 @@ export default class CogniteDatasource {
           end: timeTo,
         };
         if (target.aggregation && target.aggregation !== 'none') {
-          queryReq.aggregates = target.aggregation;
+          queryReq.aggregates = [target.aggregation];
           if (!target.granularity) {
             queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
           } else {
@@ -179,6 +179,7 @@ export default class CogniteDatasource {
         }
       }
     }
+    debugger;
     // replace variables in labels as well
     labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
@@ -186,7 +187,7 @@ export default class CogniteDatasource {
       cache
         .getQuery(
           {
-            url: `${this.url}/cogniteapi/${this.project}/timeseries/dataquery`,
+            url: `${this.url}/cogniteapi/${this.project}/timeseries/data/list`,
             method: 'POST',
             data: q,
             requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
@@ -227,7 +228,7 @@ export default class CogniteDatasource {
         const aggregation = response.config.data.aggregates;
         const aggregationPrefix = aggregation ? `${aggregation} ` : '';
         return datapoints.concat(
-          response.data.data.items.map(item => {
+          response.data.items.map(item => {
             if (item.datapoints.length >= response.config.data.limit) {
               target.warning =
                 '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
@@ -253,14 +254,16 @@ export default class CogniteDatasource {
   ): Promise<DataQueryRequestItem[]> {
     if (target.tab === Tab.Timeseries || target.tab === undefined) {
       const query: DataQueryRequestItem = {
-        name: target.target,
+        externalId: target.target,
       };
       return [query];
     }
 
     if (target.tab === Tab.Asset) {
       await this.findAssetTimeseries(target, options);
-      return target.assetQuery.timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
+      return target.assetQuery.timeseries
+        .filter(ts => ts.selected)
+        .map(ts => ({ externalId: ts.name }));
     }
 
     if (target.tab === Tab.Custom) {
@@ -376,7 +379,7 @@ export default class CogniteDatasource {
         this.backendSrv
       )
       .then((result: { data: TimeSeriesResponse }) =>
-        result.data.data.items.map(timeSeriesResponseItem => ({
+        result.data.items.map(timeSeriesResponseItem => ({
           text: timeSeriesResponseItem.description
             ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
             : timeSeriesResponseItem.name,
@@ -457,7 +460,7 @@ export default class CogniteDatasource {
       )
       .then(
         (result: { data: TimeSeriesResponse }) => {
-          return _.cloneDeep(result.data.data.items.filter(ts => !ts.isString));
+          return _.cloneDeep(result.data.items.filter(ts => !ts.isString));
         },
         error => {
           if (error.data && error.data.error) {
@@ -498,7 +501,7 @@ export default class CogniteDatasource {
       this.backendSrv
     );
 
-    const assets = result.data.data.items;
+    const assets = result.data.items;
 
     // now filter over these assets with the rest of the filters
     Utils.applyFilters(filterOptions.filters, assets);

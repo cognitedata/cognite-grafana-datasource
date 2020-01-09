@@ -225,7 +225,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 100000,
@@ -233,22 +233,24 @@ Object {
   },
   "method": "POST",
   "requestId": "1_10_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
 Object {
   "data": Object {
-    "aggregates": "min",
+    "aggregates": Array [
+      "min",
+    ],
     "end": 1549338475000,
     "granularity": "20m",
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
       Object {
-        "name": "Timeseries456",
+        "externalId": "Timeseries456",
       },
     ],
     "limit": 5000,
@@ -256,25 +258,27 @@ Object {
   },
   "method": "POST",
   "requestId": "1_10_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 10`] = `
 Object {
   "data": Object {
-    "aggregates": "max",
+    "aggregates": Array [
+      "max",
+    ],
     "end": 1549338475000,
     "granularity": "6m",
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
       Object {
-        "name": "Timeseries456",
+        "externalId": "Timeseries456",
       },
       Object {
-        "name": "Timeseries789",
+        "externalId": "Timeseries789",
       },
     ],
     "limit": 3333,
@@ -282,19 +286,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_10_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 11`] = `
 Object {
   "data": Object {
-    "aggregates": "tv",
+    "aggregates": Array [
+      "tv",
+    ],
     "end": 1549338475000,
     "granularity": "6m",
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 10000,
@@ -302,7 +308,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_10_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -473,7 +479,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 100000,
@@ -481,19 +487,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_5_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
 Object {
   "data": Object {
-    "aggregates": "count",
+    "aggregates": Array [
+      "count",
+    ],
     "end": 1549338475000,
     "granularity": "20m",
     "items": Array [
       Object {
-        "name": "Timeseries456",
+        "externalId": "Timeseries456",
       },
     ],
     "limit": 10000,
@@ -501,19 +509,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_5_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 4`] = `
 Object {
   "data": Object {
-    "aggregates": "step",
+    "aggregates": Array [
+      "step",
+    ],
     "end": 1549338475000,
     "granularity": "1s",
     "items": Array [
       Object {
-        "name": "Timeseries789",
+        "externalId": "Timeseries789",
       },
     ],
     "limit": 10000,
@@ -521,7 +531,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_5_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -601,7 +611,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 100000,
@@ -609,7 +619,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_7_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -619,7 +629,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 100000,
@@ -627,19 +637,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_7_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given an older queryTarget format should generate the correct query 1`] = `
 Object {
   "data": Object {
-    "aggregates": "average",
+    "aggregates": Array [
+      "average",
+    ],
     "end": 1549338475000,
     "granularity": "30s",
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 10000,
@@ -647,7 +659,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_3_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -755,22 +767,22 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries1",
+        "externalId": "Timeseries1",
       },
       Object {
-        "name": "Timeseries2",
+        "externalId": "Timeseries2",
       },
       Object {
-        "name": "Timeseries3",
+        "externalId": "Timeseries3",
       },
       Object {
-        "name": "Timeseries4",
+        "externalId": "Timeseries4",
       },
       Object {
-        "name": "Timeseries5",
+        "externalId": "Timeseries5",
       },
       Object {
-        "name": "Test",
+        "externalId": "Test",
       },
     ],
     "limit": 16666,
@@ -778,19 +790,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
-    "aggregates": "continuousVariance",
+    "aggregates": Array [
+      "continuousVariance",
+    ],
     "end": 1549338475000,
     "granularity": "10d",
     "items": Array [
       Object {
-        "name": "Timeseries4",
+        "externalId": "Timeseries4",
       },
     ],
     "limit": 10000,
@@ -798,19 +812,21 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
-    "aggregates": "discreteVariance",
+    "aggregates": Array [
+      "discreteVariance",
+    ],
     "end": 1549338475000,
     "granularity": "24h",
     "items": Array [
       Object {
-        "name": "Timeseries4",
+        "externalId": "Timeseries4",
       },
     ],
     "limit": 10000,
@@ -818,7 +834,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -828,7 +844,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries1",
+        "externalId": "Timeseries1",
       },
     ],
     "limit": 100000,
@@ -836,7 +852,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -846,19 +862,19 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries2",
+        "externalId": "Timeseries2",
       },
       Object {
-        "name": "Timeseries3",
+        "externalId": "Timeseries3",
       },
       Object {
-        "name": "Timeseries4",
+        "externalId": "Timeseries4",
       },
       Object {
-        "name": "Timeseries5",
+        "externalId": "Timeseries5",
       },
       Object {
-        "name": "Test",
+        "externalId": "Test",
       },
     ],
     "limit": 20000,
@@ -866,7 +882,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_E",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1018,7 +1034,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "continousVariance Timeseries4",
+      "target": "continuousVariance Timeseries4",
     },
     Object {
       "datapoints": Array [
@@ -1247,22 +1263,22 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries1",
+        "externalId": "Timeseries1",
       },
       Object {
-        "name": "Timeseries2",
+        "externalId": "Timeseries2",
       },
       Object {
-        "name": "Timeseries3",
+        "externalId": "Timeseries3",
       },
       Object {
-        "name": "Timeseries4",
+        "externalId": "Timeseries4",
       },
       Object {
-        "name": "Timeseries5",
+        "externalId": "Timeseries5",
       },
       Object {
-        "name": "Test",
+        "externalId": "Test",
       },
     ],
     "limit": 16666,
@@ -1270,7 +1286,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1281,33 +1297,33 @@ Object {
     "items": Array [
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries1",
         "function": "[12] + [12] + [123]",
-        "name": "Timeseries1",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries2",
         "function": "[34] + [34] + [123]",
-        "name": "Timeseries2",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries3",
         "function": "[56] + [56] + [123]",
-        "name": "Timeseries3",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries4",
         "function": "[78] + [78] + [123]",
-        "name": "Timeseries4",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries5",
         "function": "[90] + [90] + [123]",
-        "name": "Timeseries5",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Test",
         "function": "[123] + [123] + [123]",
-        "name": "Test",
       },
     ],
     "limit": 9090,
@@ -1315,7 +1331,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1339,8 +1355,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries1",
         "function": "[12] * [alias12_average]- [alias12_average_10s]",
-        "name": "Timeseries1",
       },
       Object {
         "aliases": Array [
@@ -1357,8 +1373,8 @@ Object {
             "id": 34,
           },
         ],
+        "externalId": "Timeseries2",
         "function": "[34] * [alias34_average]- [alias34_average_10s]",
-        "name": "Timeseries2",
       },
       Object {
         "aliases": Array [
@@ -1375,8 +1391,8 @@ Object {
             "id": 56,
           },
         ],
+        "externalId": "Timeseries3",
         "function": "[56] * [alias56_average]- [alias56_average_10s]",
-        "name": "Timeseries3",
       },
       Object {
         "aliases": Array [
@@ -1393,8 +1409,8 @@ Object {
             "id": 78,
           },
         ],
+        "externalId": "Timeseries4",
         "function": "[78] * [alias78_average]- [alias78_average_10s]",
-        "name": "Timeseries4",
       },
       Object {
         "aliases": Array [
@@ -1411,8 +1427,8 @@ Object {
             "id": 90,
           },
         ],
+        "externalId": "Timeseries5",
         "function": "[90] * [alias90_average]- [alias90_average_10s]",
-        "name": "Timeseries5",
       },
       Object {
         "aliases": Array [
@@ -1429,8 +1445,8 @@ Object {
             "id": 123,
           },
         ],
+        "externalId": "Test",
         "function": "[123] * [alias123_average]- [alias123_average_10s]",
-        "name": "Test",
       },
     ],
     "limit": 555,
@@ -1438,7 +1454,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1468,8 +1484,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries1",
         "function": "[alias12_none] * [alias12_average] - [alias12_average_10m]",
-        "name": "Timeseries1",
       },
     ],
     "limit": 3333,
@@ -1477,7 +1493,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1488,8 +1504,8 @@ Object {
     "items": Array [
       Object {
         "aliases": Array [],
+        "externalId": "",
         "function": "1+1",
-        "name": "",
       },
     ],
     "limit": 100000,
@@ -1497,7 +1513,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_E",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1508,8 +1524,8 @@ Object {
     "items": Array [
       Object {
         "aliases": Array [],
+        "externalId": "",
         "function": "([12] + [34] + [56] + [78] + [90] + [123])",
-        "name": "",
       },
     ],
     "limit": 16666,
@@ -1517,7 +1533,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_F",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -1643,8 +1659,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries1",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[12]",
-        "name": "Timeseries1",
       },
       Object {
         "aliases": Array [
@@ -1763,8 +1779,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries2",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[34]",
-        "name": "Timeseries2",
       },
       Object {
         "aliases": Array [
@@ -1883,8 +1899,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries3",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[56]",
-        "name": "Timeseries3",
       },
       Object {
         "aliases": Array [
@@ -2003,8 +2019,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries4",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[78]",
-        "name": "Timeseries4",
       },
       Object {
         "aliases": Array [
@@ -2123,8 +2139,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Timeseries5",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[90]",
-        "name": "Timeseries5",
       },
       Object {
         "aliases": Array [
@@ -2243,8 +2259,8 @@ Object {
             "id": 12,
           },
         ],
+        "externalId": "Test",
         "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[123]",
-        "name": "Test",
       },
     ],
     "limit": 83,
@@ -2252,7 +2268,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_G",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -2263,33 +2279,33 @@ Object {
     "items": Array [
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries1",
         "function": "max(max([12],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Timeseries1",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries2",
         "function": "max(max([34],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Timeseries2",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries3",
         "function": "max(max([56],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Timeseries3",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries4",
         "function": "max(max([78],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Timeseries4",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries5",
         "function": "max(max([90],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Timeseries5",
       },
       Object {
         "aliases": Array [],
+        "externalId": "Test",
         "function": "max(max([123],5),5) + max([12], [34], [56], [78], [90], [123])",
-        "name": "Test",
       },
     ],
     "limit": 2777,
@@ -2297,7 +2313,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_H",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -2308,8 +2324,8 @@ Object {
     "items": Array [
       Object {
         "aliases": Array [],
+        "externalId": "Timeseries1",
         "function": "[12] + [[TimeseriesVariable]]",
-        "name": "Timeseries1",
       },
     ],
     "limit": 50000,
@@ -2317,7 +2333,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_18_I",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -3041,7 +3057,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
     ],
     "limit": 100000,
@@ -3049,7 +3065,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_22_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
@@ -3066,10 +3082,10 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "name": "Timeseries123",
+        "externalId": "Timeseries123",
       },
       Object {
-        "name": "Timeseries456",
+        "externalId": "Timeseries456",
       },
     ],
     "limit": 50000,
@@ -3077,7 +3093,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_22_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/dataquery",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
