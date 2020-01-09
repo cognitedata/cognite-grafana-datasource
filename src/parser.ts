@@ -26,7 +26,7 @@ export const parseExpression = (
     const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
     target.aggregation = Utils.getAggregationDropdownString(filterOptions.aggregation);
     target.granularity = filterOptions.granularity;
-    return timeseries.filter(ts => ts.selected).map(ts => ({ name: ts.name }));
+    return timeseries.filter(ts => ts.selected).map(ts => ({ externalId: ts.name }));
   }
 
   const exprWithSpecialFunctions = parseSpecialFunctions(
@@ -105,7 +105,7 @@ const createDataQueryRequestItems = (
   const timeseriesString = findTimeseriesString(expr);
   if (!timeseriesString) {
     dataItems.push({
-      name,
+      externalId: name,
       function: expr,
     });
   } else {

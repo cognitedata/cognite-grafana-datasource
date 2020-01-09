@@ -47,9 +47,7 @@ export interface TimeSeriesResponseItem {
 }
 
 export interface TimeSeriesResponse {
-  data: {
-    items: TimeSeriesResponseItem[];
-  };
+  items: TimeSeriesResponseItem[];
 }
 
 export interface AssetQuery {
@@ -103,12 +101,8 @@ export interface Datapoints {
   items: Datapoint[];
 }
 
-export interface DataDatapoints {
-  data: Datapoints;
-}
-
 export interface DataQueryRequestResponse {
-  data: DataDatapoints;
+  data: Datapoints;
   config: {
     data: {
       aggregates: string;
@@ -141,23 +135,30 @@ export interface DataQueryAlias {
   granularity?: string;
 }
 
-export interface DataQueryRequestItem {
-  name: string;
+export type IdEither =
+  | {
+      id: number;
+    }
+  | {
+      externalId: string;
+    };
+
+export type DataQueryRequestItem = {
   start?: string | number;
   end?: string | number;
   limit?: number;
   granularity?: string;
-  aggregates?: string;
+  aggregates?: string[];
   function?: string;
   aliases?: DataQueryAlias[];
-}
+} & IdEither;
 
 export interface DataQueryRequest {
   items: DataQueryRequestItem[];
   start: string | number;
   end: string | number;
   limit?: number;
-  aggregates?: string;
+  aggregates?: string[];
   granularity?: string;
 }
 

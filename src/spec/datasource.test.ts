@@ -10,7 +10,9 @@ import Utils from '../utils';
 function getDataqueryResponse(request: DataQueryRequest) {
   const items = request.items;
   const itemsArr = [];
-  const aggregation = Utils.getDatasourceValueString(request.aggregates);
+  const aggregation = Utils.getDatasourceValueString(
+    request.aggregates ? request.aggregates[0] : undefined
+  );
 
   for (const item of items) {
     const datapoints = [1549336675000, 1549337275000, 1549337875000, 1549338475000].map(
@@ -22,7 +24,7 @@ function getDataqueryResponse(request: DataQueryRequest) {
     );
     itemsArr.push({
       datapoints,
-      name: item.name,
+      name: 'externalId' in item ? item.externalId : '',
     });
   }
   return getDataqueryResponseObject(itemsArr, request.aggregates ? aggregation : undefined);
@@ -31,7 +33,7 @@ function getDataqueryResponse(request: DataQueryRequest) {
 function getDataqueryResponseObject(items, aggregates) {
   const response = {
     data: {
-      data: { items },
+      items,
     },
     config: {
       data: { aggregates },
@@ -42,7 +44,7 @@ function getDataqueryResponseObject(items, aggregates) {
 function getTimeseriesResponse(items) {
   const response = {
     data: {
-      data: { items },
+      items,
     },
   };
   return response;
@@ -95,14 +97,12 @@ describe('CogniteDatasource', () => {
 
   const assetsResponse = {
     data: {
-      data: {
-        items: [
-          { id: 123, name: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
-          { id: 456, name: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
-          { id: 789, name: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
-          { id: 999, name: 'foo', description: 'bar', metadata: { key1: 'value1' } },
-        ],
-      },
+      items: [
+        { id: 123, name: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
+        { id: 456, name: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
+        { id: 789, name: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
+        { id: 999, name: 'foo', description: 'bar', metadata: { key1: 'value1' } },
+      ],
     },
   };
 
@@ -245,11 +245,11 @@ describe('CogniteDatasource', () => {
         aggregation: 'step',
         refId: 'C',
         target: 'Timeseries789',
-        label: '{{description}}-{{name}}',
+        label: '{{description}}-{{externalId}}',
       };
 
       const tsResponse = getTimeseriesResponse([
-        { name: 'Timeseries789', description: 'test timeseries' },
+        { externalId: 'Timeseries789', description: 'test timeseries' },
       ]);
 
       beforeAll(async () => {
@@ -1341,9 +1341,7 @@ describe('CogniteDatasource', () => {
         filter: '',
       };
       const response = _.cloneDeep(assetsResponse);
-      response.data.data.items = assetsResponse.data.data.items.filter(item =>
-        item.name.startsWith('asset')
-      );
+      response.data.items = assetsResponse.data.items.filter(item => item.name.startsWith('asset'));
 
       beforeAll(async () => {
         ctx.ds.backendSrv.datasourceRequest = jest
@@ -1527,9 +1525,7 @@ describe('CogniteDatasource', () => {
     describe('Given a request for asset options', () => {
       let result;
       const response = _.cloneDeep(assetsResponse);
-      response.data.data.items = assetsResponse.data.data.items.filter(item =>
-        item.name.startsWith('asset')
-      );
+      response.data.items = assetsResponse.data.items.filter(item => item.name.startsWith('asset'));
       beforeAll(async () => {
         ctx.ds.backendSrv.datasourceRequest = jest
           .fn()
@@ -1550,7 +1546,7 @@ describe('CogniteDatasource', () => {
     describe('Given a request for asset options with additional options', () => {
       let result;
       const response = _.cloneDeep(assetsResponse);
-      response.data.data.items = assetsResponse.data.data.items.filter(
+      response.data.items = assetsResponse.data.items.filter(
         item => item.name.startsWith('asset') && item.metadata.key1 === 'value1'
       );
       const optionsObj = {
@@ -1595,7 +1591,7 @@ describe('CogniteDatasource', () => {
     describe('Given a request for timeseries options', () => {
       let result;
       const response = _.cloneDeep(tsResponse);
-      response.data.data.items = tsResponse.data.data.items.filter(item =>
+      response.data.items = tsResponse.data.items.filter(item =>
         item.name.startsWith('Timeseries')
       );
       beforeAll(async () => {
