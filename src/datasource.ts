@@ -25,6 +25,7 @@ import {
   VariableQueryData,
   isError,
   DataResponse,
+  HttpMethod,
 } from './types';
 
 export default class CogniteDatasource {
@@ -139,13 +140,7 @@ export default class CogniteDatasource {
         if (target.label.match(/{{.*}}/)) {
           try {
             // need to fetch the timeseries
-            const ts = await this.getTimeseries(
-              {
-                q: target.target,
-                limit: 1,
-              },
-              target
-            );
+            const ts = await this.getTimeseries({ externalId: target.target }, target);
             labels.push(this.getTimeseriesLabel(target.label, ts[0]));
           } catch {
             labels.push(target.label);
@@ -188,7 +183,7 @@ export default class CogniteDatasource {
         .getQuery(
           {
             url: `${this.url}/cogniteapi/${this.project}/timeseries/data/list`,
-            method: 'POST',
+            method: HttpMethod.POST,
             data: q,
             requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
           },
@@ -326,7 +321,7 @@ export default class CogniteDatasource {
         url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
           queryParams
         )}`,
-        method: 'GET',
+        method: HttpMethod.GET,
       },
       this.backendSrv
     );
@@ -352,36 +347,27 @@ export default class CogniteDatasource {
     type?: string,
     options?: any
   ): Promise<MetricFindQueryResponse> {
-    let urlEnd: string = `/cogniteapi/${this.project}/`;
+    const resources = {
+      [Tab.Asset]: 'assets',
+      [Tab.Timeseries]: 'timeseries',
+    };
+    let url: string = `${this.url}/cogniteapi/${this.project}/${resources[type]}/search`;
     const data: any = {};
-    if (type === Tab.Asset) {
-      urlEnd += `assets/search`;
-      if (query) {
-        data.search = { query };
-      }
-    } else if (type === Tab.Timeseries) {
-      if (query.length === 0) {
-        urlEnd += `timeseries?`;
-      } else {
-        urlEnd += `timeseries/search?query=${query}`;
-      }
-    }
     if (options) {
-      urlEnd += `&${Utils.getQueryString(options)}`;
+      url += `&${Utils.getQueryString(options)}`;
+    }
+    if (query) {
+      data.search = { query };
     }
 
     const { data: response }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
-      {
-        data,
-        url: this.url + urlEnd,
-        method: 'POST',
-      },
+      { url, data, method: HttpMethod.POST },
       this.backendSrv
     );
 
     return response.items.map(({ name, id, description }) => ({
       text: description ? `${name} (${description})` : name,
-      value: type === Tab.Asset ? String(id) : name,
+      value: type === Tab.Asset ? `${id}` : name,
     }));
   }
 
@@ -451,12 +437,15 @@ export default class CogniteDatasource {
     target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
     try {
+      const body = {
+        url: `${this.url}/cogniteapi/${this.project}/timeseries/`,
+        method: HttpMethod.POST,
+        data: filter,
+      };
+      body.url += 'id' in filter || 'externalId' in filter ? 'byids' : 'list';
+
       const { data }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
-        {
-          url: `${this.url}/cogniteapi/${this.project}/timeseries/list`,
-          method: 'POST',
-          data: filter,
-        },
+        body,
         this.backendSrv
       );
       return _.cloneDeep(data.items.filter(ts => !ts.isString));
@@ -493,7 +482,7 @@ export default class CogniteDatasource {
     const result = await cache.getQuery(
       {
         url: this.url + urlEnd + Utils.getQueryString(queryParams),
-        method: 'GET',
+        method: HttpMethod.GET,
       },
       this.backendSrv
     );

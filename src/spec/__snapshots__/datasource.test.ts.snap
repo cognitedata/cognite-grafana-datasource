@@ -528,8 +528,11 @@ Object {
 
 exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?q=Timeseries789&limit=1",
+  "data": Object {
+    "externalId": "Timeseries789",
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
@@ -3486,8 +3489,13 @@ Array [
 
 exports[`CogniteDatasource Dropdown Options Query Given a request for timeseries options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search?query=Timeseries",
+  "data": Object {
+    "search": Object {
+      "query": "Timeseries",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
 }
 `;
 
@@ -3547,8 +3555,9 @@ Array [
 
 exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries?",
+  "data": Object {},
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
 }
 `;
 

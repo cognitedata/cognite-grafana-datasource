@@ -71,7 +71,12 @@ export type QueryFormat = 'json';
 
 export type QueryOptions = DataQueryOptions<QueryTarget>;
 
-export type HttpMethod = 'POST' | 'GET' | 'PATCH' | 'DELETE';
+export enum HttpMethod {
+  POST = 'POST',
+  GET = 'GET',
+  PATCH = 'PATCH',
+  DELETE = 'DELETE',
+}
 
 export interface DataSourceRequestOptions {
   url: string;
@@ -239,16 +244,17 @@ export type Response<T> = DataResponse<{
 }>;
 
 // todo: FIX THIS TYPE
-export interface TimeseriesFilterQuery {
-  q?: string;
-  description?: string;
-  limit?: number;
-  filter?: {
-    assetSubtreeIds?: IdEither[];
-    assetIds?: string[];
-  };
-  includeMetadata?: boolean;
-}
+export type TimeseriesFilterQuery =
+  | {
+      description?: string;
+      limit?: number;
+      filter?: {
+        assetSubtreeIds?: IdEither[];
+        assetIds?: string[];
+      };
+      includeMetadata?: boolean;
+    }
+  | IdEither;
 
 export interface VariableQueryData {
   query: string;
