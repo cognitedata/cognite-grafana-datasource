@@ -47,7 +47,7 @@ module.exports = {
         files: ["plugin.json"],
         rules: [
           {
-            search: "%VERSION%",
+            search: /%VERSION%/g,
             replace: packageJson.version
           },
           {

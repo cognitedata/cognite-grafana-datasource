@@ -41,6 +41,10 @@
         {
           "name": "api-key",
           "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        },
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:%VERSION%"
         }
       ]
     },
