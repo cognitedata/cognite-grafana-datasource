@@ -21,9 +21,10 @@ import {
   Tab,
   TimeSeriesResponse,
   TimeSeriesResponseItem,
-  TimeseriesSearchQuery,
+  TimeseriesFilterQuery,
   VariableQueryData,
   isError,
+  DataResponse,
 } from './types';
 
 export default class CogniteDatasource {
@@ -351,50 +352,52 @@ export default class CogniteDatasource {
     type?: string,
     options?: any
   ): Promise<MetricFindQueryResponse> {
-    let urlEnd: string;
+    let urlEnd: string = `/cogniteapi/${this.project}/`;
+    const data: any = {};
     if (type === Tab.Asset) {
-      if (query.length === 0) {
-        urlEnd = `/cogniteapi/${this.project}/assets?`;
-      } else {
-        urlEnd = `/cogniteapi/${this.project}/assets/search?query=${query}`;
+      urlEnd += `assets/search`;
+      if (query) {
+        data.search = { query };
       }
     } else if (type === Tab.Timeseries) {
       if (query.length === 0) {
-        urlEnd = `/cogniteapi/${this.project}/timeseries?`;
+        urlEnd += `timeseries?`;
       } else {
-        urlEnd = `/cogniteapi/${this.project}/timeseries/search?query=${query}`;
+        urlEnd += `timeseries/search?query=${query}`;
       }
     }
     if (options) {
       urlEnd += `&${Utils.getQueryString(options)}`;
     }
 
-    return cache
-      .getQuery(
-        {
-          url: this.url + urlEnd,
-          method: 'GET',
-        },
-        this.backendSrv
-      )
-      .then((result: { data: TimeSeriesResponse }) =>
-        result.data.items.map(timeSeriesResponseItem => ({
-          text: timeSeriesResponseItem.description
-            ? `${timeSeriesResponseItem.name} (${timeSeriesResponseItem.description})`
-            : timeSeriesResponseItem.name,
-          value:
-            type === Tab.Asset ? String(timeSeriesResponseItem.id) : timeSeriesResponseItem.name,
-        }))
-      );
+    const { data: response }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
+      {
+        data,
+        url: this.url + urlEnd,
+        method: 'POST',
+      },
+      this.backendSrv
+    );
+
+    return response.items.map(({ name, id, description }) => ({
+      text: description ? `${name} (${description})` : name,
+      value: type === Tab.Asset ? String(id) : name,
+    }));
   }
 
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
     // replace variables with their values
     const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
-    const searchQuery: Partial<TimeseriesSearchQuery> = {
-      path: target.assetQuery.includeSubtrees ? [assetId] : undefined,
-      assetId: !target.assetQuery.includeSubtrees ? assetId : undefined,
-      limit: 10000,
+    const filter = target.assetQuery.includeSubtrees
+      ? {
+          assetSubtreeIds: [{ id: assetId }],
+        }
+      : {
+          assetIds: [assetId],
+        };
+    const filterQuery = {
+      filter,
+      limit: 10_000,
     };
 
     // for custom queries, use cache instead of storing in target object
@@ -402,7 +405,7 @@ export default class CogniteDatasource {
       target.assetQuery.templatedTarget = assetId;
       const timeseries = cache.getTimeseries(options, target);
       if (!timeseries) {
-        const ts = await this.getTimeseries(searchQuery, target);
+        const ts = await this.getTimeseries(filterQuery, target);
         cache.setTimeseries(
           options,
           target,
@@ -412,7 +415,7 @@ export default class CogniteDatasource {
           })
         );
       }
-      return Promise.resolve();
+      return;
     }
 
     // check if assetId has changed, if not we do not need to perform this query again
@@ -421,7 +424,7 @@ export default class CogniteDatasource {
       assetId === target.assetQuery.old.target &&
       target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees
     ) {
-      return Promise.resolve();
+      return;
     }
     target.assetQuery.old = {
       target: String(assetId),
@@ -430,8 +433,8 @@ export default class CogniteDatasource {
 
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
-    searchQuery.limit = 101;
-    const ts = await this.getTimeseries(searchQuery, target);
+    filterQuery.limit = 101;
+    const ts = await this.getTimeseries(filterQuery, target);
     if (ts.length === 101) {
       target.warning =
         "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
@@ -444,32 +447,27 @@ export default class CogniteDatasource {
   }
 
   async getTimeseries(
-    searchQuery: Partial<TimeseriesSearchQuery>,
+    filter: TimeseriesFilterQuery,
     target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
-    return cache
-      .getQuery(
+    try {
+      const { data }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
         {
-          url: `${this.url}/cogniteapi/${this.project}/timeseries?${Utils.getQueryString(
-            searchQuery
-          )}`,
-          method: 'GET',
+          url: `${this.url}/cogniteapi/${this.project}/timeseries/list`,
+          method: 'POST',
+          data: filter,
         },
         this.backendSrv
-      )
-      .then(
-        (result: { data: TimeSeriesResponse }) => {
-          return _.cloneDeep(result.data.items.filter(ts => !ts.isString));
-        },
-        error => {
-          if (error.data && error.data.error) {
-            target.error = `[${error.status} ERROR] ${error.data.error.message}`;
-          } else {
-            target.error = 'Unknown error';
-          }
-          return [];
-        }
       );
+      return _.cloneDeep(data.items.filter(ts => !ts.isString));
+    } catch ({ data, status }) {
+      if (data && data.error) {
+        target.error = `[${status} ERROR] ${data.error.message}`;
+      } else {
+        target.error = 'Unknown error';
+      }
+      return [];
+    }
   }
 
   // this function is for getting metrics (template variables)
