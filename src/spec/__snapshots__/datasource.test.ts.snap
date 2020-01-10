@@ -3534,7 +3534,7 @@ Object {
     },
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search&metadata=%7B%22key1%22%3A%22value1%22%7D",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
 }
 `;
 
