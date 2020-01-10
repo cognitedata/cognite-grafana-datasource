@@ -762,7 +762,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -777,7 +777,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -792,7 +792,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -807,7 +807,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -822,7 +822,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -837,7 +837,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -852,7 +852,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -867,7 +867,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -882,7 +882,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -897,7 +897,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1338,7 +1338,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1353,7 +1353,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1368,7 +1368,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1383,7 +1383,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1398,7 +1398,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1413,7 +1413,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1428,7 +1428,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1443,7 +1443,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1458,7 +1458,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -1473,7 +1473,7 @@ Object {
         "123",
       ],
     },
-    "limit": 10000,
+    "limit": 1000,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
@@ -3637,8 +3637,12 @@ Object {
 
 exports[`CogniteDatasource Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000",
+  "data": Object {
+    "limit": 1000,
+    "search": Object {},
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
 }
 `;
 
@@ -3657,8 +3661,12 @@ Array [
 
 exports[`CogniteDatasource Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000",
+  "data": Object {
+    "limit": 1000,
+    "search": Object {},
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
 }
 `;
 
@@ -3685,8 +3693,14 @@ Array [
 
 exports[`CogniteDatasource Metrics Query Given a simple metrics query should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?limit=1000&name=asset",
+  "data": Object {
+    "limit": 1000,
+    "search": Object {
+      "name": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
 }
 `;
 
