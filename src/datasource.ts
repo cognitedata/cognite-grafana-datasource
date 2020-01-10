@@ -383,7 +383,7 @@ export default class CogniteDatasource {
         };
     const filterQuery = {
       filter,
-      limit: 10_000,
+      limit: 1000, // might need to paginate here? or say that there are more?
     };
 
     // for custom queries, use cache instead of storing in target object
@@ -413,7 +413,7 @@ export default class CogniteDatasource {
       return;
     }
     target.assetQuery.old = {
-      target: String(assetId),
+      target: `${assetId}`,
       includeSubtrees: target.assetQuery.includeSubtrees,
     };
 
@@ -469,20 +469,20 @@ export default class CogniteDatasource {
     if (query.filter && filterOptions.error) {
       return [{ text: filterOptions.error, value: '-' }];
     }
-    const urlEnd = `/cogniteapi/${this.project}/assets/search?`;
 
-    const queryParams = {
-      limit: 1000,
-      ...queryOptions.filters.reduce((obj, filter) => {
-        obj[filter.property] = filter.value;
-        return obj;
-      }, {}),
-    };
+    const search = queryOptions.filters.reduce((obj, { property, value }) => {
+      obj[property] = value;
+      return obj;
+    }, {});
 
     const result = await cache.getQuery(
       {
-        url: this.url + urlEnd + Utils.getQueryString(queryParams),
-        method: HttpMethod.GET,
+        url: `${this.url}/cogniteapi/${this.project}/assets/search`,
+        method: HttpMethod.POST,
+        data: {
+          search,
+          limit: 1000,
+        },
       },
       this.backendSrv
     );
@@ -491,12 +491,13 @@ export default class CogniteDatasource {
 
     // now filter over these assets with the rest of the filters
     Utils.applyFilters(filterOptions.filters, assets);
-    const filteredAssets = assets.filter(asset => asset.selected === true);
 
-    return filteredAssets.map(asset => ({
-      text: asset.name,
-      value: asset.id,
-    }));
+    return assets
+      .filter(({ selected }) => selected)
+      .map(({ name, id }) => ({
+        text: name,
+        value: id,
+      }));
   }
 
   private getTimeseriesLabel(label: string, timeseries: TimeSeriesResponseItem): string {
