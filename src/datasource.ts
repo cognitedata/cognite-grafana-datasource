@@ -34,6 +34,8 @@ import {
   DataResponse,
   HttpMethod,
   Response,
+  Datapoint,
+  RequestParams,
 } from './types';
 
 export default class CogniteDatasource {
@@ -186,20 +188,14 @@ export default class CogniteDatasource {
     // replace variables in labels as well
     labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
-    const queryRequests = queries.map(q =>
-      cache
-        .getQuery(
-          {
-            url: `${this.url}/cogniteapi/${this.project}/timeseries/data/list`,
-            method: HttpMethod.POST,
-            data: q,
-            requestId: getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
-          },
-          this.backendSrv
-        )
-        .catch(error => {
-          return { error };
-        })
+    const queryRequests = queries.map(
+      data =>
+        this.fetchData({
+          data,
+          path: `/timeseries/data/list`,
+          method: HttpMethod.POST,
+          requestId: getRequestId(options, queryTargets[queries.findIndex(x => x === data)]),
+        }).catch(error => ({ error })) as any
     );
 
     let timeseries: (DataQueryRequestResponse | DataQueryError)[];
@@ -320,19 +316,14 @@ export default class CogniteDatasource {
       ...reduceToMap(queryOptions.filters),
     };
 
-    const {
-      data: { items },
-    }: Response<any> = await cache.getQuery(
-      {
-        url: `${this.url}/cogniteapi/${this.project}/events/list`,
-        method: HttpMethod.POST,
-        data: {
-          filter: filterQuery,
-          limit: 1000,
-        },
+    const items = await this.fetchItems<any>({
+      path: `/events/list`,
+      method: HttpMethod.POST,
+      data: {
+        filter: filterQuery,
+        limit: 1000,
       },
-      this.backendSrv
-    );
+    });
     if (!items || !items.length) return [];
 
     applyFilters(filterOptions.filters, items);
@@ -349,6 +340,27 @@ export default class CogniteDatasource {
       }));
   }
 
+  private fetchData<T>({
+    path,
+    data,
+    method,
+    params,
+    requestId,
+  }: RequestParams): Promise<Response<T>> {
+    const paramsString = params ? `?${getQueryString(params)}` : '';
+    const url = `${this.url}/cogniteapi/${this.project}${path}${paramsString}`;
+    const body: any = { url, data, method };
+    if (requestId) {
+      body.requestId = requestId;
+    }
+    return cache.getQuery(body, this.backendSrv);
+  }
+
+  private async fetchItems<T>(params: RequestParams) {
+    const { data } = await this.fetchData<T>(params);
+    return data.items;
+  }
+
   public async getOptionsForDropdown(
     query: string,
     type?: string,
@@ -358,21 +370,20 @@ export default class CogniteDatasource {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
     };
-    let url: string = `${this.url}/cogniteapi/${this.project}/${resources[type]}/search`;
-    const data: any = {};
-    if (options) {
-      url += `&${getQueryString(options)}`;
-    }
-    if (query) {
-      data.search = { query };
-    }
+    const data: any = query
+      ? {
+          search: { query },
+        }
+      : {};
 
-    const { data: response }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
-      { url, data, method: HttpMethod.POST },
-      this.backendSrv
-    );
+    const items = await this.fetchItems<TimeSeriesResponseItem>({
+      data,
+      path: `/${resources[type]}/search`,
+      method: HttpMethod.POST,
+      params: options,
+    });
 
-    return response.items.map(({ name, id, description }) => ({
+    return items.map(({ name, id, description }) => ({
       text: description ? `${name} (${description})` : name,
       value: type === Tab.Asset ? `${id}` : name,
     }));
@@ -444,18 +455,14 @@ export default class CogniteDatasource {
     target: QueryTarget
   ): Promise<TimeSeriesResponseItem[]> {
     try {
-      const body = {
-        url: `${this.url}/cogniteapi/${this.project}/timeseries/`,
+      const endpoint = 'id' in filter || 'externalId' in filter ? 'byids' : 'list';
+
+      const items = await this.fetchItems<TimeSeriesResponseItem>({
+        path: `/timeseries/${endpoint}`,
         method: HttpMethod.POST,
         data: filter,
-      };
-      body.url += 'id' in filter || 'externalId' in filter ? 'byids' : 'list';
-
-      const { data }: DataResponse<TimeSeriesResponse> = await cache.getQuery(
-        body,
-        this.backendSrv
-      );
-      return _.cloneDeep(data.items.filter(ts => !ts.isString));
+      });
+      return _.cloneDeep(items.filter(ts => !ts.isString));
     } catch ({ data, status }) {
       if (data && data.error) {
         target.error = `[${status} ERROR] ${data.error.message}`;
@@ -477,19 +484,14 @@ export default class CogniteDatasource {
       return [{ text: filterOptions.error, value: '-' }];
     }
 
-    const result = await cache.getQuery(
-      {
-        url: `${this.url}/cogniteapi/${this.project}/assets/search`,
-        method: HttpMethod.POST,
-        data: {
-          search: reduceToMap(queryOptions.filters),
-          limit: 1000,
-        },
+    const assets = await this.fetchItems<any>({
+      path: `/assets/search`,
+      method: HttpMethod.POST,
+      data: {
+        search: reduceToMap(queryOptions.filters),
+        limit: 1000,
       },
-      this.backendSrv
-    );
-
-    const assets = result.data.items;
+    });
 
     // now filter over these assets with the rest of the filters
     applyFilters(filterOptions.filters, assets);
@@ -510,27 +512,25 @@ export default class CogniteDatasource {
     });
   }
 
-  testDatasource() {
-    return this.backendSrv
-      .datasourceRequest({
-        url: `${this.url}/cogniteloginstatus`,
-        method: 'GET',
-      })
-      .then(response => {
-        if (response.status === 200) {
-          if (response.data.data.loggedIn && response.data.data.project === this.project) {
-            return {
-              status: 'success',
-              message: 'Your Cognite credentials are valid',
-              title: 'Success',
-            };
-          }
-          return {
-            status: 'error',
-            message: 'Your Cognite credentials are invalid',
-            title: 'Error',
-          };
-        }
-      });
+  async testDatasource() {
+    const response = await this.backendSrv.datasourceRequest({
+      url: `${this.url}/cogniteloginstatus`,
+      method: 'GET',
+    });
+
+    if (response.status === 200) {
+      if (response.data.data.loggedIn && response.data.data.project === this.project) {
+        return {
+          status: 'success',
+          message: 'Your Cognite credentials are valid',
+          title: 'Success',
+        };
+      }
+      return {
+        status: 'error',
+        message: 'Your Cognite credentials are invalid',
+        title: 'Error',
+      };
+    }
   }
 }

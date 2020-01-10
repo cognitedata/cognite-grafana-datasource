@@ -109,6 +109,14 @@ export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   };
 }
 
+export interface RequestParams {
+  path: string;
+  data: any;
+  method: HttpMethod;
+  params?: { [s: string]: any };
+  requestId?: string;
+}
+
 export type DataQueryError = {
   error: {
     cancelled?: boolean;
