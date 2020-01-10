@@ -26,6 +26,7 @@ import {
   isError,
   DataResponse,
   HttpMethod,
+  Response,
 } from './types';
 
 export default class CogniteDatasource {
@@ -305,40 +306,42 @@ export default class CogniteDatasource {
       return [];
     }
 
-    // use maxStartTime and minEndTime so that we include events that are partially in range
-    const queryParams = {
-      limit: 1000,
-      maxStartTime: endTime,
-      minEndTime: startTime,
+    // use max startTime and min endTime so that we include events that are partially in range
+    const filterQuery = {
+      startTime: { max: endTime },
+      endTime: { min: startTime },
       ...queryOptions.filters.reduce((obj, filter) => {
         obj[filter.property] = filter.value;
         return obj;
       }, {}),
     };
 
-    const result = await cache.getQuery(
+    const {
+      data: { items },
+    }: Response<any> = await cache.getQuery(
       {
-        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
-          queryParams
-        )}`,
-        method: HttpMethod.GET,
+        url: `${this.url}/cogniteapi/${this.project}/events/list`,
+        method: HttpMethod.POST,
+        data: {
+          filter: filterQuery,
+          limit: 1000,
+        },
       },
       this.backendSrv
     );
-    const events = result.data.data.items;
-    if (!events || events.length === 0) return [];
+    if (!items || !items.length) return [];
 
-    Utils.applyFilters(filterOptions.filters, events);
+    Utils.applyFilters(filterOptions.filters, items);
 
-    return events
-      .filter(e => e.selected === true)
-      .map(event => ({
+    return items
+      .filter(({ selected }) => selected)
+      .map(({ description, startTime, endTime, type }) => ({
         annotation,
         isRegion: true,
-        text: event.description,
-        time: event.startTime,
-        timeEnd: event.endTime,
-        title: event.type,
+        text: description,
+        time: startTime,
+        timeEnd: endTime,
+        title: type,
       }));
   }
 

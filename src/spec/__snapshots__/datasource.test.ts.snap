@@ -2,8 +2,21 @@
 
 exports[`CogniteDatasource Annotations Query Given an annotation query should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&assetIds=%5B123%5D&type=type%201",
+  "data": Object {
+    "filter": Object {
+      "assetIds": "[123]",
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+      "type": "type 1",
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
 
@@ -34,15 +47,39 @@ Array [
 
 exports[`CogniteDatasource Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&type=non-existant%20type",
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+      "type": "non-existant type",
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
 
 exports[`CogniteDatasource Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&metadata=%7B%22key1%22%3A%22value1%22%2C%22key2%22%3A%22value2%22%7D",
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "metadata": "{\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"}",
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
 
@@ -63,8 +100,19 @@ Array [
 
 exports[`CogniteDatasource Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000",
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
 
@@ -108,8 +156,20 @@ Array [
 
 exports[`CogniteDatasource Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
 Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/search?limit=1000&maxStartTime=1549338475000&minEndTime=1549336675000&assetIds=%5B123%5D",
+  "data": Object {
+    "filter": Object {
+      "assetIds": "[123]",
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
 
