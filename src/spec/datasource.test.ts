@@ -877,51 +877,49 @@ describe('CogniteDatasource', () => {
   describe('Annotations Query', () => {
     const annotationResponse = {
       data: {
-        data: {
-          items: [
-            {
-              assetIds: [123, 456, 789],
-              description: 'event 1',
-              startTime: '1549336675000',
-              endTime: '1549336775000',
-              type: 'type 1',
-              subtype: 'subtype 1',
-            },
-            {
-              assetIds: [123],
-              description: 'event 2',
-              startTime: '1549336775000',
-              endTime: '1549336875000',
-              type: 'type 2',
-              subtype: 'subtype 2',
-            },
-            {
-              assetIds: [456],
-              description: 'event 3',
-              startTime: '1549336875000',
-              endTime: '1549336975000',
-              type: 'type 3',
-              subtype: 'subtype 3',
-            },
-            {
-              assetIds: [789],
-              description: 'event 4',
-              startTime: '1549336975000',
-              endTime: '1549337075000',
-              type: 'type 4',
-              subtype: 'subtype 4',
-            },
-            {
-              assetIds: [123, 456, 789],
-              description: 'time out of bounds',
-              startTime: '1549336600000',
-              endTime: '1549338500000',
-              type: 'type 1',
-              subtype: 'subtype 2',
-              metadata: { key1: 'value1', key2: 'value2' },
-            },
-          ],
-        },
+        items: [
+          {
+            assetIds: [123, 456, 789],
+            description: 'event 1',
+            startTime: '1549336675000',
+            endTime: '1549336775000',
+            type: 'type 1',
+            subtype: 'subtype 1',
+          },
+          {
+            assetIds: [123],
+            description: 'event 2',
+            startTime: '1549336775000',
+            endTime: '1549336875000',
+            type: 'type 2',
+            subtype: 'subtype 2',
+          },
+          {
+            assetIds: [456],
+            description: 'event 3',
+            startTime: '1549336875000',
+            endTime: '1549336975000',
+            type: 'type 3',
+            subtype: 'subtype 3',
+          },
+          {
+            assetIds: [789],
+            description: 'event 4',
+            startTime: '1549336975000',
+            endTime: '1549337075000',
+            type: 'type 4',
+            subtype: 'subtype 4',
+          },
+          {
+            assetIds: [123, 456, 789],
+            description: 'time out of bounds',
+            startTime: '1549336600000',
+            endTime: '1549338500000',
+            type: 'type 1',
+            subtype: 'subtype 2',
+            metadata: { key1: 'value1', key2: 'value2' },
+          },
+        ],
       },
     };
     beforeAll(() => {
@@ -1013,7 +1011,7 @@ describe('CogniteDatasource', () => {
         },
       };
       const response = _.cloneDeep(annotationResponse);
-      response.data.data.items = annotationResponse.data.data.items.filter(
+      response.data.items = annotationResponse.data.items.filter(
         item => item.assetIds.some(id => id === 123) && item.type === 'type 1'
       );
 
@@ -1046,7 +1044,7 @@ describe('CogniteDatasource', () => {
         },
       };
       const response = _.cloneDeep(annotationResponse);
-      response.data.data.items = annotationResponse.data.data.items.filter(item => item.metadata);
+      response.data.items = annotationResponse.data.items.filter(item => item.metadata);
 
       beforeAll(async () => {
         ctx.ds.backendSrv.datasourceRequest = jest
@@ -1077,7 +1075,7 @@ describe('CogniteDatasource', () => {
         },
       };
       const response = _.cloneDeep(annotationResponse);
-      response.data.data.items = [];
+      response.data.items = [];
 
       beforeAll(async () => {
         ctx.ds.backendSrv.datasourceRequest = jest
@@ -1139,7 +1137,7 @@ describe('CogniteDatasource', () => {
         },
       };
       const response = _.cloneDeep(annotationResponse);
-      response.data.data.items = annotationResponse.data.data.items.filter(item =>
+      response.data.items = annotationResponse.data.items.filter(item =>
         item.assetIds.some(id => id === 123)
       );
 
