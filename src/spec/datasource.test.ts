@@ -5,12 +5,12 @@ jest.mock('../cache');
 
 import CogniteDatasource from '../datasource';
 import { DataQueryRequest, QueryTarget, Tab, VariableQueryData } from '../types';
-import Utils from '../utils';
+import { getDatasourceValueString } from '../utils';
 
 function getDataqueryResponse(request: DataQueryRequest) {
   const items = request.items;
   const itemsArr = [];
-  const aggregation = Utils.getDatasourceValueString(
+  const aggregation = getDatasourceValueString(
     request.aggregates ? request.aggregates[0] : undefined
   );
 

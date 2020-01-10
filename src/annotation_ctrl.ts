@@ -1,5 +1,5 @@
 import { Annotation } from './types';
-import Utils from './utils';
+import { splitFilters } from './utils';
 
 export class CogniteAnnotationsQueryCtrl {
   public static templateUrl = 'partials/annotations.editor.html';
@@ -19,7 +19,7 @@ export class CogniteAnnotationsQueryCtrl {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.expr
         } | Expected format: event{param=value,...}`;
-      } else if (!Utils.splitFilters(match[1], errorObj, true)) {
+      } else if (!splitFilters(match[1], errorObj, true)) {
         this.annotation.error = `${errorObj.error} | Expected format: event{param=value,...}`;
       }
     }
@@ -30,7 +30,7 @@ export class CogniteAnnotationsQueryCtrl {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.filter
         } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
-      } else if (!Utils.splitFilters(match[1], errorObj, false)) {
+      } else if (!splitFilters(match[1], errorObj, false)) {
         this.annotation.error = `${
           errorObj.error
         } | Expected format: filter{property [=|!=|=~|!~] value,...}`;

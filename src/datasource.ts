@@ -1,6 +1,13 @@
 import _ from 'lodash';
 import * as dateMath from 'grafana/app/core/utils/datemath';
-import Utils from './utils';
+import {
+  reduceToMap,
+  applyFilters,
+  intervalToGranularity,
+  getRequestId,
+  getQueryString,
+  getDatasourceValueString,
+} from './utils';
 import cache from './cache';
 import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
@@ -106,7 +113,7 @@ export default class CogniteDatasource {
         if (target.aggregation && target.aggregation !== 'none') {
           queryReq.aggregates = [target.aggregation];
           if (!target.granularity) {
-            queryReq.granularity = Utils.intervalToGranularity(options.intervalMs);
+            queryReq.granularity = intervalToGranularity(options.intervalMs);
           } else {
             queryReq.granularity = target.granularity;
           }
@@ -186,7 +193,7 @@ export default class CogniteDatasource {
             url: `${this.url}/cogniteapi/${this.project}/timeseries/data/list`,
             method: HttpMethod.POST,
             data: q,
-            requestId: Utils.getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
+            requestId: getRequestId(options, queryTargets[queries.findIndex(x => x === q)]),
           },
           this.backendSrv
         )
@@ -234,7 +241,7 @@ export default class CogniteDatasource {
               datapoints: item.datapoints
                 .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
                 .map(d => {
-                  const val = Utils.getDatasourceValueString(response.config.data.aggregates);
+                  const val = getDatasourceValueString(response.config.data.aggregates);
                   return [d[val] === undefined ? d.value : d[val], d.timestamp];
                 }),
             };
@@ -310,10 +317,7 @@ export default class CogniteDatasource {
     const filterQuery = {
       startTime: { max: endTime },
       endTime: { min: startTime },
-      ...queryOptions.filters.reduce((obj, filter) => {
-        obj[filter.property] = filter.value;
-        return obj;
-      }, {}),
+      ...reduceToMap(queryOptions.filters),
     };
 
     const {
@@ -331,7 +335,7 @@ export default class CogniteDatasource {
     );
     if (!items || !items.length) return [];
 
-    Utils.applyFilters(filterOptions.filters, items);
+    applyFilters(filterOptions.filters, items);
 
     return items
       .filter(({ selected }) => selected)
@@ -357,7 +361,7 @@ export default class CogniteDatasource {
     let url: string = `${this.url}/cogniteapi/${this.project}/${resources[type]}/search`;
     const data: any = {};
     if (options) {
-      url += `&${Utils.getQueryString(options)}`;
+      url += `&${getQueryString(options)}`;
     }
     if (query) {
       data.search = { query };
@@ -473,17 +477,12 @@ export default class CogniteDatasource {
       return [{ text: filterOptions.error, value: '-' }];
     }
 
-    const search = queryOptions.filters.reduce((obj, { property, value }) => {
-      obj[property] = value;
-      return obj;
-    }, {});
-
     const result = await cache.getQuery(
       {
         url: `${this.url}/cogniteapi/${this.project}/assets/search`,
         method: HttpMethod.POST,
         data: {
-          search,
+          search: reduceToMap(queryOptions.filters),
           limit: 1000,
         },
       },
@@ -493,7 +492,7 @@ export default class CogniteDatasource {
     const assets = result.data.items;
 
     // now filter over these assets with the rest of the filters
-    Utils.applyFilters(filterOptions.filters, assets);
+    applyFilters(filterOptions.filters, assets);
 
     return assets
       .filter(({ selected }) => selected)
