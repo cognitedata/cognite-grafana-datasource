@@ -8,7 +8,12 @@ import {
   DataQueryAlias,
   QueryTarget,
 } from './types';
-import Utils from './utils';
+import {
+  intervalToGranularity,
+  getAggregationDropdownString,
+  applyFilters,
+  splitFilters,
+} from './utils';
 import _ from 'lodash';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
@@ -24,7 +29,7 @@ export const parseExpression = (
   // first check if it is just a simple `timeseries{}` or `timeseries{}[]`
   if (isSimpleTimeseriesExpression(trimmedExpr)) {
     const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
-    target.aggregation = Utils.getAggregationDropdownString(filterOptions.aggregation);
+    target.aggregation = getAggregationDropdownString(filterOptions.aggregation);
     target.granularity = filterOptions.granularity;
     return timeseries.filter(ts => ts.selected).map(ts => ({ externalId: ts.name }));
   }
@@ -161,7 +166,7 @@ const getAndApplyFilterOptions = (
 ) => {
   const filterOptions = parse(timeseriesString, ParseType.Timeseries, templateSrv, options);
   if (filterOptions.error) throw filterOptions.error;
-  Utils.applyFilters(filterOptions.filters, timeseries);
+  applyFilters(filterOptions.filters, timeseries);
   return filterOptions;
 };
 
@@ -231,7 +236,7 @@ const updateAliases = (queryItem: DataQueryRequestItem, options: QueryOptions) =
         id: Number(aliasParts[0]),
       };
       alias.aggregate = aliasParts[1];
-      alias.granularity = aliasParts[2] || Utils.intervalToGranularity(options.intervalMs);
+      alias.granularity = aliasParts[2] || intervalToGranularity(options.intervalMs);
       queryItem.function = queryItem.function.replace(match, `[${alias.alias}]`);
       if (queryItem.aliases.find(x => x.alias === alias.alias)) continue;
       queryItem.aliases.push(alias);
@@ -278,11 +283,11 @@ export const parse = (
   let splitfilters: string[];
   if (timeseriesMatch) {
     // regex finds commas that are not followed by a closed bracket
-    splitfilters = Utils.splitFilters(timeseriesMatch[1], filtersOptions, false);
+    splitfilters = splitFilters(timeseriesMatch[1], filtersOptions, false);
   } else if (assetMatch) {
-    splitfilters = Utils.splitFilters(assetMatch[1], filtersOptions, true);
+    splitfilters = splitFilters(assetMatch[1], filtersOptions, true);
   } else if (filterMatch) {
-    splitfilters = Utils.splitFilters(filterMatch[1], filtersOptions, false);
+    splitfilters = splitFilters(filterMatch[1], filtersOptions, false);
   } else {
     filtersOptions.error = `ERROR: Unable to parse expression ${query}`;
   }
