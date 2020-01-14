@@ -24,7 +24,7 @@ function getDataqueryResponse(request: DataQueryRequest) {
     );
     itemsArr.push({
       datapoints,
-      name: 'externalId' in item ? item.externalId : '',
+      externalId: 'externalId' in item ? item.externalId : item.id,
     });
   }
   return getDataqueryResponseObject(itemsArr, request.aggregates ? aggregation : undefined);
