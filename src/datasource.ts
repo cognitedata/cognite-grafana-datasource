@@ -13,7 +13,6 @@ import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
-  TimeSeriesAggregateDatapoint,
   TimeSeriesDatapoint,
   AnnotationQueryOptions,
   AnnotationResponse,
@@ -28,15 +27,12 @@ import {
   QueryResponse,
   QueryTarget,
   Tab,
-  TimeSeriesResponse,
   TimeSeriesResponseItem,
   TimeseriesFilterQuery,
   VariableQueryData,
   isError,
-  DataResponse,
   HttpMethod,
   Response,
-  Datapoint,
   RequestParams,
   Timestamp,
 } from './types';
@@ -258,43 +254,32 @@ export default class CogniteDatasource {
     target: QueryTarget,
     options: QueryOptions
   ): Promise<DataQueryRequestItem[]> {
-    if (target.tab === Tab.Timeseries || target.tab === undefined) {
-      const query: DataQueryRequestItem = {
-        externalId: target.target,
-      };
-      return [query];
-    }
-
-    if (target.tab === Tab.Asset) {
-      await this.findAssetTimeseries(target, options);
-      return target.assetQuery.timeseries
-        .filter(ts => ts.selected)
-        .map(ts => ({ externalId: ts.name }));
-    }
-
-    if (target.tab === Tab.Custom) {
-      await this.findAssetTimeseries(target, options);
-      // if we don't have any timeseries just return
-      if (cache.getTimeseries(options, target).length === 0) {
-        target.warning = '[WARNING] No timeseries found.';
-        return [];
+    try {
+      switch (target.tab) {
+        case undefined:
+        case Tab.Timeseries: {
+          return [{ externalId: target.target }];
+        }
+        case Tab.Asset: {
+          await this.findAssetTimeseries(target, options);
+          return target.assetQuery.timeseries
+            .filter(ts => ts.selected)
+            .map(ts => ({ externalId: ts.name })); // todo: remove weird mapping
+        }
+        case Tab.Custom: {
+          await this.findAssetTimeseries(target, options);
+          const timeseries = cache.getTimeseries(options, target); // TODO: remove this ugly logic
+          if (!timeseries.length) {
+            target.warning = '[WARNING] No timeseries found.';
+          } else if (target.expr) {
+            // apply the search expression
+            return parseExpression(target.expr, options, timeseries, this.templateSrv, target);
+          }
+        }
       }
-      if (!target.expr) return [];
-      // apply the search expression
-      try {
-        return parseExpression(
-          target.expr,
-          options,
-          cache.getTimeseries(options, target),
-          this.templateSrv,
-          target
-        );
-      } catch (e) {
-        target.error = e;
-        return [];
-      }
+    } catch (e) {
+      target.error = e;
     }
-
     return [];
   }
 
