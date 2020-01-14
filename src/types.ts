@@ -305,10 +305,10 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
 }
 
 export enum FilterType {
-  Equals = '=',
-  NotEquals = '!=',
-  RegexEquals = '=~',
   RegexNotEquals = '!~',
+  RegexEquals = '=~',
+  NotEquals = '!=',
+  Equals = '=',
 }
 
 export interface Filter {

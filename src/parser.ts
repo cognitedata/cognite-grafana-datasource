@@ -297,30 +297,24 @@ export const parse = (
   }
 
   for (let f of splitfilters) {
-    f = _.trim(f, ' ');
-    if (f === '') continue;
-    const filter: any = {};
-    let i: number;
-    if ((i = f.indexOf(FilterType.RegexEquals)) > -1) {
-      filter.property = _.trim(f.substr(0, i), ' \'"');
-      filter.value = _.trim(f.substr(i + 2), ' \'"');
-      filter.type = FilterType.RegexEquals;
-    } else if ((i = f.indexOf(FilterType.RegexNotEquals)) > -1) {
-      filter.property = _.trim(f.substr(0, i), ' \'"');
-      filter.value = _.trim(f.substr(i + 2), ' \'"');
-      filter.type = FilterType.RegexNotEquals;
-    } else if ((i = f.indexOf(FilterType.NotEquals)) > -1) {
-      filter.property = _.trim(f.substr(0, i), ' \'"');
-      filter.value = _.trim(f.substr(i + 2), ' \'"');
-      filter.type = FilterType.NotEquals;
-    } else if ((i = f.indexOf(FilterType.Equals)) > -1) {
-      filter.property = _.trim(f.substr(0, i), ' \'"');
-      filter.value = _.trim(f.substr(i + 1), ' \'"');
-      filter.type = FilterType.Equals;
-    } else {
-      console.error(`Error parsing ${f}`);
+    f = f.trim();
+    if (f !== '') {
+      let filter = null;
+      for (const type of Object.values(FilterType)) {
+        const index = f.indexOf(type);
+        if (index > -1) {
+          const property = _.trim(f.substr(0, index), ' \'"');
+          const value = _.trim(f.substr(index + type.length), ' \'"');
+          filter = { property, value, type };
+          break;
+        }
+      }
+      if (filter) {
+        filtersOptions.filters.push(filter);
+      } else {
+        console.error(`Error parsing ${filter}`);
+      }
     }
-    filtersOptions.filters.push(filter);
   }
 
   if (timeseriesMatch) {
