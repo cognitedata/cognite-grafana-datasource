@@ -13,6 +13,8 @@ import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
+  TimeSeriesAggregateDatapoint,
+  TimeSeriesDatapoint,
   AnnotationQueryOptions,
   AnnotationResponse,
   CogniteDataSourceSettings,
@@ -36,6 +38,7 @@ import {
   Response,
   Datapoint,
   RequestParams,
+  Timestamp,
 } from './types';
 
 export default class CogniteDatasource {
@@ -205,45 +208,49 @@ export default class CogniteDatasource {
       return { data: [] };
     }
     let count = 0;
-    return {
-      data: timeseries.reduce((datapoints, response, i) => {
-        const refId = targetQueriesCount[i].refId;
-        const target = queryTargets.find(x => x.refId === refId);
-        if (isError(response)) {
-          // if response was cancelled, no need to show error message
-          if (!response.error.cancelled) {
-            let errmsg: string;
-            if (response.error.data && response.error.data.error) {
-              errmsg = `[${response.error.status} ERROR] ${response.error.data.error.message}`;
-            } else {
-              errmsg = 'Unknown error';
-            }
-            target.error = errmsg;
+    const responseTimeseries = timeseries.reduce((datapoints, response, i) => {
+      const refId = targetQueriesCount[i].refId;
+      const target = queryTargets.find(x => x.refId === refId);
+      if (isError(response)) {
+        // if response was cancelled, no need to show error message
+        if (!response.error.cancelled) {
+          let errmsg: string;
+          if (response.error.data && response.error.data.error) {
+            errmsg = `[${response.error.status} ERROR] ${response.error.data.error.message}`;
+          } else {
+            errmsg = 'Unknown error';
           }
-          count += targetQueriesCount[i].count; // skip over these labels
-          return datapoints;
+          target.error = errmsg;
         }
+        count += targetQueriesCount[i].count; // skip over these labels
+        return datapoints;
+      }
 
-        const aggregation = response.config.data.aggregates;
-        const aggregationPrefix = aggregation ? `${aggregation} ` : '';
-        return datapoints.concat(
-          response.data.items.map(item => {
-            if (item.datapoints.length >= response.config.data.limit) {
-              target.warning =
-                '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
-            }
-            return {
-              target: labels[count++] ? labels[count - 1] : aggregationPrefix + item.name,
-              datapoints: item.datapoints
-                .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
-                .map(d => {
-                  const val = getDatasourceValueString(response.config.data.aggregates);
-                  return [d[val] === undefined ? d.value : d[val], d.timestamp];
-                }),
-            };
-          })
-        );
-      }, []),
+      const aggregation = response.config.data.aggregates;
+      const aggregationPrefix = aggregation ? `${aggregation} ` : '';
+      return datapoints.concat(
+        response.data.items.map(item => {
+          if (item.datapoints.length >= response.config.data.limit) {
+            target.warning =
+              '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+          }
+          return {
+            target: labels[count++]
+              ? labels[count - 1]
+              : aggregationPrefix + (item.externalId || item.id),
+            datapoints: (item.datapoints as Timestamp[])
+              .filter(d => d.timestamp >= timeFrom && d.timestamp <= timeTo)
+              .map(d => {
+                const prop = getDatasourceValueString(response.config.data.aggregates);
+                const value = prop in d ? d[prop] : (d as TimeSeriesDatapoint).value;
+                return [value, d.timestamp];
+              }),
+          };
+        })
+      );
+    }, []);
+    return {
+      data: responseTimeseries,
     };
   }
 

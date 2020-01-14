@@ -88,14 +88,34 @@ export interface DataSourceRequestOptions {
   data?: object;
 }
 
-export interface TimeSeriesDatapoint {
+export interface Timestamp {
   timestamp: number;
+}
+
+export interface TimeSeriesDatapoint extends Timestamp {
   value: string;
 }
 
+export interface TimeSeriesAggregateDatapoint extends Timestamp {
+  average?: number;
+  max?: number;
+  min?: number;
+  count?: number;
+  sum?: number;
+  interpolation?: number;
+  stepInterpolation?: number;
+  continuousVariance?: number;
+  discreteVariance?: number;
+  totalVariation?: number;
+}
+
 export interface Datapoint {
-  name: string;
-  datapoints: TimeSeriesDatapoint[];
+  id: number;
+  externalId?: string;
+  isStep: boolean;
+  isString: boolean;
+  unit?: string;
+  datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
 }
 
 export type Datapoints = ItemsResponse<Datapoint>;
