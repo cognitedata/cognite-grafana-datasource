@@ -78,16 +78,18 @@ const parseSpecialFunctions = (
       const selectedTs = timeseries.filter(ts => ts.selected);
       let funcString = '';
       if (match.substr(0, 3).toLowerCase() === 'sum') {
-        funcString = `([${selectedTs
-          .map(ts => getTempAliasString(ts, filterOptions))
-          .join('] + [')}])`;
+        funcString = `(${selectedTs
+          .map(({ id }) => getTempAliasString({ id, ...filterOptions }))
+          .join(' + ')})`;
       } else {
         if (selectedTs.length <= 1) {
-          funcString = selectedTs.map(ts => `[${getTempAliasString(ts, filterOptions)}]`).join('');
+          funcString = selectedTs
+            .map(({ id }) => getTempAliasString({ id, ...filterOptions }))
+            .join('');
         } else {
-          funcString = `${match.slice(0, 3).toLowerCase()}([${selectedTs
-            .map(ts => getTempAliasString(ts, filterOptions))
-            .join('], [')}])`;
+          funcString = `${match.slice(0, 3).toLowerCase()}(${selectedTs
+            .map(({ id }) => getTempAliasString({ id, ...filterOptions }))
+            .join(', ')})`;
         }
       }
       newExpr = newExpr.replace(actualMatchString, funcString);
@@ -110,9 +112,8 @@ const createDataQueryRequestItems = (
   const timeseriesString = findTimeseriesString(expr);
   if (!timeseriesString) {
     dataItems.push({
-      externalId: name,
-      function: expr,
-    });
+      expression: expr,
+    } as DataQueryRequestItem);
   } else {
     const filterOptions = getAndApplyFilterOptions(
       timeseriesString,
@@ -123,7 +124,7 @@ const createDataQueryRequestItems = (
     const selectedTs = timeseries.filter(ts => ts.selected);
 
     for (const ts of selectedTs) {
-      const replaceString = `[${getTempAliasString(ts, filterOptions)}]`;
+      const replaceString = getTempAliasString({ id: ts.id, ...filterOptions });
       let newExpr = expr.replace(timeseriesString, replaceString);
 
       // we need to replace all similar timeseries requests
@@ -141,7 +142,7 @@ const createDataQueryRequestItems = (
         );
         newExpr = newExpr.replace(
           similarTimeseriesString,
-          `[${getTempAliasString(ts, similarFilterOptions)}]`
+          getTempAliasString({ id: ts.id, ...similarFilterOptions })
         );
         index = newExpr.indexOf(tsFiltersString);
       }
@@ -153,7 +154,7 @@ const createDataQueryRequestItems = (
   }
 
   return dataItems.map(item => {
-    updateAliases(item, options);
+    updateSyntheticQueries(item, options);
     return item;
   });
 };
@@ -171,10 +172,19 @@ const getAndApplyFilterOptions = (
 };
 
 // puts in format: 'ID' or 'ID,aggr' or 'ID,aggr,gran'
-const getTempAliasString = (timeseries: TimeSeriesResponseItem, filterOptions: FilterOptions) => {
-  return `${timeseries.id}${filterOptions.aggregation ? `,${filterOptions.aggregation}` : ''}${
-    filterOptions.granularity ? `,${filterOptions.granularity}` : ''
-  }`;
+const getTempAliasString = ({
+  id,
+  granularity,
+  aggregation,
+}: {
+  id: number | string;
+  granularity: string;
+  aggregation: string;
+}) => {
+  // todo: move type somewhere
+  return `TS{id=${id}${aggregation ? `,aggregate='${aggregation}'` : ''}${
+    granularity ? `,granularity='${granularity}'` : ''
+  }}`;
 };
 
 const isSimpleTimeseriesExpression = (expr: string) => {
@@ -216,30 +226,27 @@ const findTimeseriesString = (expr: string, withAggregateAndGranularity: boolean
   return expr.substr(timeseriesIndex, index + 'timeseries{'.length);
 };
 
-// take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with aliases
-const updateAliases = (queryItem: DataQueryRequestItem, options: QueryOptions) => {
+// take in a dataqueryrequestitem and replace all [ID,agg] or [ID,agg,gran] with TS{id=ID, aggregate=agg, granularity=granularity}
+const updateSyntheticQueries = (queryItem: DataQueryRequestItem, options: QueryOptions) => {
   const regexSearch = /\[.*?\]/g;
-  const regexMatches = queryItem.function.match(regexSearch);
-  if (!queryItem.aliases) queryItem.aliases = [];
+  const queryStr = queryItem.expression;
+  const regexMatches = queryStr.match(regexSearch);
+
   if (regexMatches) {
     for (const match of regexMatches) {
       // format is id, aggregation, granularity
-      const aliasParts = match
-        .substr(1, match.length - 2)
-        .split(',')
-        .filter(string => string.length)
-        .map(x => _.trim(x, ' \'"'));
-      // if we only get [ID] or [ALIAS], then there is no need to make an alias
-      if (aliasParts.length === 1) continue;
-      const alias: DataQueryAlias = {
-        alias: `alias${aliasParts.join('_')}`,
-        id: Number(aliasParts[0]),
-      };
-      alias.aggregate = aliasParts[1];
-      alias.granularity = aliasParts[2] || intervalToGranularity(options.intervalMs);
-      queryItem.function = queryItem.function.replace(match, `[${alias.alias}]`);
-      if (queryItem.aliases.find(x => x.alias === alias.alias)) continue;
-      queryItem.aliases.push(alias);
+      if (!match.match(/\[[^0-9]*\]/g)) {
+        // todo: remove this (filters out [[Variable]] kind of stuff)
+        const [id, aggregation = '', granularity = ''] = match
+          .substr(1, match.length - 2)
+          .split(',')
+          .filter(string => string.length)
+          .map(x => _.trim(x, ' \'"'));
+        queryItem.expression = queryStr.replace(
+          match,
+          getTempAliasString({ id, aggregation, granularity })
+        );
+      }
     }
   }
 };
@@ -299,7 +306,7 @@ export const parse = (
   for (let f of splitfilters) {
     f = f.trim();
     if (f !== '') {
-      let filter = null;
+      let filter;
       for (const type of Object.values(FilterType)) {
         const index = f.indexOf(type);
         if (index > -1) {

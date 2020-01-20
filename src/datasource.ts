@@ -106,7 +106,7 @@ export default class CogniteDatasource {
           count: qlChunk.length,
         });
         // create query requests
-        const queryReq: DataQueryRequest = {
+        let queryReq: DataQueryRequest = {
           items: qlChunk,
           start: timeFrom,
           end: timeTo,
@@ -119,24 +119,10 @@ export default class CogniteDatasource {
             queryReq.granularity = target.granularity;
           }
         }
-        if (target.tab === Tab.Custom && qlChunk[0].function) {
-          let idsCount = 0;
-          const idRegex = /\[.*?\]/g; // look for [something]
-          for (const q of qlChunk) {
-            const matches = q.function.match(idRegex);
-            if (!matches) break;
-            const idsObj = {};
-            for (const match of matches) {
-              idsObj[match.substr(1, match.length - 2)] = true;
-            }
-            idsCount += Object.keys(idsObj).length;
-          }
-          if (idsCount === 0) idsCount = 1; // will fail anyways, just show the api error message
-
-          // check if any aggregates are being used
-          const usesAggregates = qlChunk.some(item => item.aliases.length > 0);
-
-          queryReq.limit = Math.floor((usesAggregates ? 10_000 : 100_000) / idsCount);
+        if (target.tab === Tab.Custom && qlChunk[0].expression) {
+          // todo: something here, whe might need to assign limits for each synthetic or something
+          // synthetics don't support all those limits etc yet
+          queryReq = { items: queryReq.items };
         } else {
           queryReq.limit = Math.floor((queryReq.aggregates ? 10_000 : 100_000) / qlChunk.length);
         }
@@ -171,7 +157,7 @@ export default class CogniteDatasource {
             if (ts.selected && count < queryList.length) {
               count += 1;
               if (!target.label) {
-                if (queryList[0].function) {
+                if (queryList[0].expression) {
                   // if using custom functions and no label is specified just use the name of the last timeseries in the function
                   labels.push(ts.name);
                   return;
@@ -187,15 +173,16 @@ export default class CogniteDatasource {
     // replace variables in labels as well
     labels = labels.map(label => this.templateSrv.replace(label, options.scopedVars));
 
-    const queryRequests = queries.map(
-      data =>
-        this.fetchData({
-          data,
-          path: `/timeseries/data/list`,
-          method: HttpMethod.POST,
-          requestId: getRequestId(options, queryTargets[queries.findIndex(x => x === data)]),
-        }).catch(error => ({ error })) as any
-    );
+    const queryRequests = queries.map(data => {
+      const isSynthetic = data.items.some(q => !!q.expression);
+      return this.fetchData({
+        data,
+        path: `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`,
+        method: HttpMethod.POST,
+        requestId: getRequestId(options, queryTargets[queries.findIndex(x => x === data)]),
+        playground: isSynthetic,
+      }).catch(error => ({ error })) as any;
+    });
 
     let timeseries: (DataQueryRequestResponse | DataQueryError)[];
     try {
@@ -338,9 +325,12 @@ export default class CogniteDatasource {
     method,
     params,
     requestId,
+    playground,
   }: RequestParams): Promise<Response<T>> {
     const paramsString = params ? `?${getQueryString(params)}` : '';
-    const url = `${this.url}/cogniteapi/${this.project}${path}${paramsString}`;
+    const url = `${this.url}/${playground ? 'playground' : 'cogniteapi'}/${
+      this.project
+    }${path}${paramsString}`;
     const body: any = { url, data, method };
     if (requestId) {
       body.requestId = requestId;

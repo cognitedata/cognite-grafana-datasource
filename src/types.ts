@@ -135,6 +135,7 @@ export interface RequestParams {
   method: HttpMethod;
   params?: { [s: string]: any };
   requestId?: string;
+  playground?: boolean;
 }
 
 export type DataQueryError = {
@@ -170,19 +171,18 @@ export type IdEither =
     };
 
 export type DataQueryRequestItem = {
+  expression?: string;
   start?: string | number;
   end?: string | number;
   limit?: number;
   granularity?: string;
   aggregates?: string[];
-  function?: string;
-  aliases?: DataQueryAlias[];
 } & IdEither;
 
 export interface DataQueryRequest {
   items: DataQueryRequestItem[];
-  start: string | number;
-  end: string | number;
+  start?: string | number;
+  end?: string | number;
   limit?: number;
   aggregates?: string[];
   granularity?: string;
