@@ -1576,1047 +1576,180 @@ Object {
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries1",
-        "function": "[12] + [12] + [123]",
+        "expression": "TS{id=12} + TS{id=12} + TS{id=123}",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries2",
-        "function": "[34] + [34] + [123]",
+        "expression": "TS{id=34} + TS{id=34} + TS{id=123}",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries3",
-        "function": "[56] + [56] + [123]",
+        "expression": "TS{id=56} + TS{id=56} + TS{id=123}",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries4",
-        "function": "[78] + [78] + [123]",
+        "expression": "TS{id=78} + TS{id=78} + TS{id=123}",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries5",
-        "function": "[90] + [90] + [123]",
+        "expression": "TS{id=90} + TS{id=90} + TS{id=123}",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Test",
-        "function": "[123] + [123] + [123]",
+        "expression": "TS{id=123} + TS{id=123} + TS{id=123}",
       },
     ],
-    "limit": 9090,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_10s",
-            "granularity": "10s",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries1",
-        "function": "[12] * [alias12_average]- [alias12_average_10s]",
+        "expression": "TS{id=12} * TS{id=12,aggregate='average'}- TS{id=12,aggregate='average',granularity='10s'}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_10s",
-            "granularity": "10s",
-            "id": 34,
-          },
-        ],
-        "externalId": "Timeseries2",
-        "function": "[34] * [alias34_average]- [alias34_average_10s]",
+        "expression": "TS{id=34} * TS{id=34,aggregate='average'}- TS{id=34,aggregate='average',granularity='10s'}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_10s",
-            "granularity": "10s",
-            "id": 56,
-          },
-        ],
-        "externalId": "Timeseries3",
-        "function": "[56] * [alias56_average]- [alias56_average_10s]",
+        "expression": "TS{id=56} * TS{id=56,aggregate='average'}- TS{id=56,aggregate='average',granularity='10s'}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_10s",
-            "granularity": "10s",
-            "id": 78,
-          },
-        ],
-        "externalId": "Timeseries4",
-        "function": "[78] * [alias78_average]- [alias78_average_10s]",
+        "expression": "TS{id=78} * TS{id=78,aggregate='average'}- TS{id=78,aggregate='average',granularity='10s'}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_10s",
-            "granularity": "10s",
-            "id": 90,
-          },
-        ],
-        "externalId": "Timeseries5",
-        "function": "[90] * [alias90_average]- [alias90_average_10s]",
+        "expression": "TS{id=90} * TS{id=90,aggregate='average'}- TS{id=90,aggregate='average',granularity='10s'}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_10s",
-            "granularity": "10s",
-            "id": 123,
-          },
-        ],
-        "externalId": "Test",
-        "function": "[123] * [alias123_average]- [alias123_average_10s]",
+        "expression": "TS{id=123} * TS{id=123,aggregate='average'}- TS{id=123,aggregate='average',granularity='10s'}",
       },
     ],
-    "limit": 555,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "none",
-            "alias": "alias12_none",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_10m",
-            "granularity": "10m",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries1",
-        "function": "[alias12_none] * [alias12_average] - [alias12_average_10m]",
+        "expression": "TS{id=12,aggregate='none'} * TS{id=12,aggregate='average'} - TS{id=12,aggregate='average',granularity='10m'}",
       },
     ],
-    "limit": 3333,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [],
-        "externalId": "",
-        "function": "1+1",
+        "expression": "1+1",
       },
     ],
-    "limit": 100000,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_E",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 16`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [],
-        "externalId": "",
-        "function": "([12] + [34] + [56] + [78] + [90] + [123])",
+        "expression": "(TS{id=12} + TS{id=34} + TS{id=56} + TS{id=78} + TS{id=90} + TS{id=123})",
       },
     ],
-    "limit": 16666,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_F",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 17`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries1",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[12]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=12}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries2",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[34]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=34}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries3",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[56]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=56}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries4",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[78]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=78}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Timeseries5",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[90]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=90}",
       },
       Object {
-        "aliases": Array [
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias12_average_1h",
-            "granularity": "1h",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias34_average_1h",
-            "granularity": "1h",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias56_average_1h",
-            "granularity": "1h",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias78_average_1h",
-            "granularity": "1h",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias90_average_1h",
-            "granularity": "1h",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "average",
-            "alias": "alias123_average_1h",
-            "granularity": "1h",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias12_count",
-            "granularity": "10d",
-            "id": 12,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias34_count",
-            "granularity": "10d",
-            "id": 34,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias56_count",
-            "granularity": "10d",
-            "id": 56,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias78_count",
-            "granularity": "10d",
-            "id": 78,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias90_count",
-            "granularity": "10d",
-            "id": 90,
-          },
-          Object {
-            "aggregate": "count",
-            "alias": "alias123_count",
-            "granularity": "10d",
-            "id": 123,
-          },
-          Object {
-            "aggregate": "avg",
-            "alias": "alias12_avg",
-            "granularity": "10d",
-            "id": 12,
-          },
-        ],
-        "externalId": "Test",
-        "function": "([alias12_average] + [alias34_average] + [alias56_average] + [alias78_average] + [alias90_average] + [alias123_average]) + ([alias12_average_1h] + [alias34_average_1h] + [alias56_average_1h] + [alias78_average_1h] + [alias90_average_1h] + [alias123_average_1h]) * max([alias12_count], [alias34_count], [alias56_count], [alias78_count], [alias90_count], [alias123_count])/ - [alias12_avg] - 3*[123]",
+        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=123}",
       },
     ],
-    "limit": 83,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_G",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 18`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries1",
-        "function": "max(max([12],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=12},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries2",
-        "function": "max(max([34],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=34},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries3",
-        "function": "max(max([56],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=56},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries4",
-        "function": "max(max([78],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=78},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries5",
-        "function": "max(max([90],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=90},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
       Object {
-        "aliases": Array [],
-        "externalId": "Test",
-        "function": "max(max([123],5),5) + max([12], [34], [56], [78], [90], [123])",
+        "expression": "max(max(TS{id=123},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
       },
     ],
-    "limit": 2777,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_H",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 19`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "aliases": Array [],
-        "externalId": "Timeseries1",
-        "function": "[12] + [[TimeseriesVariable]]",
+        "expression": "TS{id=12} + [[TimeseriesVariable]]",
       },
     ],
-    "limit": 50000,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_18_I",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
