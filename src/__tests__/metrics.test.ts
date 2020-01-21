@@ -19,17 +19,15 @@ const assetsResponse = {
 
 describe('Metrics Query', () => {
   describe('Given an empty metrics query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: '',
       filter: '',
     };
-    beforeAll(async () => {
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should return a parse error', () => {
+    it('should throw a parse error', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse expression "`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-      expect(result).toMatchSnapshot();
     });
   });
 
@@ -107,88 +105,68 @@ describe('Metrics Query', () => {
   });
 
   describe('Given an incomplete metrics query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{',
       filter: '',
     };
-    beforeAll(async () => {
+    it('should throw a parse error', () => {
       backendSrvMock.datasourceRequest.mockReset();
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should not generate a request', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse expression asset{"`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-    it('should return an error', () => {
-      expect(result).toMatchSnapshot();
     });
   });
 
   describe('Given an incorrect metrics query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{name=~asset.*}',
       filter: '',
     };
-    beforeAll(async () => {
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should not generate a request', () => {
+    it('should throw a parse error', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed."`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-    it('should return an error', () => {
-      expect(result).toMatchSnapshot();
     });
   });
 
   describe('Given an incorrect metrics query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{name="asset}',
       filter: '',
     };
-    beforeAll(async () => {
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should not generate a request', () => {
+    it('should throw a parse error', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'."`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-    it('should return an error', () => {
-      expect(result).toMatchSnapshot();
     });
   });
 
   describe('Given an incorrect filter query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{name=foo}',
       filter: 'filter{',
     };
-    beforeAll(async () => {
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should not generate a request', () => {
+    it('should throw a filter error', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse expression filter{"`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-    it('should return an error', () => {
-      expect(result).toMatchSnapshot();
     });
   });
 
   describe('Given an incorrect filter query', () => {
-    let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{name=foo}',
       filter: 'filter{foo}',
     };
-    beforeAll(async () => {
-      result = await ds.metricFindQuery(variableQuery);
-    });
-    it('should not generate a request', () => {
+    it('should throw a filter error', () => {
+      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~)."`
+      );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-    it('should return an error', () => {
-      expect(result).toMatchSnapshot();
     });
   });
 });

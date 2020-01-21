@@ -5,16 +5,10 @@ import {
   FilterOptions,
   FilterType,
   TimeSeriesResponseItem,
-  DataQueryAlias,
   QueryTarget,
 } from './types';
-import {
-  intervalToGranularity,
-  getAggregationDropdownString,
-  applyFilters,
-  splitFilters,
-} from './utils';
-import _ from 'lodash';
+import { getAggregationDropdownString, applyFilters, splitFilters } from './utils';
+import { trim } from 'lodash';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
 export const parseExpression = (
@@ -166,7 +160,6 @@ const getAndApplyFilterOptions = (
   timeseries: TimeSeriesResponseItem[]
 ) => {
   const filterOptions = parse(timeseriesString, ParseType.Timeseries, templateSrv, options);
-  if (filterOptions.error) throw filterOptions.error;
   applyFilters(filterOptions.filters, timeseries);
   return filterOptions;
 };
@@ -201,14 +194,14 @@ const findTimeseriesString = (expr: string, withAggregateAndGranularity: boolean
 
   while (openBracketCount > 0) {
     if (startIndex + index >= expr.length) {
-      throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+      throw new Error(`ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`);
     }
     if (expr.charAt(startIndex + index) === '{') openBracketCount += 1;
     else if (expr.charAt(startIndex + index) === '}') openBracketCount -= 1;
     else if (expr.charAt(startIndex + index) === '"' || expr.charAt(startIndex + index) === "'") {
       // skip ahead if we find a quote
       const endQuote = expr.indexOf(expr.charAt(startIndex + index), startIndex + index + 1);
-      if (endQuote < 0) throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+      if (endQuote < 0) throw new Error(`ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`);
       index = endQuote - startIndex;
     }
     index += 1;
@@ -220,7 +213,7 @@ const findTimeseriesString = (expr: string, withAggregateAndGranularity: boolean
   ) {
     const closeBracketIndex = expr.indexOf(']', startIndex + index);
     if (closeBracketIndex > 0) index = closeBracketIndex - startIndex + 1;
-    else throw `ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`;
+    else throw new Error(`ERROR: Unable to parse ${expr.substr(timeseriesIndex)}`);
   }
 
   return expr.substr(timeseriesIndex, index + 'timeseries{'.length);
@@ -241,7 +234,7 @@ const updateSyntheticQueries = (queryItem: DataQueryRequestItem, options: QueryO
           .substr(1, match.length - 2)
           .split(',')
           .filter(string => string.length)
-          .map(x => _.trim(x, ' \'"'));
+          .map(x => trim(x, ' \'"'));
         queryItem.expression = queryStr.replace(
           match,
           getTempAliasString({ id, aggregation, granularity })
@@ -270,13 +263,6 @@ export const parse = (
     }
   }
 
-  const filtersOptions = {
-    filters: [],
-    granularity: '',
-    aggregation: '',
-    error: '',
-  };
-
   // Format: timeseries{ options }
   //     or  timeseries{ options }[aggregation, granularity]
   // regex pulls out the options string, as well as the aggre/gran string (if it exists)
@@ -290,19 +276,16 @@ export const parse = (
   let splitfilters: string[];
   if (timeseriesMatch) {
     // regex finds commas that are not followed by a closed bracket
-    splitfilters = splitFilters(timeseriesMatch[1], filtersOptions, false);
+    splitfilters = splitFilters(timeseriesMatch[1], false);
   } else if (assetMatch) {
-    splitfilters = splitFilters(assetMatch[1], filtersOptions, true);
+    splitfilters = splitFilters(assetMatch[1], true);
   } else if (filterMatch) {
-    splitfilters = splitFilters(filterMatch[1], filtersOptions, false);
+    splitfilters = splitFilters(filterMatch[1], false);
   } else {
-    filtersOptions.error = `ERROR: Unable to parse expression ${query}`;
+    throw new Error(`ERROR: Unable to parse expression ${query}`);
   }
 
-  if (filtersOptions.error) {
-    return filtersOptions;
-  }
-
+  const filters = [];
   for (let f of splitfilters) {
     f = f.trim();
     if (f !== '') {
@@ -310,29 +293,34 @@ export const parse = (
       for (const type of Object.values(FilterType)) {
         const index = f.indexOf(type);
         if (index > -1) {
-          const property = _.trim(f.substr(0, index), ' \'"');
-          const value = _.trim(f.substr(index + type.length), ' \'"');
+          const property = trim(f.substr(0, index), ' \'"');
+          const value = trim(f.substr(index + type.length), ' \'"');
           filter = { property, value, type };
           break;
         }
       }
       if (filter) {
-        filtersOptions.filters.push(filter);
+        filters.push(filter);
       } else {
         console.error(`Error parsing ${filter}`);
       }
     }
   }
 
+  let granularity = '';
+  let aggregation = '';
   if (timeseriesMatch) {
-    const aggregation = timeseriesMatch[2];
-    if (aggregation) {
-      const splitAggregation = aggregation.split(',');
-      filtersOptions.aggregation = _.trim(splitAggregation[0], ' \'"').toLowerCase();
-      filtersOptions.granularity =
-        splitAggregation.length > 1 ? _.trim(splitAggregation[1], ' \'"') : '';
+    const optionsStr = timeseriesMatch[2];
+    if (optionsStr) {
+      const splitAggregation = optionsStr.split(',');
+      aggregation = trim(splitAggregation[0], ' \'"').toLowerCase();
+      granularity = splitAggregation.length > 1 ? trim(splitAggregation[1], ' \'"') : '';
     }
   }
 
-  return filtersOptions;
+  return {
+    filters,
+    granularity,
+    aggregation,
+  };
 };

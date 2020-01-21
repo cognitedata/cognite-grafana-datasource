@@ -4,7 +4,6 @@ import { getMockedDataSource } from './utils';
 jest.mock('../cache');
 
 const { ds, backendSrvMock } = getMockedDataSource();
-const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('Annotations Query', () => {
   const annotationResponse = {
@@ -287,7 +286,6 @@ describe('Annotations Query', () => {
   });
 
   describe('Given an annotation query with an incomplete event expression', () => {
-    let result;
     const annotationOption: any = {
       range: {
         from: '1549336675000',
@@ -299,20 +297,16 @@ describe('Annotations Query', () => {
     };
     beforeAll(async () => {
       backendSrvMock.datasourceRequest.mockReset();
-      result = await ds.annotationQuery(annotationOption);
     });
-    afterAll(() => consoleErrorSpy.mockClear());
-    it('should not generate any requests', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls.length).toBe(0);
-    });
-    it('should emit an error', () => {
-      expect(consoleErrorSpy.mock.calls[0][0]).toBe('ERROR: Unable to parse expression event{ ');
-      expect(result).toEqual([]);
+    it('should throw a parse error', () => {
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse expression event{ "`
+      );
+      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 
   describe('Given an annotation query with an incomplete event expression', () => {
-    let result;
     const annotationOption: any = {
       range: {
         from: '1549336675000',
@@ -324,22 +318,16 @@ describe('Annotations Query', () => {
     };
     beforeAll(async () => {
       backendSrvMock.datasourceRequest.mockReset();
-      result = await ds.annotationQuery(annotationOption);
     });
-    afterAll(() => consoleErrorSpy.mockClear());
-    it('should not generate any requests', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls.length).toBe(0);
-    });
-    it('should emit an error', () => {
-      expect(consoleErrorSpy.mock.calls[0][0]).toBe(
-        "ERROR: Unexpected character ' } ' while parsing ' metadata={}}'."
+    it('should throw a parse error', () => {
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unexpected character ' } ' while parsing ' metadata={}}'."`
       );
-      expect(result).toEqual([]);
+      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 
   describe('Given an annotation query with an incorrect event expression', () => {
-    let result;
     const annotationOption: any = {
       range: {
         from: '1549336675000',
@@ -349,23 +337,15 @@ describe('Annotations Query', () => {
         expr: 'event{ name=~event, foo}',
       },
     };
-    beforeAll(async () => {
-      result = await ds.annotationQuery(annotationOption);
-    });
-    afterAll(() => consoleErrorSpy.mockClear());
-    it('should not generate any requests', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls.length).toBe(0);
-    });
-    it('should emit an error', () => {
-      expect(consoleErrorSpy.mock.calls[0][0]).toBe(
-        "ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed."
+    it('should throw a parse error', () => {
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed."`
       );
-      expect(result).toEqual([]);
+      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 
   describe('Given an annotation query with an incorrect event expression', () => {
-    let result;
     const annotationOption: any = {
       range: {
         from: '1549336675000',
@@ -375,23 +355,15 @@ describe('Annotations Query', () => {
         expr: 'event{foo}',
       },
     };
-    beforeAll(async () => {
-      result = await ds.annotationQuery(annotationOption);
-    });
-    afterAll(() => consoleErrorSpy.mockClear());
-    it('should not generate any requests', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls.length).toBe(0);
-    });
-    it('should emit an error', () => {
-      expect(consoleErrorSpy.mock.calls[0][0]).toBe(
-        "ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed."
+    it('should throw a parse error', () => {
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed."`
       );
-      expect(result).toEqual([]);
+      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 
   describe('Given an annotation query with an incorrect filter expression', () => {
-    let result;
     const annotationOption: any = {
       range: {
         from: '1549336675000',
@@ -402,16 +374,11 @@ describe('Annotations Query', () => {
         filter: 'foo',
       },
     };
-    beforeAll(async () => {
-      result = await ds.annotationQuery(annotationOption);
-    });
-    afterAll(() => consoleErrorSpy.mockClear());
-    it('should not generate any requests', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls.length).toBe(0);
-    });
-    it('should emit an error', () => {
-      expect(consoleErrorSpy.mock.calls[0][0]).toBe('ERROR: Unable to parse expression foo');
-      expect(result).toEqual([]);
+    it('should throw a parse error', () => {
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"ERROR: Unable to parse expression foo"`
+      );
+      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 });

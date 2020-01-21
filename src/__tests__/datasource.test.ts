@@ -28,24 +28,16 @@ function getDataqueryResponse(request: DataQueryRequest) {
       externalId: 'externalId' in item ? item.externalId : item.id,
     });
   }
-  return getDataqueryResponseObject(itemsArr, request.aggregates ? aggregation : undefined);
+  return getItemsResponseObject(itemsArr, request.aggregates ? aggregation : undefined);
 }
 
-function getDataqueryResponseObject(items, aggregates) {
+function getItemsResponseObject(items, aggregates?: string) {
   const response = {
     data: {
       items,
     },
     config: {
       data: { aggregates },
-    },
-  };
-  return response;
-}
-function getTimeseriesResponse(items) {
-  const response = {
-    data: {
-      items,
     },
   };
   return response;
@@ -77,7 +69,7 @@ describe('Datasource Query', () => {
   };
 
   beforeEach(() => {
-    options.panelId += 1;
+    options.panelId++;
   });
 
   describe('Given no targets', () => {
@@ -191,7 +183,7 @@ describe('Datasource Query', () => {
       label: '{{description}}-{{externalId}}',
     };
 
-    const tsResponse = getTimeseriesResponse([
+    const tsResponse = getItemsResponseObject([
       { externalId: 'Timeseries789', description: 'test timeseries' },
     ]);
 
@@ -344,19 +336,19 @@ describe('Datasource Query', () => {
       refId: 'F',
     };
 
-    const tsResponseA = getTimeseriesResponse([
+    const tsResponseA = getItemsResponseObject([
       { name: 'Timeseries123', description: 'test timeseries' },
     ]);
-    const tsResponseB = getTimeseriesResponse([
+    const tsResponseB = getItemsResponseObject([
       { name: 'Timeseries123', description: 'test timeseries' },
       { name: 'Timeseries456', description: 'test timeseries' },
     ]);
-    const tsResponseC = getTimeseriesResponse([
+    const tsResponseC = getItemsResponseObject([
       { name: 'Timeseries123', description: 'test timeseriesA' },
       { name: 'Timeseries456', description: 'test timeseriesB' },
       { name: 'Timeseries789', description: 'test timeseriesC' },
     ]);
-    const tsResponseEmpty = getTimeseriesResponse([]);
+    const tsResponseEmpty = getItemsResponseObject([]);
 
     beforeAll(async () => {
       options.intervalMs = 360000;
@@ -472,7 +464,7 @@ describe('Datasource Query', () => {
       refId: 'J',
       expr: '-',
     };
-    const tsResponse = getTimeseriesResponse([
+    const tsResponse = getItemsResponseObject([
       {
         name: 'Timeseries1',
         description: 'test timeseriesA',
@@ -530,7 +522,7 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(getTimeseriesResponse([])))
+        .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])))
         .mockImplementation(x => {
           if ('FGH'.includes(x.refId)) return Promise.reject(tsError);
           return Promise.resolve(getDataqueryResponse(x.data));
@@ -637,7 +629,7 @@ describe('Datasource Query', () => {
       label: '{{description}} : [[TimeseriesVariable]]',
     };
 
-    const tsResponse = getTimeseriesResponse([
+    const tsResponse = getItemsResponseObject([
       {
         name: 'Timeseries1',
         id: 12,
@@ -776,14 +768,14 @@ describe('Datasource Query', () => {
       },
     };
 
-    const tsResponseA = getTimeseriesResponse([
+    const tsResponseA = getItemsResponseObject([
       { name: 'Timeseries123', description: 'test timeseries' },
     ]);
-    const tsResponseB = getTimeseriesResponse([
+    const tsResponseB = getItemsResponseObject([
       { name: 'Timeseries123', description: 'test timeseries' },
       { name: 'Timeseries456', description: 'test timeseries' },
     ]);
-    const tsResponseEmpty = getTimeseriesResponse([]);
+    const tsResponseEmpty = getItemsResponseObject([]);
 
     beforeAll(async () => {
       options.intervalMs = 360000;

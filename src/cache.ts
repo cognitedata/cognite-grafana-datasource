@@ -31,9 +31,8 @@ export const getQuery = async (query: DataSourceRequestOptions, backendSrv: Back
         // the item may not exist, or it may have been deleted
         return {};
       }
-      const asset = res;
-      if (!isError(asset)) {
-        queries.results.set(stringQuery, asset);
+      if (!isError(res)) {
+        queries.results.set(stringQuery, res);
         // set a timeout to clear the cache
         setTimeout(() => {
           queries.results.delete(stringQuery);
@@ -41,7 +40,7 @@ export const getQuery = async (query: DataSourceRequestOptions, backendSrv: Back
         }, cacheTime);
       }
       queries.requests.delete(stringQuery);
-      return asset;
+      return res;
     },
     error => {
       // clear the cache so that the request can be retried

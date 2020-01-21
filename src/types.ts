@@ -321,5 +321,4 @@ export interface FilterOptions {
   filters: Filter[];
   granularity: string;
   aggregation: string;
-  error: string;
 }
