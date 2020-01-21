@@ -1,236 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CogniteDatasource Annotations Query Given an annotation query should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetIds": "[123]",
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
-      "type": "type 1",
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
-}
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query should return the correct events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{assetIds = [123], type= 'type 1' }",
-    },
-    "isRegion": true,
-    "text": "event 1",
-    "time": "1549336675000",
-    "timeEnd": "1549336775000",
-    "title": "type 1",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{assetIds = [123], type= 'type 1' }",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
-      "type": "non-existant type",
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
-}
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "metadata": "{\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"}",
-      "startTime": Object {
-        "max": 1549338475000,
-      },
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
-}
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with a metadata request should return the correct event 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{ metadata={\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"} }",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
-}
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with filters should return the correct events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 2",
-    "time": "1549336775000",
-    "timeEnd": "1549336875000",
-    "title": "type 2",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 3",
-    "time": "1549336875000",
-    "timeEnd": "1549336975000",
-    "title": "type 3",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 4",
-    "time": "1549336975000",
-    "timeEnd": "1549337075000",
-    "title": "type 4",
-  },
-]
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetIds": "[123]",
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
-}
-`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query with variables should return the correct events 1`] = `Array []`;
-
-exports[`CogniteDatasource Annotations Query Given an annotation query without any filters should return all events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 1",
-    "time": "1549336675000",
-    "timeEnd": "1549336775000",
-    "title": "type 1",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 2",
-    "time": "1549336775000",
-    "timeEnd": "1549336875000",
-    "title": "type 2",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 3",
-    "time": "1549336875000",
-    "timeEnd": "1549336975000",
-    "title": "type 3",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 4",
-    "time": "1549336975000",
-    "timeEnd": "1549337075000",
-    "title": "type 4",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
-`;
-
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -245,7 +15,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -262,7 +32,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -277,7 +47,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -292,7 +62,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -309,7 +79,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -324,7 +94,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -339,7 +109,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -357,7 +127,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -382,7 +152,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 10`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 10`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -410,7 +180,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 11`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 11`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -432,7 +202,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [
     Object {
@@ -586,7 +356,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
 Object {
   "data": Object {
     "externalId": "Timeseries789",
@@ -596,7 +366,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -614,7 +384,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -636,7 +406,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should generate the correct queries 4`] = `
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 4`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -658,7 +428,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries should return correct datapoints and labels 1`] = `
+exports[`Datasource Query Given "Select Timeseries" queries should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [
     Object {
@@ -728,7 +498,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 1`] = `
+exports[`Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 1`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -746,7 +516,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 2`] = `
+exports[`Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 2`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -764,7 +534,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given an older queryTarget format should generate the correct query 1`] = `
+exports[`Datasource Query Given an older queryTarget format should generate the correct query 1`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -786,7 +556,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given an older queryTarget format should return datapoints and the default label 1`] = `
+exports[`Datasource Query Given an older queryTarget format should return datapoints and the default label 1`] = `
 Object {
   "data": Array [
     Object {
@@ -814,7 +584,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -829,7 +599,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -844,7 +614,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -859,7 +629,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -874,7 +644,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -889,7 +659,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -904,7 +674,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -919,7 +689,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -934,7 +704,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -949,7 +719,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -964,7 +734,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -997,7 +767,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -1019,7 +789,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 13`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -1041,7 +811,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 14`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1059,7 +829,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should generate the correct filtered queries 15`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 15`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1089,7 +859,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
+exports[`Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [
     Object {
@@ -1390,7 +1160,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1405,7 +1175,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1420,7 +1190,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1435,7 +1205,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1450,7 +1220,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1465,7 +1235,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1480,7 +1250,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1495,7 +1265,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1510,7 +1280,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1525,7 +1295,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -1540,7 +1310,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -1573,7 +1343,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1603,7 +1373,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1633,7 +1403,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1648,7 +1418,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1663,7 +1433,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 16`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 16`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1678,7 +1448,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 17`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 17`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1708,7 +1478,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 18`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 18`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1738,7 +1508,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should generate the correct filtered queries 19`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 19`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1753,7 +1523,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
+exports[`Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [
     Object {
@@ -2453,7 +2223,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 1`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 1`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -2468,7 +2238,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -2485,7 +2255,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 3`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 3`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -2503,7 +2273,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -2520,7 +2290,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 5`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 5`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
@@ -2541,19 +2311,19 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 1`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 1`] = `
 Object {
   "data": Array [],
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 2`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 2`] = `
 Object {
   "data": Array [],
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 3`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 3`] = `
 Object {
   "data": Array [
     Object {
@@ -2581,7 +2351,7 @@ Object {
 }
 `;
 
-exports[`CogniteDatasource Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 4`] = `
+exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 4`] = `
 Object {
   "data": Array [
     Object {
@@ -2628,342 +2398,4 @@ Object {
     },
   ],
 }
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for asset options should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "search": Object {
-      "query": "asset",
-    },
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
-}
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for asset options should return the assets with asset in their name 1`] = `
-Array [
-  Object {
-    "text": "asset 1 (test asset 1)",
-    "value": "123",
-  },
-  Object {
-    "text": "asset 2 (test asset 2)",
-    "value": "456",
-  },
-  Object {
-    "text": "asset 3 (test asset 3)",
-    "value": "789",
-  },
-]
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for asset options with additional options should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "search": Object {
-      "query": "asset",
-    },
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
-}
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for asset options with additional options should return the assets with asset in their name and metadata.key1 = value1 1`] = `
-Array [
-  Object {
-    "text": "asset 1 (test asset 1)",
-    "value": "123",
-  },
-]
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for timeseries options should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "search": Object {
-      "query": "Timeseries",
-    },
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
-}
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given a request for timeseries options should return timeseries with Timeseries in their name 1`] = `
-Array [
-  Object {
-    "text": "Timeseries1 (testA)",
-    "value": "Timeseries1",
-  },
-  Object {
-    "text": "Timeseries2 (testB)",
-    "value": "Timeseries2",
-  },
-  Object {
-    "text": "Timeseries3 (testC)",
-    "value": "Timeseries3",
-  },
-  Object {
-    "text": "Timeseries4 (testD)",
-    "value": "Timeseries4",
-  },
-  Object {
-    "text": "Timeseries5 (testE)",
-    "value": "Timeseries5",
-  },
-]
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given an empty request for asset options should generate the correct request 1`] = `
-Object {
-  "data": Object {},
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
-}
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given an empty request for asset options should return all assets 1`] = `
-Array [
-  Object {
-    "text": "asset 1 (test asset 1)",
-    "value": "123",
-  },
-  Object {
-    "text": "asset 2 (test asset 2)",
-    "value": "456",
-  },
-  Object {
-    "text": "asset 3 (test asset 3)",
-    "value": "789",
-  },
-  Object {
-    "text": "foo (bar)",
-    "value": "999",
-  },
-]
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
-Object {
-  "data": Object {},
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
-}
-`;
-
-exports[`CogniteDatasource Dropdown Options Query Given an empty request for timeseries options should return all timeseries 1`] = `
-Array [
-  Object {
-    "text": "Timeseries1 (testA)",
-    "value": "Timeseries1",
-  },
-  Object {
-    "text": "Timeseries2 (testB)",
-    "value": "Timeseries2",
-  },
-  Object {
-    "text": "Timeseries3 (testC)",
-    "value": "Timeseries3",
-  },
-  Object {
-    "text": "Timeseries4 (testD)",
-    "value": "Timeseries4",
-  },
-  Object {
-    "text": "Timeseries5 (testE)",
-    "value": "Timeseries5",
-  },
-  Object {
-    "text": "Test",
-    "value": "Test",
-  },
-]
-`;
-
-exports[`CogniteDatasource Login When given invalid login info should display an error message 1`] = `
-Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
-}
-`;
-
-exports[`CogniteDatasource Login When given invalid login info should display an error message 2`] = `
-Object {
-  "message": "Your Cognite credentials are invalid",
-  "status": "error",
-  "title": "Error",
-}
-`;
-
-exports[`CogniteDatasource Login When given valid login info and correct project should log the user in 1`] = `
-Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
-}
-`;
-
-exports[`CogniteDatasource Login When given valid login info and correct project should log the user in 2`] = `
-Object {
-  "message": "Your Cognite credentials are valid",
-  "status": "success",
-  "title": "Success",
-}
-`;
-
-exports[`CogniteDatasource Login When given valid login info but incorrect project should display an error message 1`] = `
-Object {
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
-}
-`;
-
-exports[`CogniteDatasource Login When given valid login info but incorrect project should display an error message 2`] = `
-Object {
-  "message": "Your Cognite credentials are invalid",
-  "status": "error",
-  "title": "Error",
-}
-`;
-
-exports[`CogniteDatasource Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "limit": 1000,
-    "search": Object {},
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
-}
-`;
-
-exports[`CogniteDatasource Metrics Query Given a metrics query with filters should return the correct assets 1`] = `
-Array [
-  Object {
-    "text": "asset 1",
-    "value": 123,
-  },
-  Object {
-    "text": "asset 3",
-    "value": 789,
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "limit": 1000,
-    "search": Object {},
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
-}
-`;
-
-exports[`CogniteDatasource Metrics Query Given a metrics query with no options should return all assets 1`] = `
-Array [
-  Object {
-    "text": "asset 1",
-    "value": 123,
-  },
-  Object {
-    "text": "asset 2",
-    "value": 456,
-  },
-  Object {
-    "text": "asset 3",
-    "value": 789,
-  },
-  Object {
-    "text": "foo",
-    "value": 999,
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given a simple metrics query should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "limit": 1000,
-    "search": Object {
-      "name": "asset",
-    },
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
-}
-`;
-
-exports[`CogniteDatasource Metrics Query Given a simple metrics query should return the correct assets 1`] = `
-Array [
-  Object {
-    "text": "asset 1",
-    "value": 123,
-  },
-  Object {
-    "text": "asset 2",
-    "value": 456,
-  },
-  Object {
-    "text": "asset 3",
-    "value": 789,
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an empty metrics query should return a parse error 1`] = `
-Array [
-  Object {
-    "text": "ERROR: Unable to parse expression ",
-    "value": "-",
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an incomplete metrics query should return an error 1`] = `
-Array [
-  Object {
-    "text": "ERROR: Unable to parse expression asset{",
-    "value": "-",
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 1`] = `
-Array [
-  Object {
-    "text": "ERROR: Unable to parse expression filter{",
-    "value": "-",
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an incorrect filter query should return an error 2`] = `
-Array [
-  Object {
-    "text": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
-    "value": "-",
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 1`] = `
-Array [
-  Object {
-    "text": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
-    "value": "-",
-  },
-]
-`;
-
-exports[`CogniteDatasource Metrics Query Given an incorrect metrics query should return an error 2`] = `
-Array [
-  Object {
-    "text": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
-    "value": "-",
-  },
-]
 `;

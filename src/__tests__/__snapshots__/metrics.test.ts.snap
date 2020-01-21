@@ -1,0 +1,141 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "limit": 1000,
+    "search": Object {},
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
+}
+`;
+
+exports[`Metrics Query Given a metrics query with filters should return the correct assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+]
+`;
+
+exports[`Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "limit": 1000,
+    "search": Object {},
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
+}
+`;
+
+exports[`Metrics Query Given a metrics query with no options should return all assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 2",
+    "value": 456,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+  Object {
+    "text": "foo",
+    "value": 999,
+  },
+]
+`;
+
+exports[`Metrics Query Given a simple metrics query should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "limit": 1000,
+    "search": Object {
+      "name": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
+}
+`;
+
+exports[`Metrics Query Given a simple metrics query should return the correct assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1",
+    "value": 123,
+  },
+  Object {
+    "text": "asset 2",
+    "value": 456,
+  },
+  Object {
+    "text": "asset 3",
+    "value": 789,
+  },
+]
+`;
+
+exports[`Metrics Query Given an empty metrics query should return a parse error 1`] = `
+Array [
+  Object {
+    "text": "ERROR: Unable to parse expression ",
+    "value": "-",
+  },
+]
+`;
+
+exports[`Metrics Query Given an incomplete metrics query should return an error 1`] = `
+Array [
+  Object {
+    "text": "ERROR: Unable to parse expression asset{",
+    "value": "-",
+  },
+]
+`;
+
+exports[`Metrics Query Given an incorrect filter query should return an error 1`] = `
+Array [
+  Object {
+    "text": "ERROR: Unable to parse expression filter{",
+    "value": "-",
+  },
+]
+`;
+
+exports[`Metrics Query Given an incorrect filter query should return an error 2`] = `
+Array [
+  Object {
+    "text": "ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~).",
+    "value": "-",
+  },
+]
+`;
+
+exports[`Metrics Query Given an incorrect metrics query should return an error 1`] = `
+Array [
+  Object {
+    "text": "ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed.",
+    "value": "-",
+  },
+]
+`;
+
+exports[`Metrics Query Given an incorrect metrics query should return an error 2`] = `
+Array [
+  Object {
+    "text": "ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'.",
+    "value": "-",
+  },
+]
+`;

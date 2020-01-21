@@ -263,9 +263,9 @@ export const parse = (
     if (options) {
       query = templateSrv.replace(query, options.scopedVars);
     } else {
-      for (const templateVariable of templateSrv.variables) {
-        query = query.replace(`[[${templateVariable.name}]]`, templateVariable.current.value);
-        query = query.replace(`$${templateVariable.name}`, templateVariable.current.value);
+      for (const { name, current } of templateSrv.variables) {
+        query = query.replace(`[[${name}]]`, current.value);
+        query = query.replace(`$${name}`, current.value);
       }
     }
   }
