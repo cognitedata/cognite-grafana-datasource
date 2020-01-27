@@ -6,140 +6,90 @@ import {
   QueryOptions,
   TimeSeriesResponseItem,
   HttpMethod,
-  RequestParams,
-  Response,
   TimeseriesFilterQuery,
-  isError,
   TimeSeriesDatapoint,
   Timestamp,
-  DataResponse,
-  Datapoint,
-  ItemsResponse,
+  DataQueryRequestResponse,
+  ResponseMetadata,
+  Aggregates,
+  Granularity,
+  Tuple,
+  QueriesData,
+  SuccessResponse,
+  Responses,
 } from './types';
-import { chunk, get, cloneDeep } from 'lodash';
-import { intervalToGranularity, getQueryString, getDatasourceValueString } from './utils';
+import { get, cloneDeep } from 'lodash';
+import { ms2String, getDatasourceValueString } from './utils';
 import cache from './cache';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import { Connector } from './connector';
+import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
-const { Asset, Custom, Timeseries } = Tab;
+import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
-export function filterEmptyQueryTargets(targets): QueryTarget[] {
-  // we cannot just map them because it's used somewhere as an input
-  // TODO: figure it out and fix
-  targets.forEach(target => {
-    if (target) {
-      target.error = '';
-      target.warning = '';
-    }
-  });
-
-  return targets.filter(target => {
-    if (target && !target.hide) {
-      if (target.tab === Timeseries || target.tab === undefined) {
-        return target.target && target.target !== 'Start typing tag id here';
-      }
-      if (target.tab === Asset || target.tab === Custom) {
-        return target.assetQuery && target.assetQuery.target;
-      }
-    }
-    return false;
-  });
-}
-
-type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
-type Granularity = Pick<DataQueryRequest, 'granularity'>;
-
-export function formQueriesForChunks(
-  qlChunks,
-  timeFrom: number,
-  timeTo: number,
-  targetQueriesCount,
-  { tab, aggregation, granularity, refId },
+export function formQueryForItems(
+  items,
+  { tab, aggregation, granularity },
   options
-): DataQueryRequest[] {
-  const resQueries = [];
-  let aggregateAndGranularity: Aggregates & Granularity = null;
-  const hasAggregates = aggregation && aggregation !== 'none';
-  if (hasAggregates) {
-    aggregateAndGranularity = {
-      aggregates: [aggregation],
-      granularity: granularity || intervalToGranularity(options.intervalMs),
+): DataQueryRequest {
+  if (tab === Tab.Custom && items[0].expression) {
+    // why zero?
+    // todo: something here, whe might need to assign limits for each synthetic or something
+    // synthetics don't support all those limits etc yet
+    return { items };
+  }
+  {
+    // TODO: limit used to be divided by qlChunk.length, but I am not sure it works that way
+
+    const [start, end] = getRange(options.range);
+    let aggregations: Aggregates & Granularity = null;
+    const hasAggregates = aggregation && aggregation !== 'none';
+    if (hasAggregates) {
+      aggregations = {
+        aggregates: [aggregation],
+        granularity: granularity || ms2String(options.intervalMs),
+      };
+    }
+    return {
+      ...aggregations,
+      end,
+      start,
+      items,
+      limit: hasAggregates ? 10_000 : 100_000,
     };
   }
-  const requestBase = {
-    ...aggregateAndGranularity,
-    start: timeFrom,
-    end: timeTo,
-  };
-  for (const qlChunk of qlChunks) {
-    // keep track of target lengths so we can assign errors later
-    targetQueriesCount.push({
-      refId,
-      count: qlChunk.length,
-    });
-    // create query requests
-    let queryReq: DataQueryRequest;
-
-    if (tab === Tab.Custom && qlChunk[0].expression) {
-      // todo: something here, whe might need to assign limits for each synthetic or something
-      // synthetics don't support all those limits etc yet
-      queryReq = {
-        items: qlChunk,
-      };
-    } else {
-      const limit = Math.floor((hasAggregates ? 10_000 : 100_000) / qlChunk.length);
-      queryReq = {
-        limit,
-        ...requestBase,
-        items: qlChunk,
-      };
-    }
-    resQueries.push(queryReq);
-  }
-  return resQueries;
 }
 
-export async function formQueriesForTargets(
-  targets: QueryTarget[],
-  queryLists: DataQueryRequestItem[][],
-  timeFrom: number,
-  timeTo: number,
-  targetQueriesCount: any[],
+export function formQueriesForTargets(
+  queriesData: QueriesData,
+  options: QueryOptions
+): DataQueryRequest[] {
+  return queriesData.map(({ target, items }) => {
+    return formQueryForItems(items, target, options);
+  });
+}
+
+export async function formMetadatasForTargets(
+  queriesData: QueriesData,
   options: QueryOptions,
-  apiUrl: string,
-  project: string,
-  backendSrv: BackendSrv
-): Promise<[DataQueryRequest[], string[][]]> {
-  const resQueries: DataQueryRequest[] = [];
-  const resLabels: string[][] = [];
-  for (let i = 0; i < targets.length; i++) {
-    const [target, queryList] = [targets[i], queryLists[i]];
-    if (queryList.length === 0 || target.error) {
-      continue;
-    }
-
-    // /api/v1/projects/{project}/timeseries/data/list is limited to 100 items, so we chunk
-    const qlChunks = chunk(queryList, 100);
-    resQueries.push(
-      ...formQueriesForChunks(qlChunks, timeFrom, timeTo, targetQueriesCount, target, options)
-    );
-
-    const targetLabels = chunk(
-      await getLabelsForTarget(target, options, apiUrl, project, backendSrv, queryList),
-      100
-    );
-    resLabels.push(...targetLabels);
-  }
-  return [resQueries, resLabels];
+  connector: Connector,
+  templateSrv: TemplateSrv
+): Promise<ResponseMetadata[]> {
+  const promises = queriesData.map(async ({ target, items }) => {
+    const rawLabels = await getLabelsForTarget(target, options, items, connector);
+    const labels = rawLabels.map(raw => templateSrv.replace(raw, options.scopedVars));
+    return {
+      target,
+      labels,
+    };
+  });
+  return Promise.all(promises);
 }
 
 async function getLabelsForTarget(
   target: QueryTarget,
   options: QueryOptions,
-  apiUrl: string,
-  project: string,
-  backendSrv: BackendSrv,
-  queryList: DataQueryRequestItem[]
+  queryList: DataQueryRequestItem[],
+  connector: Connector
 ): Promise<string[]> {
   // assign labels to each timeseries
   const labels = [];
@@ -147,9 +97,7 @@ async function getLabelsForTarget(
     case undefined:
     case Tab.Timeseries:
       {
-        labels.push(
-          await getTimeseriesLabel(target.label, target.target, target, apiUrl, project, backendSrv)
-        );
+        labels.push(await getTimeseriesLabel(target.label, target.target, target, connector));
       }
       break;
     case Tab.Asset:
@@ -183,16 +131,12 @@ async function getTimeseriesLabel(
   label,
   externalId,
   target,
-  apiUrl,
-  project,
-  backendSrv
+  connector: Connector
 ): Promise<string> {
   let resLabel = '';
   if (label && label.match(/{{.*}}/)) {
     try {
-      // need to fetch the timeseries
-      // todo: batch it, even though it goes though the cache
-      const [ts] = await getTimeseries({ externalId }, target, apiUrl, project, backendSrv);
+      const [ts] = await getTimeseries({ externalId }, target, connector);
       resLabel = getLabelWithInjectedProps(label, ts);
     } catch {}
   }
@@ -209,23 +153,16 @@ function getLabelWithInjectedProps(label: string, timeseries: TimeSeriesResponse
 export async function getTimeseries(
   filter: TimeseriesFilterQuery,
   target: QueryTarget,
-  apiUrl: string,
-  project: string,
-  backendSrv: BackendSrv
+  connector: Connector
 ): Promise<TimeSeriesResponseItem[]> {
   try {
     const endpoint = 'id' in filter || 'externalId' in filter ? 'byids' : 'list';
 
-    const items = await fetchItems<TimeSeriesResponseItem>(
-      {
-        path: `/timeseries/${endpoint}`,
-        method: HttpMethod.POST,
-        data: filter,
-      },
-      apiUrl,
-      project,
-      backendSrv
-    );
+    const items = await connector.fetchItems<TimeSeriesResponseItem>({
+      path: `/timeseries/${endpoint}`,
+      method: HttpMethod.POST,
+      data: filter,
+    });
     return cloneDeep(items.filter(ts => !ts.isString));
   } catch ({ data, status }) {
     if (data && data.error) {
@@ -237,91 +174,33 @@ export async function getTimeseries(
   }
 }
 
-export function fetchData<T>(
-  request: RequestParams,
-  apiUrl: string,
-  project: string,
-  backendSrv: BackendSrv
-): Promise<Response<T>> {
-  const { path, data, method, params, requestId, playground } = request;
-  const paramsString = params ? `?${getQueryString(params)}` : '';
-  const url = `${apiUrl}/${
-    playground ? 'playground' : 'cogniteapi'
-  }/${project}${path}${paramsString}`;
-  const body: any = { url, data, method };
-  if (requestId) {
-    body.requestId = requestId;
-  }
-  return cache.getQuery(body, backendSrv);
-}
-
-export async function fetchItems<T>(
-  params: RequestParams,
-  apiUrl: string,
-  project: string,
-  backendSrv: BackendSrv
-) {
-  const { data } = await fetchData<T>(params, apiUrl, project, backendSrv);
-  return data.items;
-}
-
-function showTooMuchDatapointsWarningIfNeeded(items: Datapoint[], limit: number, target) {
-  const hasLimitNumberOfDatapoints = items.some(({ datapoints }) => datapoints.length >= limit);
-  if (hasLimitNumberOfDatapoints) {
-    target.warning =
-      '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
-  }
-}
-
 export function reduceTimeseries(
-  timeseries,
-  targetQueriesCount,
-  queryTargets,
-  timeFrom,
-  timeTo
+  metaResponses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[],
+  [start, end]: Tuple<number>
 ): TimeSeries[] {
   const responseTimeseries: TimeSeries[] = [];
 
-  for (let i = 0; i < timeseries.length; i++) {
-    const response = timeseries[i];
-    const refId = targetQueriesCount[i].refId;
-    const target = queryTargets.find(x => x.refId === refId);
-    if (isError(response)) {
-      // if response was cancelled, no need to show error message
-      if (!response.error.cancelled) {
-        let errmsg: string;
-        if (response.error.data && response.error.data.error) {
-          errmsg = `[${response.error.status} ERROR] ${response.error.data.error.message}`;
-        } else {
-          errmsg = 'Unknown error';
-        }
-        target.error = errmsg;
-      }
-    } else {
-      const { data, config, labels } = response as DataResponse<ItemsResponse<Datapoint>> & {
-        config: any;
-        labels: string[];
+  metaResponses.forEach(({ result, metadata }) => {
+    const { labels } = metadata;
+    const { aggregates } = result.config.data;
+    const { items } = result.data;
+    const aggregateStr = aggregates ? `${aggregates} ` : '';
+
+    const series = items.map(({ datapoints, externalId, id }, i) => {
+      const label = labels && labels[i];
+      const resTarget = label || `${aggregateStr}${externalId || id}`;
+      const filteredDatapoints = (datapoints as Timestamp[]).filter(
+        ({ timestamp }) => timestamp >= start && timestamp <= end
+      );
+      const rawDatapoints = datapoints2Tuples(filteredDatapoints, aggregates);
+      return {
+        target: resTarget,
+        datapoints: rawDatapoints,
       };
-      const { aggregates, limit } = config.data;
-      const { items } = data;
-      const aggregateStr = aggregates ? `${aggregates} ` : '';
+    });
 
-      showTooMuchDatapointsWarningIfNeeded(items, limit, target);
-      const series: TimeSeries[] = items.map(({ datapoints, externalId, id }, i) => {
-        const resTarget = labels && labels[i] ? labels[i] : `${aggregateStr}${externalId || id}`;
-        const rawDatapoints = datapoints2Tuples(
-          (datapoints as Timestamp[]).filter(({ timestamp: ts }) => ts >= timeFrom && ts <= timeTo),
-          aggregates
-        );
-        return {
-          target: resTarget,
-          datapoints: rawDatapoints,
-        };
-      });
-
-      responseTimeseries.push(...series);
-    }
-  }
+    responseTimeseries.push(...series);
+  });
 
   return responseTimeseries;
 }
@@ -329,7 +208,7 @@ export function reduceTimeseries(
 export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
   aggregates
-): [number, number][] {
+): Tuple<number>[] {
   const prop = getDatasourceValueString(aggregates);
   return datapoints.map(d => datapoint2Tuple(d, prop));
 }
@@ -337,7 +216,30 @@ export function datapoints2Tuples<T extends Timestamp[]>(
 function datapoint2Tuple(
   dp: Timestamp | TimeSeriesDatapoint,
   aggregateProp: string
-): [number, number] {
+): Tuple<number> {
   const value = aggregateProp in dp ? dp[aggregateProp] : (dp as TimeSeriesDatapoint).value;
   return [value, dp.timestamp];
+}
+
+export async function promiser<Query, Metadata, Response>(
+  queries: Query[],
+  metadatas: Metadata[],
+  toPromise: (query: Query, metadata: Metadata) => Promise<Response>
+): Promise<Responses<Metadata, Response>> {
+  const succeded = [];
+  const failed = [];
+  const promises = queries.map(async (query, i) => {
+    const metadata = metadatas[i];
+    try {
+      const result = await toPromise(query, metadata);
+      succeded.push({ result, metadata });
+    } catch (error) {
+      failed.push({ error, metadata });
+    }
+  });
+  await Promise.all(promises);
+  return {
+    succeded,
+    failed,
+  };
 }

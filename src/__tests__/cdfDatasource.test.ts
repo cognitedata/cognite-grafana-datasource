@@ -1,4 +1,5 @@
-import { filterEmptyQueryTargets, datapoints2Tuples } from '../cdfDatasource';
+import { datapoints2Tuples, promiser } from '../cdfDatasource';
+import { filterEmptyQueryTargets } from '../datasource';
 
 describe('CDF datasource', () => {
   describe('filterQueryTargets', () => {
@@ -83,6 +84,41 @@ describe('CDF datasource', () => {
           'aggregate'
         )
       ).toEqual([[2, 1], [2, 1]]);
+    });
+  });
+
+  describe('promiser', () => {
+    it('should return failures and successes', async () => {
+      const queries = [0, 1, 2, 3];
+      const metadatas = ['a', 'b', 'c', 'd'];
+      const results = await promiser(queries, metadatas, async (query, metadata) => {
+        if (query % 2) {
+          throw new Error(metadata);
+        }
+        return query;
+      });
+      expect(results).toEqual({
+        failed: [
+          {
+            error: new Error('b'),
+            metadata: 'b',
+          },
+          {
+            error: new Error('d'),
+            metadata: 'd',
+          },
+        ],
+        succeded: [
+          {
+            result: 0,
+            metadata: 'a',
+          },
+          {
+            result: 2,
+            metadata: 'c',
+          },
+        ],
+      });
     });
   });
 });

@@ -6,6 +6,8 @@ import {
   FilterType,
   TimeSeriesResponseItem,
   QueryTarget,
+  Granularity,
+  Aggregates,
 } from './types';
 import { getAggregationDropdownString, applyFilters, splitFilters } from './utils';
 import { trim } from 'lodash';
@@ -171,9 +173,8 @@ const getTempAliasString = ({
   aggregation,
 }: {
   id: number | string;
-  granularity: string;
   aggregation: string;
-}) => {
+} & Granularity) => {
   // todo: move type somewhere
   return `TS{id=${id}${aggregation ? `,aggregate='${aggregation}'` : ''}${
     granularity ? `,granularity='${granularity}'` : ''

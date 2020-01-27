@@ -1,20 +1,10 @@
-import { isNil, isArray, reduce, get } from 'lodash';
+import { isNil, omitBy, get } from 'lodash';
 import { Filter, FilterType, QueryOptions, QueryTarget } from './types';
+import { stringify } from 'query-string';
+import ms from 'ms';
 
-// Converts an object to a query string, ignores properties with undefined/null values
-// TODO: maybe clean this up a bit, might break easily
 export function getQueryString(obj: any) {
-  return reduce(
-    obj,
-    (result: string, val: any, key: string) => {
-      return isNil(val)
-        ? result
-        : isArray(val)
-        ? `${result + [key, val].map(encodeURIComponent).join('=[')}]&`
-        : `${result + [key, val].map(encodeURIComponent).join('=')}&` + '';
-    },
-    ''
-  ).slice(0, -1);
+  return stringify(omitBy(obj, isNil));
 }
 
 export function getDatasourceValueString(aggregation: string): string {
@@ -129,24 +119,8 @@ export function applyFilters(filters: Filter[], objects: any): void {
   }
 }
 
-export function intervalToGranularity(intervalMs: number): string {
-  const seconds = Math.round(intervalMs / 1000.0);
-  if (seconds <= 60) {
-    if (seconds <= 1) {
-      return '1s';
-    }
-    return `${seconds}s`;
-  }
-  const minutes = Math.round(intervalMs / 1000.0 / 60.0);
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const hours = Math.round(intervalMs / 1000.0 / 60.0 / 60.0);
-  if (hours <= 24) {
-    return `${hours}h`;
-  }
-  const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
-  return `${days}d`;
+export function ms2String(milliseconds: number): string {
+  return ms(milliseconds < 1000 ? 1000 : milliseconds);
 }
 
 export function timeseriesHash(options: QueryOptions, target: QueryTarget) {

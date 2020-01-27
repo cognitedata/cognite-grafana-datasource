@@ -44,7 +44,7 @@ export interface TimeSeriesResponseItem {
   selected: boolean;
 }
 
-export type TimeSeriesResponse = ItemsResponse<TimeSeriesResponseItem>;
+export type TimeSeriesResponse = Items<TimeSeriesResponseItem>;
 
 export interface AssetQuery {
   target: string;
@@ -71,6 +71,8 @@ export type QueryFormat = 'json';
 
 export type QueryOptions = DataQueryOptions<QueryTarget>;
 
+export type Tuple<T> = [T, T];
+
 export enum HttpMethod {
   POST = 'POST',
   GET = 'GET',
@@ -91,6 +93,15 @@ export interface DataSourceRequestOptions {
 export interface Timestamp {
   timestamp: number;
 }
+
+export type MetaResponses = Responses<ResponseMetadata, DataQueryRequestResponse>;
+
+export type SuccessResponse<Metadata, Response> = { metadata: Metadata; result: Response };
+export type FailResponse<Metadata> = { metadata: Metadata; error: any };
+export type Responses<Metadata, Response> = {
+  failed: FailResponse<Metadata>[];
+  succeded: SuccessResponse<Metadata, Response>[];
+};
 
 export interface TimeSeriesDatapoint extends Timestamp {
   value: string;
@@ -118,7 +129,7 @@ export interface Datapoint {
   datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
 }
 
-export type Datapoints = ItemsResponse<Datapoint>;
+export type Datapoints = Items<Datapoint>;
 
 export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
@@ -129,9 +140,9 @@ export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   };
 }
 
-export interface RequestParams {
+export interface RequestParams<DataType = any> {
   path: string;
-  data: any;
+  data: DataType;
   method: HttpMethod;
   params?: { [s: string]: any };
   requestId?: string;
@@ -150,6 +161,13 @@ export type DataQueryError = {
     status: number;
   };
 };
+
+export type QueriesData = {
+  items: DataQueryRequestItem[];
+  target: QueryTarget;
+}[];
+
+export type ResponseMetadata = { labels: string[]; target: QueryTarget };
 
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
@@ -178,6 +196,9 @@ export type DataQueryRequestItem = {
   granularity?: string;
   aggregates?: string[];
 } & IdEither;
+
+export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
+export type Granularity = Pick<DataQueryRequest, 'granularity'>;
 
 export interface DataQueryRequest {
   items: DataQueryRequestItem[];
@@ -253,7 +274,7 @@ export interface Event {
   sourceId: string;
 }
 
-export type Events = ItemsResponse<Event>;
+export type Events = Items<Event>;
 
 export type DataEvents = DataResponse<Events>;
 
@@ -263,11 +284,11 @@ export interface DataResponse<T> {
   data: T;
 }
 
-export type ItemsResponse<T> = {
+export type Items<T = object> = {
   items: T[];
 };
 
-export type Response<T> = DataResponse<{
+export type Response<T = object> = DataResponse<{
   items: T[];
 }>;
 
