@@ -383,12 +383,17 @@ describe('Datasource Query', () => {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
     });
+
+    it('should replace filter assetQuery [[variable]] with its value', () => {
+      expect(backendSrvMock.datasourceRequest.mock.calls[3][0].data.filter.assetIds[0]).toEqual(
+        '123'
+      );
+    });
+
     it('should return correct datapoints and labels', () => {
       expect(result).toMatchSnapshot();
     });
-    it('should call templateSrv.replace the correct number of times', () => {
-      expect(templateSrvMock.replace).toBeCalledTimes(20);
-    });
+
     it('should display errors for malformed queries', () => {
       expect(targetError1.error).toBe('[400 ERROR] error message');
       expect(targetError2.error).toBe('Unknown error');
@@ -540,12 +545,14 @@ describe('Datasource Query', () => {
       }
     });
 
-    it('should return correct datapoints and labels', () => {
-      expect(result).toMatchSnapshot();
+    it('should replace filter assetIds $variable with assetId', () => {
+      expect(backendSrvMock.datasourceRequest.mock.calls[4][0].data.filter.assetIds[0]).toEqual(
+        '123'
+      );
     });
 
-    it('should call templateSrv.replace the correct number of times', () => {
-      expect(templateSrvMock.replace).toBeCalledTimes(37);
+    it('should return correct datapoints and labels', () => {
+      expect(result).toMatchSnapshot();
     });
 
     it('should display errors for malformed queries', () => {
@@ -713,12 +720,12 @@ describe('Datasource Query', () => {
       }
     });
 
-    it('should return correct datapoints and labels', () => {
-      expect(result).toMatchSnapshot();
+    it('should replace [[variable]] in label', () => {
+      expect(result.data[32].target).toEqual('test timeseriesA : Timeseries1');
     });
 
-    it('should call templateSrv.replace the correct number of times', () => {
-      expect(templateSrvMock.replace).toBeCalledTimes(89);
+    it('should return correct datapoints and labels', () => {
+      expect(result).toMatchSnapshot();
     });
 
     it('should display errors for malformed queries', () => {
