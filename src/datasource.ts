@@ -74,7 +74,7 @@ export default class CogniteDatasource {
     return { data: responseData };
   }
 
-  private async fetchTimeseriesForTargets(
+  public async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions
   ): Promise<MetaResponses> {

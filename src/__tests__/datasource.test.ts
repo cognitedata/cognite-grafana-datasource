@@ -1,7 +1,6 @@
 import { cloneDeep } from 'lodash';
-import { getMockedDataSource } from './utils';
+import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
 import { DataQueryRequest, QueryTarget, Tab } from '../types';
-import { getDatasourceValueString } from '../utils';
 import ms from 'ms';
 
 jest.mock('grafana/app/core/utils/datemath');
@@ -10,31 +9,6 @@ jest.mock('../cache');
 type QueryTargetLike = Partial<QueryTarget>;
 
 const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
-
-function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
-  const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
-  const datapoints = [0, 1, 2, 3, 4].map(i => ({
-    timestamp: i * ms('10m') + 1549336675000,
-    [aggrStr]: i,
-  }));
-  const itemsArr = items.map(({ externalId }) => ({
-    datapoints,
-    externalId,
-  }));
-  return getItemsResponseObject(itemsArr, aggregates && aggrStr);
-}
-
-function getItemsResponseObject(items, aggregates?: string) {
-  const response = {
-    data: {
-      items,
-    },
-    config: {
-      data: { aggregates },
-    },
-  };
-  return response;
-}
 
 const tsError = {
   status: 400,
@@ -66,27 +40,40 @@ describe('Datasource Query', () => {
   });
 
   describe('Given an older queryTarget format', () => {
-    let result;
+    let results;
+    const externalId = 'Timeseries123';
+    const aggregates = ['average'];
+    const items = [{ externalId }];
     const oldTarget: QueryTargetLike = {
-      aggregation: 'average',
+      aggregation: aggregates[0],
+      target: externalId,
       refId: 'A',
-      target: 'Timeseries123',
     };
+    const [start, end] = [+options.range.from, +options.range.to];
 
-    beforeAll(async () => {
-      options.targets = [oldTarget];
+    it('should generate the correct query', async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
         .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
-      result = await ds.query(options);
+      results = await ds.fetchTimeseriesForTargets([oldTarget] as any, options);
+
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
+      expect(backendSrvMock.datasourceRequest.mock.calls[0][0].data).toEqual({
+        end,
+        start,
+        items,
+        aggregates,
+        limit: 10000,
+        granularity: '30s',
+      });
     });
 
-    it('should generate the correct query', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
-    });
-    it('should return datapoints and the default label', () => {
-      expect(result).toMatchSnapshot();
+    it('should give correct meta responses', async () => {
+      expect(results.succeded[0].metadata).toEqual({
+        target: oldTarget,
+        labels: [''],
+      });
+      expect(results.succeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
     });
   });
 

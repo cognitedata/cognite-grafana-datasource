@@ -534,56 +534,6 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given an older queryTarget format should generate the correct query 1`] = `
-Object {
-  "data": Object {
-    "aggregates": Array [
-      "average",
-    ],
-    "end": 1549338475000,
-    "granularity": "30s",
-    "items": Array [
-      Object {
-        "externalId": "Timeseries123",
-      },
-    ],
-    "limit": 10000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_1_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given an older queryTarget format should return datapoints and the default label 1`] = `
-Object {
-  "data": Array [
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "average Timeseries123",
-    },
-  ],
-}
-`;
-
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {

@@ -1,5 +1,6 @@
-import { datapoints2Tuples, promiser } from '../cdfDatasource';
+import { datapoints2Tuples, promiser, reduceTimeseries } from '../cdfDatasource';
 import { filterEmptyQueryTargets } from '../datasource';
+import { getDataqueryResponse, getMeta } from './utils';
 import { Tab, QueryTarget } from '../types';
 
 const { Asset, Custom, Timeseries } = Tab;
@@ -116,6 +117,23 @@ describe('CDF datasource', () => {
           'aggregate'
         )
       ).toEqual([[2, 1], [2, 1]]);
+    });
+  });
+
+  describe('reduce timeseries', () => {
+    it('should return datapoints and the default label', () => {
+      const metaResponses: any[] = [
+        {
+          result: getDataqueryResponse({
+            items: [{ externalId: 'Timeseries123' }],
+            aggregates: ['average'],
+          }),
+          metadata: getMeta('Timeseries123', 'average', ['']),
+        },
+      ];
+      const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
+      expect(reduced.datapoints).toEqual([[0, 1549336675000], [1, 1549337275000]]);
+      expect(reduced.target).toEqual('average Timeseries123');
     });
   });
 
