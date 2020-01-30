@@ -195,7 +195,8 @@ export type DataQueryRequestItem = {
   limit?: number;
   granularity?: string;
   aggregates?: string[];
-} & IdEither;
+  externalId: string;
+};
 
 export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
 export type Granularity = Pick<DataQueryRequest, 'granularity'>;

@@ -2,33 +2,24 @@ import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { DataQueryRequest, QueryTarget, Tab } from '../types';
 import { getDatasourceValueString } from '../utils';
+import ms from 'ms';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
 
 const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
 
-function getDataqueryResponse(request: DataQueryRequest) {
-  const items = request.items;
-  const itemsArr = [];
-  const aggregation = getDatasourceValueString(
-    request.aggregates ? request.aggregates[0] : undefined
-  );
-
-  for (const item of items) {
-    const datapoints = [1549336675000, 1549337275000, 1549337875000, 1549338475000].map(
-      (timestamp, i) => {
-        const obj = { timestamp };
-        obj[aggregation] = i;
-        return obj;
-      }
-    );
-    itemsArr.push({
-      datapoints,
-      externalId: 'externalId' in item ? item.externalId : item.id,
-    });
-  }
-  return getItemsResponseObject(itemsArr, request.aggregates ? aggregation : undefined);
+function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
+  const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
+  const datapoints = [0, 1, 2, 3, 4].map(i => ({
+    timestamp: i * ms('10m') + 1549336675000,
+    [aggrStr]: i,
+  }));
+  const itemsArr = items.map(({ externalId }) => ({
+    datapoints,
+    externalId,
+  }));
+  return getItemsResponseObject(itemsArr, aggregates && aggrStr);
 }
 
 function getItemsResponseObject(items, aggregates?: string) {
