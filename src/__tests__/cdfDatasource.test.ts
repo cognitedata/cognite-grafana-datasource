@@ -1,12 +1,15 @@
 import { datapoints2Tuples, promiser } from '../cdfDatasource';
 import { filterEmptyQueryTargets } from '../datasource';
+import { Tab, QueryTarget } from '../types';
+
+const { Asset, Custom, Timeseries } = Tab;
 
 describe('CDF datasource', () => {
   describe('filterQueryTargets', () => {
     const normalTargets = [
       {
         target: '',
-        tab: 'Asset',
+        tab: Asset,
         assetQuery: {
           target: 'some id',
         },
@@ -14,7 +17,7 @@ describe('CDF datasource', () => {
       {
         target: 'timeseriesID',
       },
-    ];
+    ] as QueryTarget[];
     const normalTargetsResponse = normalTargets.map((target: any) => ({
       ...target,
       warning: '',
@@ -30,24 +33,24 @@ describe('CDF datasource', () => {
     });
 
     it('should filter if hide == true', () => {
-      expect(filterEmptyQueryTargets([{ hide: true }])).toEqual([]);
+      expect(filterEmptyQueryTargets([{ hide: true } as QueryTarget])).toEqual([]);
     });
 
     it('should filter out empty asset targets', () => {
       const targets = [
         {
           target: '',
-          tab: 'Custom',
+          tab: Custom,
         },
         {
           target: '',
-          tab: 'Asset',
+          tab: Asset,
           assetQuery: {
             target: '',
           },
         },
         ...normalTargets,
-      ];
+      ] as QueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargetsResponse);
     });
 
@@ -61,12 +64,41 @@ describe('CDF datasource', () => {
           target: '',
         },
         ...normalTargets,
-      ];
+      ] as QueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargetsResponse);
     });
 
     it('should not filter valid targets', () => {
       expect(filterEmptyQueryTargets(normalTargets)).toEqual(normalTargetsResponse);
+    });
+
+    it('should filter out all empty (different types)', async () => {
+      const emptyTimeseries: Partial<QueryTarget> = {
+        target: 'Start typing tag id here',
+        tab: Timeseries,
+        assetQuery: {
+          target: '',
+          timeseries: [],
+          includeSubtrees: false,
+          func: '',
+        },
+      };
+      const emptyAsset: Partial<QueryTarget> = {
+        ...emptyTimeseries,
+        target: '',
+        tab: Asset,
+      };
+      const emptyCustom: Partial<QueryTarget> = {
+        ...emptyTimeseries,
+        tab: Custom,
+        target: undefined,
+      };
+      const result = await filterEmptyQueryTargets([
+        emptyTimeseries,
+        emptyAsset,
+        emptyCustom,
+      ] as QueryTarget[]);
+      expect(result).toEqual([]);
     });
   });
 

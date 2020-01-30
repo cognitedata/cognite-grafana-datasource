@@ -332,7 +332,7 @@ export default class CogniteDatasource {
   }
 }
 
-export function filterEmptyQueryTargets(targets): QueryTarget[] {
+export function filterEmptyQueryTargets(targets: QueryTarget[]): QueryTarget[] {
   // we cannot just map them because it's used for visual feedback
   // TODO: fix it when we move to react?
   targets.forEach(target => {

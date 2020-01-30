@@ -65,51 +65,6 @@ describe('Datasource Query', () => {
     options.panelId++;
   });
 
-  describe('Given no targets', () => {
-    it('should return empty data', async () => {
-      const result = await ds.query(options);
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-      expect(result).toEqual({ data: [] });
-    });
-  });
-
-  describe('Given empty targets', () => {
-    const emptyTimeseries: QueryTargetLike = {
-      refId: 'A',
-      target: 'Start typing tag id here',
-      aggregation: 'average',
-      granularity: '',
-      label: '',
-      tab: Tab.Timeseries,
-      expr: '',
-      assetQuery: {
-        target: '',
-        timeseries: [],
-        includeSubtrees: false,
-        func: '',
-      },
-    };
-    const emptyAsset: QueryTargetLike = {
-      ...emptyTimeseries,
-      refId: 'B',
-      target: '',
-      tab: Tab.Asset,
-    };
-    const emptyCustom: QueryTargetLike = {
-      ...emptyTimeseries,
-      refId: 'C',
-      tab: Tab.Custom,
-      target: undefined,
-    };
-
-    it('should return empty data', async () => {
-      options.targets = [emptyTimeseries, emptyAsset, emptyCustom];
-      const result = await ds.query(options);
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-      expect(result).toEqual({ data: [] });
-    });
-  });
-
   describe('Given an older queryTarget format', () => {
     let result;
     const oldTarget: QueryTargetLike = {
@@ -234,7 +189,6 @@ describe('Datasource Query', () => {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
-        func: undefined,
       },
     };
     const targetB: QueryTargetLike = {
@@ -247,7 +201,6 @@ describe('Datasource Query', () => {
         target: '456',
         timeseries: [],
         includeSubtrees: true,
-        func: undefined,
       },
     };
     const targetC: QueryTargetLike = {
@@ -286,7 +239,6 @@ describe('Datasource Query', () => {
         target: '000',
         timeseries: [],
         includeSubtrees: true,
-        func: undefined,
       },
     };
     const targetError1: QueryTargetLike = {
@@ -373,7 +325,6 @@ describe('Datasource Query', () => {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
-        func: undefined,
       },
       expr: 'timeseries{}',
     };
@@ -533,7 +484,6 @@ describe('Datasource Query', () => {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
-        func: undefined,
       },
       expr: 'timeseries{}',
     };
@@ -699,7 +649,6 @@ describe('Datasource Query', () => {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
-        func: undefined,
       },
     };
     const targetB: QueryTargetLike = {
@@ -708,7 +657,6 @@ describe('Datasource Query', () => {
         target: '123',
         timeseries: [],
         includeSubtrees: true,
-        func: undefined,
       },
     };
     const targetC: QueryTargetLike = {
@@ -717,7 +665,6 @@ describe('Datasource Query', () => {
         target: '456',
         timeseries: [],
         includeSubtrees: true,
-        func: undefined,
       },
     };
 
