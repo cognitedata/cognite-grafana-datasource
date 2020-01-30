@@ -7,7 +7,6 @@ import {
   TimeSeriesResponseItem,
   QueryTarget,
   Granularity,
-  Aggregates,
 } from './types';
 import { getAggregationDropdownString, applyFilters, splitFilters } from './utils';
 import { trim } from 'lodash';

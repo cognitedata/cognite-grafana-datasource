@@ -128,9 +128,9 @@ async function getLabelsForTarget(
 }
 
 async function getTimeseriesLabel(
-  label,
-  externalId,
-  target,
+  label: string,
+  externalId: string,
+  target: QueryTarget,
   connector: Connector
 ): Promise<string> {
   let resLabel = '';
@@ -207,7 +207,7 @@ export function reduceTimeseries(
 
 export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
-  aggregates
+  aggregates: string
 ): Tuple<number>[] {
   const prop = getDatasourceValueString(aggregates);
   return datapoints.map(d => datapoint2Tuple(d, prop));
