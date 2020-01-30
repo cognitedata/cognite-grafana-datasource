@@ -126,7 +126,7 @@ export default class CogniteDatasource {
         await this.findAssetTimeseries(target, options);
         return target.assetQuery.timeseries
           .filter(ts => ts.selected)
-          .map(ts => ({ externalId: ts.name })); // todo: remove weird mapping
+          .map(({ externalId }) => ({ externalId }));
       }
       case Tab.Custom: {
         await this.findAssetTimeseries(target, options);

@@ -111,12 +111,12 @@ async function getLabelsForTarget(
       break;
     case Tab.Custom: {
       const ts = cache.getTimeseries(options, target);
-      const useTimeseriesName = !target.label && queryList[0].expression; // if using custom functions and no label is specified just use the name of the last timeseries in the function
+      const useExternalId = !target.label && queryList[0].expression; // if using custom functions and no label is specified just use the externalId of the last timeseries in the function
       for (let i = 0, count = 0; i < ts.length && count < queryList.length; i++) {
         if (ts[i].selected) {
           count++; // todo: I don't think this count is needed actually
-          if (useTimeseriesName) {
-            labels.push(ts[i].name);
+          if (useExternalId) {
+            labels.push(ts[i].externalId);
           } else {
             labels.push(getLabelWithInjectedProps(target.label || '', ts[i]));
           }

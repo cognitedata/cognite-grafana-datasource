@@ -255,7 +255,7 @@ describe('Datasource Query', () => {
       aggregation: 'max',
       refId: 'C',
       target: '',
-      label: '{{description}}-{{name}}',
+      label: '{{description}}-{{externalId}}',
       assetQuery: {
         target: '789',
         timeseries: [],
@@ -281,7 +281,7 @@ describe('Datasource Query', () => {
       aggregation: 'average',
       refId: 'E',
       target: '',
-      label: '{{description}}-{{name}}',
+      label: '{{description}}-{{externalId}}',
       assetQuery: {
         target: '000',
         timeseries: [],
@@ -299,16 +299,16 @@ describe('Datasource Query', () => {
     };
 
     const tsResponseA = getItemsResponseObject([
-      { name: 'Timeseries123', description: 'test timeseries' },
+      { externalId: 'Timeseries123', description: 'test timeseries' },
     ]);
     const tsResponseB = getItemsResponseObject([
-      { name: 'Timeseries123', description: 'test timeseries' },
-      { name: 'Timeseries456', description: 'test timeseries' },
+      { externalId: 'Timeseries123', description: 'test timeseries' },
+      { externalId: 'Timeseries456', description: 'test timeseries' },
     ]);
     const tsResponseC = getItemsResponseObject([
-      { name: 'Timeseries123', description: 'test timeseriesA' },
-      { name: 'Timeseries456', description: 'test timeseriesB' },
-      { name: 'Timeseries789', description: 'test timeseriesC' },
+      { externalId: 'Timeseries123', description: 'test timeseriesA' },
+      { externalId: 'Timeseries456', description: 'test timeseriesB' },
+      { externalId: 'Timeseries789', description: 'test timeseriesC' },
     ]);
     const tsResponseEmpty = getItemsResponseObject([]);
 
@@ -380,23 +380,23 @@ describe('Datasource Query', () => {
     const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2'}[cv,10d]",
+        "timeseries{externalId=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2'}[cv,10d]",
       refId: 'B',
     };
     const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2',}[dv]",
+        "timeseries{externalId=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2',}[dv]",
       refId: 'C',
     };
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
-      expr: 'timeseries{name=[[TimeseriesVariable]]}[none]',
+      expr: 'timeseries{externalId=[[TimeseriesVariable]]}[none]',
       refId: 'D',
     };
     const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
-      expr: 'timeseries{name!=$TimeseriesVariable}[]',
+      expr: 'timeseries{externalId!=$TimeseriesVariable}[]',
       label: '{{description}} {{metadata.key1}}',
       refId: 'E',
     };
@@ -404,17 +404,17 @@ describe('Datasource Query', () => {
     const targetF: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
-      expr: 'timeseries{name=~".*}[]',
+      expr: 'timeseries{externalId=~".*}[]',
     };
     const targetG: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'G',
-      expr: 'timeseries{name=~".*"}[avg',
+      expr: 'timeseries{externalId=~".*"}[avg',
     };
     const targetH: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'H',
-      expr: 'timeseries{name=~".*"',
+      expr: 'timeseries{externalId=~".*"',
     };
     const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -428,32 +428,32 @@ describe('Datasource Query', () => {
     };
     const tsResponse = getItemsResponseObject([
       {
-        name: 'Timeseries1',
+        externalId: 'Timeseries1',
         description: 'test timeseriesA',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
-        name: 'Timeseries2',
+        externalId: 'Timeseries2',
         description: 'test timeseriesB',
         metadata: { key1: 'value1', key2: 'value2' },
       },
       {
-        name: 'Timeseries3',
+        externalId: 'Timeseries3',
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
       },
       {
-        name: 'Timeseries4',
+        externalId: 'Timeseries4',
         description: 'test timeseriesD',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
-        name: 'Timeseries5',
+        externalId: 'Timeseries5',
         description: 'test timeseriesE',
         metadata: { key1: 'value2', key2: 'value3' },
       },
       {
-        name: 'Test',
+        externalId: 'Test',
         description: 'test timeseriesF',
         metadata: { key1: 'value1', key2: 'value3' },
       },
@@ -552,7 +552,7 @@ describe('Datasource Query', () => {
       ...cloneDeep(targetA),
       refId: 'D',
       expr:
-        'timeseries{name=[[TimeseriesVariable]]}[none] * timeseries{name=[[TimeseriesVariable]]}[average] - timeseries{name=[[TimeseriesVariable]]}[average,10m]',
+        'timeseries{externalId=[[TimeseriesVariable]]}[none] * timeseries{externalId=[[TimeseriesVariable]]}[average] - timeseries{externalId=[[TimeseriesVariable]]}[average,10m]',
     };
     const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -574,7 +574,7 @@ describe('Datasource Query', () => {
       ...cloneDeep(targetA),
       refId: 'H',
       expr:
-        'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{name="nonexistant"}) - avg(timeseries{name="Timeseries1"}[avg]) - 3*timeseries{}[]',
+        'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{externalId="nonexistant"}) - avg(timeseries{externalId="Timeseries1"}[avg]) - 3*timeseries{}[]',
     };
     const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -584,43 +584,43 @@ describe('Datasource Query', () => {
     const targetJ: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'J',
-      expr: 'timeseries{name=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
+      expr: 'timeseries{externalId=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
       label: '{{description}} : [[TimeseriesVariable]]',
     };
 
     const tsResponse = getItemsResponseObject([
       {
-        name: 'Timeseries1',
+        externalId: 'Timeseries1',
         id: 12,
         description: 'test timeseriesA',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
-        name: 'Timeseries2',
+        externalId: 'Timeseries2',
         id: 34,
         description: 'test timeseriesB',
         metadata: { key1: 'value1', key2: 'value2' },
       },
       {
-        name: 'Timeseries3',
+        externalId: 'Timeseries3',
         id: 56,
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
       },
       {
-        name: 'Timeseries4',
+        externalId: 'Timeseries4',
         id: 78,
         description: 'test timeseriesD',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
-        name: 'Timeseries5',
+        externalId: 'Timeseries5',
         id: 90,
         description: 'test timeseriesE',
         metadata: { key1: 'value2', key2: 'value3' },
       },
       {
-        name: 'Test',
+        externalId: 'Test',
         id: 123,
         description: 'test timeseriesF',
         metadata: { key1: 'value1', key2: 'value3' },
@@ -722,11 +722,11 @@ describe('Datasource Query', () => {
     };
 
     const tsResponseA = getItemsResponseObject([
-      { name: 'Timeseries123', description: 'test timeseries' },
+      { externalId: 'Timeseries123', description: 'test timeseries' },
     ]);
     const tsResponseB = getItemsResponseObject([
-      { name: 'Timeseries123', description: 'test timeseries' },
-      { name: 'Timeseries456', description: 'test timeseries' },
+      { externalId: 'Timeseries123', description: 'test timeseries' },
+      { externalId: 'Timeseries456', description: 'test timeseries' },
     ]);
     const tsResponseEmpty = getItemsResponseObject([]);
 

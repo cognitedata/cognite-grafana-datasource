@@ -27,7 +27,7 @@ export const parseExpression = (
     const filterOptions = getAndApplyFilterOptions(trimmedExpr, templateSrv, options, timeseries);
     target.aggregation = getAggregationDropdownString(filterOptions.aggregation);
     target.granularity = filterOptions.granularity;
-    return timeseries.filter(ts => ts.selected).map(ts => ({ externalId: ts.name }));
+    return timeseries.filter(ts => ts.selected).map(({ externalId }) => ({ externalId }));
   }
 
   const exprWithSpecialFunctions = parseSpecialFunctions(
@@ -37,13 +37,7 @@ export const parseExpression = (
     templateSrv
   );
 
-  return createDataQueryRequestItems(
-    exprWithSpecialFunctions,
-    options,
-    timeseries,
-    templateSrv,
-    ''
-  );
+  return createDataQueryRequestItems(exprWithSpecialFunctions, options, timeseries, templateSrv);
 };
 
 const parseSpecialFunctions = (
@@ -101,7 +95,7 @@ const createDataQueryRequestItems = (
   options: QueryOptions,
   timeseries: TimeSeriesResponseItem[],
   templateSrv: TemplateSrv,
-  name: string
+  name: string = ''
 ): DataQueryRequestItem[] => {
   let dataItems: DataQueryRequestItem[] = [];
   // match timeseries{}[] or timeseries{}
@@ -144,7 +138,13 @@ const createDataQueryRequestItems = (
       }
 
       dataItems = dataItems.concat(
-        createDataQueryRequestItems(newExpr, options, timeseries, templateSrv, name || ts.name)
+        createDataQueryRequestItems(
+          newExpr,
+          options,
+          timeseries,
+          templateSrv,
+          name || ts.externalId
+        )
       );
     }
   }

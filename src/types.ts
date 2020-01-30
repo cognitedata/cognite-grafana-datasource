@@ -29,7 +29,9 @@ export enum ParseType {
 }
 
 export interface TimeSeriesResponseItem {
-  name: string;
+  id: number;
+  externalId?: string;
+  name?: string;
   isString?: boolean;
   metadata?: object;
   unit?: string;
@@ -38,7 +40,6 @@ export interface TimeSeriesResponseItem {
   description?: string;
   source?: string;
   sourceId?: string;
-  id: number;
   createdTime: number;
   lastUpdatedTime: number;
   selected: boolean;
