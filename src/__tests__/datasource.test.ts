@@ -7,6 +7,8 @@ import ms from 'ms';
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
 
+type QueryTargetLike = Partial<QueryTarget>;
+
 const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
 
 function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
@@ -52,7 +54,7 @@ describe('Datasource Query', () => {
       to: '1549338475000',
     },
     interval: '30s',
-    intervalMs: 30000,
+    intervalMs: ms('30s'),
     maxDataPoints: 760,
     format: 'json',
     panelId: 1,
@@ -72,7 +74,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given empty targets', () => {
-    const emptyTimeseries: QueryTarget = {
+    const emptyTimeseries: QueryTargetLike = {
       refId: 'A',
       target: 'Start typing tag id here',
       aggregation: 'average',
@@ -86,17 +88,14 @@ describe('Datasource Query', () => {
         includeSubtrees: false,
         func: '',
       },
-      error: undefined,
-      hide: undefined,
-      warning: undefined,
     };
-    const emptyAsset: QueryTarget = {
+    const emptyAsset: QueryTargetLike = {
       ...emptyTimeseries,
       refId: 'B',
       target: '',
       tab: Tab.Asset,
     };
-    const emptyCustom: QueryTarget = {
+    const emptyCustom: QueryTargetLike = {
       ...emptyTimeseries,
       refId: 'C',
       tab: Tab.Custom,
@@ -113,18 +112,10 @@ describe('Datasource Query', () => {
 
   describe('Given an older queryTarget format', () => {
     let result;
-    const oldTarget: QueryTarget = {
+    const oldTarget: QueryTargetLike = {
       aggregation: 'average',
       refId: 'A',
       target: 'Timeseries123',
-      granularity: undefined,
-      label: undefined,
-      tab: undefined,
-      error: undefined,
-      hide: undefined,
-      assetQuery: undefined,
-      expr: undefined,
-      warning: undefined,
     };
 
     beforeAll(async () => {
@@ -146,27 +137,20 @@ describe('Datasource Query', () => {
 
   describe('Given "Select Timeseries" queries', () => {
     let result;
-    const tsTargetA: QueryTarget = {
+    const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: 'Timeseries123',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Timeseries,
-      error: undefined,
-      hide: undefined,
-      assetQuery: undefined,
-      expr: undefined,
-      warning: undefined,
     };
-    const tsTargetB: QueryTarget = {
+    const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
       aggregation: 'count',
       refId: 'B',
       target: 'Timeseries456',
       granularity: '20m',
     };
-    const tsTargetC: QueryTarget = {
+    const tsTargetC: QueryTargetLike = {
       ...tsTargetA,
       aggregation: 'step',
       refId: 'C',
@@ -202,26 +186,19 @@ describe('Datasource Query', () => {
 
   describe('Given "Select Timeseries" queries with errors', () => {
     let result;
-    const tsTargetA: QueryTarget = {
+    const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: 'Timeseries123',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Timeseries,
-      error: undefined,
-      hide: undefined,
-      assetQuery: undefined,
-      expr: undefined,
-      warning: undefined,
     };
-    const tsTargetB = {
+    const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
       refId: 'B',
     };
 
     beforeAll(async () => {
-      options.intervalMs = 60000;
+      options.intervalMs = ms('1m');
       options.targets = [tsTargetA, tsTargetB];
       backendSrvMock.datasourceRequest = jest
         .fn()
@@ -248,25 +225,19 @@ describe('Datasource Query', () => {
 
   describe('Given "Select Timeseries from Asset" queries', () => {
     let result;
-    const targetA: QueryTarget = {
+    const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: '',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Asset,
-      error: undefined,
-      hide: undefined,
       assetQuery: {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
         func: undefined,
       },
-      expr: undefined,
-      warning: undefined,
     };
-    const targetB: QueryTarget = {
+    const targetB: QueryTargetLike = {
       ...targetA,
       aggregation: 'min',
       refId: 'B',
@@ -279,7 +250,7 @@ describe('Datasource Query', () => {
         func: undefined,
       },
     };
-    const targetC: QueryTarget = {
+    const targetC: QueryTargetLike = {
       ...targetA,
       aggregation: 'max',
       refId: 'C',
@@ -292,7 +263,7 @@ describe('Datasource Query', () => {
         func: 'should not be evaluated',
       },
     };
-    const targetD: QueryTarget = {
+    const targetD: QueryTargetLike = {
       ...targetA,
       aggregation: 'tv',
       refId: 'D',
@@ -305,7 +276,7 @@ describe('Datasource Query', () => {
         func: 'should not be evaluated',
       },
     };
-    const targetEmpty: QueryTarget = {
+    const targetEmpty: QueryTargetLike = {
       ...targetA,
       aggregation: 'average',
       refId: 'E',
@@ -318,11 +289,11 @@ describe('Datasource Query', () => {
         func: undefined,
       },
     };
-    const targetError1: QueryTarget = {
+    const targetError1: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'E',
     };
-    const targetError2: QueryTarget = {
+    const targetError2: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
     };
@@ -342,7 +313,7 @@ describe('Datasource Query', () => {
     const tsResponseEmpty = getItemsResponseObject([]);
 
     beforeAll(async () => {
-      options.intervalMs = 360000;
+      options.intervalMs = ms('6m');
       options.targets = [
         targetA,
         targetB,
@@ -393,15 +364,11 @@ describe('Datasource Query', () => {
 
   describe('Given custom queries', () => {
     let result;
-    const targetA: QueryTarget = {
+    const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: '',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Custom,
-      error: undefined,
-      hide: undefined,
       assetQuery: {
         target: '123',
         timeseries: [],
@@ -409,53 +376,52 @@ describe('Datasource Query', () => {
         func: undefined,
       },
       expr: 'timeseries{}',
-      warning: undefined,
     };
-    const targetB: QueryTarget = {
+    const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
         "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2'}[cv,10d]",
       refId: 'B',
     };
-    const targetC: QueryTarget = {
+    const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
         "timeseries{name=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2',}[dv]",
       refId: 'C',
     };
-    const targetD: QueryTarget = {
+    const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr: 'timeseries{name=[[TimeseriesVariable]]}[none]',
       refId: 'D',
     };
-    const targetE: QueryTarget = {
+    const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr: 'timeseries{name!=$TimeseriesVariable}[]',
       label: '{{description}} {{metadata.key1}}',
       refId: 'E',
     };
     targetE.assetQuery.target = '$AssetVariable';
-    const targetF: QueryTarget = {
+    const targetF: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
       expr: 'timeseries{name=~".*}[]',
     };
-    const targetG: QueryTarget = {
+    const targetG: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'G',
       expr: 'timeseries{name=~".*"}[avg',
     };
-    const targetH: QueryTarget = {
+    const targetH: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'H',
       expr: 'timeseries{name=~".*"',
     };
-    const targetI: QueryTarget = {
+    const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'I',
       expr: '',
     };
-    const targetJ: QueryTarget = {
+    const targetJ: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'J',
       expr: '-',
@@ -494,7 +460,7 @@ describe('Datasource Query', () => {
     ]);
 
     beforeAll(async () => {
-      options.intervalMs = 86400000;
+      options.intervalMs = ms('1d');
       options.targets = [
         targetA,
         targetB,
@@ -558,15 +524,11 @@ describe('Datasource Query', () => {
 
   describe('Given custom queries with functions', () => {
     let result;
-    const targetA: QueryTarget = {
+    const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: '',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Custom,
-      error: undefined,
-      hide: undefined,
       assetQuery: {
         target: '123',
         timeseries: [],
@@ -574,53 +536,52 @@ describe('Datasource Query', () => {
         func: undefined,
       },
       expr: 'timeseries{}',
-      warning: undefined,
     };
-    const targetB: QueryTarget = {
+    const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'B',
       expr: '       timeseries{} + timeseries{} + [123]   ',
     };
-    const targetC: QueryTarget = {
+    const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'C',
       expr: 'timeseries{}[] * timeseries{}[average]- timeseries{}[average,10s]',
       label: '{{description}} {{metadata.key1}}',
     };
-    const targetD: QueryTarget = {
+    const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'D',
       expr:
         'timeseries{name=[[TimeseriesVariable]]}[none] * timeseries{name=[[TimeseriesVariable]]}[average] - timeseries{name=[[TimeseriesVariable]]}[average,10m]',
     };
-    const targetE: QueryTarget = {
+    const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'E',
       expr: 'timeseries{asdaklj}',
     };
-    const targetF: QueryTarget = {
+    const targetF: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
       expr: '1+1',
     };
-    const targetG: QueryTarget = {
+    const targetG: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'G',
       expr: 'SUM(timeseries{})',
       label: 'SUM',
     };
-    const targetH: QueryTarget = {
+    const targetH: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'H',
       expr:
         'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{name="nonexistant"}) - avg(timeseries{name="Timeseries1"}[avg]) - 3*timeseries{}[]',
     };
-    const targetI: QueryTarget = {
+    const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'I',
       expr: 'max(max(timeseries{},5),5) + max(timeseries{})',
     };
-    const targetJ: QueryTarget = {
+    const targetJ: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'J',
       expr: 'timeseries{name=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
@@ -667,7 +628,7 @@ describe('Datasource Query', () => {
     ]);
 
     beforeAll(async () => {
-      options.intervalMs = 900000000;
+      options.intervalMs = ms('2.5h');
       options.targets = [
         targetA,
         targetB,
@@ -729,25 +690,19 @@ describe('Datasource Query', () => {
 
   describe('Given multiple "Select Timeseries from Asset" queries in a row', () => {
     const results = [];
-    const targetA: QueryTarget = {
+    const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: '',
-      granularity: undefined,
-      label: undefined,
       tab: Tab.Asset,
-      error: undefined,
-      hide: undefined,
       assetQuery: {
         target: '123',
         timeseries: [],
         includeSubtrees: false,
         func: undefined,
       },
-      expr: undefined,
-      warning: undefined,
     };
-    const targetB: QueryTarget = {
+    const targetB: QueryTargetLike = {
       ...targetA,
       assetQuery: {
         target: '123',
@@ -756,7 +711,7 @@ describe('Datasource Query', () => {
         func: undefined,
       },
     };
-    const targetC: QueryTarget = {
+    const targetC: QueryTargetLike = {
       ...targetA,
       assetQuery: {
         target: '456',
@@ -776,7 +731,7 @@ describe('Datasource Query', () => {
     const tsResponseEmpty = getItemsResponseObject([]);
 
     beforeAll(async () => {
-      options.intervalMs = 360000;
+      options.intervalMs = ms('6m');
       options.targets = [targetA];
       backendSrvMock.datasourceRequest = jest
         .fn()
