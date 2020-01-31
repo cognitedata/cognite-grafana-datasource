@@ -19,8 +19,12 @@ export class CogniteAnnotationsQueryCtrl {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.expr
         } | Expected format: event{param=value,...}`;
-      } else if (!splitFilters(match[1], errorObj, true)) {
-        this.annotation.error = `${errorObj.error} | Expected format: event{param=value,...}`;
+      } else {
+        try {
+          splitFilters(match[1], true);
+        } catch (error) {
+          this.annotation.error = `${error.message} | Expected format: event{param=value,...}`;
+        }
       }
     }
     // check the filter expression (if it exists)
@@ -30,10 +34,14 @@ export class CogniteAnnotationsQueryCtrl {
         this.annotation.error = `Error: Unable to parse ${
           this.annotation.filter
         } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
-      } else if (!splitFilters(match[1], errorObj, false)) {
-        this.annotation.error = `${
-          errorObj.error
-        } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
+      } else {
+        try {
+          splitFilters(match[1], false);
+        } catch (error) {
+          this.annotation.error = `${
+            error.message
+          } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
+        }
       }
     }
   }

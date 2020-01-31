@@ -1,20 +1,10 @@
-import _ from 'lodash';
+import { isNil, omitBy, get } from 'lodash';
 import { Filter, FilterType, QueryOptions, QueryTarget } from './types';
+import { stringify } from 'query-string';
+import ms from 'ms';
 
-// Converts an object to a query string, ignores properties with undefined/null values
-// TODO: maybe clean this up a bit, might break easily
 export function getQueryString(obj: any) {
-  return _.reduce(
-    obj,
-    (result: string, val: any, key: string) => {
-      return _.isNil(val)
-        ? result
-        : _.isArray(val)
-        ? `${result + [key, val].map(encodeURIComponent).join('=[')}]&`
-        : `${result + [key, val].map(encodeURIComponent).join('=')}&` + '';
-    },
-    ''
-  ).slice(0, -1);
+  return stringify(omitBy(obj, isNil));
 }
 
 export function getDatasourceValueString(aggregation: string): string {
@@ -45,7 +35,7 @@ export function getAggregationDropdownString(aggregation: string): string {
   return val;
 }
 
-export function splitFilters(filterString: string, filtersOptions: any, onlyAllowEquals: boolean) {
+export function splitFilters(filterString: string, onlyAllowEquals: boolean) {
   const filterStrings = [];
   // ignore commas that are within these characters
   const openChars = ['(', '[', '{', "'", '"'];
@@ -59,12 +49,10 @@ export function splitFilters(filterString: string, filtersOptions: any, onlyAllo
         continue;
       }
       if (onlyAllowEquals && !filter.match(/[^!]=[^~]/)) {
-        filtersOptions.error = `ERROR: Unable to parse '${filter}'. Only strict equality (=) is allowed.`;
-        return undefined;
+        throw new Error(`ERROR: Unable to parse '${filter}'. Only strict equality (=) is allowed.`);
       }
       if (filter.indexOf('=') === -1 && filter.indexOf('~') === -1) {
-        filtersOptions.error = `ERROR: Could not parse: '${filter}'. Missing a comparator (=,!=,=~,!~).`;
-        return undefined;
+        throw new Error(`ERROR: Could not parse: '${filter}'. Missing a comparator (=,!=,=~,!~).`);
       }
       filterStrings.push(filter);
       start = i + 1;
@@ -77,18 +65,20 @@ export function splitFilters(filterString: string, filtersOptions: any, onlyAllo
         i = c;
         continue;
       } else {
-        filtersOptions.error = `ERROR: Could not find closing ' ${
-          closeChars[o]
-        } ' while parsing '${filterString.substring(start)}'.`;
-        return undefined;
+        throw new Error(
+          `ERROR: Could not find closing ' ${
+            closeChars[o]
+          } ' while parsing '${filterString.substring(start)}'.`
+        );
       }
     }
     const c = closeChars.findIndex(x => x === filterString[i]);
     if (c >= 0) {
-      filtersOptions.error = `ERROR: Unexpected character ' ${
-        closeChars[c]
-      } ' while parsing '${filterString.substring(start)}'.`;
-      return undefined;
+      throw new Error(
+        `ERROR: Unexpected character ' ${closeChars[c]} ' while parsing '${filterString.substring(
+          start
+        )}'.`
+      );
     }
   }
   return filterStrings;
@@ -99,27 +89,27 @@ export function applyFilters(filters: Filter[], objects: any): void {
     obj.selected = true;
     for (const filter of filters) {
       if (filter.type === FilterType.RegexEquals) {
-        const val = _.get(obj, filter.property);
+        const val = get(obj, filter.property);
         const regex = `^${filter.value}$`;
         if (val === undefined || !val.match(regex)) {
           obj.selected = false;
           break;
         }
       } else if (filter.type === FilterType.RegexNotEquals) {
-        const val = _.get(obj, filter.property);
+        const val = get(obj, filter.property);
         const regex = `^${filter.value}$`;
         if (val === undefined || val.match(regex)) {
           obj.selected = false;
           break;
         }
       } else if (filter.type === FilterType.NotEquals) {
-        const val = _.get(obj, filter.property);
+        const val = get(obj, filter.property);
         if (val === undefined || String(val) === filter.value) {
           obj.selected = false;
           break;
         }
       } else if (filter.type === FilterType.Equals) {
-        const val = _.get(obj, filter.property);
+        const val = get(obj, filter.property);
         if (val === undefined || String(val) !== filter.value) {
           obj.selected = false;
           break;
@@ -129,24 +119,8 @@ export function applyFilters(filters: Filter[], objects: any): void {
   }
 }
 
-export function intervalToGranularity(intervalMs: number): string {
-  const seconds = Math.round(intervalMs / 1000.0);
-  if (seconds <= 60) {
-    if (seconds <= 1) {
-      return '1s';
-    }
-    return `${seconds}s`;
-  }
-  const minutes = Math.round(intervalMs / 1000.0 / 60.0);
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const hours = Math.round(intervalMs / 1000.0 / 60.0 / 60.0);
-  if (hours <= 24) {
-    return `${hours}h`;
-  }
-  const days = Math.round(intervalMs / 1000.0 / 60.0 / 60.0 / 24.0);
-  return `${days}d`;
+export function ms2String(milliseconds: number): string {
+  return ms(milliseconds < 1000 ? 1000 : milliseconds);
 }
 
 export function timeseriesHash(options: QueryOptions, target: QueryTarget) {
