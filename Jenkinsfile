@@ -53,7 +53,7 @@ podTemplate(
         }
 
         stage('Test') {
-          sh('yarn test')
+          sh('yarn test --maxWorkers=1')
         }
       }
 
