@@ -359,7 +359,11 @@ Object {
 exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
 Object {
   "data": Object {
-    "externalId": "Timeseries789",
+    "items": Array [
+      Object {
+        "externalId": "Timeseries789",
+      },
+    ],
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",

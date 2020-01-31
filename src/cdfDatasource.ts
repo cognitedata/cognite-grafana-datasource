@@ -128,15 +128,15 @@ async function getLabelsForTarget(
 }
 
 async function getTimeseriesLabel(
-  label: string,
+  label: string = '',
   externalId: string,
   target: QueryTarget,
   connector: Connector
 ): Promise<string> {
-  let resLabel = '';
+  let resLabel = label;
   if (label && label.match(/{{.*}}/)) {
     try {
-      const [ts] = await getTimeseries({ externalId }, target, connector);
+      const [ts] = await getTimeseries({ items: [{ externalId }] }, target, connector);
       resLabel = getLabelWithInjectedProps(label, ts);
     } catch {}
   }
@@ -156,7 +156,7 @@ export async function getTimeseries(
   connector: Connector
 ): Promise<TimeSeriesResponseItem[]> {
   try {
-    const endpoint = 'id' in filter || 'externalId' in filter ? 'byids' : 'list';
+    const endpoint = 'items' in filter ? 'byids' : 'list';
 
     const items = await connector.fetchItems<TimeSeriesResponseItem>({
       path: `/timeseries/${endpoint}`,

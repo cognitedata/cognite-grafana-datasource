@@ -305,7 +305,7 @@ export type TimeseriesFilterQuery =
       };
       includeMetadata?: boolean;
     }
-  | IdEither;
+  | { items: [IdEither] };
 
 export interface VariableQueryData {
   query: string;
