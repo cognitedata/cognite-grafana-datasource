@@ -216,9 +216,9 @@ export default class CogniteDatasource {
       params: options,
     });
 
-    return items.map(({ name, id, description }) => ({
-      text: description ? `${name} (${description})` : name,
-      value: type === Tab.Asset ? `${id}` : name,
+    return items.map(({ externalId, id, description }) => ({
+      text: description ? `${externalId} (${description})` : externalId,
+      value: type === Tab.Asset ? `${id}` : externalId,
     }));
   }
 

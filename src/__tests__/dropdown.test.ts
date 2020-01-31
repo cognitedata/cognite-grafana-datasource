@@ -18,10 +18,10 @@ function getTimeseriesResponse(items) {
 const assetsResponse = {
   data: {
     items: [
-      { id: 123, name: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
-      { id: 456, name: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
-      { id: 789, name: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
-      { id: 999, name: 'foo', description: 'bar', metadata: { key1: 'value1' } },
+      { id: 123, externalId: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
+      { id: 456, externalId: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
+      { id: 789, externalId: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
+      { id: 999, externalId: 'foo', description: 'bar', metadata: { key1: 'value1' } },
     ],
   },
 };
@@ -29,27 +29,27 @@ const assetsResponse = {
 describe('Dropdown Options Query', () => {
   const tsResponse = getTimeseriesResponse([
     {
-      name: 'Timeseries1',
+      externalId: 'Timeseries1',
       description: 'testA',
     },
     {
-      name: 'Timeseries2',
+      externalId: 'Timeseries2',
       description: 'testB',
     },
     {
-      name: 'Timeseries3',
+      externalId: 'Timeseries3',
       description: 'testC',
     },
     {
-      name: 'Timeseries4',
+      externalId: 'Timeseries4',
       description: 'testD',
     },
     {
-      name: 'Timeseries5',
+      externalId: 'Timeseries5',
       description: 'testE',
     },
     {
-      name: 'Test',
+      externalId: 'Test',
     },
   ]);
 
@@ -75,7 +75,9 @@ describe('Dropdown Options Query', () => {
   describe('Given a request for asset options', () => {
     let result;
     const response = cloneDeep(assetsResponse);
-    response.data.items = assetsResponse.data.items.filter(item => item.name.startsWith('asset'));
+    response.data.items = assetsResponse.data.items.filter(item =>
+      item.externalId.startsWith('asset')
+    );
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
@@ -97,7 +99,7 @@ describe('Dropdown Options Query', () => {
     let result;
     const response = cloneDeep(assetsResponse);
     response.data.items = assetsResponse.data.items.filter(
-      item => item.name.startsWith('asset') && item.metadata.key1 === 'value1'
+      item => item.externalId.startsWith('asset') && item.metadata.key1 === 'value1'
     );
     const optionsObj = {
       metadata: '{"key1":"value1"}',
@@ -141,7 +143,9 @@ describe('Dropdown Options Query', () => {
   describe('Given a request for timeseries options', () => {
     let result;
     const response = cloneDeep(tsResponse);
-    response.data.items = tsResponse.data.items.filter(item => item.name.startsWith('Timeseries'));
+    response.data.items = tsResponse.data.items.filter(item =>
+      item.externalId.startsWith('Timeseries')
+    );
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
