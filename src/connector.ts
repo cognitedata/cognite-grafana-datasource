@@ -1,4 +1,13 @@
-import { RequestParams, Response, HttpMethod, DataSourceRequestOptions, Items } from './types';
+import {
+  RequestParams,
+  Response,
+  HttpMethod,
+  DataSourceRequestOptions,
+  Items,
+  DataResponse,
+  CursorResponse,
+  Limit,
+} from './types';
 import { getQueryString } from './utils';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import cache from './cache';
@@ -54,6 +63,36 @@ export class Connector {
   public async fetchItems<T>(params: RequestParams) {
     const { data } = await this.fetchData<Response<T>>(params);
     return data.items;
+  }
+
+  public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
+    const maxLimit = 1000;
+    const { data: queryData } = params;
+    const fullLimit = queryData.limit;
+    const { data } = await this.fetchData<CursorResponse<T>>({
+      ...params,
+      data: {
+        ...queryData,
+        limit: Math.min(maxLimit, fullLimit),
+      },
+    });
+    let { nextCursor: cursor, items } = data;
+    while (cursor && fullLimit > items.length) {
+      const { data: current } = await this.fetchData<CursorResponse<T>>({
+        ...params,
+        data: {
+          ...queryData,
+          cursor,
+          limit: maxLimit,
+        },
+      });
+      cursor = current.nextCursor;
+      items = [...items, ...current.items];
+    }
+    if (items.length > fullLimit) {
+      items.length = fullLimit;
+    }
+    return items;
   }
 
   public request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
