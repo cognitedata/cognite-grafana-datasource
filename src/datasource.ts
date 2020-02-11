@@ -216,10 +216,13 @@ export default class CogniteDatasource {
       params: options,
     });
 
-    return items.map(({ externalId, id, description }) => ({
-      text: description ? `${externalId} (${description})` : externalId,
-      value: type === Tab.Asset ? `${id}` : externalId,
-    }));
+    return items.map(({ name, externalId, id, description }) => {
+      const displayName = name || externalId;
+      return {
+        text: description ? `${displayName} (${description})` : displayName,
+        value: type === Asset ? `${id}` : externalId,
+      };
+    });
   }
 
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
@@ -238,7 +241,7 @@ export default class CogniteDatasource {
       target.assetQuery.templatedTarget = assetId;
       const timeseries = cache.getTimeseries(options, target);
       if (!timeseries) {
-        const limit = 1000; // might need to paginate here? or say that there are more?
+        const limit = 10000; // 0.5 used to give this many. we keep it for now
         const ts = await getTimeseries({ filter, limit }, target, this.connector);
         cache.setTimeseries(
           options,

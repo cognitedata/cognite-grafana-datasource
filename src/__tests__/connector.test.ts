@@ -69,4 +69,45 @@ describe('connector', () => {
       expect(datasourceRequest).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('auto-pagination with fetchAndPaginate', () => {
+    const limit = 10000;
+    const query = {
+      path: '',
+      data: { limit, filter: {} },
+      method: HttpMethod.POST,
+    };
+    const items1000 = Array.from({ length: 1000 }, (_, i) => i);
+    const response = { data: { items: items1000, nextCursor: 'next' } };
+
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('returns all 10k elements', async () => {
+      datasourceRequest.mockImplementation(async () => response);
+      const res = await connector.fetchAndPaginate(query);
+      expect(res.length).toBe(limit);
+    });
+
+    it('returns as many as it can', async () => {
+      datasourceRequest
+        .mockImplementationOnce(async () => response)
+        .mockImplementationOnce(async () => response)
+        .mockImplementationOnce(async () => ({ data: { items: items1000.slice(500) } }));
+      const res = await connector.fetchAndPaginate(query);
+      expect(res).toEqual([...items1000, ...items1000, ...items1000.slice(500)]);
+      expect(res.length).toBe(2500);
+    });
+
+    it('returns 1000 by default', async () => {
+      datasourceRequest.mockImplementation(async () => response);
+      const res = await connector.fetchAndPaginate({
+        ...query,
+        data: { ...query.data, limit: undefined },
+      });
+      expect(res).toEqual(items1000);
+      expect(res.length).toBe(1000);
+    });
+  });
 });

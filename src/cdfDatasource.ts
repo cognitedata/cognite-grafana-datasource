@@ -17,6 +17,8 @@ import {
   QueriesData,
   SuccessResponse,
   Responses,
+  IdEither,
+  Items,
 } from './types';
 import { get, cloneDeep } from 'lodash';
 import { ms2String, getDatasourceValueString } from './utils';
@@ -38,8 +40,6 @@ export function formQueryForItems(
     return { items };
   }
   {
-    // TODO: limit used to be divided by qlChunk.length, but I am not sure it works that way
-
     const [start, end] = getRange(options.range);
     let aggregations: Aggregates & Granularity = null;
     const hasAggregates = aggregation && aggregation !== 'none';
@@ -49,12 +49,13 @@ export function formQueryForItems(
         granularity: granularity || ms2String(options.intervalMs),
       };
     }
+    const limit = Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(items.length, 100));
     return {
       ...aggregations,
       end,
       start,
       items,
-      limit: hasAggregates ? 10_000 : 100_000,
+      limit,
     };
   }
 }
@@ -151,20 +152,31 @@ function getLabelWithInjectedProps(label: string, timeseries: TimeSeriesResponse
 }
 
 export async function getTimeseries(
-  filter: TimeseriesFilterQuery,
+  data: TimeseriesFilterQuery | Items<IdEither>,
   target: QueryTarget,
   connector: Connector
 ): Promise<TimeSeriesResponseItem[]> {
   try {
-    const endpoint = 'items' in filter ? 'byids' : 'list';
+    const method = HttpMethod.POST;
+    let items: TimeSeriesResponseItem[];
 
-    const items = await connector.fetchItems<TimeSeriesResponseItem>({
-      path: `/timeseries/${endpoint}`,
-      method: HttpMethod.POST,
-      data: filter,
-    });
+    if ('items' in data) {
+      items = await connector.fetchItems({
+        data,
+        method,
+        path: `/timeseries/byids`,
+      });
+    } else {
+      items = await connector.fetchAndPaginate({
+        data,
+        method,
+        path: `/timeseries/list`,
+      });
+    }
+
     return cloneDeep(items.filter(ts => !ts.isString));
-  } catch ({ data, status }) {
+  } catch (error) {
+    const { data, status } = error;
     if (data && data.error) {
       target.error = `[${status} ERROR] ${data.error.message}`;
     } else {

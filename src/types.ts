@@ -290,22 +290,24 @@ export type Items<T = object> = {
   items: T[];
 };
 
+export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
+
 export type Response<T = object> = DataResponse<{
   items: T[];
 }>;
 
-// todo: FIX THIS TYPE
-export type TimeseriesFilterQuery =
-  | {
-      description?: string;
-      limit?: number;
-      filter?: {
-        assetSubtreeIds?: IdEither[];
-        assetIds?: string[];
-      };
-      includeMetadata?: boolean;
-    }
-  | { items: [IdEither] };
+export type TimeseriesFilterQuery = {
+  filter?: {
+    description?: string;
+    assetSubtreeIds?: IdEither[];
+    assetIds?: string[];
+  };
+  cursor?: string;
+} & Limit;
+
+export type Limit = {
+  limit?: number;
+};
 
 export interface VariableQueryData {
   query: string;
