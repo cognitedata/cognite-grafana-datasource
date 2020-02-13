@@ -120,13 +120,11 @@ export default class CogniteDatasource {
     switch (target.tab) {
       case undefined:
       case Tab.Timeseries: {
-        return [{ externalId: target.target }];
+        return [{ id: target.target }];
       }
       case Tab.Asset: {
         await this.findAssetTimeseries(target, options);
-        return target.assetQuery.timeseries
-          .filter(ts => ts.selected)
-          .map(({ externalId }) => ({ externalId }));
+        return target.assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
         await this.findAssetTimeseries(target, options);
@@ -220,7 +218,7 @@ export default class CogniteDatasource {
       const displayName = name || externalId;
       return {
         text: description ? `${displayName} (${description})` : displayName,
-        value: type === Asset ? `${id}` : externalId,
+        value: type === Tab.Timeseries ? id : id.toString(),
       };
     });
   }
@@ -348,7 +346,7 @@ export function filterEmptyQueryTargets(targets: QueryTarget[]): QueryTarget[] {
   return targets.filter(target => {
     if (target && !target.hide) {
       if (target.tab === Timeseries || target.tab === undefined) {
-        return target.target && target.target !== 'Start typing tag id here';
+        return target.target;
       }
       if (target.tab === Asset || target.tab === Custom) {
         return target.assetQuery && target.assetQuery.target;

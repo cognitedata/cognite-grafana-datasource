@@ -9,14 +9,13 @@ describe('CDF datasource', () => {
   describe('filterQueryTargets', () => {
     const normalTargets = [
       {
-        target: '',
         tab: Asset,
         assetQuery: {
           target: 'some id',
         },
       },
       {
-        target: 'timeseriesID',
+        target: 1,
       },
     ] as QueryTarget[];
     const normalTargetsResponse = normalTargets.map((target: any) => ({
@@ -58,12 +57,9 @@ describe('CDF datasource', () => {
     it('should filter out empty timeseries targets', () => {
       const targets = [
         {
-          target: 'Start typing tag id here',
           tab: 'Timeseries',
         },
-        {
-          target: '',
-        },
+        {},
         ...normalTargets,
       ] as QueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargetsResponse);
@@ -75,7 +71,6 @@ describe('CDF datasource', () => {
 
     it('should filter out all empty (different types)', async () => {
       const emptyTimeseries: Partial<QueryTarget> = {
-        target: 'Start typing tag id here',
         tab: Timeseries,
         assetQuery: {
           target: '',
@@ -86,7 +81,7 @@ describe('CDF datasource', () => {
       };
       const emptyAsset: Partial<QueryTarget> = {
         ...emptyTimeseries,
-        target: '',
+        target: 1,
         tab: Asset,
       };
       const emptyCustom: Partial<QueryTarget> = {
@@ -122,18 +117,19 @@ describe('CDF datasource', () => {
 
   describe('reduce timeseries', () => {
     it('should return datapoints and the default label', () => {
+      const id = 2;
       const metaResponses: any[] = [
         {
           result: getDataqueryResponse({
-            items: [{ externalId: 'Timeseries123' }],
+            items: [{ id }],
             aggregates: ['average'],
           }),
-          metadata: getMeta('Timeseries123', 'average', ['']),
+          metadata: getMeta(id, 'average', ['']),
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
       expect(reduced.datapoints).toEqual([[0, 1549336675000], [1, 1549337275000]]);
-      expect(reduced.target).toEqual('average Timeseries123');
+      expect(reduced.target).toEqual(`average ${id}`);
     });
   });
 

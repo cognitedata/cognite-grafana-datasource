@@ -57,7 +57,7 @@ export interface AssetQuery {
 }
 
 export interface QueryTarget extends DataQuery {
-  target: string;
+  target: number;
   aggregation: string;
   granularity: string;
   error: string;
@@ -196,7 +196,7 @@ export type DataQueryRequestItem = {
   limit?: number;
   granularity?: string;
   aggregates?: string[];
-  externalId: string;
+  id: number;
 };
 
 export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;

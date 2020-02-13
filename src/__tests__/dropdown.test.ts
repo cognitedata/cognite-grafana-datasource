@@ -29,26 +29,32 @@ const assetsResponse = {
 describe('Dropdown Options Query', () => {
   const tsResponse = getTimeseriesResponse([
     {
+      id: 1,
       externalId: 'Timeseries1',
       description: 'testA',
     },
     {
+      id: 2,
       externalId: 'Timeseries2',
       description: 'testB',
     },
     {
+      id: 3,
       externalId: 'Timeseries3',
       description: 'testC',
     },
     {
+      id: 4,
       externalId: 'Timeseries4',
       description: 'testD',
     },
     {
+      id: 5,
       externalId: 'Timeseries5',
       description: 'testE',
     },
     {
+      id: 6,
       externalId: 'Test',
     },
   ]);
@@ -143,8 +149,8 @@ describe('Dropdown Options Query', () => {
   describe('Given a request for timeseries options', () => {
     let result;
     const response = cloneDeep(tsResponse);
-    response.data.items = tsResponse.data.items.filter(item =>
-      item.externalId.startsWith('Timeseries')
+    response.data.items = tsResponse.data.items.filter(
+      item => item.description && item.description.startsWith('test')
     );
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest

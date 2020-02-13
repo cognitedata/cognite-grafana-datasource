@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { DataQueryRequest, QueryTarget, Tab } from '../types';
+import { DataQueryRequest, QueryTarget, Tab, TimeSeriesResponseItem } from '../types';
 import ms from 'ms';
 
 jest.mock('grafana/app/core/utils/datemath');
@@ -41,12 +41,12 @@ describe('Datasource Query', () => {
 
   describe('Given an older queryTarget format', () => {
     let results;
-    const externalId = 'Timeseries123';
+    const id = 123;
     const aggregates = ['average'];
-    const items = [{ externalId }];
+    const items = [{ id }];
     const oldTarget: QueryTargetLike = {
       aggregation: aggregates[0],
-      target: externalId,
+      target: id,
       refId: 'A',
     };
     const [start, end] = [+options.range.from, +options.range.to];
@@ -79,29 +79,33 @@ describe('Datasource Query', () => {
 
   describe('Given "Select Timeseries" queries', () => {
     let result;
+    const id = 789;
     const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: 'Timeseries123',
+      target: 123,
       tab: Tab.Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
       aggregation: 'count',
       refId: 'B',
-      target: 'Timeseries456',
+      target: 456,
       granularity: '20m',
     };
     const tsTargetC: QueryTargetLike = {
       ...tsTargetA,
       aggregation: 'step',
       refId: 'C',
-      target: 'Timeseries789',
-      label: '{{description}}-{{externalId}}',
+      target: id,
+      label: '{{description}}-{{id}}',
     };
 
     const tsResponse = getItemsResponseObject([
-      { externalId: 'Timeseries789', description: 'test timeseries' },
+      {
+        id,
+        description: 'test timeseries',
+      },
     ]);
 
     beforeAll(async () => {
@@ -122,16 +126,27 @@ describe('Datasource Query', () => {
       expect(backendSrvMock.datasourceRequest.mock.calls[3][0]).toMatchSnapshot();
     });
     it('should return correct datapoints and labels', () => {
-      expect(result).toMatchSnapshot();
+      const { target: targetA } = tsTargetA;
+      const { target: targetB, aggregation: aggregationB } = tsTargetB;
+      const {
+        data: {
+          items: [{ id: targetC, description }],
+        },
+      } = tsResponse;
+
+      expect(result.data[0].target).toEqual(targetA.toString());
+      expect(result.data[1].target).toEqual(`${aggregationB} ${targetB}`);
+      expect(result.data[2].target).toEqual(`${description}-${targetC}`);
     });
   });
 
   describe('Given "Select Timeseries" queries with errors', () => {
     let result;
+    const id = 123;
     const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: 'Timeseries123',
+      target: id,
       tab: Tab.Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
@@ -170,7 +185,6 @@ describe('Datasource Query', () => {
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: '',
       tab: Tab.Asset,
       assetQuery: {
         target: '123',
@@ -182,7 +196,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'min',
       refId: 'B',
-      target: 'should be ignored',
+      target: 123,
       granularity: '20m',
       assetQuery: {
         target: '456',
@@ -194,7 +208,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'max',
       refId: 'C',
-      target: '',
+      target: 123,
       label: '{{description}}-{{externalId}}',
       assetQuery: {
         target: '789',
@@ -207,7 +221,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'tv',
       refId: 'D',
-      target: '',
+      target: 123,
       label: '{{description}}',
       assetQuery: {
         target: '[[AssetVariable]]',
@@ -220,7 +234,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'average',
       refId: 'E',
-      target: '',
+      target: 123,
       label: '{{description}}-{{externalId}}',
       assetQuery: {
         target: '000',
@@ -238,16 +252,16 @@ describe('Datasource Query', () => {
     };
 
     const tsResponseA = getItemsResponseObject([
-      { externalId: 'Timeseries123', description: 'test timeseries' },
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
     ]);
     const tsResponseB = getItemsResponseObject([
-      { externalId: 'Timeseries123', description: 'test timeseries' },
-      { externalId: 'Timeseries456', description: 'test timeseries' },
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
+      { id: 456, externalId: 'Timeseries456', description: 'test timeseries' },
     ]);
     const tsResponseC = getItemsResponseObject([
-      { externalId: 'Timeseries123', description: 'test timeseriesA' },
-      { externalId: 'Timeseries456', description: 'test timeseriesB' },
-      { externalId: 'Timeseries789', description: 'test timeseriesC' },
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseriesA' },
+      { id: 456, externalId: 'Timeseries456', description: 'test timeseriesB' },
+      { id: 789, externalId: 'Timeseries789', description: 'test timeseriesC' },
     ]);
     const tsResponseEmpty = getItemsResponseObject([]);
 
@@ -306,7 +320,7 @@ describe('Datasource Query', () => {
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: '',
+      target: 123,
       tab: Tab.Custom,
       assetQuery: {
         target: '123',
@@ -366,31 +380,37 @@ describe('Datasource Query', () => {
     };
     const tsResponse = getItemsResponseObject([
       {
+        id: 1,
         externalId: 'Timeseries1',
         description: 'test timeseriesA',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
+        id: 2,
         externalId: 'Timeseries2',
         description: 'test timeseriesB',
         metadata: { key1: 'value1', key2: 'value2' },
       },
       {
+        id: 3,
         externalId: 'Timeseries3',
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
       },
       {
+        id: 4,
         externalId: 'Timeseries4',
         description: 'test timeseriesD',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
+        id: 5,
         externalId: 'Timeseries5',
         description: 'test timeseriesE',
         metadata: { key1: 'value2', key2: 'value3' },
       },
       {
+        id: 6,
         externalId: 'Test',
         description: 'test timeseriesF',
         metadata: { key1: 'value1', key2: 'value3' },
@@ -465,7 +485,7 @@ describe('Datasource Query', () => {
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: '',
+      target: 123,
       tab: Tab.Custom,
       assetQuery: {
         target: '123',
@@ -630,7 +650,7 @@ describe('Datasource Query', () => {
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
-      target: '',
+      target: 123,
       tab: Tab.Asset,
       assetQuery: {
         target: '123',
@@ -656,11 +676,11 @@ describe('Datasource Query', () => {
     };
 
     const tsResponseA = getItemsResponseObject([
-      { externalId: 'Timeseries123', description: 'test timeseries' },
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
     ]);
     const tsResponseB = getItemsResponseObject([
-      { externalId: 'Timeseries123', description: 'test timeseries' },
-      { externalId: 'Timeseries456', description: 'test timeseries' },
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
+      { id: 456, externalId: 'Timeseries456', description: 'test timeseries' },
     ]);
     const tsResponseEmpty = getItemsResponseObject([]);
 

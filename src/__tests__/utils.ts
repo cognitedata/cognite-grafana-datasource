@@ -14,15 +14,15 @@ export function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
     timestamp: i * ms('10m') + 1549336675000,
     [aggrStr]: i,
   }));
-  const itemsArr = items.map(({ externalId }) => ({
+  const itemsArr = items.map(({ id }) => ({
+    id,
     datapoints,
-    externalId,
   }));
   return getItemsResponseObject(itemsArr, aggregates && aggrStr);
 }
 
 export function getItemsResponseObject(items, aggregates?: string) {
-  const response = {
+  return {
     data: {
       items,
     },
@@ -30,7 +30,6 @@ export function getItemsResponseObject(items, aggregates?: string) {
       data: { aggregates },
     },
   };
-  return response as DataQueryRequestResponse;
 }
 
 const getBackendSrvMock = () =>
@@ -85,12 +84,12 @@ export const getMockedDataSource = () => {
   };
 };
 
-export function getMeta(externalId, aggregation, labels) {
+export function getMeta(id, aggregation, labels) {
   return {
     labels,
     target: {
       aggregation,
-      target: externalId,
+      target: id,
     } as QueryTarget,
   };
 }
