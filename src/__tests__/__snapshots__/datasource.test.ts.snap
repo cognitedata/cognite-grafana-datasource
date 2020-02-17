@@ -224,7 +224,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "123",
+      "target": "Timeseries123",
     },
     Object {
       "datapoints": Array [
@@ -245,7 +245,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "min 123",
+      "target": "min Timeseries123",
     },
     Object {
       "datapoints": Array [
@@ -266,7 +266,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "min 456",
+      "target": "min Timeseries456",
     },
     Object {
       "datapoints": Array [
@@ -765,7 +765,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "1",
+      "target": "Timeseries1",
     },
     Object {
       "datapoints": Array [
@@ -786,7 +786,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "2",
+      "target": "Timeseries2",
     },
     Object {
       "datapoints": Array [
@@ -807,7 +807,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "3",
+      "target": "Timeseries3",
     },
     Object {
       "datapoints": Array [
@@ -828,7 +828,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "4",
+      "target": "Timeseries4",
     },
     Object {
       "datapoints": Array [
@@ -849,7 +849,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "5",
+      "target": "Timeseries5",
     },
     Object {
       "datapoints": Array [
@@ -870,7 +870,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "6",
+      "target": "Timeseries6",
     },
     Object {
       "datapoints": Array [
@@ -891,7 +891,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "continuousVariance 4",
+      "target": "continuousVariance Timeseries4",
     },
     Object {
       "datapoints": Array [
@@ -912,7 +912,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "discreteVariance 4",
+      "target": "discreteVariance Timeseries4",
     },
     Object {
       "datapoints": Array [
@@ -933,7 +933,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "1",
+      "target": "Timeseries1",
     },
     Object {
       "datapoints": Array [
@@ -1429,7 +1429,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "12",
+      "target": "Timeseries12",
     },
     Object {
       "datapoints": Array [
@@ -1450,7 +1450,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "34",
+      "target": "Timeseries34",
     },
     Object {
       "datapoints": Array [
@@ -1471,7 +1471,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "56",
+      "target": "Timeseries56",
     },
     Object {
       "datapoints": Array [
@@ -1492,7 +1492,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "78",
+      "target": "Timeseries78",
     },
     Object {
       "datapoints": Array [
@@ -1513,7 +1513,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "90",
+      "target": "Timeseries90",
     },
     Object {
       "datapoints": Array [
@@ -1534,7 +1534,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "123",
+      "target": "Timeseries123",
     },
     Object {
       "datapoints": Array [
@@ -2229,7 +2229,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "123",
+      "target": "Timeseries123",
     },
   ],
 }
@@ -2257,7 +2257,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "123",
+      "target": "Timeseries123",
     },
     Object {
       "datapoints": Array [
@@ -2278,7 +2278,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "456",
+      "target": "Timeseries456",
     },
   ],
 }

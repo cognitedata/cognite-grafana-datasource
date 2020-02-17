@@ -8,7 +8,10 @@ const variables = [
   { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
 ];
 
-export function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
+export function getDataqueryResponse(
+  { items, aggregates }: DataQueryRequest,
+  externalIdPrefix = 'externalId-'
+) {
   const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
   const datapoints = [0, 1, 2, 3, 4].map(i => ({
     timestamp: i * ms('10m') + 1549336675000,
@@ -17,6 +20,7 @@ export function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
   const itemsArr = items.map(({ id }) => ({
     id,
     datapoints,
+    externalId: `${externalIdPrefix}${id}`,
   }));
   return getItemsResponseObject(itemsArr, aggregates && aggrStr);
 }

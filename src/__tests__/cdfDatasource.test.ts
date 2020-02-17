@@ -118,18 +118,22 @@ describe('CDF datasource', () => {
   describe('reduce timeseries', () => {
     it('should return datapoints and the default label', () => {
       const id = 2;
+      const externalIdPrefix = 'Timeseries';
       const metaResponses: any[] = [
         {
-          result: getDataqueryResponse({
-            items: [{ id }],
-            aggregates: ['average'],
-          }),
+          result: getDataqueryResponse(
+            {
+              items: [{ id }],
+              aggregates: ['average'],
+            },
+            externalIdPrefix
+          ),
           metadata: getMeta(id, 'average', ['']),
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
       expect(reduced.datapoints).toEqual([[0, 1549336675000], [1, 1549337275000]]);
-      expect(reduced.target).toEqual(`average ${id}`);
+      expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
     });
   });
 

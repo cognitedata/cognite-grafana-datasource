@@ -19,6 +19,7 @@ const tsError = {
     },
   },
 };
+const externalIdPrefix = 'Timeseries';
 
 describe('Datasource Query', () => {
   const options: any = {
@@ -114,7 +115,7 @@ describe('Datasource Query', () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponse))
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
 
@@ -134,8 +135,8 @@ describe('Datasource Query', () => {
         },
       } = tsResponse;
 
-      expect(result.data[0].target).toEqual(targetA.toString());
-      expect(result.data[1].target).toEqual(`${aggregationB} ${targetB}`);
+      expect(result.data[0].target).toEqual(`${externalIdPrefix}${targetA}`);
+      expect(result.data[1].target).toEqual(`${aggregationB} ${externalIdPrefix}${targetB}`);
       expect(result.data[2].target).toEqual(`${description}-${targetC}`);
     });
   });
@@ -285,7 +286,7 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(tsResponseEmpty))
         .mockRejectedValueOnce(tsError)
         .mockRejectedValueOnce({})
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
     afterAll(() => {
@@ -445,7 +446,7 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])))
         .mockImplementation(x => {
           if ('FGH'.includes(x.refId)) return Promise.reject(tsError);
-          return Promise.resolve(getDataqueryResponse(x.data));
+          return Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix));
         });
       result = await ds.query(options);
     });
@@ -610,15 +611,31 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
         .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
         .mockRejectedValueOnce(tsError)
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)));
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        );
       result = await ds.query(options);
     });
 
@@ -691,9 +708,11 @@ describe('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponseEmpty))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
-        .mockImplementationOnce(x => Promise.resolve(getDataqueryResponse(x.data)))
+        .mockImplementationOnce(x =>
+          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
+        )
         .mockImplementationOnce(() => Promise.resolve(tsResponseB))
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       results.push(await ds.query(options));
       results.push(await ds.query(options));
       options.targets = [targetB];
