@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { DataQueryRequest, QueryTarget, Tab, TimeSeriesResponseItem } from '../types';
+import { QueryTarget, Tab } from '../types';
 import ms from 'ms';
 
 jest.mock('grafana/app/core/utils/datemath');

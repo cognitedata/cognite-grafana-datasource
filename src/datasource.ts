@@ -26,6 +26,7 @@ import {
   MetaResponses,
   FailResponse,
   SuccessResponse,
+  InputQueryTarget,
 } from './types';
 import {
   formQueriesForTargets,
@@ -333,7 +334,7 @@ export default class CogniteDatasource {
   }
 }
 
-export function filterEmptyQueryTargets(targets: QueryTarget[]): QueryTarget[] {
+export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
   // we cannot just map them because it's used for visual feedback
   // TODO: fix it when we move to react?
   targets.forEach(target => {
@@ -343,17 +344,20 @@ export function filterEmptyQueryTargets(targets: QueryTarget[]): QueryTarget[] {
     }
   });
 
-  return targets.filter(target => {
-    if (target && !target.hide) {
-      if (target.tab === Timeseries || target.tab === undefined) {
-        return target.target;
+  return targets.reduce(
+    (result, target) => {
+      if (!target || target.hide) {
+        return result;
       }
-      if (target.tab === Asset || target.tab === Custom) {
-        return target.assetQuery && target.assetQuery.target;
-      }
-    }
-    return false;
-  });
+
+      const { tab, target: tsTarget, assetQuery } = target;
+
+      const value = tab === Asset || tab === Custom ? assetQuery && assetQuery.target : tsTarget;
+
+      return value && value !== '' ? ([...result, target] as QueryTarget[]) : result;
+    },
+    [] as QueryTarget[]
+  );
 }
 
 function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
