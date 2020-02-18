@@ -150,3 +150,5 @@ ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 `yarn` followed by `yarn build` should work on systems with a shell.
 
 For debugging and development, use `yarn dev`, and for testing use `yarn test`.
+
+# hey, hey, hey
