@@ -344,20 +344,13 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
     }
   });
 
-  return targets.reduce(
-    (result, target) => {
-      if (!target || target.hide) {
-        return result;
-      }
+  return targets.filter(target => {
+    if (!target || target.hide) return;
 
-      const { tab, target: tsTarget, assetQuery } = target;
+    const { tab, target: tsTarget, assetQuery } = target;
 
-      const value = tab === Asset || tab === Custom ? assetQuery && assetQuery.target : tsTarget;
-
-      return value && value !== '' ? ([...result, target] as QueryTarget[]) : result;
-    },
-    [] as QueryTarget[]
-  );
+    return !!(tab === Asset || tab === Custom ? assetQuery && assetQuery.target : tsTarget);
+  }) as QueryTarget[];
 }
 
 function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
