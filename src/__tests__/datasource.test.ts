@@ -1,12 +1,12 @@
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { QueryTarget, Tab } from '../types';
+import { Tab, InputQueryTarget } from '../types';
 import ms from 'ms';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('../cache');
 
-type QueryTargetLike = Partial<QueryTarget>;
+type QueryTargetLike = Partial<InputQueryTarget>;
 
 const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
 
@@ -197,7 +197,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'min',
       refId: 'B',
-      target: 123,
+      target: '',
       granularity: '20m',
       assetQuery: {
         target: '456',
@@ -209,7 +209,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'max',
       refId: 'C',
-      target: 123,
+      target: '',
       label: '{{description}}-{{externalId}}',
       assetQuery: {
         target: '789',
@@ -222,7 +222,7 @@ describe('Datasource Query', () => {
       ...targetA,
       aggregation: 'tv',
       refId: 'D',
-      target: 123,
+      target: '',
       label: '{{description}}',
       assetQuery: {
         target: '[[AssetVariable]]',
