@@ -39,25 +39,24 @@ export function formQueryForItems(
     // synthetics don't support all those limits etc yet
     return { items };
   }
-  {
-    const [start, end] = getRange(options.range);
-    let aggregations: Aggregates & Granularity = null;
-    const hasAggregates = aggregation && aggregation !== 'none';
-    if (hasAggregates) {
-      aggregations = {
-        aggregates: [aggregation],
-        granularity: granularity || ms2String(options.intervalMs),
-      };
-    }
-    const limit = Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(items.length, 100));
-    return {
-      ...aggregations,
-      end,
-      start,
-      items,
-      limit,
+
+  const [start, end] = getRange(options.range);
+  let aggregations: Aggregates & Granularity = null;
+  const hasAggregates = aggregation && aggregation !== 'none';
+  if (hasAggregates) {
+    aggregations = {
+      aggregates: [aggregation],
+      granularity: granularity || ms2String(options.intervalMs),
     };
   }
+  const limit = Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(items.length, 100));
+  return {
+    ...aggregations,
+    end,
+    start,
+    items,
+    limit,
+  };
 }
 
 export function formQueriesForTargets(
@@ -130,14 +129,14 @@ async function getLabelsForTarget(
 
 async function getTimeseriesLabel(
   label: string = '',
-  externalId: string,
+  id: number,
   target: QueryTarget,
   connector: Connector
 ): Promise<string> {
   let resLabel = label;
   if (label && label.match(/{{.*}}/)) {
     try {
-      const [ts] = await getTimeseries({ items: [{ externalId }] }, target, connector);
+      const [ts] = await getTimeseries({ items: [{ id }] }, target, connector);
       resLabel = getLabelWithInjectedProps(label, ts);
     } catch {}
   }

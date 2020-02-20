@@ -8,6 +8,7 @@
   "scripts": {
     "build": "webpack --config webpack.config.prod.js",
     "dev": "webpack --config webpack.config.js --mode development",
+    "dev:watch": "webpack --config webpack.config.js --mode development --watch",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
     "test": "jest --coverage",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",

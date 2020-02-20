@@ -1,7 +1,7 @@
 import { datapoints2Tuples, promiser, reduceTimeseries } from '../cdfDatasource';
 import { filterEmptyQueryTargets } from '../datasource';
 import { getDataqueryResponse, getMeta } from './utils';
-import { Tab, QueryTarget } from '../types';
+import { Tab, QueryTarget, InputQueryTarget } from '../types';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -16,9 +16,9 @@ describe('CDF datasource', () => {
         },
       },
       {
-        target: 'timeseriesID',
+        target: 123,
       },
-    ] as QueryTarget[];
+    ] as InputQueryTarget[];
     const normalTargetsResponse = normalTargets.map((target: any) => ({
       ...target,
       warning: '',
@@ -51,21 +51,21 @@ describe('CDF datasource', () => {
           },
         },
         ...normalTargets,
-      ] as QueryTarget[];
+      ] as InputQueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargetsResponse);
     });
 
     it('should filter out empty timeseries targets', () => {
       const targets = [
         {
-          target: 'Start typing tag id here',
+          target: '',
           tab: 'Timeseries',
         },
         {
           target: '',
         },
         ...normalTargets,
-      ] as QueryTarget[];
+      ] as InputQueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargetsResponse);
     });
 
@@ -74,8 +74,8 @@ describe('CDF datasource', () => {
     });
 
     it('should filter out all empty (different types)', async () => {
-      const emptyTimeseries: Partial<QueryTarget> = {
-        target: 'Start typing tag id here',
+      const emptyTimeseries: Partial<InputQueryTarget> = {
+        target: '',
         tab: Timeseries,
         assetQuery: {
           target: '',
@@ -84,12 +84,12 @@ describe('CDF datasource', () => {
           func: '',
         },
       };
-      const emptyAsset: Partial<QueryTarget> = {
+      const emptyAsset: Partial<InputQueryTarget> = {
         ...emptyTimeseries,
         target: '',
         tab: Asset,
       };
-      const emptyCustom: Partial<QueryTarget> = {
+      const emptyCustom: Partial<InputQueryTarget> = {
         ...emptyTimeseries,
         tab: Custom,
         target: undefined,
@@ -98,7 +98,7 @@ describe('CDF datasource', () => {
         emptyTimeseries,
         emptyAsset,
         emptyCustom,
-      ] as QueryTarget[]);
+      ] as InputQueryTarget[]);
       expect(result).toEqual([]);
     });
   });
@@ -122,18 +122,23 @@ describe('CDF datasource', () => {
 
   describe('reduce timeseries', () => {
     it('should return datapoints and the default label', () => {
+      const id = 2;
+      const externalIdPrefix = 'Timeseries';
       const metaResponses: any[] = [
         {
-          result: getDataqueryResponse({
-            items: [{ externalId: 'Timeseries123' }],
-            aggregates: ['average'],
-          }),
-          metadata: getMeta('Timeseries123', 'average', ['']),
+          result: getDataqueryResponse(
+            {
+              items: [{ id }],
+              aggregates: ['average'],
+            },
+            externalIdPrefix
+          ),
+          metadata: getMeta(id, 'average', ['']),
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
       expect(reduced.datapoints).toEqual([[0, 1549336675000], [1, 1549337275000]]);
-      expect(reduced.target).toEqual('average Timeseries123');
+      expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
     });
   });
 
