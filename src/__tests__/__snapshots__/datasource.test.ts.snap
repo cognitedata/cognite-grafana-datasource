@@ -115,7 +115,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 100000,
@@ -137,10 +137,10 @@ Object {
     "granularity": "20m",
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
       Object {
-        "externalId": "Timeseries456",
+        "id": 456,
       },
     ],
     "limit": 5000,
@@ -162,13 +162,13 @@ Object {
     "granularity": "6m",
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
       Object {
-        "externalId": "Timeseries456",
+        "id": 456,
       },
       Object {
-        "externalId": "Timeseries789",
+        "id": 789,
       },
     ],
     "limit": 3333,
@@ -190,7 +190,7 @@ Object {
     "granularity": "6m",
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 10000,
@@ -361,7 +361,7 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "externalId": "Timeseries789",
+        "id": 789,
       },
     ],
   },
@@ -376,7 +376,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 100000,
@@ -398,7 +398,7 @@ Object {
     "granularity": "20m",
     "items": Array [
       Object {
-        "externalId": "Timeseries456",
+        "id": 456,
       },
     ],
     "limit": 10000,
@@ -420,7 +420,7 @@ Object {
     "granularity": "1s",
     "items": Array [
       Object {
-        "externalId": "Timeseries789",
+        "id": 789,
       },
     ],
     "limit": 10000,
@@ -432,83 +432,13 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries" queries should return correct datapoints and labels 1`] = `
-Object {
-  "data": Array [
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "Timeseries123",
-    },
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "count Timeseries456",
-    },
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "test timeseries-Timeseries789",
-    },
-  ],
-}
-`;
-
 exports[`Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 1`] = `
 Object {
   "data": Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 100000,
@@ -526,7 +456,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 100000,
@@ -694,22 +624,22 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries1",
+        "id": 1,
       },
       Object {
-        "externalId": "Timeseries2",
+        "id": 2,
       },
       Object {
-        "externalId": "Timeseries3",
+        "id": 3,
       },
       Object {
-        "externalId": "Timeseries4",
+        "id": 4,
       },
       Object {
-        "externalId": "Timeseries5",
+        "id": 5,
       },
       Object {
-        "externalId": "Test",
+        "id": 6,
       },
     ],
     "limit": 16666,
@@ -731,7 +661,7 @@ Object {
     "granularity": "10d",
     "items": Array [
       Object {
-        "externalId": "Timeseries4",
+        "id": 4,
       },
     ],
     "limit": 10000,
@@ -753,7 +683,7 @@ Object {
     "granularity": "1d",
     "items": Array [
       Object {
-        "externalId": "Timeseries4",
+        "id": 4,
       },
     ],
     "limit": 10000,
@@ -771,7 +701,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries1",
+        "id": 1,
       },
     ],
     "limit": 100000,
@@ -789,19 +719,19 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries2",
+        "id": 2,
       },
       Object {
-        "externalId": "Timeseries3",
+        "id": 3,
       },
       Object {
-        "externalId": "Timeseries4",
+        "id": 4,
       },
       Object {
-        "externalId": "Timeseries5",
+        "id": 5,
       },
       Object {
-        "externalId": "Test",
+        "id": 6,
       },
     ],
     "limit": 20000,
@@ -940,7 +870,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Test",
+      "target": "Timeseries6",
     },
     Object {
       "datapoints": Array [
@@ -1270,22 +1200,22 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries1",
+        "id": 12,
       },
       Object {
-        "externalId": "Timeseries2",
+        "id": 34,
       },
       Object {
-        "externalId": "Timeseries3",
+        "id": 56,
       },
       Object {
-        "externalId": "Timeseries4",
+        "id": 78,
       },
       Object {
-        "externalId": "Timeseries5",
+        "id": 90,
       },
       Object {
-        "externalId": "Test",
+        "id": 123,
       },
     ],
     "limit": 16666,
@@ -1499,7 +1429,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Timeseries1",
+      "target": "Timeseries12",
     },
     Object {
       "datapoints": Array [
@@ -1520,7 +1450,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Timeseries2",
+      "target": "Timeseries34",
     },
     Object {
       "datapoints": Array [
@@ -1541,7 +1471,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Timeseries3",
+      "target": "Timeseries56",
     },
     Object {
       "datapoints": Array [
@@ -1562,7 +1492,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Timeseries4",
+      "target": "Timeseries78",
     },
     Object {
       "datapoints": Array [
@@ -1583,7 +1513,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Timeseries5",
+      "target": "Timeseries90",
     },
     Object {
       "datapoints": Array [
@@ -1604,7 +1534,7 @@ Object {
           1549338475000,
         ],
       ],
-      "target": "Test",
+      "target": "Timeseries123",
     },
     Object {
       "datapoints": Array [
@@ -2215,7 +2145,7 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
     ],
     "limit": 100000,
@@ -2250,10 +2180,10 @@ Object {
     "end": 1549338475000,
     "items": Array [
       Object {
-        "externalId": "Timeseries123",
+        "id": 123,
       },
       Object {
-        "externalId": "Timeseries456",
+        "id": 456,
       },
     ],
     "limit": 50000,

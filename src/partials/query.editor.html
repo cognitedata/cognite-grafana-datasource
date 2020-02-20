@@ -36,6 +36,8 @@
      <div class="gf-form">
        <label class="gf-form-label query-keyword fix-query-keyword">Tag</label>
        <gf-form-dropdown model="ctrl.target.target"
+         placeholder="Start typing tag id here"
+         class="gf-dropdown-wrapper"
          css-class="gf-size-auto"
          allow-custom="false"
          lookup-text="true"
@@ -74,6 +76,8 @@
     <div class="gf-form">
       <label class="gf-form-label query-keyword fix-query-keyword">Asset Tag</label>
       <gf-form-dropdown model="ctrl.target.assetQuery.target"
+        class="gf-dropdown-wrapper"
+        placeholder="Start typing asset tag"
         css-class="gf-size-auto"
         allow-custom="false"
         lookup-text="true"
@@ -137,6 +141,7 @@
         </info-popover>
       </div>
       <gf-form-dropdown model="ctrl.target.assetQuery.target"
+        class="gf-dropdown-wrapper"
         css-class="gf-size-auto"
         allow-custom="false"
         lookup-text="true"

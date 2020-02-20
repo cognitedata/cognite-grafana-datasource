@@ -56,8 +56,8 @@ export interface AssetQuery {
   templatedTarget?: string;
 }
 
-export interface QueryTarget extends DataQuery {
-  target: string;
+export interface InputQueryTarget extends DataQuery {
+  target: number | '';
   aggregation: string;
   granularity: string;
   error: string;
@@ -68,9 +68,13 @@ export interface QueryTarget extends DataQuery {
   warning: string;
 }
 
+export interface QueryTarget extends InputQueryTarget {
+  target: number;
+}
+
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<QueryTarget>;
+export type QueryOptions = DataQueryOptions<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
@@ -196,7 +200,7 @@ export type DataQueryRequestItem = {
   limit?: number;
   granularity?: string;
   aggregates?: string[];
-  externalId: string;
+  id: number;
 };
 
 export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;

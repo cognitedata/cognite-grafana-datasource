@@ -66,23 +66,23 @@ exports[`Dropdown Options Query Given a request for timeseries options should re
 Array [
   Object {
     "text": "Timeseries1 (testA)",
-    "value": "Timeseries1",
+    "value": 1,
   },
   Object {
     "text": "Timeseries2 (testB)",
-    "value": "Timeseries2",
+    "value": 2,
   },
   Object {
     "text": "Timeseries3 (testC)",
-    "value": "Timeseries3",
+    "value": 3,
   },
   Object {
     "text": "Timeseries4 (testD)",
-    "value": "Timeseries4",
+    "value": 4,
   },
   Object {
     "text": "Timeseries5 (testE)",
-    "value": "Timeseries5",
+    "value": 5,
   },
 ]
 `;
@@ -128,27 +128,27 @@ exports[`Dropdown Options Query Given an empty request for timeseries options sh
 Array [
   Object {
     "text": "Timeseries1 (testA)",
-    "value": "Timeseries1",
+    "value": 1,
   },
   Object {
     "text": "Timeseries2 (testB)",
-    "value": "Timeseries2",
+    "value": 2,
   },
   Object {
     "text": "Timeseries3 (testC)",
-    "value": "Timeseries3",
+    "value": 3,
   },
   Object {
     "text": "Timeseries4 (testD)",
-    "value": "Timeseries4",
+    "value": 4,
   },
   Object {
     "text": "Timeseries5 (testE)",
-    "value": "Timeseries5",
+    "value": 5,
   },
   Object {
     "text": "Test",
-    "value": "Test",
+    "value": 6,
   },
 ]
 `;

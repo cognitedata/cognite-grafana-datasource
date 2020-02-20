@@ -8,21 +8,25 @@ const variables = [
   { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
 ];
 
-export function getDataqueryResponse({ items, aggregates }: DataQueryRequest) {
+export function getDataqueryResponse(
+  { items, aggregates }: DataQueryRequest,
+  externalIdPrefix = 'externalId-'
+) {
   const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
   const datapoints = [0, 1, 2, 3, 4].map(i => ({
     timestamp: i * ms('10m') + 1549336675000,
     [aggrStr]: i,
   }));
-  const itemsArr = items.map(({ externalId }) => ({
+  const itemsArr = items.map(({ id }) => ({
+    id,
     datapoints,
-    externalId,
+    externalId: `${externalIdPrefix}${id}`,
   }));
   return getItemsResponseObject(itemsArr, aggregates && aggrStr);
 }
 
 export function getItemsResponseObject(items, aggregates?: string) {
-  const response = {
+  return {
     data: {
       items,
     },
@@ -30,7 +34,6 @@ export function getItemsResponseObject(items, aggregates?: string) {
       data: { aggregates },
     },
   };
-  return response as DataQueryRequestResponse;
 }
 
 const getBackendSrvMock = () =>
@@ -85,12 +88,12 @@ export const getMockedDataSource = () => {
   };
 };
 
-export function getMeta(externalId, aggregation, labels) {
+export function getMeta(id, aggregation, labels) {
   return {
     labels,
     target: {
       aggregation,
-      target: externalId,
+      target: id,
     } as QueryTarget,
   };
 }

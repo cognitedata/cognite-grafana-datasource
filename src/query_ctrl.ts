@@ -39,7 +39,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   ];
   currentTabIndex: number;
   defaults = {
-    target: 'Start typing tag id here',
+    target: '',
     type: 'timeserie',
     aggregation: 'average',
     granularity: '',
