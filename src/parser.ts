@@ -11,6 +11,8 @@ import {
 import { getAggregationDropdownString, applyFilters, splitFilters } from './utils';
 import { trim } from 'lodash';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import nearley from 'nearley';
+import grammar from './query-parser/grammar';
 
 export const parseExpression = (
   expr: string,
@@ -263,6 +265,13 @@ export const parse = (
       }
     }
   }
+
+  // todo: to use parser you requires to:
+  const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+  parser.feed(query);
+
+  console.log(parser.finish());
+  //
 
   // Format: timeseries{ options }
   //     or  timeseries{ options }[aggregation, granularity]

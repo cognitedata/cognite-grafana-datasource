@@ -14,7 +14,8 @@
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "tslint": "tslint -c tslint.json --project tsconfig.json",
     "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
-    "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""
+    "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
+    "build-query-parser": "nearleyc ./src/query-parser/grammar.ne -o ./src/query-parser/grammar.ts"
   },
   "devDependencies": {
     "@grafana/ui": "^6.0.1-alpha.0",
@@ -33,6 +34,7 @@
     "jest": "23",
     "lint-staged": "^8.1.1",
     "ms": "^2.1.2",
+    "nearley": "^2.19.1",
     "ng-annotate-webpack-plugin": "^0.3.0",
     "prettier": "1.16.3",
     "query-string": "^6.10.1",
@@ -54,7 +56,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,css}": [
-      "tslint -c tslint.json --fix",
+      "tslint -c tslint.json --fix -e \"grammar.ts\"",
       "prettier --write",
       "git add"
     ],
