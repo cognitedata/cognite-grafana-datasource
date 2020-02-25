@@ -1,7 +1,7 @@
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
 import { getRequestId, applyFilters } from './utils';
-import cache from './cache';
 import { parse } from './query-parser';
+import { formQueriesForExpression } from './query-parser/ts/parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
@@ -130,8 +130,16 @@ export default class CogniteDatasource {
         await this.findAssetTimeseries(target, options);
         return target.assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
+      case Tab.Custom: {
+        return formQueriesForExpression(
+          target.expr,
+          options,
+          this.templateSrv,
+          target,
+          this.connector
+        );
+      }
     }
-    return [];
   }
 
   private replaceVariable(query: string): string {
@@ -225,25 +233,6 @@ export default class CogniteDatasource {
       : {
           assetIds: [assetId],
         };
-
-    // for custom queries, use cache instead of storing in target object
-    if (target.tab === Tab.Custom) {
-      target.assetQuery.templatedTarget = assetId;
-      const timeseries = cache.getTimeseries(options, target);
-      if (!timeseries) {
-        const limit = 10000; // 0.5 used to give this many. we keep it for now
-        const ts = await getTimeseries({ filter, limit }, target, this.connector);
-        cache.setTimeseries(
-          options,
-          target,
-          ts.map(ts => {
-            ts.selected = true;
-            return ts;
-          })
-        );
-      }
-      return;
-    }
 
     // check if assetId has changed, if not we do not need to perform this query again
     if (
@@ -339,11 +328,18 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
   });
 
   return targets.filter(target => {
-    if (!target || target.hide) return;
-
-    const { tab, target: tsTarget, assetQuery } = target;
-
-    return !!(tab === Asset || tab === Custom ? assetQuery && assetQuery.target : tsTarget);
+    if (target && !target.hide) {
+      const { tab, assetQuery } = target;
+      switch (tab) {
+        case Asset:
+          return assetQuery && assetQuery.target;
+        case Custom:
+          return target.expr;
+        case Timeseries:
+        case undefined:
+          return target.target;
+      }
+    }
   }) as QueryTarget[];
 }
 

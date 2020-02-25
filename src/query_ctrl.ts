@@ -3,6 +3,7 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
 import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
+import { parse } from './query-parser/ts/parser'
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -78,6 +79,16 @@ export class CogniteQueryCtrl extends QueryCtrl {
       _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
       return options;
     });
+  }
+
+  onChangeCustom() {
+    try {
+      parse(this.target.expr);
+      this.target.error = '';
+      this.onChangeInternal();
+    } catch (e) {
+      this.target.error = e.message;
+    }
   }
 
   onChangeInternal() {

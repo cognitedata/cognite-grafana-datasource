@@ -6,12 +6,12 @@ import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { ParserResponse, QueryParserResponse } from './types';
 
+const compiledGrammar = Grammar.fromCompiled(grammar);
 const filterDeep = getFilterDeep(_);
 const paths = getPaths(_);
 const omitDeep = getOmitDeep(_);
 
-const parseQuery = (query: string): QueryParserResponse => {
-  const parser = new Parser(Grammar.fromCompiled(grammar));
+export const parseWith = (parser: Parser, query: string) => {
   const trimmedQuery = query.trim();
   let result;
 
@@ -36,6 +36,10 @@ const parseQuery = (query: string): QueryParserResponse => {
   }
 
   return result;
+} 
+
+const parseQuery = (query: string): QueryParserResponse => {
+  return parseWith(new Parser(compiledGrammar), query);
 };
 
 const formatErrorMessage = ({ offset }, query, title = 'Parser: Syntax error'): string => {

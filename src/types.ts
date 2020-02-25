@@ -203,7 +203,7 @@ export type DataQueryRequestItem = {
   limit?: number;
   granularity?: string;
   aggregates?: string[];
-  id: number;
+  id?: number;
 };
 
 export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
@@ -308,6 +308,7 @@ export type TimeseriesFilterQuery = {
     description?: string;
     assetSubtreeIds?: IdEither[];
     assetIds?: string[];
+    [s: string]: any; // TODO: figure out type
   };
   cursor?: string;
 } & Limit;

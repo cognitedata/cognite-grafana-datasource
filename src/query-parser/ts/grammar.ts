@@ -7,37 +7,99 @@ function id(d: any[]): any { return d[0]; }
 const join = ([d]) => d.join('');
 const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
-  return d.length > 2
-	? {[d[0]+d[1]]:{key: d[0], filter: d[1], value: d[2]}}
-	: {[d[0]]: d[1]}
+  return {
+	  path: d[0],
+	  filter: d[1],
+	  value: d[2]
+  }
+}
+const extractConditionPair = ([path, filter, value]) => {
+  return path ? {path, filter, value} : {}
+}
+
+const extract = (extractor, d) => {
+  let output = {...extractor(d[1])};
+
+  for (let i in d[2]) {
+    output = {...output, ...extractor(d[2][i][2])};
+  }
+
+  return output;
 }
 const extractConditionToArray = d => {
   if(!d.length) return [];
-  const output = [extractPair(d[2])];
+  const output = [extractPair(d[1])];
 
-  for (let i in d[4]) {
-  	output.push(extractPair(d[4][i][2]))
+  for (let i in d[2]) {
+    output.push(extractPair(d[2][i][1]))
   }
 
   return output
 }
 const extractObject = d => {
-  let output = {...extractPair(d[2])};
+  let output = {...extractPair(d[1])};
 
-  for (let i in d[4]) {
-    output = {...output, ...extractPair(d[4][i][2])};
+  for (let i in d[2]) {
+    output = {...output, ...extractPair(d[2][i][2])};
   }
 
   return output;
 }
 const extractArray = d => {
-  const output = [d[2]];
+  const output = [d[1]];
 
-  for (let i in d[4]) {
-    output.push(d[4][i][2]);
+  for (let i in d[2]) {
+    output.push(d[2][i][1]);
   }
 
   return output;
+}
+
+const extractOperationsArray = d => {
+  const output = [d[0]];
+
+  for (let i in d[1]) {
+    output.push(d[1][i][0]);
+	  output.push(d[1][i][1]);
+  }
+
+  return output;
+}
+
+const extractCommaSeparatedArray = d => {
+  const output = [d[0]];
+
+  for (let i in d[1]) {
+    output.push(d[1][i][1]);
+  }
+  return output;
+}
+
+const extractMapFuncArgs = d => {
+  return d.filter(d => d !== ',')
+}
+
+const extract2Elements = d => {
+	return [d[0], d[2]]
+}
+
+const extractOperator = ([s, operator, S]) => {
+  return { operator }
+}
+
+const extractNumber = ([constant]) => {
+  return { constant }
+}
+
+const extractPI = d => {
+  return { constant: d[0] + d[2] }
+}
+
+const extractFunction = ([func, br, args, BR]) => {
+  if (args && args.length) {
+    return { func: func || '', args }
+  }
+  return { func }
 }
 
 const emptyObject = () => ({});
@@ -183,16 +245,41 @@ const grammar: Grammar = {
             return d.join("");
         }
         },
-    {"name": "rule", "symbols": ["type", "condition"], "postprocess": formatQuery},
-    {"name": "type$string$1", "symbols": [{"literal":"a"}, {"literal":"s"}, {"literal":"s"}, {"literal":"e"}, {"literal":"t"}, {"literal":"s"}], "postprocess": (d) => d.join('')},
-    {"name": "type", "symbols": ["type$string$1"], "postprocess": id},
-    {"name": "type$string$2", "symbols": [{"literal":"e"}, {"literal":"v"}, {"literal":"e"}, {"literal":"n"}, {"literal":"t"}, {"literal":"s"}], "postprocess": (d) => d.join('')},
-    {"name": "type", "symbols": ["type$string$2"], "postprocess": id},
-    {"name": "condition", "symbols": [{"literal":"{"}, {"literal":"}"}], "postprocess": emptyArray},
+    {"name": "query", "symbols": ["_", "trimmed", "_"], "postprocess": d => d[1]},
+    {"name": "trimmed", "symbols": ["compositeElement"], "postprocess": id},
+    {"name": "trimmed", "symbols": ["function"], "postprocess": id},
+    {"name": "function", "symbols": ["unary", "br", "arithmethicElements", "BR"], "postprocess": extractFunction},
+    {"name": "function", "symbols": ["unary", "br", "oneElement", "BR"], "postprocess": extractFunction},
+    {"name": "function", "symbols": ["binary", "br", "twoElements", "BR"], "postprocess": extractFunction},
+    {"name": "function", "symbols": ["n_ary", "br", "commaSeparatedElements", "BR"], "postprocess": extractFunction},
+    {"name": "function$string$1", "symbols": [{"literal":"m"}, {"literal":"a"}, {"literal":"p"}], "postprocess": (d) => d.join('')},
+    {"name": "function", "symbols": ["function$string$1", "br", "map_func_args", "BR"], "postprocess": extractFunction},
+    {"name": "oneElement", "symbols": ["element"], "postprocess": extractCommaSeparatedArray},
+    {"name": "twoElements", "symbols": ["compositeElement", "comma", "compositeElement"], "postprocess": extract2Elements},
+    {"name": "commaSeparatedElements$ebnf$1", "symbols": []},
+    {"name": "commaSeparatedElements$ebnf$1$subexpression$1", "symbols": ["comma", "compositeElement"]},
+    {"name": "commaSeparatedElements$ebnf$1", "symbols": ["commaSeparatedElements$ebnf$1", "commaSeparatedElements$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "commaSeparatedElements", "symbols": ["compositeElement", "commaSeparatedElements$ebnf$1"], "postprocess": extractCommaSeparatedArray},
+    {"name": "arithmethicElements$ebnf$1$subexpression$1", "symbols": ["operator", "element"]},
+    {"name": "arithmethicElements$ebnf$1", "symbols": ["arithmethicElements$ebnf$1$subexpression$1"]},
+    {"name": "arithmethicElements$ebnf$1$subexpression$2", "symbols": ["operator", "element"]},
+    {"name": "arithmethicElements$ebnf$1", "symbols": ["arithmethicElements$ebnf$1", "arithmethicElements$ebnf$1$subexpression$2"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "arithmethicElements", "symbols": ["element", "arithmethicElements$ebnf$1"], "postprocess": extractOperationsArray},
+    {"name": "map_func_args", "symbols": ["compositeElement", {"literal":","}, "array", {"literal":","}, "array", "comma", "number"], "postprocess": extractMapFuncArgs},
+    {"name": "compositeElement", "symbols": ["element"], "postprocess": id},
+    {"name": "compositeElement", "symbols": ["arithmethicElements"], "postprocess": id},
+    {"name": "element", "symbols": ["function"], "postprocess": id},
+    {"name": "element", "symbols": ["type", "condition"], "postprocess": formatQuery},
+    {"name": "element", "symbols": ["number"], "postprocess": extractNumber},
+    {"name": "element$string$1", "symbols": [{"literal":"p"}, {"literal":"i"}, {"literal":"("}], "postprocess": (d) => d.join('')},
+    {"name": "element", "symbols": ["element$string$1", "_", {"literal":")"}], "postprocess": extractPI},
+    {"name": "type$subexpression$1", "symbols": [/[tT]/, /[sS]/], "postprocess": function(d) {return d.join(""); }},
+    {"name": "type", "symbols": ["type$subexpression$1"], "postprocess": ([d]) => d.toLowerCase()},
+    {"name": "condition", "symbols": ["curl", "CURL"], "postprocess": emptyArray},
     {"name": "condition$ebnf$1", "symbols": []},
-    {"name": "condition$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "_", "pair", "_"]},
+    {"name": "condition$ebnf$1$subexpression$1", "symbols": ["comma", "pair"]},
     {"name": "condition$ebnf$1", "symbols": ["condition$ebnf$1", "condition$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "condition", "symbols": [{"literal":"{"}, "_", "pair", "_", "condition$ebnf$1", "_", {"literal":"}"}], "postprocess": extractConditionToArray},
+    {"name": "condition", "symbols": ["curl", "pair", "condition$ebnf$1", "CURL"], "postprocess": extractConditionToArray},
     {"name": "filter$string$1", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": (d) => d.join('')},
     {"name": "filter", "symbols": ["filter$string$1"], "postprocess": id},
     {"name": "filter$string$2", "symbols": [{"literal":"="}, {"literal":"~"}], "postprocess": (d) => d.join('')},
@@ -206,33 +293,71 @@ const grammar: Grammar = {
     {"name": "string", "symbols": ["sqstring"], "postprocess": id},
     {"name": "string", "symbols": ["dqstring"], "postprocess": id},
     {"name": "number", "symbols": ["decimal"], "postprocess": id},
-    {"name": "array", "symbols": [{"literal":"["}, "_", {"literal":"]"}], "postprocess": emptyArray},
+    {"name": "array", "symbols": ["sqr", "SQR"], "postprocess": emptyArray},
     {"name": "array$ebnf$1", "symbols": []},
-    {"name": "array$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "_", "value", "_"]},
+    {"name": "array$ebnf$1$subexpression$1", "symbols": ["comma", "value"]},
     {"name": "array$ebnf$1", "symbols": ["array$ebnf$1", "array$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "array", "symbols": [{"literal":"["}, "_", "value", "_", "array$ebnf$1", "_", {"literal":"]"}], "postprocess": extractArray},
-    {"name": "object", "symbols": [{"literal":"{"}, "_", {"literal":"}"}], "postprocess": emptyObject},
+    {"name": "array", "symbols": ["sqr", "value", "array$ebnf$1", "SQR"], "postprocess": extractArray},
+    {"name": "object", "symbols": ["curl", "CURL"], "postprocess": emptyObject},
     {"name": "object$ebnf$1", "symbols": []},
-    {"name": "object$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "_", "pair", "_"]},
+    {"name": "object$ebnf$1$subexpression$1", "symbols": ["comma", "pair"]},
     {"name": "object$ebnf$1", "symbols": ["object$ebnf$1", "object$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "object", "symbols": [{"literal":"{"}, "_", "pair", "_", "object$ebnf$1", "_", {"literal":"}"}], "postprocess": extractObject},
-    {"name": "pair", "symbols": ["prop_name", "_", "equals", "_", "value"], "postprocess": d => [d[0], d[4]]},
-    {"name": "pair", "symbols": ["prop_name", "_", "filter", "_", "string"], "postprocess": d => [d[0], d[2], d[4]]},
+    {"name": "object", "symbols": ["curl", "pair", "object$ebnf$1", "CURL"], "postprocess": extractObject},
+    {"name": "pair", "symbols": ["prop_name", "equals", "value"]},
+    {"name": "pair", "symbols": ["prop_name", "filter", "string"]},
     {"name": "value", "symbols": ["object"], "postprocess": id},
     {"name": "value", "symbols": ["array"], "postprocess": id},
     {"name": "value", "symbols": ["number"], "postprocess": id},
     {"name": "value", "symbols": ["string"], "postprocess": id},
     {"name": "value$string$1", "symbols": [{"literal":"t"}, {"literal":"r"}, {"literal":"u"}, {"literal":"e"}], "postprocess": (d) => d.join('')},
-    {"name": "value", "symbols": ["value$string$1"], "postprocess": d => true},
+    {"name": "value", "symbols": ["value$string$1"], "postprocess": () => true},
     {"name": "value$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": (d) => d.join('')},
-    {"name": "value", "symbols": ["value$string$2"], "postprocess": d => false},
+    {"name": "value", "symbols": ["value$string$2"], "postprocess": () => false},
     {"name": "value$string$3", "symbols": [{"literal":"n"}, {"literal":"u"}, {"literal":"l"}, {"literal":"l"}], "postprocess": (d) => d.join('')},
-    {"name": "value", "symbols": ["value$string$3"], "postprocess": d => null},
+    {"name": "value", "symbols": ["value$string$3"], "postprocess": () => null},
+    {"name": "operator", "symbols": ["_", {"literal":"+"}, "_"], "postprocess": extractOperator},
+    {"name": "operator", "symbols": ["_", {"literal":"-"}, "_"], "postprocess": extractOperator},
+    {"name": "operator", "symbols": ["_", {"literal":"/"}, "_"], "postprocess": extractOperator},
+    {"name": "operator", "symbols": ["_", {"literal":"*"}, "_"], "postprocess": extractOperator},
+    {"name": "comma", "symbols": ["_", {"literal":","}, "_"], "postprocess": d => d[1]},
+    {"name": "unary$string$1", "symbols": [{"literal":"s"}, {"literal":"i"}, {"literal":"n"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$1"], "postprocess": id},
+    {"name": "unary$string$2", "symbols": [{"literal":"c"}, {"literal":"o"}, {"literal":"s"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$2"], "postprocess": id},
+    {"name": "unary$string$3", "symbols": [{"literal":"l"}, {"literal":"n"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$3"], "postprocess": id},
+    {"name": "unary$string$4", "symbols": [{"literal":"s"}, {"literal":"q"}, {"literal":"r"}, {"literal":"t"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$4"], "postprocess": id},
+    {"name": "unary$string$5", "symbols": [{"literal":"e"}, {"literal":"x"}, {"literal":"p"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$5"], "postprocess": id},
+    {"name": "unary$string$6", "symbols": [{"literal":"a"}, {"literal":"b"}, {"literal":"s"}], "postprocess": (d) => d.join('')},
+    {"name": "unary", "symbols": ["unary$string$6"], "postprocess": id},
+    {"name": "unary", "symbols": [], "postprocess": id},
+    {"name": "binary$string$1", "symbols": [{"literal":"p"}, {"literal":"o"}, {"literal":"w"}], "postprocess": (d) => d.join('')},
+    {"name": "binary", "symbols": ["binary$string$1"], "postprocess": id},
+    {"name": "binary$string$2", "symbols": [{"literal":"r"}, {"literal":"o"}, {"literal":"u"}, {"literal":"n"}, {"literal":"d"}], "postprocess": (d) => d.join('')},
+    {"name": "binary", "symbols": ["binary$string$2"], "postprocess": id},
+    {"name": "binary$string$3", "symbols": [{"literal":"o"}, {"literal":"n"}, {"literal":"_"}, {"literal":"e"}, {"literal":"r"}, {"literal":"r"}, {"literal":"o"}, {"literal":"r"}], "postprocess": (d) => d.join('')},
+    {"name": "binary", "symbols": ["binary$string$3"], "postprocess": id},
+    {"name": "n_ary$string$1", "symbols": [{"literal":"m"}, {"literal":"a"}, {"literal":"x"}], "postprocess": (d) => d.join('')},
+    {"name": "n_ary", "symbols": ["n_ary$string$1"], "postprocess": id},
+    {"name": "n_ary$string$2", "symbols": [{"literal":"m"}, {"literal":"i"}, {"literal":"n"}], "postprocess": (d) => d.join('')},
+    {"name": "n_ary", "symbols": ["n_ary$string$2"], "postprocess": id},
+    {"name": "n_ary$string$3", "symbols": [{"literal":"a"}, {"literal":"v"}, {"literal":"g"}], "postprocess": (d) => d.join('')},
+    {"name": "n_ary", "symbols": ["n_ary$string$3"], "postprocess": id},
+    {"name": "n_ary$string$4", "symbols": [{"literal":"s"}, {"literal":"u"}, {"literal":"m"}], "postprocess": (d) => d.join('')},
+    {"name": "n_ary", "symbols": ["n_ary$string$4"], "postprocess": id},
+    {"name": "br", "symbols": ["_", {"literal":"("}], "postprocess": null},
+    {"name": "BR", "symbols": ["_", {"literal":")"}], "postprocess": null},
+    {"name": "curl", "symbols": ["_", {"literal":"{"}], "postprocess": null},
+    {"name": "CURL", "symbols": ["_", {"literal":"}"}], "postprocess": null},
+    {"name": "sqr", "symbols": ["_", {"literal":"["}], "postprocess": null},
+    {"name": "SQR", "symbols": ["_", {"literal":"]"}], "postprocess": null},
     {"name": "_$ebnf$1", "symbols": []},
     {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": null}
   ],
-  ParserStart: "rule",
+  ParserStart: "query",
 };
 
 export default grammar;

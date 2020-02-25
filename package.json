@@ -6,16 +6,16 @@
   "author": "Cognite AS",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "yarn build-query-parser && webpack --config webpack.config.prod.js",
-    "dev": "webpack --config webpack.config.js --mode development",
+    "build": "yarn build-parser && webpack --config webpack.config.prod.js",
+    "dev": "yarn build-parser && webpack --config webpack.config.js --mode development",
     "dev:watch": "webpack --config webpack.config.js --mode development --watch",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
     "test": "jest --coverage",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
-    "tslint": "tslint -c tslint.json --project tsconfig.json",
-    "tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix",
+    "lint": "tslint -c tslint.json --project tsconfig.json",
+    "lint:fix": "yarn lint --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
-    "build-query-parser": "nearleyc ./src/query-parser/grammar.ne -o ./src/query-parser/grammar.ts"
+    "build-parser": "nearleyc ./src/query-parser/grammar.ne -o ./src/query-parser/grammar.ts && nearleyc ./src/query-parser/ts/grammar.ne -o ./src/query-parser/ts/grammar.ts"
   },
   "devDependencies": {
     "@grafana/ui": "^6.0.1-alpha.0",
@@ -57,13 +57,14 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,css}": [
-      "tslint -c tslint.json --fix -e \"grammar.ts\"",
+      "tslint -c tslint.json --fix",
       "prettier --write",
       "git add"
     ],
     "*.{md}": [
       "prettier --write",
       "git add"
-    ]
+    ],
+    "ignore": ["*/**/grammar.ts"]
   }
 }

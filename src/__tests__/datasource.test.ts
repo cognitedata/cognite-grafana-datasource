@@ -324,6 +324,7 @@ describe('Datasource Query', () => {
       target: 123,
       tab: Tab.Custom,
       assetQuery: {
+        // TODO: not needed for custom anymore
         target: '123',
         timeseries: [],
         includeSubtrees: false,
@@ -488,6 +489,7 @@ describe('Datasource Query', () => {
       target: 123,
       tab: Tab.Custom,
       assetQuery: {
+        // TODO: should be removed
         target: '123',
         timeseries: [],
         includeSubtrees: false,

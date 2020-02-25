@@ -8,6 +8,7 @@ export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
 }
 
+// todo: need to remove this one
 export function getDatasourceValueString(aggregation: string): string {
   const mapping = {
     '': 'value',
