@@ -7,8 +7,8 @@
       <input
         type="text"
         class="gf-form-input custom-query width-auto"
-        ng-model="ctrl.annotation.expr"
-        ng-blur="ctrl.verify()"
+        ng-model="ctrl.annotation.query"
+        ng-blur="ctrl.onBlur()"
         placeholder=""
       />
       <info-popover
@@ -24,30 +24,6 @@
     Example: event{type="WORKORDER",assetSubtrees=[12,345,6,7890]} <br>
   Templated variables can also be used with [[variable]] or $variable
     Example: event{assetSubtrees=[$Variable]}</pre>
-    </div>
-    <div class="gf-form gf-form--grow">
-      <label class="gf-form-label query-keyword fix-query-keyword width-8"
-        >Filter</label
-      >
-      <input
-        type="text"
-        class="gf-form-input custom-query width-auto"
-        ng-model="ctrl.annotation.filter"
-        ng-blur="ctrl.verify()"
-        placeholder=""
-      />
-      <info-popover
-        mode="right-absolute"
-        ng-click="showHelpFilter = !showHelpFilter"
-        >Click for help</info-popover
-      >
-    </div>
-    <div class="gf-form--grow" ng-show="showHelpFilter">
-      <pre>
-  Filter on the queried events
-    Format is: filter{property comparator value,...}
-    Comparator can be =, !=, =~, !~ <br>
-    Example: filter{metadata.key1=~".*test", subtype!="ABC"}</pre>
     </div>
     <div class="gf-form-inline panel-container" ng-if="ctrl.annotation.error">
       <label class="gf-form-label--error">{{ ctrl.annotation.error }}</label>

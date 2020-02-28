@@ -222,7 +222,7 @@ export interface Annotation {
   iconColor: string;
   limit: number;
   name: string;
-  expr: string;
+  query: string;
   filter: string;
   error: string;
   type: string;

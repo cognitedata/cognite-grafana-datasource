@@ -24,6 +24,9 @@ import {
   FailResponse,
   SuccessResponse,
   InputQueryTarget,
+  ParseType,
+  AnnotationResponse,
+  AnnotationQueryOptions,
 } from './types';
 import {
   formQueriesForTargets,
@@ -131,51 +134,43 @@ export default class CogniteDatasource {
   /**
    * used by dashboards to get annotations (events)
    */
-  // public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
-  //   const { range, annotation } = options;
-  //   const { expr, filter, error } = annotation;
-  //   const [startTime, endTime] = getRange(range);
-  //   let response = [];
-  //
-  //   if (!error && expr) {
-  //     const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
-  //     const filterOptions = filter
-  //       ? parse(filter, ParseType.Event, this.templateSrv)
-  //       : { filters: [] };
-  //
-  //     // use max startTime and min endTime so that we include events that are partially in range
-  //     const filterQuery = {
-  //       startTime: { max: endTime },
-  //       endTime: { min: startTime },
-  //       ...reduceToMap(queryOptions.filters),
-  //     };
-  //
-  //     const items = await this.connector.fetchItems<any>({
-  //       path: `/events/list`,
-  //       method: HttpMethod.POST,
-  //       data: {
-  //         filter: filterQuery,
-  //         limit: 1000,
-  //       },
-  //     });
-  //
-  //     if (items && items.length) {
-  //       applyFilters(filterOptions.filters, items);
-  //
-  //       response = items
-  //         .filter(({ selected }) => selected)
-  //         .map(({ description, startTime, endTime, type }) => ({
-  //           annotation,
-  //           isRegion: true,
-  //           text: description,
-  //           time: startTime,
-  //           timeEnd: endTime,
-  //           title: type,
-  //         }));
-  //     }
-  //   }
-  //   return response;
-  // }
+  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
+    const { range, annotation } = options;
+    const { query, error } = annotation;
+    const [startTime, endTime] = getRange(range);
+    let response = [];
+
+    if (!error && query) {
+      const { filters, params } = parseV1(query);
+      const timeFrame = {
+        startTime: { max: endTime },
+        endTime: { min: startTime },
+      };
+
+      const items = await this.connector.fetchItems<any>({
+        path: `/events/list`,
+        method: HttpMethod.POST,
+        data: {
+          filter: { ...params, ...timeFrame },
+          limit: 1000,
+        },
+      });
+
+      if (items && items.length) {
+        response = applyFiltersV1(items, filters).map(
+          ({ description, startTime, endTime, type }) => ({
+            annotation,
+            isRegion: true,
+            text: description,
+            time: startTime,
+            timeEnd: endTime,
+            title: type,
+          })
+        );
+      }
+    }
+    return response;
+  }
 
   /**
    * used by query editor to search for assets/timeseries

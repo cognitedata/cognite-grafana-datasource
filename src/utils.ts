@@ -101,10 +101,10 @@ export const applyFiltersV1 = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
 };
 
 export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): boolean => {
-  const valueToFilter = get(obj, path);
+  const valueToFilter = get(obj, path, null);
   const regex = `^${value}$`;
 
-  if (!valueToFilter) {
+  if (valueToFilter === null) {
     return true;
   }
 
