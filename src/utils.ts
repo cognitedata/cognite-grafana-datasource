@@ -1,7 +1,8 @@
 import { isNil, omitBy, get } from 'lodash';
-import { Filter, FilterType, QueryOptions, QueryTarget } from './types';
+import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
+import { FilterType, ParsedFilter } from './query-parser/types';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
@@ -25,14 +26,6 @@ export function getDatasourceValueString(aggregation: string): string {
     tv: 'totalVariation',
   };
   return mapping[aggregation] || aggregation;
-}
-
-export function getAggregationDropdownString(aggregation: string): string {
-  let val = getDatasourceValueString(aggregation);
-  if (val === 'continousVariance') val = 'continuousVariance';
-  // temp 0.5 fix
-  else if (val === 'value') val = 'none';
-  return val;
 }
 
 export function splitFilters(filterString: string, onlyAllowEquals: boolean) {
@@ -84,41 +77,6 @@ export function splitFilters(filterString: string, onlyAllowEquals: boolean) {
   return filterStrings;
 }
 
-export function applyFilters(filters: Filter[], objects: any): void {
-  for (const obj of objects) {
-    obj.selected = true;
-    for (const filter of filters) {
-      if (filter.type === FilterType.RegexEquals) {
-        const val = get(obj, filter.property);
-        const regex = `^${filter.value}$`;
-        if (val === undefined || !val.match(regex)) {
-          obj.selected = false;
-          break;
-        }
-      } else if (filter.type === FilterType.RegexNotEquals) {
-        const val = get(obj, filter.property);
-        const regex = `^${filter.value}$`;
-        if (val === undefined || val.match(regex)) {
-          obj.selected = false;
-          break;
-        }
-      } else if (filter.type === FilterType.NotEquals) {
-        const val = get(obj, filter.property);
-        if (val === undefined || String(val) === filter.value) {
-          obj.selected = false;
-          break;
-        }
-      } else if (filter.type === FilterType.Equals) {
-        const val = get(obj, filter.property);
-        if (val === undefined || String(val) !== filter.value) {
-          obj.selected = false;
-          break;
-        }
-      }
-    }
-  }
-}
-
 export function ms2String(milliseconds: number): string {
   return ms(milliseconds < 1000 ? 1000 : milliseconds);
 }
@@ -134,9 +92,28 @@ export function getRequestId(options: QueryOptions, target: QueryTarget) {
   return `${options.dashboardId}_${options.panelId}_${target.refId}`;
 }
 
-export function reduceToMap(array: { property: string; value: any }[]) {
-  return array.reduce((obj, { property, value }) => {
-    obj[property] = value;
-    return obj;
-  }, {});
-}
+export const applyFiltersV1 = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
+  if (!filters.length) {
+    return objs;
+  }
+
+  return objs.filter(obj => filters.every(filter => checkFilter(obj, filter)));
+};
+
+export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): boolean => {
+  const valueToFilter = get(obj, path);
+  const regex = `^${value}$`;
+
+  if (!valueToFilter) {
+    return true;
+  }
+
+  switch (filter) {
+    case FilterType.RegexEquals:
+      return valueToFilter.match(regex);
+    case FilterType.RegexNotEquals:
+      return !valueToFilter.match(regex);
+    case FilterType.NotEquals:
+      return value !== valueToFilter;
+  }
+};

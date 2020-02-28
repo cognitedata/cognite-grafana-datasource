@@ -11,44 +11,29 @@ const formatQuery = ([type, query]) => ({ type, query });
 const extractPair = d => {
   return d.length > 2 ? { [d[0]]: { filter: d[1], value: d[2] } } : { [d[0]]: d[1] };
 };
-const extractConditionPair = ([key, filter, value]) => {
-  return key ? { key, filter, value } : {};
-};
-
-const extract = (extraxtor, d) => {
-  let output = { ...extraxtor(d[1]) };
-
-  for (const i in d[2]) {
-    output = { ...output, ...extraxtor(d[2][i][2]) };
-  }
-
-  return output;
-};
 const extractConditionToArray = d => {
   if (!d.length) return [];
   const output = [extractPair(d[1])];
 
-  for (const i in d[2]) {
+  for (let i in d[2]) {
     output.push(extractPair(d[2][i][2]));
   }
 
   return output;
 };
-// const extractObject = extract.bind(null, extractPair);
 const extractObject = d => {
   let output = { ...extractPair(d[1]) };
 
-  for (const i in d[2]) {
+  for (let i in d[2]) {
     output = { ...output, ...extractPair(d[2][i][2]) };
   }
 
   return output;
 };
-const extractCodition = extract.bind(null, extractConditionPair);
 const extractArray = d => {
   const output = [d[1]];
 
-  for (const i in d[2]) {
+  for (let i in d[2]) {
     output.push(d[2][i][2]);
   }
 
@@ -97,7 +82,7 @@ const grammar: Grammar = {
     {
       name: 'unsigned_int',
       symbols: ['unsigned_int$ebnf$1'],
-      postprocess(d) {
+      postprocess: function(d) {
         return parseInt(d[0].join(''));
       },
     },
@@ -110,11 +95,12 @@ const grammar: Grammar = {
     {
       name: 'int',
       symbols: ['int$ebnf$1', 'int$ebnf$2'],
-      postprocess(d) {
+      postprocess: function(d) {
         if (d[0]) {
           return parseInt(d[0][0] + d[1].join(''));
+        } else {
+          return parseInt(d[1].join(''));
         }
-        return parseInt(d[1].join(''));
       },
     },
     { name: 'unsigned_decimal$ebnf$1', symbols: [/[0-9]/] },
@@ -142,7 +128,7 @@ const grammar: Grammar = {
     {
       name: 'unsigned_decimal',
       symbols: ['unsigned_decimal$ebnf$1', 'unsigned_decimal$ebnf$2'],
-      postprocess(d) {
+      postprocess: function(d) {
         return parseFloat(d[0].join('') + (d[1] ? '.' + d[1][1].join('') : ''));
       },
     },
@@ -169,14 +155,14 @@ const grammar: Grammar = {
     {
       name: 'decimal',
       symbols: ['decimal$ebnf$1', 'decimal$ebnf$2', 'decimal$ebnf$3'],
-      postprocess(d) {
+      postprocess: function(d) {
         return parseFloat((d[0] || '') + d[1].join('') + (d[2] ? '.' + d[2][1].join('') : ''));
       },
     },
     {
       name: 'percentage',
       symbols: ['decimal', { literal: '%' }],
-      postprocess(d) {
+      postprocess: function(d) {
         return d[0] / 100;
       },
     },
@@ -221,7 +207,7 @@ const grammar: Grammar = {
     {
       name: 'jsonfloat',
       symbols: ['jsonfloat$ebnf$1', 'jsonfloat$ebnf$2', 'jsonfloat$ebnf$3', 'jsonfloat$ebnf$4'],
-      postprocess(d) {
+      postprocess: function(d) {
         return parseFloat(
           (d[0] || '') +
             d[1].join('') +
@@ -239,7 +225,7 @@ const grammar: Grammar = {
     {
       name: 'dqstring',
       symbols: [{ literal: '"' }, 'dqstring$ebnf$1', { literal: '"' }],
-      postprocess(d) {
+      postprocess: function(d) {
         return d[1].join('');
       },
     },
@@ -252,7 +238,7 @@ const grammar: Grammar = {
     {
       name: 'sqstring',
       symbols: [{ literal: "'" }, 'sqstring$ebnf$1', { literal: "'" }],
-      postprocess(d) {
+      postprocess: function(d) {
         return d[1].join('');
       },
     },
@@ -265,7 +251,7 @@ const grammar: Grammar = {
     {
       name: 'btstring',
       symbols: [{ literal: '`' }, 'btstring$ebnf$1', { literal: '`' }],
-      postprocess(d) {
+      postprocess: function(d) {
         return d[1].join('');
       },
     },
@@ -273,7 +259,7 @@ const grammar: Grammar = {
     {
       name: 'dstrchar',
       symbols: [{ literal: '\\' }, 'strescape'],
-      postprocess(d) {
+      postprocess: function(d) {
         return JSON.parse('"' + d.join('') + '"');
       },
     },
@@ -281,7 +267,7 @@ const grammar: Grammar = {
     {
       name: 'sstrchar',
       symbols: [{ literal: '\\' }, 'strescape'],
-      postprocess(d) {
+      postprocess: function(d) {
         return JSON.parse('"' + d.join('') + '"');
       },
     },
@@ -293,7 +279,7 @@ const grammar: Grammar = {
     {
       name: 'sstrchar',
       symbols: ['sstrchar$string$1'],
-      postprocess(d) {
+      postprocess: function(d) {
         return "'";
       },
     },
@@ -301,11 +287,10 @@ const grammar: Grammar = {
     {
       name: 'strescape',
       symbols: [{ literal: 'u' }, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/],
-      postprocess(d) {
+      postprocess: function(d) {
         return d.join('');
       },
     },
-    { name: 'query', symbols: ['rule'], postprocess: id },
     { name: 'rule', symbols: ['type', 'condition'], postprocess: formatQuery },
     {
       name: 'type$string$1',
@@ -323,15 +308,11 @@ const grammar: Grammar = {
     {
       name: 'type$string$2',
       symbols: [
+        { literal: 'e' },
+        { literal: 'v' },
+        { literal: 'e' },
+        { literal: 'n' },
         { literal: 't' },
-        { literal: 'i' },
-        { literal: 'm' },
-        { literal: 'e' },
-        { literal: 's' },
-        { literal: 'e' },
-        { literal: 'r' },
-        { literal: 'i' },
-        { literal: 'e' },
         { literal: 's' },
       ],
       postprocess: d => d.join(''),
@@ -369,10 +350,10 @@ const grammar: Grammar = {
     },
     { name: 'filter', symbols: ['filter$string$3'], postprocess: id },
     { name: 'equals', symbols: [{ literal: '=' }], postprocess: id },
-    { name: 'prop_name$ebnf$1', symbols: [/[A-z0-9\._]/] },
+    { name: 'prop_name$ebnf$1', symbols: [/[A-z0-9_]/] },
     {
       name: 'prop_name$ebnf$1',
-      symbols: ['prop_name$ebnf$1', /[A-z0-9\._]/],
+      symbols: ['prop_name$ebnf$1', /[A-z0-9_]/],
       postprocess: d => d[0].concat([d[1]]),
     },
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
@@ -407,7 +388,7 @@ const grammar: Grammar = {
     {
       name: 'pair',
       symbols: ['prop_name', 'equals', 'value'],
-      postprocess(d) {
+      postprocess: d => {
         return [d[0], d[2]];
       },
     },
@@ -421,13 +402,7 @@ const grammar: Grammar = {
       symbols: [{ literal: 't' }, { literal: 'r' }, { literal: 'u' }, { literal: 'e' }],
       postprocess: d => d.join(''),
     },
-    {
-      name: 'value',
-      symbols: ['value$string$1'],
-      postprocess(d) {
-        return true;
-      },
-    },
+    { name: 'value', symbols: ['value$string$1'], postprocess: d => true },
     {
       name: 'value$string$2',
       symbols: [
@@ -439,29 +414,18 @@ const grammar: Grammar = {
       ],
       postprocess: d => d.join(''),
     },
-    {
-      name: 'value',
-      symbols: ['value$string$2'],
-      postprocess(d) {
-        return false;
-      },
-    },
+    { name: 'value', symbols: ['value$string$2'], postprocess: d => false },
     {
       name: 'value$string$3',
       symbols: [{ literal: 'n' }, { literal: 'u' }, { literal: 'l' }, { literal: 'l' }],
       postprocess: d => d.join(''),
     },
-    {
-      name: 'value',
-      symbols: ['value$string$3'],
-      postprocess(d) {
-        return null;
-      },
-    },
-    { name: '_', symbols: [] },
-    { name: '_', symbols: [{ literal: ' ' }], postprocess: null },
+    { name: 'value', symbols: ['value$string$3'], postprocess: d => null },
+    { name: '_$ebnf$1', symbols: [] },
+    { name: '_$ebnf$1', symbols: ['_$ebnf$1', /[\s]/], postprocess: d => d[0].concat([d[1]]) },
+    { name: '_', symbols: ['_$ebnf$1'], postprocess: null },
   ],
-  ParserStart: 'query',
+  ParserStart: 'rule',
 };
 
 export default grammar;

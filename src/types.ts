@@ -315,12 +315,11 @@ export type Limit = {
 
 export interface VariableQueryData {
   query: string;
-  filter: string;
 }
 
 export interface VariableQueryProps {
-  query: any;
-  onChange: (query: any, definition: string) => void;
+  query: string;
+  onChange: (query: VariableQueryData) => void;
   datasource: any;
   templateSrv: any;
 }

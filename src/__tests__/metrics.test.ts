@@ -21,11 +21,10 @@ describe('Metrics Query', () => {
   describe('Given an empty metrics query', () => {
     const variableQuery: VariableQueryData = {
       query: '',
-      filter: '',
     };
     it('should throw a parse error', () => {
       expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression "`
+        `"ERROR: Unable to parse expression"`
       );
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
@@ -35,7 +34,6 @@ describe('Metrics Query', () => {
     let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{}',
-      filter: '',
     };
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
@@ -58,7 +56,6 @@ describe('Metrics Query', () => {
     let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{name=asset}',
-      filter: '',
     };
     const response = cloneDeep(assetsResponse);
     response.data.items = assetsResponse.data.items.filter(item => item.name.startsWith('asset'));
@@ -84,8 +81,8 @@ describe('Metrics Query', () => {
     let result;
     const variableQuery: VariableQueryData = {
       query: 'asset{}',
-      filter: 'filter{description=~ "test asset.*", metadata.key1 != value2}',
     };
+    // filter: 'filter{description=~ "test asset.*", metadata.key1 != value2}',
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
@@ -107,7 +104,6 @@ describe('Metrics Query', () => {
   describe('Given an incomplete metrics query', () => {
     const variableQuery: VariableQueryData = {
       query: 'asset{',
-      filter: '',
     };
     it('should throw a parse error', () => {
       backendSrvMock.datasourceRequest.mockReset();
@@ -121,7 +117,6 @@ describe('Metrics Query', () => {
   describe('Given an incorrect metrics query', () => {
     const variableQuery: VariableQueryData = {
       query: 'asset{name=~asset.*}',
-      filter: '',
     };
     it('should throw a parse error', () => {
       expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -134,7 +129,6 @@ describe('Metrics Query', () => {
   describe('Given an incorrect metrics query', () => {
     const variableQuery: VariableQueryData = {
       query: 'asset{name="asset}',
-      filter: '',
     };
     it('should throw a parse error', () => {
       expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -147,7 +141,6 @@ describe('Metrics Query', () => {
   describe('Given an incorrect filter query', () => {
     const variableQuery: VariableQueryData = {
       query: 'asset{name=foo}',
-      filter: 'filter{',
     };
     it('should throw a filter error', () => {
       expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -160,7 +153,6 @@ describe('Metrics Query', () => {
   describe('Given an incorrect filter query', () => {
     const variableQuery: VariableQueryData = {
       query: 'asset{name=foo}',
-      filter: 'filter{foo}',
     };
     it('should throw a filter error', () => {
       expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(

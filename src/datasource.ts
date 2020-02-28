@@ -1,17 +1,14 @@
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
-import { reduceToMap, applyFilters, getRequestId } from './utils';
+import { getRequestId, applyFiltersV1 } from './utils';
 import cache from './cache';
-import { parseExpression, parse } from './parser';
+import { parseV1 } from './query-parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
-  AnnotationQueryOptions,
-  AnnotationResponse,
   CogniteDataSourceSettings,
   DataQueryRequestItem,
   DataQueryRequestResponse,
   MetricFindQueryResponse,
-  ParseType,
   QueryOptions,
   QueryResponse,
   QueryTarget,
@@ -120,22 +117,12 @@ export default class CogniteDatasource {
   ): Promise<DataQueryRequestItem[]> {
     switch (target.tab) {
       case undefined:
-      case Tab.Timeseries: {
+      case Timeseries: {
         return [{ id: target.target }];
       }
-      case Tab.Asset: {
+      case Asset: {
         await this.findAssetTimeseries(target, options);
         return target.assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
-      }
-      case Tab.Custom: {
-        await this.findAssetTimeseries(target, options);
-        const timeseries = cache.getTimeseries(options, target); // TODO: remove this ugly logic
-        if (!timeseries.length) {
-          target.warning = '[WARNING] No timeseries found.';
-        } else if (target.expr) {
-          // apply the search expression
-          return parseExpression(target.expr, options, timeseries, this.templateSrv, target);
-        }
       }
     }
     return [];
@@ -144,51 +131,51 @@ export default class CogniteDatasource {
   /**
    * used by dashboards to get annotations (events)
    */
-  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
-    const { range, annotation } = options;
-    const { expr, filter, error } = annotation;
-    const [startTime, endTime] = getRange(range);
-    let response = [];
-
-    if (!error && expr) {
-      const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
-      const filterOptions = filter
-        ? parse(filter, ParseType.Event, this.templateSrv)
-        : { filters: [] };
-
-      // use max startTime and min endTime so that we include events that are partially in range
-      const filterQuery = {
-        startTime: { max: endTime },
-        endTime: { min: startTime },
-        ...reduceToMap(queryOptions.filters),
-      };
-
-      const items = await this.connector.fetchItems<any>({
-        path: `/events/list`,
-        method: HttpMethod.POST,
-        data: {
-          filter: filterQuery,
-          limit: 1000,
-        },
-      });
-
-      if (items && items.length) {
-        applyFilters(filterOptions.filters, items);
-
-        response = items
-          .filter(({ selected }) => selected)
-          .map(({ description, startTime, endTime, type }) => ({
-            annotation,
-            isRegion: true,
-            text: description,
-            time: startTime,
-            timeEnd: endTime,
-            title: type,
-          }));
-      }
-    }
-    return response;
-  }
+  // public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
+  //   const { range, annotation } = options;
+  //   const { expr, filter, error } = annotation;
+  //   const [startTime, endTime] = getRange(range);
+  //   let response = [];
+  //
+  //   if (!error && expr) {
+  //     const queryOptions = parse(expr, ParseType.Event, this.templateSrv);
+  //     const filterOptions = filter
+  //       ? parse(filter, ParseType.Event, this.templateSrv)
+  //       : { filters: [] };
+  //
+  //     // use max startTime and min endTime so that we include events that are partially in range
+  //     const filterQuery = {
+  //       startTime: { max: endTime },
+  //       endTime: { min: startTime },
+  //       ...reduceToMap(queryOptions.filters),
+  //     };
+  //
+  //     const items = await this.connector.fetchItems<any>({
+  //       path: `/events/list`,
+  //       method: HttpMethod.POST,
+  //       data: {
+  //         filter: filterQuery,
+  //         limit: 1000,
+  //       },
+  //     });
+  //
+  //     if (items && items.length) {
+  //       applyFilters(filterOptions.filters, items);
+  //
+  //       response = items
+  //         .filter(({ selected }) => selected)
+  //         .map(({ description, startTime, endTime, type }) => ({
+  //           annotation,
+  //           isRegion: true,
+  //           text: description,
+  //           time: startTime,
+  //           timeEnd: endTime,
+  //           title: type,
+  //         }));
+  //     }
+  //   }
+  //   return response;
+  // }
 
   /**
    * used by query editor to search for assets/timeseries
@@ -285,30 +272,24 @@ export default class CogniteDatasource {
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query, filter }: VariableQueryData): Promise<MetricFindQueryResponse> {
-    const queryOptions = parse(query, ParseType.Asset, this.templateSrv);
-    const filterOptions = filter
-      ? parse(filter, ParseType.Asset, this.templateSrv)
-      : { filters: [] };
+  async metricFindQuery({ query }: VariableQueryData): Promise<MetricFindQueryResponse> {
+    const { params, filters } = parseV1(query);
 
     const assets = await this.connector.fetchItems<any>({
-      path: `/assets/search`,
+      path: `/assets/list`,
       method: HttpMethod.POST,
       data: {
-        search: reduceToMap(queryOptions.filters),
+        filter: params,
         limit: 1000,
       },
     });
 
-    // now filter over these assets with the rest of the filters
-    applyFilters(filterOptions.filters, assets);
+    const filteredAssets = applyFiltersV1(assets, filters);
 
-    return assets
-      .filter(({ selected }) => selected)
-      .map(({ name, id }) => ({
-        text: name,
-        value: id,
-      }));
+    return filteredAssets.map(({ name, id }) => ({
+      text: name,
+      value: id,
+    }));
   }
 
   /**
