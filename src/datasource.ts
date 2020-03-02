@@ -1,7 +1,7 @@
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
-import { getRequestId, applyFiltersV1 } from './utils';
+import { getRequestId, applyFilters } from './utils';
 import cache from './cache';
-import { parseV1 } from './query-parser';
+import { parse } from './query-parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
@@ -24,10 +24,10 @@ import {
   FailResponse,
   SuccessResponse,
   InputQueryTarget,
-  ParseType,
   AnnotationResponse,
   AnnotationQueryOptions,
 } from './types';
+import { FilterRequest, AssetsFilterRequestParams, EventsFilterRequestParams } from './api-types';
 import {
   formQueriesForTargets,
   getTimeseries,
@@ -37,6 +37,7 @@ import {
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
+import { ParserResponse } from './query-parser/types';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -135,40 +136,45 @@ export default class CogniteDatasource {
    * used by dashboards to get annotations (events)
    */
   public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
+    const {
+      range,
+      annotation,
+      annotation: { query, error },
+    } = options;
     const [startTime, endTime] = getRange(range);
     let response = [];
 
-    if (!error && query) {
-      const { filters, params } = parseV1(query);
-      const timeFrame = {
-        startTime: { max: endTime },
-        endTime: { min: startTime },
-      };
-
-      const items = await this.connector.fetchItems<any>({
-        path: `/events/list`,
-        method: HttpMethod.POST,
-        data: {
-          filter: { ...params, ...timeFrame },
-          limit: 1000,
-        },
-      });
-
-      if (items && items.length) {
-        response = applyFiltersV1(items, filters).map(
-          ({ description, startTime, endTime, type }) => ({
-            annotation,
-            isRegion: true,
-            text: description,
-            time: startTime,
-            timeEnd: endTime,
-            title: type,
-          })
-        );
-      }
+    if (error || !query) {
+      return response;
     }
+
+    const { filters, params } = parse(query);
+    const timeFrame = {
+      startTime: { max: endTime },
+      endTime: { min: startTime },
+    };
+    const data: FilterRequest<EventsFilterRequestParams> = {
+      filter: { ...params, ...timeFrame },
+      limit: 1000,
+    };
+
+    const items = await this.connector.fetchItems<any>({
+      data,
+      path: `/events/list`,
+      method: HttpMethod.POST,
+    });
+
+    if (items && items.length) {
+      response = applyFilters(items, filters).map(({ description, startTime, endTime, type }) => ({
+        annotation,
+        isRegion: true,
+        text: description,
+        time: startTime,
+        timeEnd: endTime,
+        title: type,
+      }));
+    }
+
     return response;
   }
 
@@ -267,19 +273,19 @@ export default class CogniteDatasource {
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query }: VariableQueryData): Promise<MetricFindQueryResponse> {
-    const { params, filters } = parseV1(query);
+  async metricFindQuery({ filters, params }: ParserResponse): Promise<MetricFindQueryResponse> {
+    const data: FilterRequest<AssetsFilterRequestParams> = {
+      filter: params,
+      limit: 1000,
+    };
 
     const assets = await this.connector.fetchItems<any>({
+      data,
       path: `/assets/list`,
       method: HttpMethod.POST,
-      data: {
-        filter: params,
-        limit: 1000,
-      },
     });
 
-    const filteredAssets = applyFiltersV1(assets, filters);
+    const filteredAssets = applyFilters(assets, filters);
 
     return filteredAssets.map(({ name, id }) => ({
       text: name,

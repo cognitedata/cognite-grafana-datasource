@@ -2,10 +2,11 @@ import {
   DataQueryOptions,
   DataQuery,
   TimeSeries,
-  TimeRange,
+  TimeRange as GrafanaTimeRange,
   RawTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
+import { ParserResponse } from './query-parser/types';
 
 export type QueryResponse = DataResponse<TimeSeries[]>;
 
@@ -230,8 +231,8 @@ export interface Annotation {
 }
 
 export interface AnnotationQueryOptions {
-  range: TimeRange;
-  rangeRaw: RawTimeRange;
+  range: GrafanaTimeRange;
+  rangeRaw: GrafanaTimeRange;
   annotation: Annotation;
   dashboard: number;
 }
@@ -313,13 +314,18 @@ export type Limit = {
   limit?: number;
 };
 
+export interface Cursor {
+  cursor?: string;
+}
+
 export interface VariableQueryData {
   query: string;
+  error: string;
 }
 
 export interface VariableQueryProps {
   query: string;
-  onChange: (query: VariableQueryData) => void;
+  onChange: (query: ParserResponse) => void;
   datasource: any;
   templateSrv: any;
 }
@@ -330,23 +336,4 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
     defaultRegion: string;
     cogniteProject: string;
   };
-}
-
-export enum FilterType {
-  RegexNotEquals = '!~',
-  RegexEquals = '=~',
-  NotEquals = '!=',
-  Equals = '=',
-}
-
-export interface Filter {
-  property: string;
-  value: string;
-  type: FilterType;
-}
-
-export interface FilterOptions {
-  filters: Filter[];
-  granularity: string;
-  aggregation: string;
 }

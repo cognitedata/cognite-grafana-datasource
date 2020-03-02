@@ -1,1 +1,1 @@
-export { parseV1 } from './query-parser';
+export { parse } from './query-parser';
