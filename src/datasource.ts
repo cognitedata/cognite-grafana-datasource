@@ -37,7 +37,7 @@ import {
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
-import { ParserResponse } from './query-parser/types';
+import { ParsedFilter, ParserResponse, QueryCondition } from './query-parser/types';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -132,6 +132,10 @@ export default class CogniteDatasource {
     return [];
   }
 
+  private replaceVariable(query: string): string {
+    return this.templateSrv.replace(query);
+  }
+
   /**
    * used by dashboards to get annotations (events)
    */
@@ -148,7 +152,9 @@ export default class CogniteDatasource {
       return response;
     }
 
-    const { filters, params } = parse(query);
+    const replacedVariablesQuery = this.replaceVariable(query);
+
+    const { filters, params } = parse(replacedVariablesQuery);
     const timeFrame = {
       startTime: { max: endTime },
       endTime: { min: startTime },
@@ -273,7 +279,16 @@ export default class CogniteDatasource {
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ filters, params }: ParserResponse): Promise<MetricFindQueryResponse> {
+  async metricFindQuery({ query }: VariableQueryData): Promise<MetricFindQueryResponse> {
+    let params: QueryCondition;
+    let filters: ParsedFilter[];
+
+    try {
+      ({ params, filters } = parse(query));
+    } catch (e) {
+      return [];
+    }
+
     const data: FilterRequest<AssetsFilterRequestParams> = {
       filter: params,
       limit: 1000,

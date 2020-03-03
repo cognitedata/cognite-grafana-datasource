@@ -320,12 +320,12 @@ export interface Cursor {
 
 export interface VariableQueryData {
   query: string;
-  error: string;
+  error?: string;
 }
 
 export interface VariableQueryProps {
   query: string;
-  onChange: (query: ParserResponse) => void;
+  onChange: (query: VariableQueryData) => void;
   datasource: any;
   templateSrv: any;
 }

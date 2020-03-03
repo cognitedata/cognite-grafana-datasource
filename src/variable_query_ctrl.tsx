@@ -27,12 +27,14 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
 
   handleBlur = () => {
     try {
-      const parsed = parse(this.state.query);
+      const { query } = this.state;
+      parse(query);
 
-      this.props.onChange(parsed);
+      this.props.onChange({ query });
     } catch ({ title, message }) {
       const error = `${title}:\n${message}`;
       this.setState({ error });
+      this.props.onChange({ query: '' });
     }
   };
 

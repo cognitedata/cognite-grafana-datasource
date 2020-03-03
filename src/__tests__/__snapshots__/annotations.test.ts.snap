@@ -4,7 +4,9 @@ exports[`Annotations Query Given an annotation query should generate the correct
 Object {
   "data": Object {
     "filter": Object {
-      "assetIds": "[123]",
+      "assetIds": Array [
+        123,
+      ],
       "endTime": Object {
         "min": 1549336675000,
       },
@@ -18,31 +20,6 @@ Object {
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
-`;
-
-exports[`Annotations Query Given an annotation query should return the correct events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{assetIds = [123], type= 'type 1' }",
-    },
-    "isRegion": true,
-    "text": "event 1",
-    "time": "1549336675000",
-    "timeEnd": "1549336775000",
-    "title": "type 1",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{assetIds = [123], type= 'type 1' }",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
 `;
 
 exports[`Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
@@ -71,7 +48,10 @@ Object {
       "endTime": Object {
         "min": 1549336675000,
       },
-      "metadata": "{\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"}",
+      "metadata": Object {
+        "key1": "value1",
+        "key2": "value2",
+      },
       "startTime": Object {
         "max": 1549338475000,
       },
@@ -81,21 +61,6 @@ Object {
   "method": "POST",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
-`;
-
-exports[`Annotations Query Given an annotation query with a metadata request should return the correct event 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{ metadata={\\"key1\\":\\"value1\\",\\"key2\\":\\"value2\\"} }",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
 `;
 
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
@@ -116,49 +81,13 @@ Object {
 }
 `;
 
-exports[`Annotations Query Given an annotation query with filters should return the correct events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 2",
-    "time": "1549336775000",
-    "timeEnd": "1549336875000",
-    "title": "type 2",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 3",
-    "time": "1549336875000",
-    "timeEnd": "1549336975000",
-    "title": "type 3",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-      "filter": "filter{description=~event.*, type!= 'type 1', }",
-    },
-    "isRegion": true,
-    "text": "event 4",
-    "time": "1549336975000",
-    "timeEnd": "1549337075000",
-    "title": "type 4",
-  },
-]
-`;
-
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
 Object {
   "data": Object {
     "filter": Object {
-      "assetIds": "[123]",
+      "assetIds": Array [
+        123,
+      ],
       "endTime": Object {
         "min": 1549336675000,
       },
@@ -174,58 +103,3 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query with variables should return the correct events 1`] = `Array []`;
-
-exports[`Annotations Query Given an annotation query without any filters should return all events 1`] = `
-Array [
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 1",
-    "time": "1549336675000",
-    "timeEnd": "1549336775000",
-    "title": "type 1",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 2",
-    "time": "1549336775000",
-    "timeEnd": "1549336875000",
-    "title": "type 2",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 3",
-    "time": "1549336875000",
-    "timeEnd": "1549336975000",
-    "title": "type 3",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "event 4",
-    "time": "1549336975000",
-    "timeEnd": "1549337075000",
-    "title": "type 4",
-  },
-  Object {
-    "annotation": Object {
-      "expr": "event{}",
-    },
-    "isRegion": true,
-    "text": "time out of bounds",
-    "time": "1549336600000",
-    "timeEnd": "1549338500000",
-    "title": "type 1",
-  },
-]
-`;
