@@ -5,15 +5,14 @@ import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
 
 const { ds, backendSrvMock } = getMockedDataSource();
-const assets = [
-  { id: 123, name: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
-  { id: 456, name: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
-  { id: 789, name: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
-  { id: 999, name: 'foo', description: 'bar', metadata: { key1: 'value1' } },
-];
 const assetsResponse = {
   data: {
-    items: assets,
+    items: [
+      { id: 123, name: 'asset 1', description: 'test asset 1', metadata: { key1: 'value1' } },
+      { id: 456, name: 'asset 2', description: 'test asset 2', metadata: { key1: 'value2' } },
+      { id: 789, name: 'asset 3', description: 'test asset 3', metadata: { key1: 'value3' } },
+      { id: 999, name: 'foo', description: 'bar', metadata: { key1: 'value1' } },
+    ],
   },
 };
 

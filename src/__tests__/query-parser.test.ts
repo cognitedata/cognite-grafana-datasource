@@ -31,7 +31,7 @@ describe('Query parser', () => {
       expect(() => parseQuery(input)).toThrowErrorMatchingSnapshot();
     });
     it('should throw error if wrong filter provided', () => {
-      const input = `asset{name~='name'}`;
+      const input = `assets{name~='name'}`;
 
       expect(() => parseQuery(input)).toThrowErrorMatchingSnapshot();
     });

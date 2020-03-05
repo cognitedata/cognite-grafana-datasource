@@ -6,8 +6,8 @@ exports[`Query parser Query parsing should fail if string with double quotes 1`]
 `;
 
 exports[`Query parser Query parsing should throw error if wrong filter provided 1`] = `
-"asset{name~='name'}
-     ^"
+"assets{name~='name'}
+           ^"
 `;
 
 exports[`Query parser Query parsing should throw error if wrong type provided 1`] = `

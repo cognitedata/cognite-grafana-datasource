@@ -25,7 +25,7 @@ const extractObject = d => {
   let output = {...extractPair(d[2])};
 
   for (let i in d[4]) {
-      output = {...output, ...extractPair(d[4][i][2])};
+    output = {...output, ...extractPair(d[4][i][2])};
   }
 
   return output;
@@ -34,7 +34,7 @@ const extractArray = d => {
   const output = [d[2]];
 
   for (let i in d[4]) {
-      output.push(d[4][i][2]);
+    output.push(d[4][i][2]);
   }
 
   return output;
@@ -55,7 +55,7 @@ filter -> "!=" {% id %}
   | "=~" {% id %}
   | "!~" {% id %}
 equals -> "=" {% id %}
-prop_name -> [A-z0-9_]:+ {% join %}
+prop_name -> [A-Za-z0-9_]:+ {% join %}
 
 string -> sqstring {% id %}
 number -> unsigned_int {% id %}
