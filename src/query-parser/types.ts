@@ -2,6 +2,7 @@ export enum FilterType {
   RegexNotEquals = '!~',
   RegexEquals = '=~',
   NotEquals = '!=',
+  Equals = '=',
 }
 export interface QueryFilter {
   filter: FilterType;
@@ -32,4 +33,9 @@ export interface QueryCondition {
 export interface ParserResponse extends QueryParserType {
   params: QueryCondition;
   filters: ParsedFilter[];
+}
+
+export interface ParserError {
+  title: string;
+  message: string;
 }

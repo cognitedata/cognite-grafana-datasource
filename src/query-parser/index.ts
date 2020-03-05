@@ -1,1 +1,1 @@
-export { parse } from './query-parser';
+export * from './query-parser';

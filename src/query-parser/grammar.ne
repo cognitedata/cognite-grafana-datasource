@@ -8,33 +8,33 @@ const join = ([d]) => d.join('');
 const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return d.length > 2
-	? {[d[0]]:{ filter: d[1], value: d[2]}}
+	? {[d[0]+d[1]]:{key: d[0], filter: d[1], value: d[2]}}
 	: {[d[0]]: d[1]}
 }
 const extractConditionToArray = d => {
   if(!d.length) return [];
-  const output = [extractPair(d[1])];
+  const output = [extractPair(d[2])];
 
-  for (let i in d[2]) {
-  	output.push(extractPair(d[2][i][2]))
+  for (let i in d[4]) {
+  	output.push(extractPair(d[4][i][2]))
   }
 
   return output
 }
 const extractObject = d => {
-  let output = {...extractPair(d[1])};
+  let output = {...extractPair(d[2])};
 
-  for (let i in d[2]) {
-      output = {...output, ...extractPair(d[2][i][2])};
+  for (let i in d[4]) {
+      output = {...output, ...extractPair(d[4][i][2])};
   }
 
   return output;
 }
 const extractArray = d => {
-  const output = [d[1]];
+  const output = [d[2]];
 
-  for (let i in d[2]) {
-      output.push(d[2][i][2]);
+  for (let i in d[4]) {
+      output.push(d[4][i][2]);
   }
 
   return output;
@@ -49,7 +49,7 @@ type -> "assets" {% id %}
   | "events" {% id %}
 
 condition -> "{" "}" {% emptyArray %}
-  | "{" pair ("," _ pair):* "}" {% extractConditionToArray %}
+  | "{" _ pair _ ("," _ pair _):* _ "}" {% extractConditionToArray %}
 
 filter -> "!=" {% id %}
   | "=~" {% id %}
@@ -59,12 +59,12 @@ prop_name -> [A-z0-9_]:+ {% join %}
 
 string -> sqstring {% id %}
 number -> unsigned_int {% id %}
-array -> "[" "]" {% emptyArray %}
-  | "[" value ("," _ value):* "]" {% extractArray %}
-object -> "{" "}" {% emptyObject %}
-	| "{" pair ("," _ pair):* "}" {% extractObject %}
-pair -> prop_name equals value {% d => { return [d[0], d[2]]; } %}
- | prop_name filter string
+array -> "[" _ "]" {% emptyArray %}
+  | "[" _ value _ ("," _ value _):* _ "]" {% extractArray %}
+object -> "{" _ "}" {% emptyObject %}
+	| "{" _ pair _ ("," _ pair _):* _ "}" {% extractObject %}
+pair -> prop_name _ equals _ value {% d => [d[0], d[4]] %}
+ | prop_name _ filter _ string {% d => [d[0], d[2], d[4]] %}
 value ->
     object {% id %}
   | array {% id %}

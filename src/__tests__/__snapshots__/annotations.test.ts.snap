@@ -63,6 +63,10 @@ Object {
 }
 `;
 
+exports[`Annotations Query Given an annotation query with an incomplete event expression should throw a parse error 1`] = `"received is not a function"`;
+
+exports[`Annotations Query Given an annotation query with an incorrect event expression should throw a parse error 1`] = `"received is not a function"`;
+
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
 Object {
   "data": Object {

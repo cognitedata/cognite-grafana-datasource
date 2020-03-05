@@ -26,8 +26,10 @@ import {
   InputQueryTarget,
   AnnotationResponse,
   AnnotationQueryOptions,
+  FilterRequest,
+  AssetsFilterRequestParams,
+  EventsFilterRequestParams,
 } from './types';
-import { FilterRequest, AssetsFilterRequestParams, EventsFilterRequestParams } from './api-types';
 import {
   formQueriesForTargets,
   getTimeseries,
@@ -37,7 +39,7 @@ import {
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
-import { ParsedFilter, ParserResponse, QueryCondition } from './query-parser/types';
+import { ParsedFilter, QueryCondition } from './query-parser/types';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -300,7 +302,12 @@ export default class CogniteDatasource {
       method: HttpMethod.POST,
     });
 
-    const filteredAssets = applyFilters(assets, filters);
+    let filteredAssets;
+    try {
+      filteredAssets = applyFilters(assets, filters);
+    } catch (e) {
+      throw e;
+    }
 
     return filteredAssets.map(({ name, id }) => ({
       text: name,

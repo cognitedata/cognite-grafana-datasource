@@ -3,11 +3,8 @@ import {
   DataQuery,
   TimeSeries,
   TimeRange as GrafanaTimeRange,
-  RawTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
-import { ParserResponse } from './query-parser/types';
-
 export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
@@ -78,6 +75,11 @@ export type QueryFormat = 'json';
 export type QueryOptions = DataQueryOptions<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
+
+export interface Range<T> {
+  min?: T;
+  max?: T;
+}
 
 export enum HttpMethod {
   POST = 'POST',
@@ -336,4 +338,54 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
     defaultRegion: string;
     cogniteProject: string;
   };
+}
+
+export interface Metadata {
+  [name: string]: string;
+}
+
+export type TimeRange = Range<number>;
+export type CogniteInternalId = number;
+export type CogniteExternallId = string;
+
+export interface FilterRequestParams {
+  metadata?: Metadata;
+  assetSubtreeIds?: IdEither[];
+  createdTime?: TimeRange;
+  lastUpdatedTime?: TimeRange;
+  externalIdPrefix?: string;
+}
+
+export interface AssetsFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  parentIds?: CogniteInternalId[];
+  parentExternalIds?: CogniteExternallId[];
+  rootIds?: IdEither[];
+  source?: string;
+  root?: boolean;
+}
+
+export interface TimeseriesFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  unit?: string;
+  isString?: boolean;
+  isStep?: boolean;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+}
+
+export interface EventsFilterRequestParams extends FilterRequestParams {
+  startTime?: TimeRange;
+  endTime?: TimeRange;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+  source?: string;
+  type?: string;
+  subtype?: string;
+}
+
+export interface FilterRequest<Filter> extends Limit, Cursor {
+  filter: Filter;
 }

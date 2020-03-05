@@ -1,8 +1,8 @@
+jest.mock('../cache');
+
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
-
-jest.mock('../cache');
 
 const { ds, backendSrvMock } = getMockedDataSource();
 const assets = [
@@ -88,7 +88,7 @@ describe('Metrics Query', () => {
   describe('Given a metrics query with filters', () => {
     let result;
     const variableQuery: VariableQueryData = {
-      query: "assets{description=~'test asset.*', metadata={key1!='value2'}}",
+      query: "assets{description=~'test asset.*', metadata={key1!='value2', key1!~'.*3'}}",
     };
 
     beforeAll(async () => {
@@ -104,7 +104,7 @@ describe('Metrics Query', () => {
     });
 
     it('should return the correct assets', () => {
-      expect(result.length).toEqual(2);
+      expect(result.length).toEqual(1);
     });
   });
 
@@ -143,13 +143,20 @@ describe('Metrics Query', () => {
   });
 
   describe('Given an incorrect filter query', () => {
-    const variableQuery: VariableQueryData = {
-      query: "assets{name~='foo'}",
-    };
-    it('should return an empty array', async () => {
+    it('should return an empty array if filter type is wrong', async () => {
+      const variableQuery: VariableQueryData = {
+        query: "assets{name~='foo'}",
+      };
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+    });
+    it('should return an empty array if filter regexp is wrong', async () => {
+      const variableQuery: VariableQueryData = {
+        query: "assets{name=~'*.foo'}",
+      };
+      expect(ds.metricFindQuery(variableQuery)).toThrowErrorMatchingSnapshot();
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
     });
   });
 });

@@ -1,5 +1,5 @@
 import CogniteDatasource from '../datasource';
-import { DataQueryRequest, DataQueryRequestResponse, QueryTarget } from '../types';
+import { DataQueryRequest, QueryTarget } from '../types';
 import { getDatasourceValueString } from '../utils';
 import ms from 'ms';
 

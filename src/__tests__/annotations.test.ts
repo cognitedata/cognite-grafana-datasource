@@ -3,7 +3,7 @@ import { getMockedDataSource } from './utils';
 
 jest.mock('../cache');
 
-const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
+const { ds, backendSrvMock } = getMockedDataSource();
 
 describe('Annotations Query', () => {
   const annotationResponse = {
@@ -53,6 +53,10 @@ describe('Annotations Query', () => {
       ],
     },
   };
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   describe('Given an empty annotation query', () => {
     let result;
@@ -297,7 +301,7 @@ describe('Annotations Query', () => {
       backendSrvMock.datasourceRequest.mockReset();
     });
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowError();
+      expect(ds.annotationQuery(annotationOption)).toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
@@ -313,7 +317,7 @@ describe('Annotations Query', () => {
       },
     };
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowError();
+      expect(ds.annotationQuery(annotationOption)).toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });

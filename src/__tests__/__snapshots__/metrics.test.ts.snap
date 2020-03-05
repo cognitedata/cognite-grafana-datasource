@@ -45,3 +45,5 @@ Object {
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/list",
 }
 `;
+
+exports[`Metrics Query Given an incorrect filter query should return an empty array if filter regexp is wrong 1`] = `"received is not a function"`;

@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Query parser Query parsing should fail if string with double quotes 1`] = `
+"assets{name=\\"name\\"}
+            ^"
+`;
+
+exports[`Query parser Query parsing should throw error if wrong filter provided 1`] = `
+"asset{name~='name'}
+     ^"
+`;
+
+exports[`Query parser Query parsing should throw error if wrong type provided 1`] = `
+"asset{name='name'}
+     ^"
+`;
+
+exports[`Query parser Query parsing should throw error in case of empty query 1`] = `
+"
+^"
+`;
+
+exports[`Query parser Query parsing should throw error in case of wrong format 1`] = `
+"
+^"
+`;

@@ -9,32 +9,34 @@ function id(d: any[]): any {
 const join = ([d]) => d.join('');
 const formatQuery = ([type, query]) => ({ type, query });
 const extractPair = d => {
-  return d.length > 2 ? { [d[0]]: { filter: d[1], value: d[2] } } : { [d[0]]: d[1] };
+  return d.length > 2
+    ? { [d[0] + d[1]]: { key: d[0], filter: d[1], value: d[2] } }
+    : { [d[0]]: d[1] };
 };
 const extractConditionToArray = d => {
   if (!d.length) return [];
-  const output = [extractPair(d[1])];
+  const output = [extractPair(d[2])];
 
-  for (let i in d[2]) {
-    output.push(extractPair(d[2][i][2]));
+  for (let i in d[4]) {
+    output.push(extractPair(d[4][i][2]));
   }
 
   return output;
 };
 const extractObject = d => {
-  let output = { ...extractPair(d[1]) };
+  let output = { ...extractPair(d[2]) };
 
-  for (let i in d[2]) {
-    output = { ...output, ...extractPair(d[2][i][2]) };
+  for (let i in d[4]) {
+    output = { ...output, ...extractPair(d[4][i][2]) };
   }
 
   return output;
 };
 const extractArray = d => {
-  const output = [d[1]];
+  const output = [d[2]];
 
-  for (let i in d[2]) {
-    output.push(d[2][i][2]);
+  for (let i in d[4]) {
+    output.push(d[4][i][2]);
   }
 
   return output;
@@ -320,7 +322,7 @@ const grammar: Grammar = {
     { name: 'type', symbols: ['type$string$2'], postprocess: id },
     { name: 'condition', symbols: [{ literal: '{' }, { literal: '}' }], postprocess: emptyArray },
     { name: 'condition$ebnf$1', symbols: [] },
-    { name: 'condition$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'pair'] },
+    { name: 'condition$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'pair', '_'] },
     {
       name: 'condition$ebnf$1',
       symbols: ['condition$ebnf$1', 'condition$ebnf$1$subexpression$1'],
@@ -328,7 +330,7 @@ const grammar: Grammar = {
     },
     {
       name: 'condition',
-      symbols: [{ literal: '{' }, 'pair', 'condition$ebnf$1', { literal: '}' }],
+      symbols: [{ literal: '{' }, '_', 'pair', '_', 'condition$ebnf$1', '_', { literal: '}' }],
       postprocess: extractConditionToArray,
     },
     {
@@ -359,9 +361,9 @@ const grammar: Grammar = {
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
     { name: 'string', symbols: ['sqstring'], postprocess: id },
     { name: 'number', symbols: ['unsigned_int'], postprocess: id },
-    { name: 'array', symbols: [{ literal: '[' }, { literal: ']' }], postprocess: emptyArray },
+    { name: 'array', symbols: [{ literal: '[' }, '_', { literal: ']' }], postprocess: emptyArray },
     { name: 'array$ebnf$1', symbols: [] },
-    { name: 'array$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'value'] },
+    { name: 'array$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'value', '_'] },
     {
       name: 'array$ebnf$1',
       symbols: ['array$ebnf$1', 'array$ebnf$1$subexpression$1'],
@@ -369,12 +371,16 @@ const grammar: Grammar = {
     },
     {
       name: 'array',
-      symbols: [{ literal: '[' }, 'value', 'array$ebnf$1', { literal: ']' }],
+      symbols: [{ literal: '[' }, '_', 'value', '_', 'array$ebnf$1', '_', { literal: ']' }],
       postprocess: extractArray,
     },
-    { name: 'object', symbols: [{ literal: '{' }, { literal: '}' }], postprocess: emptyObject },
+    {
+      name: 'object',
+      symbols: [{ literal: '{' }, '_', { literal: '}' }],
+      postprocess: emptyObject,
+    },
     { name: 'object$ebnf$1', symbols: [] },
-    { name: 'object$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'pair'] },
+    { name: 'object$ebnf$1$subexpression$1', symbols: [{ literal: ',' }, '_', 'pair', '_'] },
     {
       name: 'object$ebnf$1',
       symbols: ['object$ebnf$1', 'object$ebnf$1$subexpression$1'],
@@ -382,17 +388,19 @@ const grammar: Grammar = {
     },
     {
       name: 'object',
-      symbols: [{ literal: '{' }, 'pair', 'object$ebnf$1', { literal: '}' }],
+      symbols: [{ literal: '{' }, '_', 'pair', '_', 'object$ebnf$1', '_', { literal: '}' }],
       postprocess: extractObject,
     },
     {
       name: 'pair',
-      symbols: ['prop_name', 'equals', 'value'],
-      postprocess: d => {
-        return [d[0], d[2]];
-      },
+      symbols: ['prop_name', '_', 'equals', '_', 'value'],
+      postprocess: d => [d[0], d[4]],
     },
-    { name: 'pair', symbols: ['prop_name', 'filter', 'string'] },
+    {
+      name: 'pair',
+      symbols: ['prop_name', '_', 'filter', '_', 'string'],
+      postprocess: d => [d[0], d[2], d[4]],
+    },
     { name: 'value', symbols: ['object'], postprocess: id },
     { name: 'value', symbols: ['array'], postprocess: id },
     { name: 'value', symbols: ['number'], postprocess: id },
