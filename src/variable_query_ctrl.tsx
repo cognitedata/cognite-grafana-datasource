@@ -31,8 +31,8 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
       parse(query);
 
       this.props.onChange({ query });
-    } catch ({ title, message }) {
-      const error = `${title}:\n${message}`;
+    } catch ({ message }) {
+      const error = message;
       this.setState({ error });
       this.props.onChange({ query: '' });
     }

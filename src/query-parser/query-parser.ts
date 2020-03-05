@@ -20,25 +20,29 @@ const parseQuery = (query: string): QueryParserResponse => {
 
     [result] = parser.finish();
   } catch (e) {
-    throw handleParserError(e, trimmedQuery);
+    const message = formatErrorMessage(e, trimmedQuery);
+
+    throw new Error(message);
   }
 
   if (!result) {
-    throw handleParserError(
+    const message = formatErrorMessage(
       { offset: trimmedQuery.length },
       trimmedQuery,
-      'Unexpected end of input'
+      'Parser: Unexpected end of input'
     );
+
+    throw new Error(message);
   }
 
   return result;
 };
 
-const handleParserError = ({ offset }, query, title = 'Syntax error'): ParserError => {
+const formatErrorMessage = ({ offset }, query, title = 'Parser: Syntax error'): string => {
   const pointer = Number.isInteger(offset) ? offset + 1 : query.length;
   const message = `${query}\n${Array(pointer).join(' ')}^`;
 
-  return { title, message };
+  return `${title}:\n${message}`;
 };
 
 const formatQueryParse = ({ type, query }: QueryParserResponse): ParserResponse => {

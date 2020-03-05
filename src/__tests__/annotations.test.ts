@@ -301,7 +301,7 @@ describe('Annotations Query', () => {
       backendSrvMock.datasourceRequest.mockReset();
     });
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).toThrowErrorMatchingSnapshot();
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
@@ -317,7 +317,7 @@ describe('Annotations Query', () => {
       },
     };
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).toThrowErrorMatchingSnapshot();
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });

@@ -17,8 +17,8 @@ export class CogniteAnnotationsQueryCtrl {
 
     try {
       parse(this.annotation.query);
-    } catch ({ title, message }) {
-      this.annotation.error = `${title}:\n${message}`;
+    } catch ({ message }) {
+      this.annotation.error = message;
     }
   }
 }

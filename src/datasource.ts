@@ -155,7 +155,6 @@ export default class CogniteDatasource {
     }
 
     const replacedVariablesQuery = this.replaceVariable(query);
-
     const { filters, params } = parse(replacedVariablesQuery);
     const timeFrame = {
       startTime: { max: endTime },
