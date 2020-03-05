@@ -19,8 +19,3 @@ exports[`Query parser Query parsing should throw error in case of empty query 1`
 "
 ^"
 `;
-
-exports[`Query parser Query parsing should throw error in case of wrong format 1`] = `
-"
-^"
-`;
