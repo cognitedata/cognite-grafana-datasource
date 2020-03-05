@@ -45,7 +45,7 @@ describe('Query parser', () => {
           {
             assetIds: [123],
             metadata: {
-              'some unique hash here': {
+              'key=~': {
                 key: 'key1',
                 filter: '=~',
                 value: 'test.*',
