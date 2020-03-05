@@ -352,10 +352,10 @@ const grammar: Grammar = {
     },
     { name: 'filter', symbols: ['filter$string$3'], postprocess: id },
     { name: 'equals', symbols: [{ literal: '=' }], postprocess: id },
-    { name: 'prop_name$ebnf$1', symbols: [/[A-z0-9_]/] },
+    { name: 'prop_name$ebnf$1', symbols: [/[A-Za-z0-9_]/] },
     {
       name: 'prop_name$ebnf$1',
-      symbols: ['prop_name$ebnf$1', /[A-z0-9_]/],
+      symbols: ['prop_name$ebnf$1', /[A-Za-z0-9_]/],
       postprocess: d => d[0].concat([d[1]]),
     },
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
