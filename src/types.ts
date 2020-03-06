@@ -2,11 +2,9 @@ import {
   DataQueryOptions,
   DataQuery,
   TimeSeries,
-  TimeRange,
-  RawTimeRange,
+  TimeRange as GrafanaTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
-
 export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
@@ -77,6 +75,11 @@ export type QueryFormat = 'json';
 export type QueryOptions = DataQueryOptions<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
+
+export interface Range<T> {
+  min?: T;
+  max?: T;
+}
 
 export enum HttpMethod {
   POST = 'POST',
@@ -222,7 +225,7 @@ export interface Annotation {
   iconColor: string;
   limit: number;
   name: string;
-  expr: string;
+  query: string;
   filter: string;
   error: string;
   type: string;
@@ -230,8 +233,8 @@ export interface Annotation {
 }
 
 export interface AnnotationQueryOptions {
-  range: TimeRange;
-  rangeRaw: RawTimeRange;
+  range: GrafanaTimeRange;
+  rangeRaw: GrafanaTimeRange;
   annotation: Annotation;
   dashboard: number;
 }
@@ -313,14 +316,18 @@ export type Limit = {
   limit?: number;
 };
 
+export interface Cursor {
+  cursor?: string;
+}
+
 export interface VariableQueryData {
   query: string;
-  filter: string;
+  error?: string;
 }
 
 export interface VariableQueryProps {
-  query: any;
-  onChange: (query: any, definition: string) => void;
+  query: string;
+  onChange: (query: VariableQueryData) => void;
   datasource: any;
   templateSrv: any;
 }
@@ -333,21 +340,52 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
   };
 }
 
-export enum FilterType {
-  RegexNotEquals = '!~',
-  RegexEquals = '=~',
-  NotEquals = '!=',
-  Equals = '=',
+export interface Metadata {
+  [name: string]: string;
 }
 
-export interface Filter {
-  property: string;
-  value: string;
-  type: FilterType;
+export type TimeRange = Range<number>;
+export type CogniteInternalId = number;
+export type CogniteExternallId = string;
+
+export interface FilterRequestParams {
+  metadata?: Metadata;
+  assetSubtreeIds?: IdEither[];
+  createdTime?: TimeRange;
+  lastUpdatedTime?: TimeRange;
+  externalIdPrefix?: string;
 }
 
-export interface FilterOptions {
-  filters: Filter[];
-  granularity: string;
-  aggregation: string;
+export interface AssetsFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  parentIds?: CogniteInternalId[];
+  parentExternalIds?: CogniteExternallId[];
+  rootIds?: IdEither[];
+  source?: string;
+  root?: boolean;
+}
+
+export interface TimeseriesFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  unit?: string;
+  isString?: boolean;
+  isStep?: boolean;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+}
+
+export interface EventsFilterRequestParams extends FilterRequestParams {
+  startTime?: TimeRange;
+  endTime?: TimeRange;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+  source?: string;
+  type?: string;
+  subtype?: string;
+}
+
+export interface FilterRequest<Filter> extends Limit, Cursor {
+  filter: Filter;
 }

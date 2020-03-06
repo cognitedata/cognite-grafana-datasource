@@ -1,11 +1,10 @@
+jest.mock('../cache');
+
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
 
-jest.mock('../cache');
-
 const { ds, backendSrvMock } = getMockedDataSource();
-
 const assetsResponse = {
   data: {
     items: [
@@ -18,15 +17,17 @@ const assetsResponse = {
 };
 
 describe('Metrics Query', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   describe('Given an empty metrics query', () => {
     const variableQuery: VariableQueryData = {
       query: '',
-      filter: '',
     };
-    it('should throw a parse error', () => {
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression "`
-      );
+    it('should return empty array', async () => {
+      const result = await ds.metricFindQuery(variableQuery);
+
+      expect(result).toEqual([]);
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
@@ -34,8 +35,7 @@ describe('Metrics Query', () => {
   describe('Given a metrics query with no options', () => {
     let result;
     const variableQuery: VariableQueryData = {
-      query: 'asset{}',
-      filter: '',
+      query: 'assets{}',
     };
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
@@ -44,24 +44,28 @@ describe('Metrics Query', () => {
       result = await ds.metricFindQuery(variableQuery);
     });
 
+    afterAll(() => {
+      jest.clearAllMocks();
+    });
+
     it('should generate the correct request', () => {
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
       expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return all assets', () => {
-      expect(result).toMatchSnapshot();
+      expect(result.length).toEqual(assetsResponse.data.items.length);
     });
   });
 
   describe('Given a simple metrics query', () => {
     let result;
+    const id = 123;
     const variableQuery: VariableQueryData = {
-      query: 'asset{name=asset}',
-      filter: '',
+      query: `assets{id=${id}}`,
     };
     const response = cloneDeep(assetsResponse);
-    response.data.items = assetsResponse.data.items.filter(item => item.name.startsWith('asset'));
+    response.data.items = assetsResponse.data.items.filter(item => item.id === id);
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
@@ -76,15 +80,17 @@ describe('Metrics Query', () => {
     });
 
     it('should return the correct assets', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ value }) => value);
+
+      expect(result.length).toEqual(1);
+      expect(resultIds.includes(id)).toBeTruthy();
     });
   });
 
   describe('Given a metrics query with filters', () => {
     let result;
     const variableQuery: VariableQueryData = {
-      query: 'asset{}',
-      filter: 'filter{description=~ "test asset.*", metadata.key1 != value2}',
+      query: "assets{description=~'test asset.*', metadata={key1!='value2', key1!~'.*3'}}",
     };
 
     beforeAll(async () => {
@@ -100,73 +106,62 @@ describe('Metrics Query', () => {
     });
 
     it('should return the correct assets', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ value }) => value);
+
+      expect(result.length).toEqual(1);
+      expect(resultIds.includes(123)).toBeTruthy();
+    });
+  });
+
+  describe('Given a metrics query with unmatched filters', () => {
+    let result;
+    const variableQuery: VariableQueryData = {
+      query: "assets{description=~'non-matched filter.*', metadata={key1!='value2'}}",
+    };
+
+    beforeAll(async () => {
+      backendSrvMock.datasourceRequest = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(assetsResponse));
+      result = await ds.metricFindQuery(variableQuery);
+    });
+
+    it('should generate the correct request', () => {
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
+      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should return the correct assets', () => {
+      expect(result.length).toEqual(0);
     });
   });
 
   describe('Given an incomplete metrics query', () => {
     const variableQuery: VariableQueryData = {
-      query: 'asset{',
-      filter: '',
+      query: 'asset',
     };
-    it('should throw a parse error', () => {
-      backendSrvMock.datasourceRequest.mockReset();
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression asset{"`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-  });
-
-  describe('Given an incorrect metrics query', () => {
-    const variableQuery: VariableQueryData = {
-      query: 'asset{name=~asset.*}',
-      filter: '',
-    };
-    it('should throw a parse error', () => {
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse 'name=~asset.*'. Only strict equality (=) is allowed."`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-  });
-
-  describe('Given an incorrect metrics query', () => {
-    const variableQuery: VariableQueryData = {
-      query: 'asset{name="asset}',
-      filter: '',
-    };
-    it('should throw a parse error', () => {
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Could not find closing ' \\" ' while parsing 'name=\\"asset'."`
-      );
+    it('should return an empty array', async () => {
+      const result = await ds.metricFindQuery(variableQuery);
+      expect(result).toEqual([]);
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
 
   describe('Given an incorrect filter query', () => {
-    const variableQuery: VariableQueryData = {
-      query: 'asset{name=foo}',
-      filter: 'filter{',
-    };
-    it('should throw a filter error', () => {
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression filter{"`
-      );
+    it('should return an empty array if filter type is wrong', async () => {
+      const variableQuery: VariableQueryData = {
+        query: "assets{name~='foo'}",
+      };
+      const result = await ds.metricFindQuery(variableQuery);
+      expect(result).toEqual([]);
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
-  });
-
-  describe('Given an incorrect filter query', () => {
-    const variableQuery: VariableQueryData = {
-      query: 'asset{name=foo}',
-      filter: 'filter{foo}',
-    };
-    it('should throw a filter error', () => {
-      expect(ds.metricFindQuery(variableQuery)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Could not parse: 'foo'. Missing a comparator (=,!=,=~,!~)."`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+    it('should throw an error if filter regexp is wrong', async () => {
+      const variableQuery: VariableQueryData = {
+        query: "assets{name=~'*.foo'}",
+      };
+      expect(ds.metricFindQuery(variableQuery)).toThrowErrorMatchingSnapshot();
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
     });
   });
 });

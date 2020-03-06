@@ -10,6 +10,7 @@ describe('Annotations Query', () => {
     data: {
       items: [
         {
+          id: 1,
           assetIds: [123, 456, 789],
           description: 'event 1',
           startTime: '1549336675000',
@@ -18,6 +19,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 1',
         },
         {
+          id: 2,
           assetIds: [123],
           description: 'event 2',
           startTime: '1549336775000',
@@ -26,6 +28,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 2',
         },
         {
+          id: 3,
           assetIds: [456],
           description: 'event 3',
           startTime: '1549336875000',
@@ -34,6 +37,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 3',
         },
         {
+          id: 4,
           assetIds: [789],
           description: 'event 4',
           startTime: '1549336975000',
@@ -42,6 +46,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 4',
         },
         {
+          id: 5,
           assetIds: [123, 456, 789],
           description: 'time out of bounds',
           startTime: '1549336600000',
@@ -54,6 +59,10 @@ describe('Annotations Query', () => {
     },
   };
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('Given an empty annotation query', () => {
     let result;
     const annotationOption: any = {
@@ -62,7 +71,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: '',
+        query: '',
       },
     };
 
@@ -84,7 +93,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{}',
+        query: 'events{}',
       },
     };
 
@@ -97,7 +106,7 @@ describe('Annotations Query', () => {
 
     it('should return all events', () => {
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(result).toMatchSnapshot();
+      expect(result.length).toEqual(annotationResponse.data.items.length);
     });
   });
 
@@ -109,18 +118,18 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{}',
+        query: "events{type='type 5'}",
       },
     };
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementation(() => Promise.resolve({ data: { data: { items: [] } } }));
+        .mockImplementation(() => Promise.resolve({ data: { items: [] } }));
       result = await ds.annotationQuery(annotationOption);
     });
 
-    it('should return all events', () => {
+    it('should return empty array', () => {
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
       expect(result).toEqual([]);
     });
@@ -134,7 +143,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: "event{assetIds = [123], type= 'type 1' }",
+        query: "events{assetIds=[123], type='type 1'}",
       },
     };
     const response = _.cloneDeep(annotationResponse);
@@ -155,7 +164,11 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ text }) => text);
+      const expectedEvents = ['event 1', 'time out of bounds'];
+
+      expect(result.length).toEqual(2);
+      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -167,7 +180,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{ metadata={"key1":"value1","key2":"value2"} }',
+        query: "events{metadata={key1='value1', key2='value2'}}",
       },
     };
     const response = _.cloneDeep(annotationResponse);
@@ -186,7 +199,10 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct event', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ text }) => text);
+
+      expect(result.length).toEqual(1);
+      expect(resultIds.includes('time out of bounds')).toBeTruthy();
     });
   });
 
@@ -198,7 +214,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: "event{type= 'non-existant type'}",
+        query: "events{type='non-existant type'}",
       },
     };
     const response = _.cloneDeep(annotationResponse);
@@ -229,8 +245,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{}',
-        filter: "filter{description=~event.*, type!= 'type 1', }",
+        query: "events{description=~'event.*', type!='type 1'}",
       },
     };
 
@@ -247,7 +262,11 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ text }) => text);
+      const expectedEvents = ['event 2', 'event 3', 'event 4'];
+
+      expect(result.length).toEqual(3);
+      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -259,8 +278,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{assetIds=[$AssetVariable]}',
-        filter: "filter{description!~event.*,, metadata.key1=~'', }",
+        query: "events{assetIds=[$AssetVariable], description!~'event.*'}",
       },
     };
     const response = _.cloneDeep(annotationResponse);
@@ -281,7 +299,10 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ text }) => text);
+
+      expect(result.length).toEqual(1);
+      expect(resultIds.includes('time out of bounds')).toBeTruthy();
     });
   });
 
@@ -292,37 +313,14 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{ ',
+        query: 'events{ ',
       },
     };
     beforeAll(async () => {
       backendSrvMock.datasourceRequest.mockReset();
     });
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression event{ "`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-  });
-
-  describe('Given an annotation query with an incomplete event expression', () => {
-    const annotationOption: any = {
-      range: {
-        from: '1549336675000',
-        to: '1549338475000',
-      },
-      annotation: {
-        expr: 'event{ metadata={}}}',
-      },
-    };
-    beforeAll(async () => {
-      backendSrvMock.datasourceRequest.mockReset();
-    });
-    it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unexpected character ' } ' while parsing ' metadata={}}'."`
-      );
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });
@@ -334,50 +332,11 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        expr: 'event{ name=~event, foo}',
+        query: 'events{ name=~event, foo}',
       },
     };
     it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse 'name=~event'. Only strict equality (=) is allowed."`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-  });
-
-  describe('Given an annotation query with an incorrect event expression', () => {
-    const annotationOption: any = {
-      range: {
-        from: '1549336675000',
-        to: '1549338475000',
-      },
-      annotation: {
-        expr: 'event{foo}',
-      },
-    };
-    it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse 'foo'. Only strict equality (=) is allowed."`
-      );
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
-    });
-  });
-
-  describe('Given an annotation query with an incorrect filter expression', () => {
-    const annotationOption: any = {
-      range: {
-        from: '1549336675000',
-        to: '1549338475000',
-      },
-      annotation: {
-        expr: 'event{ }',
-        filter: 'foo',
-      },
-    };
-    it('should throw a parse error', () => {
-      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"ERROR: Unable to parse expression foo"`
-      );
+      expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
   });

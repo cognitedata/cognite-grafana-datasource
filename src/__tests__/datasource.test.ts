@@ -316,7 +316,7 @@ describe('Datasource Query', () => {
     });
   });
 
-  describe('Given custom queries', () => {
+  xdescribe('Given custom queries', () => {
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
@@ -480,8 +480,7 @@ describe('Datasource Query', () => {
       expect(targetH.error).not.toHaveLength(0);
     });
   });
-
-  describe('Given custom queries with functions', () => {
+  xdescribe('Given custom queries with functions', () => {
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
@@ -661,7 +660,6 @@ describe('Datasource Query', () => {
       expect(targetF.error).not.toHaveLength(0);
     });
   });
-
   describe('Given multiple "Select Timeseries from Asset" queries in a row', () => {
     const results = [];
     const targetA: QueryTargetLike = {

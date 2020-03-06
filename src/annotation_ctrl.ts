@@ -1,48 +1,24 @@
 import { Annotation } from './types';
-import { splitFilters } from './utils';
+import { parse } from './query-parser';
+
+const help = `Query for events using the 'events/list' endpoint. You can apply filters by adding '=~', '!~' and '!=' signs to props.
+  Format is: events{param=number, param2=~'string', ...}
+  Example: events{type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}], subtype=~'SUB.*'}
+Templated variables can also be used with [[variable]] or $variable
+    Example: events{type=$Variable}`;
 
 export class CogniteAnnotationsQueryCtrl {
   public static templateUrl = 'partials/annotations.editor.html';
   annotation: Annotation;
+  help: string = help;
 
-  verify() {
-    // simple verification that the queries are in the right format
+  onBlur() {
     this.annotation.error = '';
-    const errorObj = { error: '' };
 
-    // check the query expression
-    if (!this.annotation.expr) {
-      this.annotation.error = `Error: Query expression required.`;
-    } else {
-      const match = this.annotation.expr.match(/^event\{(.*)\}$/);
-      if (!match) {
-        this.annotation.error = `Error: Unable to parse ${
-          this.annotation.expr
-        } | Expected format: event{param=value,...}`;
-      } else {
-        try {
-          splitFilters(match[1], true);
-        } catch (error) {
-          this.annotation.error = `${error.message} | Expected format: event{param=value,...}`;
-        }
-      }
-    }
-    // check the filter expression (if it exists)
-    if (!this.annotation.error && this.annotation.filter) {
-      const match = this.annotation.filter.match(/^filter\{(.*)\}$/);
-      if (!match) {
-        this.annotation.error = `Error: Unable to parse ${
-          this.annotation.filter
-        } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
-      } else {
-        try {
-          splitFilters(match[1], false);
-        } catch (error) {
-          this.annotation.error = `${
-            error.message
-          } | Expected format: filter{property [=|!=|=~|!~] value,...}`;
-        }
-      }
+    try {
+      parse(this.annotation.query);
+    } catch ({ message }) {
+      this.annotation.error = message;
     }
   }
 }
