@@ -150,7 +150,7 @@ describe('Metrics Query', () => {
       expect(result).toEqual([]);
       expect(backendSrvMock.datasourceRequest).not.toBeCalled();
     });
-    it('should return an empty array if filter regexp is wrong', async () => {
+    it('should throw an error if filter regexp is wrong', async () => {
       const variableQuery: VariableQueryData = {
         query: "assets{name=~'*.foo'}",
       };
