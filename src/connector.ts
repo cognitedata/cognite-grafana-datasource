@@ -60,7 +60,7 @@ export class Connector {
     };
   }
 
-  public async fetchItems<T>(params: RequestParams) {
+  public async fetchItems<T>(params: RequestParams): Promise<T[]> {
     const { data } = await this.fetchData<Response<T>>(params);
     return data.items;
   }

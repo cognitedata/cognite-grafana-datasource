@@ -53,7 +53,7 @@ export const applyFilters = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
 
 export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): boolean => {
   const valueToFilter = get(obj, path, null);
-  const regex = new RegExp(`^${value}$`, 'i');
+  const regex = new RegExp(`^${value}$`);
 
   if (valueToFilter === null) {
     return false;
@@ -65,6 +65,6 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
     case FilterType.RegexNotEquals:
       return !valueToFilter.match(regex);
     case FilterType.NotEquals:
-      return value.toLowerCase() !== valueToFilter.toLowerCase();
+      return value !== valueToFilter;
   }
 };

@@ -34,8 +34,3 @@ export interface ParserResponse extends QueryParserType {
   params: QueryCondition;
   filters: ParsedFilter[];
 }
-
-export interface ParserError {
-  title: string;
-  message: string;
-}

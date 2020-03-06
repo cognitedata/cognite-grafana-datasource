@@ -360,6 +360,7 @@ const grammar: Grammar = {
     },
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
     { name: 'string', symbols: ['sqstring'], postprocess: id },
+    { name: 'string', symbols: ['dqstring'], postprocess: id },
     { name: 'number', symbols: ['unsigned_int'], postprocess: id },
     { name: 'array', symbols: [{ literal: '[' }, '_', { literal: ']' }], postprocess: emptyArray },
     { name: 'array$ebnf$1', symbols: [] },

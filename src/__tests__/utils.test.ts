@@ -22,9 +22,9 @@ describe('Utils', () => {
       filter: FilterType.RegexNotEquals,
       value: '.*3',
     };
-    const filters = [caseSensitive, notEndWith, rootFilter];
-    it('should be case insensitive', () => {
-      expect(applyFilters(assets, [caseSensitive]).length).toEqual(4);
+    const filters = [notEndWith, rootFilter];
+    it('should be case sensitive', () => {
+      expect(applyFilters(assets, [caseSensitive]).length).toEqual(0);
     });
     it('should filter root props', () => {
       expect(applyFilters(assets, [rootFilter]).length).toEqual(3);

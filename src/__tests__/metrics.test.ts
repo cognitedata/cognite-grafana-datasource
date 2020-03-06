@@ -80,7 +80,10 @@ describe('Metrics Query', () => {
     });
 
     it('should return the correct assets', () => {
+      const resultIds = result.map(({ value }) => value);
+
       expect(result.length).toEqual(1);
+      expect(resultIds.includes(id)).toBeTruthy();
     });
   });
 
@@ -103,7 +106,10 @@ describe('Metrics Query', () => {
     });
 
     it('should return the correct assets', () => {
+      const resultIds = result.map(({ value }) => value);
+
       expect(result.length).toEqual(1);
+      expect(resultIds.includes(123)).toBeTruthy();
     });
   });
 

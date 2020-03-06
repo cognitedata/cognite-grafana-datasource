@@ -10,6 +10,7 @@ describe('Annotations Query', () => {
     data: {
       items: [
         {
+          id: 1,
           assetIds: [123, 456, 789],
           description: 'event 1',
           startTime: '1549336675000',
@@ -18,6 +19,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 1',
         },
         {
+          id: 2,
           assetIds: [123],
           description: 'event 2',
           startTime: '1549336775000',
@@ -26,6 +28,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 2',
         },
         {
+          id: 3,
           assetIds: [456],
           description: 'event 3',
           startTime: '1549336875000',
@@ -34,6 +37,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 3',
         },
         {
+          id: 4,
           assetIds: [789],
           description: 'event 4',
           startTime: '1549336975000',
@@ -42,6 +46,7 @@ describe('Annotations Query', () => {
           subtype: 'subtype 4',
         },
         {
+          id: 5,
           assetIds: [123, 456, 789],
           description: 'time out of bounds',
           startTime: '1549336600000',
@@ -113,18 +118,18 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        query: 'events{}',
+        query: "events{type='type 5'}",
       },
     };
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementation(() => Promise.resolve({ data: { data: { items: [] } } }));
+        .mockImplementation(() => Promise.resolve({ data: { items: [] } }));
       result = await ds.annotationQuery(annotationOption);
     });
 
-    it('should return all events', () => {
+    it('should return empty array', () => {
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
       expect(result).toEqual([]);
     });
@@ -159,7 +164,11 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
+      const resultIds = result.map(({ text }) => text);
+      const expectedEvents = ['event 1', 'time out of bounds'];
+
       expect(result.length).toEqual(2);
+      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -190,7 +199,10 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct event', () => {
+      const resultIds = result.map(({ text }) => text);
+
       expect(result.length).toEqual(1);
+      expect(resultIds.includes('time out of bounds')).toBeTruthy();
     });
   });
 
@@ -250,7 +262,11 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
+      const resultIds = result.map(({ text }) => text);
+      const expectedEvents = ['event 2', 'event 3', 'event 4'];
+
       expect(result.length).toEqual(3);
+      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -262,7 +278,7 @@ describe('Annotations Query', () => {
         to: '1549338475000',
       },
       annotation: {
-        query: "events{assetIds=[$AssetVariable], description!~'event.*', metadata={key1=~''}}",
+        query: "events{assetIds=[$AssetVariable], description!~'event.*'}",
       },
     };
     const response = _.cloneDeep(annotationResponse);
@@ -283,7 +299,10 @@ describe('Annotations Query', () => {
     });
 
     it('should return the correct events', () => {
-      expect(result).toMatchSnapshot();
+      const resultIds = result.map(({ text }) => text);
+
+      expect(result.length).toEqual(1);
+      expect(resultIds.includes('time out of bounds')).toBeTruthy();
     });
   });
 

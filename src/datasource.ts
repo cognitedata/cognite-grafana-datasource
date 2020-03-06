@@ -165,24 +165,24 @@ export default class CogniteDatasource {
       limit: 1000,
     };
 
-    const items = await this.connector.fetchItems<any>({
+    response = await this.connector.fetchItems<any>({
       data,
       path: `/events/list`,
       method: HttpMethod.POST,
     });
 
-    if (items && items.length) {
-      response = applyFilters(items, filters).map(({ description, startTime, endTime, type }) => ({
-        annotation,
-        isRegion: true,
-        text: description,
-        time: startTime,
-        timeEnd: endTime,
-        title: type,
-      }));
+    if (filters.length) {
+      response = applyFilters(response, filters);
     }
 
-    return response;
+    return response.map(({ description, startTime, endTime, type }) => ({
+      annotation,
+      isRegion: true,
+      text: description,
+      time: startTime,
+      timeEnd: endTime,
+      title: type,
+    }));
   }
 
   /**

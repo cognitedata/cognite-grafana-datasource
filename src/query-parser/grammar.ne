@@ -58,6 +58,7 @@ equals -> "=" {% id %}
 prop_name -> [A-Za-z0-9_]:+ {% join %}
 
 string -> sqstring {% id %}
+  | dqstring {% id %}
 number -> unsigned_int {% id %}
 array -> "[" _ "]" {% emptyArray %}
   | "[" _ value _ ("," _ value _):* _ "]" {% extractArray %}

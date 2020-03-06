@@ -113,5 +113,3 @@ Object {
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
-
-exports[`Annotations Query Given an annotation query with variables should return the correct events 1`] = `Array []`;

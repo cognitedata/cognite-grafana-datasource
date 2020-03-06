@@ -4,24 +4,19 @@ import { QueryParserTypes } from '../query-parser/types';
 describe('Query parser', () => {
   describe('Query parsing', () => {
     it('should parse string', () => {
-      const assetsInput = `assets{rootIds={id=123}}`;
+      const assetsInput = `assets{rootIds={id=123}, description="description"}`;
       const eventsInput = `events{description=~'some.*', assetIds=[123]}`;
       const { type: assetType, query: assetQuery } = parseQuery(assetsInput);
       const { type: eventsType, query: eventsQuery } = parseQuery(eventsInput);
 
       expect(assetType).toEqual(QueryParserTypes.assets);
-      expect(assetQuery.length).toEqual(1);
+      expect(assetQuery.length).toEqual(2);
 
       expect(eventsType).toEqual(QueryParserTypes.events);
       expect(eventsQuery.length).toEqual(2);
     });
     it('should throw error in case of empty query', () => {
       const input = ``;
-
-      expect(() => parseQuery(input)).toThrowErrorMatchingSnapshot();
-    });
-    it('should fail if string with double quotes', () => {
-      const input = `assets{name="name"}`;
 
       expect(() => parseQuery(input)).toThrowErrorMatchingSnapshot();
     });
@@ -135,13 +130,11 @@ describe('Query parser', () => {
 
     it('should be space agnostic', () => {
       const query = ` assets{ name = 'name' , metadata = { key2 !~ 'value2'}  }  `;
-      const {
-        params: { name },
-        filters: [filter],
-      } = parse(query);
+      const queryWithoutSpaces = query.replace(' ', '');
+      const parsedWithSpaces = parse(query);
+      const parsedWithoutSpaces = parse(queryWithoutSpaces);
 
-      expect(name).toEqual('name');
-      expect(filter).toEqual({ path: 'metadata.key2', filter: '!~', value: 'value2' });
+      expect(parsedWithSpaces).toEqual(parsedWithoutSpaces);
     });
   });
 });

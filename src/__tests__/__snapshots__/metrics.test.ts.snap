@@ -46,4 +46,4 @@ Object {
 }
 `;
 
-exports[`Metrics Query Given an incorrect filter query should return an empty array if filter regexp is wrong 1`] = `"received is not a function"`;
+exports[`Metrics Query Given an incorrect filter query should throw an error if filter regexp is wrong 1`] = `"received is not a function"`;
