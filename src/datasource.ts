@@ -148,10 +148,9 @@ export default class CogniteDatasource {
       annotation: { query, error },
     } = options;
     const [startTime, endTime] = getRange(range);
-    let response = [];
 
     if (error || !query) {
-      return response;
+      return [];
     }
 
     const replacedVariablesQuery = this.replaceVariable(query);
@@ -165,15 +164,12 @@ export default class CogniteDatasource {
       limit: 1000,
     };
 
-    response = await this.connector.fetchItems<any>({
+    const items = await this.connector.fetchItems<any>({
       data,
       path: `/events/list`,
       method: HttpMethod.POST,
     });
-
-    if (filters.length) {
-      response = applyFilters(response, filters);
-    }
+    const response = applyFilters(items, filters);
 
     return response.map(({ description, startTime, endTime, type }) => ({
       annotation,
@@ -301,12 +297,7 @@ export default class CogniteDatasource {
       method: HttpMethod.POST,
     });
 
-    let filteredAssets;
-    try {
-      filteredAssets = applyFilters(assets, filters);
-    } catch (e) {
-      throw e;
-    }
+    const filteredAssets = applyFilters(assets, filters);
 
     return filteredAssets.map(({ name, id }) => ({
       text: name,
