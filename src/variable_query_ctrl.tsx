@@ -1,5 +1,11 @@
 import React from 'react';
 import { VariableQueryData, VariableQueryProps } from './types';
+import { parse } from './query-parser';
+
+const help = `Query for assets using the '/assets/list' endpoint. You can apply filters by adding '=~', '!~' and '!=' signs to props.
+  Format is: assets{param=value,...}
+  Example: assets{metadata={KEY='value', KEY_2=~'value.*'}}
+`;
 
 export class CogniteVariableQueryCtrl extends React.PureComponent<
   VariableQueryProps,
@@ -7,7 +13,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
 > {
   defaults: VariableQueryData = {
     query: '',
-    filter: '',
+    error: '',
   };
 
   constructor(props: VariableQueryProps) {
@@ -15,16 +21,22 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
     this.state = Object.assign(this.defaults, this.props.query);
   }
 
-  handleChange(event, prop: 'query' | 'filter') {
-    const state: any = {
-      [prop]: event.target.value,
-    };
-    this.setState(state);
-  }
+  handleQueryChange = event => {
+    this.setState({ query: event.target.value, error: '' });
+  };
 
-  handleBlur() {
-    this.props.onChange(this.state, this.state.query);
-  }
+  handleBlur = () => {
+    try {
+      const { query } = this.state;
+      parse(query);
+
+      this.props.onChange({ query });
+    } catch ({ message }) {
+      const error = message;
+      this.setState({ error });
+      this.props.onChange({ query: '' });
+    }
+  };
 
   render() {
     return (
@@ -35,31 +47,14 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
             type="text"
             className="gf-form-input"
             value={this.state.query}
-            onChange={e => this.handleChange(e, 'query')}
-            onBlur={e => this.handleBlur()}
-            placeholder="eg: asset{name='example', assetSubtrees=[123456789]}"
-            required
-          />
-        </div>
-        <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">Filter</span>
-          <input
-            type="text"
-            className="gf-form-input"
-            value={this.state.filter}
-            onChange={e => this.handleChange(e, 'filter')}
-            onBlur={e => this.handleBlur()}
-            placeholder="eg: filter{name=~'.*test.*', isStep=1, metadata.key1!=false}"
+            onChange={this.handleQueryChange}
+            onBlur={this.handleBlur}
+            placeholder="eg: assets{name='example', assetSubtreeIds=[{id=123456789, externalId='externalId'}]}"
           />
         </div>
         <div className="gf-form--grow">
-          <pre>
-            {`  Query for assets using the '/assets/search' endpoint
-    Format is asset{param=value,...}
-  Then, filter on these assets
-    Format is filter{property comparator value,...}
-    Comparator can be =, !=, =~, !~ `}
-          </pre>
+          {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
+          <pre>{help}</pre>
         </div>
       </div>
     );

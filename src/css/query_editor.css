@@ -43,3 +43,10 @@ pre code {
 .gf-dropdown-wrapper {
   min-width: 200px;
 }
+
+pre.gf-formatted-error {
+  background: transparent;
+  border: none;
+  padding-bottom: 0;
+  color: #ff6060;
+}

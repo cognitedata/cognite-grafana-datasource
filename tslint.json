@@ -12,5 +12,8 @@
         "utils": "Utils"
       }
     ]
+  },
+  "linterOptions": {
+    "exclude": ["*/**/grammar.ts"]
   }
 }
