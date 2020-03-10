@@ -55,16 +55,16 @@
        <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
        <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
        <info-popover mode="right-absolute">
-           The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
+         The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
        </info-popover>
      </div>
      <div class="gf-form gf-form--grow">
        <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
        <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
        <info-popover mode="right-absolute">
-           <span ng-non-bindable>
-             Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
-           </span>
+         <span ng-non-bindable>
+           Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+         </span>
        </info-popover>
      </div>
    </div>
@@ -101,7 +101,7 @@
       <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
       <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.onChangeInternal()" placeholder="default"/>
       <info-popover mode="right-absolute">
-          The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
+        The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
       </info-popover>
     </div>
     <div class="gf-form gf-form--grow">
@@ -137,7 +137,7 @@
       <div class="gf-form">
         <label class="gf-form-label query-keyword fix-query-keyword width-8">Root Asset</label>
         <info-popover mode="right-absolute">
-            Select an asset to pull timeseries from. (Variables can also be used via $variable)
+          Select an asset to pull timeseries from. (Variables can also be used via $variable)
         </info-popover>
       </div>
       <gf-form-dropdown model="ctrl.target.assetQuery.target"
