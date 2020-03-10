@@ -56,6 +56,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
     },
   };
   isAllSelected: boolean;
+  hints: {
+    granularity: `The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`;
+    label: `Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}`;
+  };
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
