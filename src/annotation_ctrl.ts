@@ -1,15 +1,21 @@
 import { Annotation } from './types';
 import { parse } from './query-parser';
+import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
 export class CogniteAnnotationsQueryCtrl {
   public static templateUrl = 'partials/annotations.editor.html';
   annotation: Annotation;
 
+  /** @ngInject */
+  constructor(private templateSrv: TemplateSrv) {}
+
   onBlur() {
     this.annotation.error = '';
 
     try {
-      parse(this.annotation.query);
+      const queryWithVariable = this.templateSrv.replace(this.annotation.query);
+
+      parse(queryWithVariable);
     } catch ({ message }) {
       this.annotation.error = message;
     }
