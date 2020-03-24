@@ -103,6 +103,8 @@ const extractFunction = ([func, br, args, BR]) => {
   return { func }
 }
 
+const extractVariable = ([_, d]) => "$" + d;
+
 const emptyObject = () => ({});
 const emptyArray = () => ([]);
 %}
@@ -158,9 +160,13 @@ value ->
   | array {% id %}
   | number {% id %}
   | string {% id %}
+  | variable {% id %}
   | "true" {% () => true %}
   | "false" {% () => false %}
   | "null" {% () => null %}
+
+variable -> "$" prop_name {% extractVariable %}
+  | "[[" prop_name "]]" {% extractVariable %}
 
 operator -> _ "+" _ {% extractOperator %}
   | _ "-" _ {% extractOperator %}

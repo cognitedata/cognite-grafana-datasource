@@ -89,6 +89,11 @@ describe('nearley parser', () => {
       ])
     );
   });
+
+  it('template variables', () => {
+    const res = parse(`ts{id=[[asset]]}`);
+    expect(res).toEqual(STSRefQueryItem([FilterQueryItem('id', '$asset')]));
+  });
 });
 
 describe('nearley reverse', () => {

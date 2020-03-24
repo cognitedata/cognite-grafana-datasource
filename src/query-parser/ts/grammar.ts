@@ -102,6 +102,8 @@ const extractFunction = ([func, br, args, BR]) => {
   return { func }
 }
 
+const extractVariable = ([_, d]) => "$" + d;
+
 const emptyObject = () => ({});
 const emptyArray = () => ([]);
 
@@ -309,12 +311,17 @@ const grammar: Grammar = {
     {"name": "value", "symbols": ["array"], "postprocess": id},
     {"name": "value", "symbols": ["number"], "postprocess": id},
     {"name": "value", "symbols": ["string"], "postprocess": id},
+    {"name": "value", "symbols": ["variable"], "postprocess": id},
     {"name": "value$string$1", "symbols": [{"literal":"t"}, {"literal":"r"}, {"literal":"u"}, {"literal":"e"}], "postprocess": (d) => d.join('')},
     {"name": "value", "symbols": ["value$string$1"], "postprocess": () => true},
     {"name": "value$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": (d) => d.join('')},
     {"name": "value", "symbols": ["value$string$2"], "postprocess": () => false},
     {"name": "value$string$3", "symbols": [{"literal":"n"}, {"literal":"u"}, {"literal":"l"}, {"literal":"l"}], "postprocess": (d) => d.join('')},
     {"name": "value", "symbols": ["value$string$3"], "postprocess": () => null},
+    {"name": "variable", "symbols": [{"literal":"$"}, "prop_name"], "postprocess": extractVariable},
+    {"name": "variable$string$1", "symbols": [{"literal":"["}, {"literal":"["}], "postprocess": (d) => d.join('')},
+    {"name": "variable$string$2", "symbols": [{"literal":"]"}, {"literal":"]"}], "postprocess": (d) => d.join('')},
+    {"name": "variable", "symbols": ["variable$string$1", "prop_name", "variable$string$2"], "postprocess": extractVariable},
     {"name": "operator", "symbols": ["_", {"literal":"+"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"-"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"/"}, "_"], "postprocess": extractOperator},
