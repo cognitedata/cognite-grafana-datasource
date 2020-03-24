@@ -191,7 +191,7 @@ export const getLabelsForExpression = async (
 export type FilterQueryItem = {
   path: string;
   filter: FilterType;
-  value: string | number | FilterQueryItem[];
+  value: string | number | FilterQueryItem[] | FilterQueryItem[][];
 };
 
 export type Operator = {
@@ -285,6 +285,10 @@ function isFilterQueryItem(item: any): item is FilterQueryItem {
   return item.path && item.filter && 'value' in item;
 }
 
+function isFilterQueryItemArr(query: any): query is FilterQueryItem[] {
+  return isArray(query) && query.length && query.every(isFilterQueryItem);
+}
+
 export const getReferencedTimeseries = (
   route: STSQueryItem[] | STSFunction
 ): { [id: string]: string }[] => {
@@ -338,9 +342,15 @@ function isUnaryFunction(obj: any): obj is STSFunction {
 
 export function flattenServerQueryFilters(items: FilterQueryItem[]): { [s: string]: string } {
   return items.reduce((res, filter) => {
-    let value: string | number | {}[] = filter.value;
+    let value: any;
     if (isByIdsQuery(filter.value)) {
       value = filter.value.map(item => flattenServerQueryFilters([item]));
+    } else if(isFilterQueryItemArr(filter.value)) {
+      value = flattenServerQueryFilters(filter.value);
+    } else if (isArray(filter.value)){
+      value = filter.value.map(flattenServerQueryFilters);
+    } else {
+      value = filter.value
     }
     res[filter.path] = value;
     return res;
@@ -457,12 +467,17 @@ export const reverseFilterItem = ({ path, filter, value }: FilterQueryItem) => {
   return `${path}${filter}${stringifyValue(value)}`;
 };
 
-export function stringifyValue(val: string | number | number[] | string[] | FilterQueryItem[]) {
-  if (isArray(val)) {
+export function stringifyValue(val: string | number | number[] | string[] | FilterQueryItem[] | FilterQueryItem[][]) {
+  if(isArray(val)) {
     const items = (val as any).map(item => {
       return isFilterQueryItem(item) ? reverseFilterItem(item) : stringifyValue(item)
     });
-    return `[${items.join(',')}]`;
+    const joinedItems = items.join(', ');
+    if(isFilterQueryItemArr(val)) {
+      return `{${joinedItems}}`;
+    } else if (isArray(val)) {
+      return `[${joinedItems}]`;
+    }
   }
   return JSON.stringify(val);
 }

@@ -57,6 +57,30 @@ describe('get timeseries filters from parsed data', () => {
   it('get flat server filters', () => {
     expect(getServerFilters(testSeries)).toEqual([{}, { name: 'value' }]);
   });
+
+  it('flatten nested server filters', () => {
+    expect(
+      flattenServerQueryFilters([
+        FilterQueryItem('a', [FilterQueryItem('b', 'c')]),
+      ])
+    ).toEqual({
+      a: {
+        b: 'c'
+      },
+    });
+  });
+
+  it('flatten nested server filters with arrays', () => {
+    expect(
+      flattenServerQueryFilters([
+        FilterQueryItem('a', [[FilterQueryItem('b', 'c')]]),
+      ])
+    ).toEqual({
+      a: [{
+        b: 'c'
+      }],
+    });
+  });
 });
 
 describe('nearley parser', () => {
@@ -79,7 +103,7 @@ describe('nearley parser', () => {
     expect(res).toEqual(
       STSFunction('sin', [
         STSRefQueryItem([
-          FilterQueryItem('assetSubtreeIds', [FilterQueryItem('id', 1)]),
+          FilterQueryItem('assetSubtreeIds', [[FilterQueryItem('id', 1)]]),
           FilterQueryItem('aggregate', 'average'),
         ]),
         Operator('/'),
@@ -126,6 +150,17 @@ describe('nearley reverse', () => {
     const res = reverse(func);
     expect(res).toEqual('avg(ts{id=1}, ts{id=2})');
   });
+
+  it('nested filters', () => {
+    const func = STSRefQueryItem(
+      [FilterQueryItem(
+        'metadata',
+        [FilterQueryItem('nested', [[FilterQueryItem('a', 'b')], [FilterQueryItem('c', [])]])]
+      )]
+    )
+    const res = reverse(func);
+    expect(res).toEqual('ts{metadata={nested=[{a="b"}, {c=[]}]}}');
+  })
 });
 
 describe('parse & reverse', () => {
@@ -145,6 +180,9 @@ describe('parse & reverse', () => {
     'sin((1 + 2 + 3))',
     'map(ts{}, ["one"], [1], 0)',
     'avg(map(ts{}, [], [], 0), 1)',
+    'ts{metadata={nestedArr=[{a="b"}], nested={a="b"}}}',
+    'ts{arr=["a", 1]}',
+    'ts{assetSubtreeIds=[{id=1}]}',
   ];
   inputs.map(input => it(input, () => {
     expect(reverse(parse(input))).toBe(input);

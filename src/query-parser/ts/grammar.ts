@@ -37,10 +37,10 @@ const extractConditionToArray = d => {
   return output
 }
 const extractObject = d => {
-  let output = {...extractPair(d[1])};
+  let output = [extractPair(d[1])];
 
   for (let i in d[2]) {
-    output = {...output, ...extractPair(d[2][i][2])};
+    output.push(extractPair(d[2][i][1]));
   }
 
   return output;
