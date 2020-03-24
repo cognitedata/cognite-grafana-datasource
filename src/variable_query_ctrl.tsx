@@ -2,10 +2,37 @@ import React from 'react';
 import { VariableQueryData, VariableQueryProps } from './types';
 import { parse } from './query-parser';
 
-const help = `Query for assets using the '/assets/list' endpoint. You can apply filters by adding '=~', '!~' and '!=' signs to props.
-  Format is: assets{param=value,...}
-  Example: assets{metadata={KEY='value', KEY_2=~'value.*'}}
-`;
+const help = (
+  <pre>
+    Query for assets uses the '/assets/list' endpoint. For request parameters{' '}
+    <code className="query-keyword">'='</code> sign is used.
+    <br />
+    Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
+    <br />
+    Example:{' '}
+    <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]`}</code>
+    <br />
+    <br />
+    Filtering through the results also possible by adding{' '}
+    <code className="query-keyword">'=~'</code>, <code className="query-keyword">'!~'</code> and{' '}
+    <code className="query-keyword">'!='</code> signs to props. Applying few filters for query acts
+    as AND
+    <br />
+    Format:
+    <br />
+    <code className="query-keyword">'=~'</code> – regex equality, means that provided regexp is used
+    to match defined prop and matched value will be included
+    <br />
+    <code className="query-keyword">'!~'</code> – regex inequality, means that provided regexp is
+    used to match defined prop and matched value will be excluded
+    <br />
+    <code className="query-keyword">'!='</code> – strict inequality, means that provided string is
+    used to strict prop comparing and matched value will be excluded
+    <br />
+    Example:{' '}
+    <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'} assetSubtreeIds=[{id=123}]}`}</code>
+  </pre>
+);
 
 export class CogniteVariableQueryCtrl extends React.PureComponent<
   VariableQueryProps,
@@ -54,7 +81,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
         </div>
         <div className="gf-form--grow">
           {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
-          <pre>{help}</pre>
+          {help}
         </div>
       </div>
     );
