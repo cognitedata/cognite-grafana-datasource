@@ -30,30 +30,28 @@ export const formQueriesForExpression = async (
   if (isSimpleSyntheticExpression(templatedExpr)) {
     return [{ expression: templatedExpr }];
   }
-  {
-    const parsed = parse(templatedExpr);
-    const serverFilters = getServerFilters(parsed);
-    const timeseries = await Promise.all(
-      serverFilters.map(async filter => {
-        const tsResult = await getTimeseries({ filter }, target, connector, false);
-        if (!tsResult.length) {
-          throw new Error(`cannot find timeseries for one of filters in expression ${expr}`); // TODO: better error handling
-        }
-        return tsResult;
-      })
-    );
-    const clientFilters = getClientFilters(parsed);
-    const clientFilteredTimeseries = timeseries.map((arr, i) =>
-      applyFilters(arr, clientFilters[i])
-    );
-    const multiaryFuncTsIndices = getIndicesOfMultiaryFunctionArgs(parsed);
-    const permutations = generateAllPossiblePermutations(
-      clientFilteredTimeseries,
-      multiaryFuncTsIndices
-    );
-    const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
-    return queryExpressions.map(expression => ({ expression }));
-  }
+  const parsed = parse(templatedExpr);
+  const serverFilters = getServerFilters(parsed);
+  const timeseries = await Promise.all(
+    serverFilters.map(async filter => {
+      const tsResult = await getTimeseries({ filter }, target, connector, false);
+      if (!tsResult.length) {
+        throw new Error(`cannot find timeseries for one of filters in expression ${expr}`); // TODO: better error handling
+      }
+      return tsResult;
+    })
+  );
+  const clientFilters = getClientFilters(parsed);
+  const clientFilteredTimeseries = timeseries.map((arr, i) =>
+    applyFilters(arr, clientFilters[i])
+  );
+  const multiaryFuncTsIndices = getIndicesOfMultiaryFunctionArgs(parsed);
+  const permutations = generateAllPossiblePermutations(
+    clientFilteredTimeseries,
+    multiaryFuncTsIndices
+  );
+  const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
+  return queryExpressions.map(expression => ({ expression }));
 };
 
 export const injectTSIdsInExpression = (
