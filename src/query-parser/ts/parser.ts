@@ -5,7 +5,7 @@ import {
   QueryTarget,
   IdEither,
 } from '../../types';
-import { isArray, isObjectLike } from 'lodash';
+import _, { isArray, isObjectLike } from 'lodash';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
@@ -14,7 +14,9 @@ import { Connector } from '../../connector';
 import { FilterType, ParsedFilter } from '../types';
 import { applyFilters } from '../../utils';
 import { parseWith } from '../index';
+import getFilterDeep from 'deepdash/getFilterDeep';
 
+const filterDeep = getFilterDeep(_);
 const compiledGrammar = Grammar.fromCompiled(grammar);
 
 export const formQueriesForExpression = async (
@@ -253,28 +255,28 @@ export function Operator(operator: Operator['operator']): Operator {
   return { operator };
 }
 
-function isEqualsFilter(filter: FilterType) {
-  return filter === FilterType.Equals;
+function isEqualsFilter(query: any)  {
+  return isFilterQueryItem(query) && query.filter === FilterType.Equals;
 }
 
 function isOneOf(value: string, ...arr: string[]) {
   return arr.indexOf(value) !== -1;
 }
 
-function isSyntheticsFilter({ filter, path }: FilterQueryItem) {
-  return isEqualsFilter(filter) && isOneOf(path, 'granularity', 'aggregate');
+function isSyntheticsFilter(query: FilterQueryItem) {
+  return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate');
 }
 
-function isIdsFilter({ filter, path }: FilterQueryItem) {
-  return isEqualsFilter(filter) && isOneOf(path, 'id', 'externalId');
+function isIdsFilter(query: FilterQueryItem) {
+  return isEqualsFilter(query) && isOneOf(query.path, 'id', 'externalId');
 }
 
 function isServerFilter(item: FilterQueryItem) {
-  return isEqualsFilter(item.filter) && !isIdsFilter(item) && !isSyntheticsFilter(item);
+  return isEqualsFilter(item) && !isSyntheticsFilter(item);
 }
 
-function isClientFilter(item: FilterQueryItem) {
-  return !isEqualsFilter(item.filter);
+function isClientFilter(item: any) {
+  return isFilterQueryItem(item) && !isEqualsFilter(item);
 }
 
 function isByIdsQuery(query: any): query is FilterQueryItem[] {
@@ -282,7 +284,7 @@ function isByIdsQuery(query: any): query is FilterQueryItem[] {
 }
 
 function isFilterQueryItem(item: any): item is FilterQueryItem {
-  return item.path && item.filter && 'value' in item;
+  return isObjectLike(item) && item.path && item.filter && 'value' in item;
 }
 
 function isFilterQueryItemArr(query: any): query is FilterQueryItem[] {
@@ -346,7 +348,7 @@ export function flattenServerQueryFilters(items: FilterQueryItem[]): { [s: strin
     if (isByIdsQuery(filter.value)) {
       value = filter.value.map(item => flattenServerQueryFilters([item]));
     } else if(isFilterQueryItemArr(filter.value)) {
-      value = flattenServerQueryFilters(filter.value);
+      value = {...res[filter.path], ...flattenServerQueryFilters(filter.value)};
     } else if (isArray(filter.value)){
       value = filter.value.map(flattenServerQueryFilters);
     } else {
@@ -408,22 +410,44 @@ export const getServerFilters = (
   route: STSQueryItem[] | STSFunction
 ): { [s: string]: string }[] => {
   const responseArr: { [s: string]: string }[] = [];
+  const filter = (_, __, parent) => isServerFilter(parent);
   walk(route, obj => {
     if (isTSReferenceQueryItem(obj) && !hasIdsFilter(obj)) {
-      const serverQuery = obj.query.filter(isServerFilter);
-      const flatFilters = flattenServerQueryFilters(serverQuery);
+      const serverQuery = filterDeep(filterDeep(obj.query, filter), filter);
+      const flatFilters = flattenServerQueryFilters(serverQuery || []);
       responseArr.push(flatFilters);
     }
   });
   return responseArr;
 };
 
+
+export function flattenClientQueryFilters(items: FilterQueryItem[], path = []): ParsedFilter[] {
+  const res: ParsedFilter[] = [];
+  items.forEach(filter => {
+    if (isServerFilter(filter) && isFilterQueryItemArr(filter.value)) {
+      res.push(
+        ...flattenClientQueryFilters(filter.value, [...path, filter.path])
+      )
+    } else {
+      res.push({
+        path: [...path, filter.path].join('.'),
+        value: filter.value as string | number,
+        filter: filter.filter
+      })
+    }
+  })
+  return res;
+}
+
 export const getClientFilters = (route: STSQueryItem[] | STSFunction): ParsedFilter[][] => {
   const responseArr: ParsedFilter[][] = [];
+  const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
   walk(route, obj => {
     if (isTSReferenceQueryItem(obj) && !hasIdsFilter(obj)) {
-      const clientQuery = obj.query.filter(isClientFilter);
-      responseArr.push(clientQuery as ParsedFilter[]); // TODO: fix this
+      const clientQuery = filterDeep(filterDeep(obj.query, filter), filter);
+      const flatFilters = flattenClientQueryFilters(clientQuery || []);
+      responseArr.push(flatFilters);
     }
   });
   return responseArr;
@@ -475,7 +499,8 @@ export function stringifyValue(val: string | number | number[] | string[] | Filt
     const joinedItems = items.join(', ');
     if(isFilterQueryItemArr(val)) {
       return `{${joinedItems}}`;
-    } else if (isArray(val)) {
+    }
+    if (isArray(val)) {
       return `[${joinedItems}]`;
     }
   }

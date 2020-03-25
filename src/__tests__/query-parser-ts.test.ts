@@ -13,6 +13,7 @@ import {
   getIndicesOfMultiaryFunctionArgs,
   convertExpressionToLabel,
   Operator,
+  getClientFilters,
 } from '../query-parser/ts/parser';
 import { FilterType } from '../query-parser/types';
 import { TimeSeriesResponseItem } from '../types';
@@ -55,7 +56,40 @@ describe('get timeseries filters from parsed data', () => {
   });
 
   it('get flat server filters', () => {
-    expect(getServerFilters(testSeries)).toEqual([{}, { name: 'value' }]);
+    expect(getServerFilters(testSeries)).toStrictEqual([{}, { name: 'value' }]);
+  });
+
+  it('get flat server filter, nested', () => {
+    const nested = [STSRefQueryItem([FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')])])];
+    expect(getServerFilters(nested)).toStrictEqual([{}]);
+  });
+
+  it('get flat server filter, nested, merge', () => {
+    const nested = [STSRefQueryItem([
+      FilterQueryItem('a', [FilterQueryItem('b', 'c')]),
+      FilterQueryItem('a', [FilterQueryItem('d', 'e')]),
+    ])];
+    expect(getServerFilters(nested)).toStrictEqual([{ a: { b: 'c', d: 'e' }}]);
+  });
+
+  it('get flat server filters, nested 2', () => {
+    const nested = [STSRefQueryItem([
+      FilterQueryItem('a', [[
+        FilterQueryItem('b', 'c', '!~'), FilterQueryItem('d', 'e')
+      ]])
+    ])];
+    expect(getServerFilters(nested)).toStrictEqual([{ a: [{ d: 'e' }]}]);
+  });
+
+  it('get flat server filters, nested 3', () => {
+    const nested = [STSRefQueryItem([
+      FilterQueryItem('ids', [[
+        FilterQueryItem('id', 0)
+      ],[
+        FilterQueryItem('id', 1)
+      ]]),
+    ])];
+    expect(getServerFilters(nested)).toStrictEqual([{ ids: [{ id: 0}, {id : 1}]}]);
   });
 
   it('flatten nested server filters', () => {
@@ -63,7 +97,7 @@ describe('get timeseries filters from parsed data', () => {
       flattenServerQueryFilters([
         FilterQueryItem('a', [FilterQueryItem('b', 'c')]),
       ])
-    ).toEqual({
+    ).toStrictEqual({
       a: {
         b: 'c'
       },
@@ -75,11 +109,29 @@ describe('get timeseries filters from parsed data', () => {
       flattenServerQueryFilters([
         FilterQueryItem('a', [[FilterQueryItem('b', 'c')]]),
       ])
-    ).toEqual({
+    ).toStrictEqual({
       a: [{
         b: 'c'
       }],
     });
+  });
+
+  it('get client filters', () => {
+    const nested = [STSRefQueryItem([FilterQueryItem('b', 'c', '!~')])];
+    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('b', 'c', '!~')]]);
+  });
+
+  it('get client filter, nested', () => {
+    const nested = [STSRefQueryItem([FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')])])];
+    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('a.b', 'c', '!~')]]);
+  });
+
+  it('get client filter, nested with duplicates', () => {
+    const nested = [STSRefQueryItem([
+      FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')]),
+      FilterQueryItem('a', [FilterQueryItem('d', 'e')])
+    ])];
+    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('a.b', 'c', '!~')]]);
   });
 });
 
@@ -182,7 +234,7 @@ describe('parse & reverse', () => {
     'avg(map(ts{}, [], [], 0), 1)',
     'ts{metadata={nestedArr=[{a="b"}], nested={a="b"}}}',
     'ts{arr=["a", 1]}',
-    'ts{assetSubtreeIds=[{id=1}]}',
+    'ts{assetSubtreeIds=[{id=1}, {id=2}]}',
   ];
   inputs.map(input => it(input, () => {
     expect(reverse(parse(input))).toBe(input);
