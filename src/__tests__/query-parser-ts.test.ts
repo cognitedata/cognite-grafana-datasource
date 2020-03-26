@@ -14,12 +14,19 @@ import {
   convertExpressionToLabel,
   Operator,
   getClientFilters,
+  WrappedConst,
 } from '../query-parser/ts/parser';
 import { FilterType } from '../query-parser/types';
 import { TimeSeriesResponseItem } from '../types';
 import { cloneDeep } from 'lodash';
 
 const { NotEquals } = FilterType;
+const STS = STSRefQueryItem;
+const Filter = FilterQueryItem;
+
+function Constant(constant: number | 'pi()'): WrappedConst {
+  return { constant };
+}
 
 function STSFunction(func: STSFunction['func'], args: STSFunction['args']): STSFunction {
   return {
@@ -29,9 +36,9 @@ function STSFunction(func: STSFunction['func'], args: STSFunction['args']): STSF
 }
 
 const testSeries: STSQueryItem[] = [
-  STSRefQueryItem([FilterQueryItem('id', 2), FilterQueryItem('hey', 'other', NotEquals)]),
-  STSRefQueryItem(),
-  STSRefQueryItem([FilterQueryItem('id', 2, NotEquals), FilterQueryItem('name', 'value')]),
+  STS([Filter('id', 2), Filter('hey', 'other', NotEquals)]),
+  STS(),
+  STS([Filter('id', 2, NotEquals), Filter('name', 'value')]),
 ];
 
 describe('get timeseries filters from parsed data', () => {
@@ -46,8 +53,8 @@ describe('get timeseries filters from parsed data', () => {
   it('flatten server filters', () => {
     expect(
       flattenServerQueryFilters([
-        FilterQueryItem('name', 'value'),
-        FilterQueryItem('name2', 'value2'),
+        Filter('name', 'value'),
+        Filter('name2', 'value2'),
       ])
     ).toEqual({
       name: 'value',
@@ -55,98 +62,105 @@ describe('get timeseries filters from parsed data', () => {
     });
   });
 
-  it('get flat server filters', () => {
-    expect(getServerFilters(testSeries)).toStrictEqual([{}, { name: 'value' }]);
-  });
-
-  it('get flat server filter, nested', () => {
-    const nested = [STSRefQueryItem([FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')])])];
-    expect(getServerFilters(nested)).toStrictEqual([{}]);
-  });
-
-  it('get flat server filter, nested, merge', () => {
-    const nested = [STSRefQueryItem([
-      FilterQueryItem('a', [FilterQueryItem('b', 'c')]),
-      FilterQueryItem('a', [FilterQueryItem('d', 'e')]),
-    ])];
-    expect(getServerFilters(nested)).toStrictEqual([{ a: { b: 'c', d: 'e' }}]);
-  });
-
-  it('get flat server filters, nested 2', () => {
-    const nested = [STSRefQueryItem([
-      FilterQueryItem('a', [[
-        FilterQueryItem('b', 'c', '!~'), FilterQueryItem('d', 'e')
-      ]])
-    ])];
-    expect(getServerFilters(nested)).toStrictEqual([{ a: [{ d: 'e' }]}]);
-  });
-
-  it('get flat server filters, nested 3', () => {
-    const nested = [STSRefQueryItem([
-      FilterQueryItem('ids', [[
-        FilterQueryItem('id', 0)
-      ],[
-        FilterQueryItem('id', 1)
-      ]]),
-    ])];
-    expect(getServerFilters(nested)).toStrictEqual([{ ids: [{ id: 0}, {id : 1}]}]);
-  });
-
-  it('flatten nested server filters', () => {
-    expect(
-      flattenServerQueryFilters([
-        FilterQueryItem('a', [FilterQueryItem('b', 'c')]),
-      ])
-    ).toStrictEqual({
-      a: {
-        b: 'c'
-      },
+  describe('get flat server filters', () => {
+    it('basic', () => {
+      expect(getServerFilters(testSeries)).toStrictEqual([{}, { name: 'value' }]);
     });
-  });
 
-  it('flatten nested server filters with arrays', () => {
-    expect(
-      flattenServerQueryFilters([
-        FilterQueryItem('a', [[FilterQueryItem('b', 'c')]]),
-      ])
-    ).toStrictEqual({
-      a: [{
-        b: 'c'
-      }],
+    it('nested', () => {
+      const nested = [STS([Filter('a', [Filter('b', 'c', '!~')])])];
+      expect(getServerFilters(nested)).toStrictEqual([{}]);
     });
-  });
 
-  it('get client filters', () => {
-    const nested = [STSRefQueryItem([FilterQueryItem('b', 'c', '!~')])];
-    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('b', 'c', '!~')]]);
-  });
+    it('nested with merge', () => {
+      const nested = [STS([
+        Filter('a', [Filter('b', 'c')]),
+        Filter('a', [Filter('d', 'e')]),
+      ])];
+      expect(getServerFilters(nested)).toStrictEqual([{ a: { b: 'c', d: 'e' } }]);
+    });
 
-  it('get client filter, nested', () => {
-    const nested = [STSRefQueryItem([FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')])])];
-    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('a.b', 'c', '!~')]]);
-  });
+    it('nested with client filter', () => {
+      const nested = [STS([
+        Filter('a', [[
+          Filter('b', 'c', '!~'), Filter('d', 'e')
+        ]])
+      ])];
+      expect(getServerFilters(nested)).toStrictEqual([{ a: [{ d: 'e' }] }]);
+    });
 
-  it('get client filter, nested with duplicates', () => {
-    const nested = [STSRefQueryItem([
-      FilterQueryItem('a', [FilterQueryItem('b', 'c', '!~')]),
-      FilterQueryItem('a', [FilterQueryItem('d', 'e')])
-    ])];
-    expect(getClientFilters(nested)).toStrictEqual([[FilterQueryItem('a.b', 'c', '!~')]]);
-  });
+    it('nested with ids', () => {
+      const nested = [STS([
+        Filter('ids', [[
+          Filter('id', 0)
+        ], [
+          Filter('id', 1)
+        ]]),
+      ])];
+      expect(getServerFilters(nested)).toStrictEqual([{ ids: [{ id: 0 }, { id: 1 }] }]);
+    });
+  })
+
+
+  describe('flatten nested server filters', () => {
+    it('basic', () => {
+      expect(
+        flattenServerQueryFilters([
+          Filter('a', [Filter('b', 'c')]),
+        ])
+      ).toStrictEqual({
+        a: {
+          b: 'c'
+        },
+      });
+    });
+  
+    it('with arrays', () => {
+      expect(
+        flattenServerQueryFilters([
+          Filter('a', [[Filter('b', 'c')]]),
+        ])
+      ).toStrictEqual({
+        a: [{
+          b: 'c'
+        }],
+      });
+    });
+  })
+
+  describe('get client filters', () => {
+    it('basic', () => {
+      const nested = [STS([Filter('b', 'c', '!~')])];
+      expect(getClientFilters(nested)).toStrictEqual([[Filter('b', 'c', '!~')]]);
+    });
+
+    it('nested', () => {
+      const nested = [STS([Filter('a', [Filter('b', 'c', '!~')])])];
+      expect(getClientFilters(nested)).toStrictEqual([[Filter('a.b', 'c', '!~')]]);
+    });
+
+    it('nested with duplicates', () => {
+      const nested = [STS([
+        Filter('a', [Filter('b', 'c', '!~')]),
+        Filter('a', [Filter('d', 'e')])
+      ])];
+      expect(getClientFilters(nested)).toStrictEqual([[Filter('a.b', 'c', '!~')]]);
+    });
+  })
 });
 
 describe('nearley parser', () => {
   it('one time serie', () => {
     const res = parse(`ts{id=1}`);
-    expect(res).toEqual(STSRefQueryItem([FilterQueryItem('id', 1)]));
+    expect(res).toEqual(STS([Filter('id', 1)]));
   });
 
   it('simple arithmethics', () => {
     const res = parse(`ts{id=1} - ts{a=2}`);
     expect(res).toEqual([
-      STSRefQueryItem([FilterQueryItem('id', 1)]),
+      STS([Filter('id', 1)]),
       Operator('-'),
-      STSRefQueryItem([FilterQueryItem('a', 2)]),
+      STS([Filter('a', 2)]),
     ]);
   });
 
@@ -154,41 +168,37 @@ describe('nearley parser', () => {
     const res = parse(`sin(ts{assetSubtreeIds=[{id=1}], aggregate="average"} / 10)`);
     expect(res).toEqual(
       STSFunction('sin', [
-        STSRefQueryItem([
-          FilterQueryItem('assetSubtreeIds', [[FilterQueryItem('id', 1)]]),
-          FilterQueryItem('aggregate', 'average'),
+        STS([
+          Filter('assetSubtreeIds', [[Filter('id', 1)]]),
+          Filter('aggregate', 'average'),
         ]),
         Operator('/'),
-        {
-          constant: 10,
-        },
+        Constant(10),
       ])
     );
   });
 
   it('template variables', () => {
     const res = parse(`ts{id=[[asset]]}`);
-    expect(res).toEqual(STSRefQueryItem([FilterQueryItem('id', '$asset')]));
+    expect(res).toEqual(STS([Filter('id', '$asset')]));
   });
 });
 
 describe('nearley reverse', () => {
   it('simple arithmethics', () => {
     const res = reverse([
-      STSRefQueryItem([FilterQueryItem('id', 1)]),
+      STS([Filter('id', 1)]),
       Operator('-'),
-      STSRefQueryItem([FilterQueryItem('a', 2)]),
+      STS([Filter('a', 2)]),
     ]);
     expect(res).toEqual('ts{id=1} - ts{a=2}');
   });
 
   it('sin function with arithmetics', () => {
     const func = STSFunction('sin', [
-      STSRefQueryItem([FilterQueryItem('id', 1)]),
+      STS([Filter('id', 1)]),
       Operator('/'),
-      {
-        constant: 10,
-      },
+      Constant(10),
     ]);
     const res = reverse(func);
     expect(res).toEqual('sin(ts{id=1} / 10)');
@@ -196,18 +206,18 @@ describe('nearley reverse', () => {
 
   it('average function', () => {
     const func = STSFunction('avg', [
-      STSRefQueryItem([FilterQueryItem('id', 1)]),
-      STSRefQueryItem([FilterQueryItem('id', 2)]),
+      STS([Filter('id', 1)]),
+      STS([Filter('id', 2)]),
     ]);
     const res = reverse(func);
     expect(res).toEqual('avg(ts{id=1}, ts{id=2})');
   });
 
   it('nested filters', () => {
-    const func = STSRefQueryItem(
-      [FilterQueryItem(
+    const func = STS(
+      [Filter(
         'metadata',
-        [FilterQueryItem('nested', [[FilterQueryItem('a', 'b')], [FilterQueryItem('c', [])]])]
+        [Filter('nested', [[Filter('a', 'b')], [Filter('c', [])]])]
       )]
     )
     const res = reverse(func);
@@ -244,11 +254,9 @@ describe('parse & reverse', () => {
 describe('inject ids in queries', () => {
   it('function with arithmetics', () => {
     const func = STSFunction('sin', [
-      STSRefQueryItem([FilterQueryItem('assetSubtreeIds', [FilterQueryItem('id', 1)])]),
+      STS([Filter('assetSubtreeIds', [Filter('id', 1)])]),
       Operator('/'),
-      {
-        constant: 10,
-      },
+      Constant(10),
     ]);
     const res = injectTSIdsInExpression(func, [[{ id: 1 } as TimeSeriesResponseItem]]);
     expect(res).toEqual('sin(ts{id=1} / 10)');
@@ -256,7 +264,7 @@ describe('inject ids in queries', () => {
 
   it('multiary function', () => {
     const func = STSFunction('avg', [
-      STSRefQueryItem([FilterQueryItem('assetSubtreeIds', [FilterQueryItem('id', 1)])]),
+      STS([Filter('assetSubtreeIds', [Filter('id', 1)])]),
     ]);
     const res = injectTSIdsInExpression(func, [
       [{ id: 1 }, { id: 2 }, { id: 3 }],
@@ -266,7 +274,7 @@ describe('inject ids in queries', () => {
 
   it('sum function with one filter', () => {
     const func = STSFunction('sum', [
-      STSRefQueryItem([FilterQueryItem('assetSubtreeIds', [FilterQueryItem('id', 1)])]),
+      STS([Filter('assetSubtreeIds', [Filter('id', 1)])]),
     ]);
     const res = injectTSIdsInExpression(func, [
       [{ id: 1 }, { id: 2 }, { id: 3 }],
@@ -276,8 +284,8 @@ describe('inject ids in queries', () => {
 });
 
 describe('find multiary function indices', () => {
-  const funcWithOneParam = STSFunction('avg', [STSRefQueryItem()]);
-  const funcWithFewParams = STSFunction('avg', [STSRefQueryItem(), STSRefQueryItem()]);
+  const funcWithOneParam = STSFunction('avg', [STS()]);
+  const funcWithFewParams = STSFunction('avg', [STS(), STS()]);
   const funcComposition = [
     funcWithFewParams,
     Operator('+'),
@@ -290,46 +298,49 @@ describe('find multiary function indices', () => {
     Operator('+'),
     STSFunction('avg', funcComposition),
   ];
+  const indices = getIndicesOfMultiaryFunctionArgs;
 
   it('valid for single param', () => {
-    const res = getIndicesOfMultiaryFunctionArgs(cloneDeep(funcWithOneParam));
+    const res = indices(cloneDeep(funcWithOneParam));
     expect(res).toEqual([0]);
   });
 
   it('invalid if multiple params', () => {
-    const res = getIndicesOfMultiaryFunctionArgs(cloneDeep(funcWithFewParams));
+    const res = indices(cloneDeep(funcWithFewParams));
     expect(res).toEqual([]);
   });
 
   it('works with composition of functions', () => {
-    const res = getIndicesOfMultiaryFunctionArgs(cloneDeep(funcComposition));
+    const res = indices(cloneDeep(funcComposition));
     expect(res).toEqual([2, 3]);
   });
 
   it('works with nested composition of functions', () => {
-    const res = getIndicesOfMultiaryFunctionArgs(cloneDeep(STSFunction('sin', funcComposition)));
+    const res = indices(cloneDeep(STSFunction('sin', funcComposition)));
     expect(res).toEqual([2, 3]);
   });
 
   it('works with complex nested composition of functions', () => {
-    const res = getIndicesOfMultiaryFunctionArgs(cloneDeep(nestedComposition));
+    const res = indices(cloneDeep(nestedComposition));
     expect(res).toEqual([2, 3, 6, 7]);
   });
 
   it('map() is a special case, doesn\'t work as multiary', () => {
-    const mapFunc = STSFunction('map', [STSRefQueryItem(), ['1'], [1], 1]);
-    const res = getIndicesOfMultiaryFunctionArgs(mapFunc);
+    const mapFunc = STSFunction('map', [STS(), ['1'], [1], 1]);
+    const res = indices(mapFunc);
     expect(res).toEqual([]);
   });
 });
 
 describe('permutations', () => {
-  it('with one element', () => {
-    expect(generateAllPossiblePermutations([['a']])).toEqual([[['a']]]);
+  const gen = generateAllPossiblePermutations;
+
+  it('one element', () => {
+    expect(gen([['a']])).toEqual([[['a']]]);
   });
 
-  it('with multiple elements', () => {
-    expect(generateAllPossiblePermutations([['a'], ['1', '2', '3'], ['å', 'æ']])).toEqual([
+  it('multiple elements', () => {
+    expect(gen([['a'], ['1', '2', '3'], ['å', 'æ']])).toEqual([
       [['a'], ['1'], ['å']],
       [['a'], ['1'], ['æ']],
       [['a'], ['2'], ['å']],
@@ -339,8 +350,8 @@ describe('permutations', () => {
     ]);
   });
 
-  it('with 1 lock', () => {
-    expect(generateAllPossiblePermutations([['a', 'b'], ['1', '2', '3'], ['å', 'æ']], [1])).toEqual(
+  it('1 lock', () => {
+    expect(gen([['a', 'b'], ['1', '2', '3'], ['å', 'æ']], [1])).toEqual(
       [
         [['a'], ['1', '2', '3'], ['å']],
         [['a'], ['1', '2', '3'], ['æ']],
@@ -350,58 +361,60 @@ describe('permutations', () => {
     );
   });
 
-  it('with multiple locks', () => {
-    expect(generateAllPossiblePermutations([['a'], ['1', '2', '3'], ['å', 'æ']], [0, 1])).toEqual([
+  it('multiple locks', () => {
+    expect(gen([['a'], ['1', '2', '3'], ['å', 'æ']], [0, 1])).toEqual([
       [['a'], ['1', '2', '3'], ['å']],
       [['a'], ['1', '2', '3'], ['æ']],
     ]);
   });
 
-  it('with all locked', () => {
+  it('all locked', () => {
     expect(
-      generateAllPossiblePermutations([['a'], ['1', '2', '3'], ['å', 'æ'], ['b']], [0, 1, 2, 3])
+      gen([['a'], ['1', '2', '3'], ['å', 'æ'], ['b']], [0, 1, 2, 3])
     ).toEqual([[['a'], ['1', '2', '3'], ['å', 'æ'], ['b']]]);
   });
 
-  it('with single elements locked', () => {
-    expect(generateAllPossiblePermutations([['a'], ['1'], ['å'], ['b']], [0, 3])).toEqual([
+  it('single elements locked', () => {
+    expect(gen([['a'], ['1'], ['å'], ['b']], [0, 3])).toEqual([
       [['a'], ['1'], ['å'], ['b']],
     ]);
   });
 
-  it('with single element locked', () => {
-    expect(generateAllPossiblePermutations([['a'], ['b'], ['c']], [0])).toEqual([
+  it('single element locked', () => {
+    expect(gen([['a'], ['b'], ['c']], [0])).toEqual([
       [['a'], ['b'], ['c']],
     ]);
   });
 });
 
 describe('convert expression to label', () => {
-  it('works with 1 ts and default label str', () => {
-    const res = convertExpressionToLabel('ts{id=1}', '', {
+  const convert = convertExpressionToLabel;
+
+  it('1 ts and default label str', () => {
+    const res = convert('ts{id=1}', '', {
       '1': { externalId: 'one' } as TimeSeriesResponseItem,
     });
     expect(res).toEqual('one');
   });
 
-  it('works with 2 ts and specified label', () => {
-    const res = convertExpressionToLabel('ts{id=1} + ts{id=2}', '{{id}}', {
+  it('2 ts and specified label', () => {
+    const res = convert('ts{id=1} + ts{id=2}', '{{id}}', {
       '1': { id: 1, externalId: 'one' } as TimeSeriesResponseItem,
       '2': { id: 2, externalId: 'two' } as TimeSeriesResponseItem,
     });
     expect(res).toEqual('1 + 2');
   });
 
-  it('works with parenthesis', () => {
-    const res = convertExpressionToLabel('(ts{id=1} + ts{id=2})', '', {
+  it('parenthesis', () => {
+    const res = convert('(ts{id=1} + ts{id=2})', '', {
       '1': { id: 1 } as TimeSeriesResponseItem,
       '2': { id: 2 } as TimeSeriesResponseItem,
     });
     expect(res).toEqual('(1 + 2)');
   });
 
-  it('works with map(...)', () => {
-    const res = convertExpressionToLabel(`map(ts{id=1}, ['one'], [1], 0)`, '', {
+  it('map(...)', () => {
+    const res = convert(`map(ts{id=1}, ['one'], [1], 0)`, '', {
       '1': { id: 1 } as TimeSeriesResponseItem
     });
     expect(res).toEqual(`map(1, ["one"], [1], 0)`);
