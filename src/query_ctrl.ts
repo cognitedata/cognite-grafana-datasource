@@ -81,7 +81,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
-  onChangeCustom() {
+  onChangeCustom() { // todo: why it doesn't work without this hack?
     try {
       parse(this.target.expr);
       this.target.error = '';
