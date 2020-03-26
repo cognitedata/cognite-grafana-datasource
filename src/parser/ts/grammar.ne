@@ -135,7 +135,8 @@ element -> function {% id %}
   | number {% extractNumber %}
   | "pi(" _ ")" {% extractPI %}
 
-type -> "ts"i {% ([d]) => d.toLowerCase() %}
+type -> "ts" {% id %}
+  | "TS" {% ([d]) => d.toLowerCase() %}
 
 condition -> curl CURL {% emptyArray %}
   | curl pair (comma pair):* CURL {% extractConditionToArray %}
