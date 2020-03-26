@@ -23,7 +23,7 @@ import {
 import { get, cloneDeep } from 'lodash';
 import { ms2String, getDatasourceValueString } from './utils';
 import { Connector } from './connector';
-import { getLabelsForExpression } from './parser/ts';
+import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
@@ -35,30 +35,28 @@ export function formQueryForItems(
 ): DataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Tab.Custom) {
-    const hasAggregates = false; // todo: check if there are ny aggregations inside
-    const limit = calculateDPLimitPerQuery(hasAggregates, items.length);
+    const isAggregated = items.some(({ expression}) => hasAggregates(expression));
+    const limit = calculateDPLimitPerQuery(isAggregated, items.length);
     return {
       items: items.map(({ expression }) => ({ expression, start, end, limit })),
     };
   }
-  {
-    let aggregations: Aggregates & Granularity = null;
-    const hasAggregates = aggregation && aggregation !== 'none';
-    if (hasAggregates) {
-      aggregations = {
-        aggregates: [aggregation],
-        granularity: granularity || ms2String(options.intervalMs),
-      };
-    }
-    const limit = calculateDPLimitPerQuery(hasAggregates, items.length);
-    return {
-      ...aggregations,
-      end,
-      start,
-      items,
-      limit,
+  let aggregations: Aggregates & Granularity = null;
+  const isAggregated = aggregation && aggregation !== 'none';
+  if (isAggregated) {
+    aggregations = {
+      aggregates: [aggregation],
+      granularity: granularity || ms2String(options.intervalMs),
     };
   }
+  const limit = calculateDPLimitPerQuery(isAggregated, items.length);
+  return {
+    ...aggregations,
+    end,
+    start,
+    items,
+    limit,
+  };
 }
 
 function calculateDPLimitPerQuery(hasAggregates: boolean, queriesNumber: number) {

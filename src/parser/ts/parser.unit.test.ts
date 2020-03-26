@@ -15,6 +15,7 @@ import {
   Operator,
   getClientFilters,
   WrappedConst,
+  hasAggregates,
 } from './index';
 import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
@@ -420,3 +421,12 @@ describe('convert expression to label', () => {
     expect(res).toEqual(`map(1, ["one"], [1], 0)`);
   })
 });
+
+describe('check if expression has aggregates', () => {
+  it('works with simple expressions', () => {
+    expect(hasAggregates('ts{}')).toBeFalsy();
+    expect(hasAggregates('ts{id=1}')).toBeFalsy();
+    expect(hasAggregates('ts{aggregate="something"}')).toBeTruthy();
+    expect(hasAggregates('ts{granularity="1s"}')).toBeTruthy();
+  })
+})

@@ -210,6 +210,19 @@ export const getReferencedTimeseries = (
   }));
 };
 
+export const hasAggregates = (
+  expression: string
+): boolean => {
+  const parsed = parse(expression);
+  let hasAggregates = false;
+  walk(parsed, obj => {
+    if (isSTSReference(obj) && obj.query.some(isSTSAggregateFilter)) {
+      hasAggregates = true;
+    }
+  });
+  return hasAggregates
+};
+
 export function flattenServerQueryFilters(items: STSFilter[]): StringMap {
   return items.reduce((res, filter) => {
     let value: any;
