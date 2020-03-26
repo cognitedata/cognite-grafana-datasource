@@ -8,8 +8,8 @@ import {
   generateAllPossiblePermutations,
   STSFunction,
   injectTSIdsInExpression,
-  FilterQueryItem,
-  STSRefQueryItem,
+  STSFilter,
+  STSReference,
   getIndicesOfMultiaryFunctionArgs,
   convertExpressionToLabel,
   Operator,
@@ -21,8 +21,8 @@ import { TimeSeriesResponseItem } from '../types';
 import { cloneDeep } from 'lodash';
 
 const { NotEquals } = FilterType;
-const STS = STSRefQueryItem;
-const Filter = FilterQueryItem;
+const STS = STSReference;
+const Filter = STSFilter;
 
 function Constant(constant: number | 'pi()'): WrappedConst {
   return { constant };
