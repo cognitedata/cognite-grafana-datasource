@@ -130,6 +130,17 @@ describe('get timeseries filters from parsed data', () => {
   })
 
   describe('get client filters', () => {
+
+    it('void', () => {
+      const nested = [STS([]), STS([])];
+      expect(getClientFilters(nested)).toStrictEqual([[], []]);
+    });
+
+    it('empty', () => {
+      const nested = [STS([Filter('b', 'c')])];
+      expect(getClientFilters(nested)).toStrictEqual([[]]);
+    });
+
     it('basic', () => {
       const nested = [STS([Filter('b', 'c', '!~')])];
       expect(getClientFilters(nested)).toStrictEqual([[Filter('b', 'c', '!~')]]);
