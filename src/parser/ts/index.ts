@@ -13,7 +13,7 @@ import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
 import { Connector } from '../../connector';
 import { FilterType, ParsedFilter } from '../types';
 import { applyFilters } from '../../utils';
-import { parseWith } from '../index';
+import { parseWith } from '../events-assets/index';
 import getFilterDeep from 'deepdash/getFilterDeep';
 
 const filterDeep = getFilterDeep(_);
@@ -127,9 +127,8 @@ const isSimpleSyntheticExpression = (expr: string): boolean => {
 function unwrapId(idEither: IdEither) {
   if ('id' in idEither) {
     return idEither.id;
-  } else {
-    return idEither.externalId;
-  }
+  } 
+  return idEither.externalId;
 }
 
 const filterNonUniqueIds = (ids: IdEither[]) => {

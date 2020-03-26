@@ -15,7 +15,7 @@
     "lint": "tslint -c tslint.json --project tsconfig.json",
     "lint:fix": "yarn lint --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
-    "build-parser": "nearleyc ./src/query-parser/grammar.ne -o ./src/query-parser/grammar.ts && nearleyc ./src/query-parser/ts/grammar.ne -o ./src/query-parser/ts/grammar.ts"
+    "build-parser": "nearleyc ./src/parser/events-assets/grammar.ne -o ./src/parser/events-assets/grammar.ts && nearleyc ./src/parser/ts/grammar.ne -o ./src/parser/ts/grammar.ts"
   },
   "devDependencies": {
     "@grafana/ui": "^6.0.1-alpha.0",

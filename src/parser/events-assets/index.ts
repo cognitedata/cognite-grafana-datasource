@@ -4,7 +4,7 @@ import getPaths from 'deepdash/getPaths';
 import getOmitDeep from 'deepdash/getOmitDeep';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
-import { ParserResponse, QueryParserResponse } from './types';
+import { ParserResponse, QueryParserResponse } from '../types';
 
 const compiledGrammar = Grammar.fromCompiled(grammar);
 const filterDeep = getFilterDeep(_);

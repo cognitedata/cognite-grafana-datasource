@@ -23,7 +23,7 @@ import {
 import { get, cloneDeep } from 'lodash';
 import { ms2String, getDatasourceValueString } from './utils';
 import { Connector } from './connector';
-import { getLabelsForExpression } from './query-parser/ts/parser';
+import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';

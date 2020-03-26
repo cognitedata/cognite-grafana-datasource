@@ -1,7 +1,7 @@
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
 import { getRequestId, applyFilters } from './utils';
-import { parse } from './query-parser';
-import { formQueriesForExpression } from './query-parser/ts/parser';
+import { parse } from './parser/events-assets';
+import { formQueriesForExpression } from './parser/ts';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import {
@@ -39,7 +39,7 @@ import {
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
-import { ParsedFilter, QueryCondition } from './query-parser/types';
+import { ParsedFilter, QueryCondition } from './parser/types';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {

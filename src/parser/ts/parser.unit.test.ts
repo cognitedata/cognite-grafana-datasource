@@ -15,9 +15,9 @@ import {
   Operator,
   getClientFilters,
   WrappedConst,
-} from '../query-parser/ts/parser';
-import { FilterType } from '../query-parser/types';
-import { TimeSeriesResponseItem } from '../types';
+} from './index';
+import { FilterType } from '../types';
+import { TimeSeriesResponseItem } from '../../types';
 import { cloneDeep } from 'lodash';
 
 const { NotEquals } = FilterType;

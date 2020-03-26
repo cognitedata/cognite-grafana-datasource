@@ -2,7 +2,7 @@ import { isNil, omitBy, get } from 'lodash';
 import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
-import { FilterType, ParsedFilter } from './query-parser/types';
+import { FilterType, ParsedFilter } from './parser/types';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
