@@ -1,12 +1,10 @@
 import {
   DataQueryRequestItem,
-  QueryOptions,
   TimeSeriesResponseItem,
   QueryTarget,
   IdEither,
 } from '../../types';
 import _, { isArray, isObjectLike } from 'lodash';
-import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
@@ -21,16 +19,13 @@ const compiledGrammar = Grammar.fromCompiled(grammar);
 
 export const formQueriesForExpression = async (
   expr: string,
-  options: QueryOptions,
-  templateSrv: TemplateSrv,
   target: QueryTarget,
   connector: Connector
 ): Promise<DataQueryRequestItem[]> => {
-  const templatedExpr = templateSrv.replace(expr.trim(), options.scopedVars);
-  if (isSimpleSyntheticExpression(templatedExpr)) {
-    return [{ expression: templatedExpr }];
+  if (isSimpleSyntheticExpression(expr)) {
+    return [{ expression: expr }];
   }
-  const parsed = parse(templatedExpr);
+  const parsed = parse(expr);
   const serverFilters = getServerFilters(parsed);
   const timeseries = await Promise.all(
     serverFilters.map(async filter => {

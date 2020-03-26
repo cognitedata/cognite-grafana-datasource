@@ -121,23 +121,19 @@ export default class CogniteDatasource {
     target: QueryTarget,
     options: QueryOptions
   ): Promise<DataQueryRequestItem[]> {
-    switch (target.tab) {
+    const { tab, target: tsId, assetQuery, expr } = target;
+    switch (tab) {
       case undefined:
       case Timeseries: {
-        return [{ id: target.target }];
+        return [{ id: tsId }];
       }
       case Asset: {
         await this.findAssetTimeseries(target, options);
-        return target.assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
+        return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        return formQueriesForExpression(
-          target.expr,
-          options,
-          this.templateSrv,
-          target,
-          this.connector
-        );
+        const templatedExpr = this.templateSrv.replace(expr.trim(), options.scopedVars);
+        return formQueriesForExpression(templatedExpr, target, this.connector);
       }
     }
   }

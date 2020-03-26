@@ -110,7 +110,6 @@ async function getLabelsForTarget(
       return labels;
     }
     case Tab.Custom: {
-      // const ts = cache.getTimeseries(options, target);
       const expressions = queryList.map(({ expression }) => expression);
       const labels = await getLabelsForExpression(expressions, target.label, target, connector);
       return labels;

@@ -11,7 +11,7 @@ const filterDeep = getFilterDeep(_);
 const paths = getPaths(_);
 const omitDeep = getOmitDeep(_);
 
-export const parseWith = (parser: Parser, query: string) => {
+const parseWith = (parser: Parser, query: string) => {
   const trimmedQuery = query.trim();
   let result;
 
@@ -84,4 +84,4 @@ const parse = (query: string): ParserResponse => {
   return formatQueryParse(result);
 };
 
-export { parse, formatQueryParse, parseQuery };
+export { parse, formatQueryParse, parseQuery, parseWith };
