@@ -316,59 +316,56 @@ describe('Datasource Query', () => {
     });
   });
 
-  xdescribe('Given custom queries', () => {
+  describe('Given custom queries', () => {
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: 123,
       tab: Tab.Custom,
-      assetQuery: {
-        // TODO: not needed for custom anymore
-        target: '123',
-        timeseries: [],
-        includeSubtrees: false,
-      },
-      expr: 'timeseries{}',
+      expr: 'ts{}',
     };
     const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "timeseries{externalId=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2'}[cv,10d]",
+        "ts{description!='test timeseriesA', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
       refId: 'B',
     };
     const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "timeseries{externalId=~'Timeseries.*', description!='test timeseriesA', metadata.key1 = value1, metadata.key2 !~'.*2',}[dv]",
+        "ts{name='Timeseries1', description!='test timeseriesA', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance'}",
       refId: 'C',
     };
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
-      expr: 'timeseries{externalId=[[TimeseriesVariable]]}[none]',
+      expr: 'ts{externalId="[[TimeseriesVariable]]"}',
       refId: 'D',
     };
     const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
-      expr: 'timeseries{externalId!=$TimeseriesVariable}[]',
+      assetQuery: {
+        ...targetA.assetQuery,
+        target: '$AssetVariable'
+      },
+      expr: 'ts{externalId!="$TimeseriesVariable"}',
       label: '{{description}} {{metadata.key1}}',
       refId: 'E',
     };
-    targetE.assetQuery.target = '$AssetVariable';
     const targetF: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
-      expr: 'timeseries{externalId=~".*}[]',
+      expr: 'ts{externalId=~".*}',
     };
     const targetG: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'G',
-      expr: 'timeseries{externalId=~".*"}[avg',
+      expr: 'ts{externalId=~".*"}[avg',
     };
     const targetH: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'H',
-      expr: 'timeseries{externalId=~".*"',
+      expr: 'ts{externalId=~".*"',
     };
     const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -433,22 +430,28 @@ describe('Datasource Query', () => {
         targetI,
         targetJ,
       ];
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])))
-        .mockImplementation(x => {
-          if ('FGH'.includes(x.refId)) return Promise.reject(tsError);
-          return Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix));
-        });
+      const listMock = async (...params) => {
+        // console.log(JSON.stringify(params)) //TODO: remove this
+        return cloneDeep(tsResponse);
+      }
+      const dataMock = async x => {
+        // console.log(JSON.stringify(x)) //TODO: remove this
+        return getDataqueryResponse(x.data, externalIdPrefix)
+      }
+      backendSrvMock.datasourceRequest = jest.fn()
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(listMock)
+        .mockImplementationOnce(dataMock)
+        .mockImplementationOnce(dataMock)
+        .mockImplementationOnce(dataMock)
+        .mockImplementationOnce(dataMock)
+     
       result = await ds.query(options);
     });
     afterAll(() => {
@@ -456,16 +459,10 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(15);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(12);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
-    });
-
-    it('should replace filter assetIds $variable with assetId', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls[4][0].data.filter.assetIds[0]).toEqual(
-        '123'
-      );
     });
 
     it('should return correct datapoints and labels', () => {
@@ -479,108 +476,104 @@ describe('Datasource Query', () => {
       expect(targetG.error).not.toHaveLength(0);
       expect(targetH.error).toBeDefined();
       expect(targetH.error).not.toHaveLength(0);
+      expect(targetI.error).toBeDefined();
+      expect(targetJ.error).toBeDefined();
     });
   });
-  xdescribe('Given custom queries with functions', () => {
+  describe('Given custom queries with functions', () => {
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
       refId: 'A',
       target: 123,
       tab: Tab.Custom,
-      assetQuery: {
-        // TODO: should be removed
-        target: '123',
-        timeseries: [],
-        includeSubtrees: false,
-      },
-      expr: 'timeseries{}',
+      expr: 'ts{} + pi()',
     };
     const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'B',
-      expr: '       timeseries{} + timeseries{} + [123]   ',
+      expr: '       ts{} + ts{id=123}   ',
     };
     const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'C',
-      expr: 'timeseries{}[] * timeseries{}[average]- timeseries{}[average,10s]',
+      expr: 'ts{} * ts{aggregate="average"} - ts{aggregate="average", granularity="10s"}',
       label: '{{description}} {{metadata.key1}}',
     };
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'D',
       expr:
-        'timeseries{externalId=[[TimeseriesVariable]]}[none] * timeseries{externalId=[[TimeseriesVariable]]}[average] - timeseries{externalId=[[TimeseriesVariable]]}[average,10m]',
+        'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
     };
     const targetE: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'E',
-      expr: 'timeseries{asdaklj}',
+      expr: 'ts{asdaklj}',
     };
     const targetF: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'F',
-      expr: '1+1',
+      expr: 'no',
     };
     const targetG: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'G',
-      expr: 'SUM(timeseries{})',
-      label: 'SUM',
+      expr: 'sum(ts{})',
+      label: 'sum',
     };
     const targetH: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'H',
       expr:
-        'sum(timeseries{}[average]) + SuM(timeseries{}[average,1h]) * MAX(timeseries{}[count])/mIN(timeseries{externalId="nonexistant"}) - avg(timeseries{externalId="Timeseries1"}[avg]) - 3*timeseries{}[]',
+        'sum(ts{aggregate="average"}) + sum(ts{aggregate="average", granularity="1h"}) * MAX(ts{aggregate="count"})/min(ts{externalId="nonexistant"}) - avg(ts{externalId="Timeseries1", aggregate="average"}) - 3*ts{}',
     };
     const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'I',
-      expr: 'max(max(timeseries{},5),5) + max(timeseries{})',
+      expr: 'max(max(ts{},5),5) + max(ts{})',
     };
     const targetJ: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'J',
-      expr: 'timeseries{externalId=[[TimeseriesVariable]]} + [[TimeseriesVariable]]',
+      expr: 'ts{externalId="[[TimeseriesVariable]]"}',
       label: '{{description}} : [[TimeseriesVariable]]',
     };
 
     const tsResponse = getItemsResponseObject([
       {
         externalId: 'Timeseries1',
-        id: 12,
+        id: 1,
         description: 'test timeseriesA',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
         externalId: 'Timeseries2',
-        id: 34,
+        id: 2,
         description: 'test timeseriesB',
         metadata: { key1: 'value1', key2: 'value2' },
       },
       {
         externalId: 'Timeseries3',
-        id: 56,
+        id: 3,
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
       },
       {
         externalId: 'Timeseries4',
-        id: 78,
+        id: 4,
         description: 'test timeseriesD',
         metadata: { key1: 'value1', key2: 'value3' },
       },
       {
         externalId: 'Timeseries5',
-        id: 90,
+        id: 5,
         description: 'test timeseriesE',
         metadata: { key1: 'value2', key2: 'value3' },
       },
       {
         externalId: 'Test',
-        id: 123,
+        id: 6,
         description: 'test timeseriesF',
         metadata: { key1: 'value1', key2: 'value3' },
       },
@@ -600,55 +593,47 @@ describe('Datasource Query', () => {
         targetI,
         targetJ,
       ];
+      const mockList = async (...args) => {
+        // console.log(args) // TODO: remove this
+        // TODO: fix this test file in general, some tests are broken
+        return cloneDeep(tsResponse)
+      }
+      const mockData = async x => {
+        // console.log(x.data) //TODO: remove this
+        return getDataqueryResponse(x.data, externalIdPrefix)
+      }
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(() => Promise.resolve(cloneDeep(tsResponse)))
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+        .mockImplementationOnce(mockList)
+
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData)
+
         .mockRejectedValueOnce(tsError)
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        )
-        .mockImplementationOnce(x =>
-          Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix))
-        );
+        
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData)
+        .mockImplementationOnce(mockData);
       result = await ds.query(options);
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(19);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(11);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
-    });
-
-    it('should replace [[variable]] in label', () => {
-      expect(result.data[32].target).toEqual('test timeseriesA : Timeseries1');
     });
 
     it('should return correct datapoints and labels', () => {

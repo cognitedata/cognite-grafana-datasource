@@ -68,7 +68,7 @@ export class Connector {
   public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
     const maxLimit = 1000;
     const { data: queryData } = params;
-    const fullLimit = queryData.limit;
+    const fullLimit = queryData.limit || maxLimit;
     const { data } = await this.fetchData<CursorResponse<T>>({
       ...params,
       data: {
