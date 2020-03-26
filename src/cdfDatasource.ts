@@ -21,7 +21,7 @@ import {
   Items,
 } from './types';
 import { get, cloneDeep } from 'lodash';
-import { ms2String, getDatasourceValueString } from './utils';
+import { ms2String } from './utils';
 import { Connector } from './connector';
 import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
@@ -210,10 +210,9 @@ export function reduceTimeseries(
 
 export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
-  aggregates: string
+  aggregate: string
 ): Tuple<number>[] {
-  const prop = getDatasourceValueString(aggregates);
-  return datapoints.map(d => datapoint2Tuple(d, prop));
+  return datapoints.map(d => datapoint2Tuple(d, aggregate));
 }
 
 function datapoint2Tuple(

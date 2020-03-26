@@ -1,6 +1,5 @@
 import CogniteDatasource from '../datasource';
 import { DataQueryRequest, QueryTarget } from '../types';
-import { getDatasourceValueString } from '../utils';
 import ms from 'ms';
 
 const variables = [
@@ -12,17 +11,17 @@ export function getDataqueryResponse(
   { items, aggregates }: DataQueryRequest,
   externalIdPrefix = 'externalId-'
 ) {
-  const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
+  const aggregate = aggregates ? aggregates[0] : undefined;
   const datapoints = [0, 1, 2, 3, 4].map(i => ({
     timestamp: i * ms('10m') + 1549336675000,
-    [aggrStr]: i,
+    [aggregate]: i,
   }));
   const itemsArr = items.map(({ id }) => ({
     id,
     datapoints,
     externalId: `${externalIdPrefix}${id}`,
   }));
-  return getItemsResponseObject(itemsArr, aggregates && aggrStr);
+  return getItemsResponseObject(itemsArr, aggregate);
 }
 
 export function getItemsResponseObject(items, aggregates?: string) {
