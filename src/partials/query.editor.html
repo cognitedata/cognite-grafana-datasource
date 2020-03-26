@@ -161,7 +161,7 @@
   Example:  <code class="query-keyword">sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}</code>
 
   Templated variables can also be used with <code class="query-keyword">$variable</code>.
-  Example: <code class="query-keyword">ts{assetIds=[$asset], metadata=~{key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}</code> <br>
+  Example: <code class="query-keyword">ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}</code> <br>
   Synthetic timeseries functions can also be applied on one or multiple timeseries.
   Example: <code class="query-keyword">(ts{name=~'.*temp.*', aggregate='average'} - 32) * 5/9</code>
             <code class="query-keyword">ts{} + sin(ts{granularity='24h', aggregate='average'})</code><br>
