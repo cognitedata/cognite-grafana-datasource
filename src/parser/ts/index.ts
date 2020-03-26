@@ -195,51 +195,6 @@ export const getLabelsForExpression = async (
   return expressions.map(expr => convertExpressionToLabel(expr, labelSrc, tsMap));
 };
 
-type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
-type StringMap = { [key: string]: string };
-
-export type STSFilter = {
-  path: string;
-  filter: FilterType;
-  value: string | number | STSFilter[] | STSFilter[][];
-};
-
-export type Operator = {
-  operator: '+' | '-' | '/' | '*';
-};
-
-export type STSQueryItem = Operator | STSReference | WrappedConst | STSFunction;
-
-export type WrappedConst = {
-  constant: number | 'pi()';
-};
-
-export type STSFunction = UnaryFunction | MultiaryFunction | MapFunction;
-
-export type UnaryFunction = {
-  func: 'sin' | 'cos' | 'ln' | 'sqrt' | 'exp' | 'abs' | '';
-  args: STSQueryItem[];
-};
-
-export type MultiaryOperator = 'avg' | 'max' | 'min' | 'sum';
-
-export type BinaryOperator = 'pow' | 'round' | 'on_error';
-
-export type MultiaryFunction = {
-  func: MultiaryOperator | BinaryOperator;
-  args: (STSQueryItem[] | STSQueryItem)[];
-};
-
-export type MapFunction = {
-  func: 'map';
-  args: [STSReference, string[], number[], number];
-} 
-
-export type STSReference = {
-  type: 'ts';
-  query: STSFilter[];
-};
-
 export const getReferencedTimeseries = (
   route: STSQueryItem[] | STSFunction
 ): StringMap[] => {
@@ -521,4 +476,50 @@ function isMultiaryFunction(obj: any): obj is MultiaryFunction {
     'on_error',
   ].includes(obj.func);
 }
+
+type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
+
+type StringMap = { [key: string]: string };
+
+export type STSFilter = {
+  path: string;
+  filter: FilterType;
+  value: string | number | STSFilter[] | STSFilter[][];
+};
+
+export type Operator = {
+  operator: '+' | '-' | '/' | '*';
+};
+
+export type STSQueryItem = Operator | STSReference | WrappedConst | STSFunction;
+
+export type WrappedConst = {
+  constant: number | 'pi()';
+};
+
+export type STSFunction = UnaryFunction | MultiaryFunction | MapFunction;
+
+export type UnaryFunction = {
+  func: 'sin' | 'cos' | 'ln' | 'sqrt' | 'exp' | 'abs' | '';
+  args: STSQueryItem[];
+};
+
+export type MultiaryOperator = 'avg' | 'max' | 'min' | 'sum';
+
+export type BinaryOperator = 'pow' | 'round' | 'on_error';
+
+export type MultiaryFunction = {
+  func: MultiaryOperator | BinaryOperator;
+  args: (STSQueryItem[] | STSQueryItem)[];
+};
+
+export type MapFunction = {
+  func: 'map';
+  args: [STSReference, string[], number[], number];
+} 
+
+export type STSReference = {
+  type: 'ts';
+  query: STSFilter[];
+};
 
