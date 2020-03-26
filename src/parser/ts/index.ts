@@ -9,7 +9,7 @@ import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
 import { Connector } from '../../connector';
-import { FilterType, ParsedFilter } from '../types';
+import { FilterType } from '../types';
 import { applyFilters } from '../../utils';
 import { parseWith } from '../events-assets/index';
 import getFilterDeep from 'deepdash/getFilterDeep';
@@ -193,7 +193,7 @@ export const getLabelsForExpression = async (
 export const getReferencedTimeseries = (
   route: STSQueryItem[] | STSFunction
 ): StringMap[] => {
-  let idFilters: STSFilter[] = [];
+  let idFilters: STSServerFilter[] = [];
   walk(route, obj => {
     if (isSTSReference(obj)) {
       const ids = getIdFilters(obj);
@@ -294,9 +294,9 @@ export const getServerFilters = (
 };
 
 
-export function flattenClientQueryFilters(items: STSFilter[], path = []): ParsedFilter[] {
-  const res: ParsedFilter[] = [];
-  items.forEach(filter => {
+export function flattenClientQueryFilters(filters: STSFilter[], path = []): STSClientFilter[] {
+  const res: STSClientFilter[] = [];
+  for(const filter of filters) {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
       res.push(
         ...flattenClientQueryFilters(filter.value, [...path, filter.path])
@@ -304,16 +304,16 @@ export function flattenClientQueryFilters(items: STSFilter[], path = []): Parsed
     } else {
       res.push({
         path: [...path, filter.path].join('.'),
-        value: filter.value as string | number,
+        value: filter.value,
         filter: filter.filter
-      })
+      } as STSClientFilter)
     }
-  })
+  }
   return res;
 }
 
-export const getClientFilters = (route: STSQueryItem[] | STSFunction): ParsedFilter[][] => {
-  const responseArr: ParsedFilter[][] = [];
+export const getClientFilters = (route: STSQueryItem[] | STSFunction): STSClientFilter[][] => {
+  const responseArr: STSClientFilter[][] = [];
   const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
   walk(route, obj => {
     if (isSTSReference(obj) && !hasIdsFilter(obj)) {
@@ -402,7 +402,7 @@ export function STSFilter(
   value: STSFilter['value'],
   filter: FilterType = '='
 ): STSFilter {
-  return { path, value, filter };
+  return { path, value, filter } as STSFilter;
 }
 
 export function Operator(operator: Operator['operator']): Operator {
@@ -417,7 +417,7 @@ const hasIdsFilter = (obj: STSReference) => {
   return getIdFilters(obj).length;
 };
 
-function isEqualsFilter(query: any)  {
+function isEqualsFilter(query: any): query is STSServerFilter  {
   return isSTSFilter(query) && query.filter === FilterType.Equals;
 }
 
@@ -429,15 +429,15 @@ function isSTSAggregateFilter(query: STSFilter) {
   return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate');
 }
 
-function isIdsFilter(query: STSFilter) {
+function isIdsFilter(query: STSFilter): query is STSServerFilter {
   return isEqualsFilter(query) && isOneOf(query.path, 'id', 'externalId');
 }
 
-function isServerFilter(item: STSFilter) {
+function isServerFilter(item: STSFilter): item is STSServerFilter {
   return isEqualsFilter(item) && !isSTSAggregateFilter(item);
 }
 
-function isClientFilter(item: any) {
+function isClientFilter(item: any): item is STSClientFilter {
   return isSTSFilter(item) && !isEqualsFilter(item);
 }
 
@@ -489,9 +489,17 @@ type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
 
-export type STSFilter = {
+export type STSFilter = STSClientFilter | STSServerFilter;
+
+export type STSClientFilter = {
   path: string;
-  filter: FilterType;
+  filter: Exclude<FilterType, '='>;
+  value: string;
+};
+
+export type STSServerFilter = {
+  path: string;
+  filter: Extract<FilterType, '='>;
   value: string | number | STSFilter[] | STSFilter[][];
 };
 

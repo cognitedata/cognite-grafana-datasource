@@ -7,7 +7,7 @@ export const FilterType = {
 export type FilterType = '!~' | '=~' | '!=' | '=';
 export interface QueryFilter {
   filter: FilterType;
-  value: string | number;
+  value: string;
 }
 
 export enum QueryParserTypes {
