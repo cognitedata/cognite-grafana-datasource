@@ -28,13 +28,15 @@ import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
+const { Asset, Custom, Timeseries} = Tab;
+
 export function formQueryForItems(
   items,
   { tab, aggregation, granularity },
   options
 ): DataQueryRequest {
   const [start, end] = getRange(options.range);
-  if (tab === Tab.Custom) {
+  if (tab === Custom) {
     const isAggregated = items.some(({ expression}) => hasAggregates(expression));
     const limit = calculateDPLimitPerQuery(isAggregated, items.length);
     return {
@@ -79,7 +81,7 @@ export async function formMetadatasForTargets(
   templateSrv: TemplateSrv
 ): Promise<ResponseMetadata[]> {
   const promises = queriesData.map(async ({ target, items }) => {
-    const rawLabels = await getLabelsForTarget(target, options, items, connector);
+    const rawLabels = await getLabelsForTarget(target, items, connector);
     const labels = rawLabels.map(raw => templateSrv.replace(raw, options.scopedVars));
     return {
       target,
@@ -91,25 +93,21 @@ export async function formMetadatasForTargets(
 
 async function getLabelsForTarget(
   target: QueryTarget,
-  options: QueryOptions,
   queryList: DataQueryRequestItem[],
   connector: Connector
 ): Promise<string[]> {
   switch (target.tab) {
     case undefined:
-    case Tab.Timeseries: {
+    case Timeseries: {
       return [await getTimeseriesLabel(target.label, target.target, target, connector)];
     }
-    case Tab.Asset: {
-      const labels = [];
-      target.assetQuery.timeseries.forEach(ts => {
-        if (ts.selected) {
-          labels.push(getLabelWithInjectedProps(target.label || '', ts));
-        }
-      });
-      return labels;
+    case Asset: {
+      const labelSrc = target.label || '';
+      return target.assetQuery.timeseries
+        .filter(ts => ts.selected)
+        .map(ts => getLabelWithInjectedProps(labelSrc, ts));
     }
-    case Tab.Custom: {
+    case Custom: {
       const expressions = queryList.map(({ expression }) => expression);
       const labels = await getLabelsForExpression(expressions, target.label, target, connector);
       return labels;
