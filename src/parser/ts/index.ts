@@ -317,7 +317,7 @@ export const getClientFilters = (route: STSQueryItem[] | STSFunction): STSClient
   const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
   walk(route, obj => {
     if (isSTSReference(obj) && !hasIdsFilter(obj)) {
-      const clientQuery = filterDeep(filterDeep(obj.query, filter), filter);
+      const clientQuery = filterDeep(filterDeep(obj.query, filter) || [], filter);
       const flatFilters = flattenClientQueryFilters(clientQuery || []);
       responseArr.push(flatFilters);
     }

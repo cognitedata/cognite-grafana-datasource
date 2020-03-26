@@ -9,10 +9,12 @@ const variables = [
 
 export function getDataqueryResponse(
   { items, aggregates }: DataQueryRequest,
-  externalIdPrefix = 'externalId-'
+  externalIdPrefix = 'externalId-',
+  dpNumber: number = 5
 ) {
   const aggregate = aggregates ? aggregates[0] : undefined;
-  const datapoints = [0, 1, 2, 3, 4].map(i => ({
+  /* tslint:disable-next-line */
+  const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({
     timestamp: i * ms('10m') + 1549336675000,
     [aggregate]: i,
   }));
@@ -46,8 +48,10 @@ const getTemplateSrvMock = () =>
     replace: jest.fn((q, options) => {
       let query = q;
       for (const { name, current } of variables) {
-        query = query.replace(`[[${name}]]`, current.value);
-        query = query.replace(`$${name}`, current.value);
+        while(query.includes(`[[${name}]]`) || query.includes(`$${name}`)) {
+          query = query.replace(`[[${name}]]`, current.value);
+          query = query.replace(`$${name}`, current.value);
+        }
       }
       return query;
     }),

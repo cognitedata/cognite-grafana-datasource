@@ -328,13 +328,13 @@ describe('Datasource Query', () => {
     const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "ts{description!='test timeseriesA', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
+        "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
       refId: 'B',
     };
     const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
       expr:
-        "ts{name='Timeseries1', description!='test timeseriesA', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance'}",
+        "ts{name='Timeseries1', description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance'}",
       refId: 'C',
     };
     const targetD: QueryTargetLike = {
@@ -395,25 +395,7 @@ describe('Datasource Query', () => {
         externalId: 'Timeseries3',
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
-      },
-      {
-        id: 4,
-        externalId: 'Timeseries4',
-        description: 'test timeseriesD',
-        metadata: { key1: 'value1', key2: 'value3' },
-      },
-      {
-        id: 5,
-        externalId: 'Timeseries5',
-        description: 'test timeseriesE',
-        metadata: { key1: 'value2', key2: 'value3' },
-      },
-      {
-        id: 6,
-        externalId: 'Test',
-        description: 'test timeseriesF',
-        metadata: { key1: 'value1', key2: 'value3' },
-      },
+      }
     ]);
 
     beforeAll(async () => {
@@ -430,13 +412,11 @@ describe('Datasource Query', () => {
         targetI,
         targetJ,
       ];
-      const listMock = async (...params) => {
-        // console.log(JSON.stringify(params)) //TODO: remove this
+      const listMock = async () => {
         return cloneDeep(tsResponse);
       }
       const dataMock = async x => {
-        // console.log(JSON.stringify(x)) //TODO: remove this
-        return getDataqueryResponse(x.data, externalIdPrefix)
+        return getDataqueryResponse(x.data, externalIdPrefix, 0)
       }
       backendSrvMock.datasourceRequest = jest.fn()
         .mockImplementationOnce(listMock)
@@ -459,7 +439,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(12);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(14);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
@@ -480,6 +460,7 @@ describe('Datasource Query', () => {
       expect(targetJ.error).toBeDefined();
     });
   });
+
   describe('Given custom queries with functions', () => {
     let result;
     const targetA: QueryTargetLike = {
@@ -492,7 +473,7 @@ describe('Datasource Query', () => {
     const targetB: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'B',
-      expr: '       ts{} + ts{id=123}   ',
+      expr: '       ts{} + ts{id=1}   ',
     };
     const targetC: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -526,7 +507,7 @@ describe('Datasource Query', () => {
       ...cloneDeep(targetA),
       refId: 'H',
       expr:
-        'sum(ts{aggregate="average"}) + sum(ts{aggregate="average", granularity="1h"}) * MAX(ts{aggregate="count"})/min(ts{externalId="nonexistant"}) - avg(ts{externalId="Timeseries1", aggregate="average"}) - 3*ts{}',
+        'sum(ts{aggregate="average"}) + sum(ts{aggregate="average", granularity="1h"}) * max(ts{aggregate="count"})/min(ts{externalId="Timeseries1"}) - avg(ts{aggregate="average"}) - 3*ts{}',
     };
     const targetI: QueryTargetLike = {
       ...cloneDeep(targetA),
@@ -559,24 +540,6 @@ describe('Datasource Query', () => {
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
       },
-      {
-        externalId: 'Timeseries4',
-        id: 4,
-        description: 'test timeseriesD',
-        metadata: { key1: 'value1', key2: 'value3' },
-      },
-      {
-        externalId: 'Timeseries5',
-        id: 5,
-        description: 'test timeseriesE',
-        metadata: { key1: 'value2', key2: 'value3' },
-      },
-      {
-        externalId: 'Test',
-        id: 6,
-        description: 'test timeseriesF',
-        metadata: { key1: 'value1', key2: 'value3' },
-      },
     ]);
 
     beforeAll(async () => {
@@ -593,44 +556,21 @@ describe('Datasource Query', () => {
         targetI,
         targetJ,
       ];
-      const mockList = async (...args) => {
-        // console.log(args) // TODO: remove this
-        // TODO: fix this test file in general, some tests are broken
-        return cloneDeep(tsResponse)
-      }
-      const mockData = async x => {
-        // console.log(x.data) //TODO: remove this
-        return getDataqueryResponse(x.data, externalIdPrefix)
-      }
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-        .mockImplementationOnce(mockList)
-
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData)
-
-        .mockRejectedValueOnce(tsError)
-        
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData)
-        .mockImplementationOnce(mockData);
+        .mockImplementation(async (data: any) => {
+          if (data.url.includes('/byids') || data.url.includes('timeseries/list')) {
+            return cloneDeep(tsResponse)
+          }  if (data.url.includes('/synthetic/query')) {
+            return getDataqueryResponse(data.data, externalIdPrefix, 0)
+          }
+          throw new Error('no mock')
+        })
       result = await ds.query(options);
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(11);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(30);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }

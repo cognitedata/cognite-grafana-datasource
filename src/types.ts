@@ -308,7 +308,7 @@ export type TimeseriesFilterQuery = {
     description?: string;
     assetSubtreeIds?: IdEither[];
     assetIds?: string[];
-    [s: string]: any; // TODO: figure out type
+    [s: string]: any; // so we auto-support next features
   };
   cursor?: string;
 } & Limit;
