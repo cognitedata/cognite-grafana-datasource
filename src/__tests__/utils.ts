@@ -1,3 +1,4 @@
+/* tslint:disable */
 import CogniteDatasource from '../datasource';
 import { DataQueryRequest, QueryTarget } from '../types';
 import ms from 'ms';
@@ -13,7 +14,6 @@ export function getDataqueryResponse(
   dpNumber: number = 5
 ) {
   const aggregate = aggregates ? aggregates[0] : undefined;
-  /* tslint:disable-next-line */
   const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({
     timestamp: i * ms('10m') + 1549336675000,
     [aggregate]: i,
@@ -48,10 +48,10 @@ const getTemplateSrvMock = () =>
     replace: jest.fn((q, options) => {
       let query = q;
       for (const { name, current } of variables) {
-        while(query.includes(`[[${name}]]`) || query.includes(`$${name}`)) {
-          query = query.replace(`[[${name}]]`, current.value);
-          query = query.replace(`$${name}`, current.value);
-        }
+        const varSyntax1 = new RegExp('\\[\\[' + name + '\\]\\]', 'g');
+        const varSyntax2 = new RegExp('\\$' + name, 'g');
+        query = query.replace(varSyntax1, current.value);
+        query = query.replace(varSyntax2, current.value);
       }
       return query;
     }),

@@ -194,7 +194,7 @@ export const walk = (
     resArr.push(res);
   }
   if (isSTSFunction(route)) {
-    let args;
+    let args: STSItem;
     if(isMapFunction(route)) {
       args = route.args[0];
     } else {
