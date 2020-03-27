@@ -4,7 +4,7 @@ import {
   QueryTarget,
   IdEither,
 } from '../../types';
-import _, { isArray, isObjectLike } from 'lodash';
+import _, { isArray, isObjectLike, uniqBy } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
@@ -131,7 +131,7 @@ export const getLabelsForExpression = async (
   connector: Connector
 ) => {
   const tsIds = getReferencedIdsInExpressions(expressions);
-  const tsUniqueIds = filterNonUniqueIds(tsIds);
+  const tsUniqueIds = uniqBy(tsIds, unwrapId);
   const referencedTS = await getTimeseries({ items: tsUniqueIds }, target, connector, false);
   const tsMap = reduceTsToMap(referencedTS);
   return expressions.map(expr => convertExpressionToLabel(expr, labelSrc, tsMap));
@@ -339,15 +339,6 @@ function unwrapId(idEither: IdEither) {
   } 
   return idEither.externalId;
 }
-
-const filterNonUniqueIds = (ids: IdEither[]) => {
-  const uniqueMap = {};
-  for (const idEither of ids) {
-    uniqueMap[unwrapId(idEither)] = idEither;
-  }
-  const uniqueIds = Object.keys(uniqueMap).map(key => uniqueMap[key]);
-  return uniqueIds;
-};
 
 const getReferencedIdsInExpressions = (expressions: string[]) => {
   const allIds: IdEither[] = [];

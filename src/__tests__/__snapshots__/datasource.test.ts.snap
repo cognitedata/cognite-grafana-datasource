@@ -957,13 +957,13 @@ Object {
         "id": 1,
       },
       Object {
+        "externalId": "Timeseries1",
+      },
+      Object {
         "id": 2,
       },
       Object {
         "id": 3,
-      },
-      Object {
-        "externalId": "Timeseries1",
       },
     ],
   },
