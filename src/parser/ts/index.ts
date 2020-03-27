@@ -73,15 +73,6 @@ export const parse = (s: string): STSQueryItem[] | STSFunction => {
   return parseWith(new Parser(compiledGrammar), s)
 };
 
-const flattenSumFunctions = (queryWithSum: string): string => {
-  const parsed = parse(queryWithSum);
-  return reverse(parsed, item => {
-    if (isMultiaryFunction(item) && item.func === 'sum') {
-      return `(${reverse(item.args, null, ' + ')})`;
-    }
-  });
-};
-
 export const generateAllPossiblePermutations = <T>(
   arrayOfArrays: T[][],
   lockIndices: number[] = []
@@ -112,50 +103,6 @@ export const generateAllPossiblePermutations = <T>(
     }
   }
   return res;
-};
-
-const isSimpleSyntheticExpression = (expr: string): boolean => {
-  const parsed = parse(expr);
-  return !getServerFilters(parsed).length;
-};
-
-function unwrapId(idEither: IdEither) {
-  if ('id' in idEither) {
-    return idEither.id;
-  } 
-  return idEither.externalId;
-}
-
-const filterNonUniqueIds = (ids: IdEither[]) => {
-  const uniqueMap = {};
-  for (const idEither of ids) {
-    uniqueMap[unwrapId(idEither)] = idEither;
-  }
-  const uniqueIds = Object.keys(uniqueMap).map(key => uniqueMap[key]);
-  return uniqueIds;
-};
-
-const getReferencedIdsInExpressions = (expressions: string[]) => {
-  const allIds: IdEither[] = [];
-  for (const expression of expressions) {
-    const parsed = parse(expression);
-    const referenced = getReferencedTimeseries(parsed) as IdEither[];
-    allIds.push(...referenced);
-  }
-  return allIds;
-};
-
-const reduceTsToMap = (timeseries: TimeSeriesResponseItem[]): TSResponseMap => {
-  return timeseries.reduce(
-    (map, serie) => {
-      map[serie.id] = serie;
-      if (serie.externalId) {
-        map[serie.externalId] = serie;
-      }
-      return map;
-    },
-    {} as TSResponseMap
-  );
 };
 
 export const convertExpressionToLabel = (
@@ -208,9 +155,8 @@ export const getReferencedTimeseries = (
 export const hasAggregates = (
   expression: string
 ): boolean => {
-  const parsed = parse(expression);
   let hasAggregates = false;
-  walk(parsed, obj => {
+  walk(parse(expression), obj => {
     if (isSTSReference(obj) && obj.query.some(isSTSAggregateFilter)) {
       hasAggregates = true;
     }
@@ -236,29 +182,27 @@ export function flattenServerQueryFilters(items: STSFilter[]): StringMap {
 }
 
 export const walk = (
-  route: (STSQueryItem[] | STSQueryItem)[] | STSQueryItem | STSFunction | WrappedConst,
+  route: STSItem,
   iterator: (item: STSQueryItem | STSFunction) => any
 ) => {
   if (isArray(route)) {
     return route.map(r => walk(r, iterator));
   }
-  {
-    const resArr = [];
-    const res = iterator(route);
-    if (res !== undefined) {
-      resArr.push(res);
-    }
-    if (isSTSFunction(route)) {
-      let args;
-      if(isMapFunction(route)) {
-        args = route.args[0];
-      } else {
-        args = route.args;
-      }
-      resArr.push(...walk(args, iterator));
-    }
-    return resArr;
+  const resArr = [];
+  const res = iterator(route);
+  if (res !== undefined) {
+    resArr.push(res);
   }
+  if (isSTSFunction(route)) {
+    let args;
+    if(isMapFunction(route)) {
+      args = route.args[0];
+    } else {
+      args = route.args;
+    }
+    resArr.push(...walk(args, iterator));
+  }
+  return resArr;
 };
 
 export const getIndicesOfMultiaryFunctionArgs = (route: STSQueryItem[] | STSFunction): number[] => {
@@ -293,7 +237,6 @@ export const getServerFilters = (
   return responseArr;
 };
 
-
 export function flattenClientQueryFilters(filters: STSFilter[], path = []): STSClientFilter[] {
   const res: STSClientFilter[] = [];
   for(const filter of filters) {
@@ -325,69 +268,108 @@ export const getClientFilters = (route: STSQueryItem[] | STSFunction): STSClient
   return responseArr;
 };
 
-const reverseItem = (
-  item: STSQueryItem | STSFunction | WrappedConst | STSQueryItem[],
-  custom?: (item: STSQueryItem | STSFunction | WrappedConst | (STSQueryItem | STSQueryItem[])[]) => string
-) => {
-  if (custom) {
-    const customRes = custom(item);
-    if (customRes !== undefined) {
-      return customRes;
-    }
-  }
-  if (isArray(item)) {
-    return reverse(item, custom);
-  }
-  if (isSTSReference(item)) {
-    const filters = item.query.map(reverseSTSFilter).join(', ');
-    return `ts{${filters}}`;
-  }
-  if (isOperator(item)) {
-    return ` ${item.operator} `;
-  }
-  if (isWrappedConst(item)) {
-    return `${item.constant}`;
-  }
-  const separator = isMultiaryFunction(item) ? ', ' : '';
-  let stringArgs = '';
-  if(isMapFunction(item)) {
-    const [arg0, ...args] = item.args;
-    stringArgs = `${reverseItem(arg0, custom)}, ${args.map(stringifyValue).join(', ')}`
-  } else {
-    stringArgs = (item.args as any).map(i => reverseItem(i, custom)).join(separator);
-  }
-  return `${item.func}(${stringArgs})`;
-};
-
 function reverseSTSFilter({ path, filter, value }: STSFilter) {
   return `${path}${filter}${stringifyValue(value)}`;
 };
 
-function stringifyValue(val: string | number | number[] | string[] | STSFilter[] | STSFilter[][]) {
+function stringifyValue(val: STSValue, wrap: boolean = true) {
   if(isArray(val)) {
     const items = (val as any).map(item => {
       return isSTSFilter(item) ? reverseSTSFilter(item) : stringifyValue(item)
     });
-    const joinedItems = items.join(', ');
-    if(isSTSFilterArr(val)) {
-      return `{${joinedItems}}`;
+    const joinedStr = items.join(', ');
+    if (wrap) {
+      return isSTSFilterArr(val) ? `{${joinedStr}}`: `[${joinedStr}]`;
     }
-    if (isArray(val)) {
-      return `[${joinedItems}]`;
-    }
+    return joinedStr;
   }
   return JSON.stringify(val);
 }
 
 export const reverse = (
-  arr: (STSQueryItem[] | STSQueryItem)[] | STSQueryItem | STSFunction | WrappedConst,
-  custom?: (item: STSQueryItem | STSFunction) => string,
-  separator: string = ''
-) => {
-  if (isArray(arr)) {
-    return arr.map(i => reverseItem(i, custom)).join(separator);
+  target: STSItem,
+  custom?: (item: STSItem) => string,
+  separateWith: string = ''
+): string => {
+  if (custom) {
+    const customRes = custom(target);
+    if (customRes !== undefined) {
+      return customRes;
+    }
   }
-  return reverseItem(arr, custom);
+  if (isArray(target)) {
+    return target.map(i => reverse(i, custom)).join(separateWith);
+  }
+  if (isSTSReference(target)) {
+    return `${target.type}{${stringifyValue(target.query, false)}}`;
+  }
+  if (isOperator(target)) {
+    return ` ${target.operator} `;
+  }
+  if (isWrappedConst(target)) {
+    return `${target.constant}`;
+  }
+  const separator = isMultiaryFunction(target) ? ', ' : '';
+  let stringArgs = '';
+  if(isMapFunction(target)) {
+    const [arg0, ...args] = target.args;
+    stringArgs = `${reverse(arg0, custom)}, ${args.map(arg => stringifyValue(arg)).join(', ')}`
+  } else {
+    stringArgs = reverse(target.args, custom, separator);
+  }
+  return `${target.func}(${stringArgs})`;
+};
+
+function flattenSumFunctions (expression: string): string {
+  return reverse(parse(expression), item => {
+    if (isSumFunction(item)) {
+      return `(${reverse(item.args, null, ' + ')})`;
+    }
+  });
+};
+
+const isSimpleSyntheticExpression = (expr: string): boolean => {
+  const parsed = parse(expr);
+  return !getServerFilters(parsed).length;
+};
+
+function unwrapId(idEither: IdEither) {
+  if ('id' in idEither) {
+    return idEither.id;
+  } 
+  return idEither.externalId;
+}
+
+const filterNonUniqueIds = (ids: IdEither[]) => {
+  const uniqueMap = {};
+  for (const idEither of ids) {
+    uniqueMap[unwrapId(idEither)] = idEither;
+  }
+  const uniqueIds = Object.keys(uniqueMap).map(key => uniqueMap[key]);
+  return uniqueIds;
+};
+
+const getReferencedIdsInExpressions = (expressions: string[]) => {
+  const allIds: IdEither[] = [];
+  for (const expression of expressions) {
+    const parsed = parse(expression);
+    const referenced = getReferencedTimeseries(parsed) as IdEither[];
+    allIds.push(...referenced);
+  }
+  return allIds;
+};
+
+const reduceTsToMap = (timeseries: TimeSeriesResponseItem[]): TSResponseMap => {
+  return timeseries.reduce(
+    (map, serie) => {
+      map[serie.id] = serie;
+      if (serie.externalId) {
+        map[serie.externalId] = serie;
+      }
+      return map;
+    },
+    {} as TSResponseMap
+  );
 };
 
 export function STSReference(query: STSFilter[] = []): STSReference {
@@ -469,12 +451,21 @@ function isSTSFunction(obj: any): obj is STSFunction {
   return isObjectLike(obj) && 'args' in obj && 'func' in obj;
 }
 
+function isSpecificFunction(obj: any, name: string): obj is STSFunction {
+  return isSTSFunction(obj) && name === obj.func;
+}
+
 function isMapFunction(obj: any): obj is MapFunction {
-  return isSTSFunction(obj) && 'map' === obj.func;
+  return isSpecificFunction(obj, 'map');
+}
+
+function isSumFunction(obj: any): obj is MultiaryFunction {
+  return isSpecificFunction(obj, 'sum');
 }
 
 function isMultiaryFunction(obj: any): obj is MultiaryFunction {
-  return isSTSFunction(obj) && [
+  return isSTSFunction(obj) && isOneOf(
+    obj.func,
     'avg',
     'sum',
     'min',
@@ -482,12 +473,17 @@ function isMultiaryFunction(obj: any): obj is MultiaryFunction {
     'pow',
     'round',
     'on_error',
-  ].includes(obj.func);
+  )
 }
+
 
 type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
+
+type STSItem = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem | STSFunction | WrappedConst;
+
+type STSValue = string | number | number[] | string[] | STSFilter[] | STSFilter[][];
 
 export type STSFilter = STSClientFilter | STSServerFilter;
 
