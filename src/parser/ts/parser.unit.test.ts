@@ -4,7 +4,7 @@ import {
   getServerFilters,
   flattenServerQueryFilters,
   parse,
-  reverse,
+  composeSTSQuery,
   generateAllPossiblePermutations,
   STSFunction,
   injectTSIdsInExpression,
@@ -198,7 +198,7 @@ describe('nearley parser', () => {
 
 describe('nearley reverse', () => {
   it('simple arithmethics', () => {
-    const res = reverse([
+    const res = composeSTSQuery([
       STS([Filter('id', 1)]),
       Operator('-'),
       STS([Filter('a', 2)]),
@@ -212,7 +212,7 @@ describe('nearley reverse', () => {
       Operator('/'),
       Constant(10),
     ]);
-    const res = reverse(func);
+    const res = composeSTSQuery(func);
     expect(res).toEqual('sin(ts{id=1} / 10)');
   });
 
@@ -221,7 +221,7 @@ describe('nearley reverse', () => {
       STS([Filter('id', 1)]),
       STS([Filter('id', 2)]),
     ]);
-    const res = reverse(func);
+    const res = composeSTSQuery(func);
     expect(res).toEqual('avg(ts{id=1}, ts{id=2})');
   });
 
@@ -232,7 +232,7 @@ describe('nearley reverse', () => {
         [Filter('nested', [[Filter('a', 'b')], [Filter('c', [])]])]
       )]
     )
-    const res = reverse(func);
+    const res = composeSTSQuery(func);
     expect(res).toEqual('ts{metadata={nested=[{a="b"}, {c=[]}]}}');
   })
 });
@@ -259,7 +259,7 @@ describe('parse & reverse', () => {
     'ts{assetSubtreeIds=[{id=1}, {id=2}]}',
   ];
   inputs.map(input => it(input, () => {
-    expect(reverse(parse(input))).toBe(input);
+    expect(composeSTSQuery(parse(input))).toBe(input);
   }));
 })
 

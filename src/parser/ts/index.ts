@@ -60,14 +60,14 @@ export const injectTSIdsInExpression = (
   timeseries: TimeSeriesResponseItem[][]
 ) => {
   let i = 0;
-  const exprWithSum = reverse(parsedData, item => {
+  const exprWithSum = composeSTSQuery(parsedData, item => {
     if (isSTSReference(item) && !hasIdsFilter(item)) {
       const syntheticFilters = item.query.filter(isSTSAggregateFilter);
       const paramTSIds = timeseries[i++].map(({ id }) => id);
       const pseudoParsedSTS = paramTSIds.map(id =>
         STSReference([STSFilter('id', id), ...syntheticFilters])
       );
-      return pseudoParsedSTS.map(ts => reverse(ts)).join(', ');
+      return pseudoParsedSTS.map(ts => composeSTSQuery(ts)).join(', ');
     }
   });
   return flattenSumFunctions(exprWithSum);
@@ -114,7 +114,7 @@ export const convertExpressionToLabel = (
   labelSrc: string,
   tsMap: TSResponseMap
 ) => {
-  return reverse(parse(expression), item => {
+  return composeSTSQuery(parse(expression), item => {
     if (isSTSReference(item)) {
       const [{ value }] = getIdFilters(item);
       const serie = tsMap[String(value)];
@@ -281,7 +281,7 @@ const stringifyValue = (val: STSValue, wrap: boolean = true) => {
   return JSON.stringify(val);
 }
 
-export const reverse = (
+export const composeSTSQuery = (
   target: STSQuery,
   custom?: (item: STSQuery) => string,
   separateWith: string = ''
@@ -293,7 +293,7 @@ export const reverse = (
     }
   }
   if (isArray(target)) {
-    return target.map(i => reverse(i, custom)).join(separateWith);
+    return target.map(i => composeSTSQuery(i, custom)).join(separateWith);
   }
   if (isSTSReference(target)) {
     return `${target.type}{${stringifyValue(target.query, false)}}`;
@@ -308,17 +308,17 @@ export const reverse = (
   let stringArgs = '';
   if(isMapFunction(target)) {
     const [arg0, ...args] = target.args;
-    stringArgs = `${reverse(arg0, custom)}, ${args.map(arg => stringifyValue(arg)).join(', ')}`
+    stringArgs = `${composeSTSQuery(arg0, custom)}, ${args.map(arg => stringifyValue(arg)).join(', ')}`
   } else {
-    stringArgs = reverse(target.args, custom, separator);
+    stringArgs = composeSTSQuery(target.args, custom, separator);
   }
   return `${target.func}(${stringArgs})`;
 };
 
 const flattenSumFunctions =  (expression: string): string => {
-  return reverse(parse(expression), item => {
+  return composeSTSQuery(parse(expression), item => {
     if (isSumFunction(item)) {
-      return `(${reverse(item.args, null, ' + ')})`;
+      return `(${composeSTSQuery(item.args, null, ' + ')})`;
     }
   });
 };
