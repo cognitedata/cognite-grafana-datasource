@@ -56,7 +56,7 @@ const NoTimeseriesFound = (filter: StringMap, expr: string) => {
 }
 
 export const injectTSIdsInExpression = (
-  parsedData: STSQueryItem[] | STSFunction,
+  parsedData: STSQuery,
   timeseries: TimeSeriesResponseItem[][]
 ) => {
   let i = 0;
@@ -73,7 +73,7 @@ export const injectTSIdsInExpression = (
   return flattenSumFunctions(exprWithSum);
 };
 
-export const parse = (s: string): STSQueryItem[] | STSFunction => {
+export const parse = (s: string): STSQuery => {
   return parseWith(new Parser(compiledGrammar), s)
 };
 
@@ -142,7 +142,7 @@ export const getLabelsForExpression = async (
 };
 
 export const getReferencedTimeseries = (
-  route: STSQueryItem[] | STSFunction
+  route: STSQuery
 ): StringMap[] => {
   let idFilters: STSServerFilter[] = [];
   walk(route, obj => {
@@ -186,7 +186,7 @@ export const flattenServerQueryFilters = (items: STSFilter[]): StringMap => {
 }
 
 export const walk = (
-  route: STSItem,
+  route: STSQuery,
   iterator: (item: STSQueryItem | STSFunction) => any
 ) => {
   if (isArray(route)) {
@@ -198,7 +198,7 @@ export const walk = (
     resArr.push(res);
   }
   if (isSTSFunction(route)) {
-    let args: STSItem;
+    let args: STSQuery;
     if(isMapFunction(route)) {
       args = route.args[0];
     } else {
@@ -209,7 +209,7 @@ export const walk = (
   return resArr;
 };
 
-export const getIndicesOfMultiaryFunctionArgs = (route: STSQueryItem[] | STSFunction): number[] => {
+export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
   const responseArr = [];
   const argsIndices = [];
   let index = 0;
@@ -227,7 +227,7 @@ export const getIndicesOfMultiaryFunctionArgs = (route: STSQueryItem[] | STSFunc
 };
 
 export const getServerFilters = (
-  route: STSQueryItem[] | STSFunction
+  route: STSQuery
 ): StringMap[] => {
   const responseArr: StringMap[] = [];
   const filter = (_, __, parent) => isServerFilter(parent);
@@ -259,7 +259,7 @@ export const flattenClientQueryFilters = (filters: STSFilter[], path = []): STSC
   return res;
 }
 
-export const getClientFilters = (route: STSQueryItem[] | STSFunction): STSClientFilter[][] => {
+export const getClientFilters = (route: STSQuery): STSClientFilter[][] => {
   const responseArr: STSClientFilter[][] = [];
   const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
   walk(route, obj => {
@@ -291,8 +291,8 @@ const stringifyValue = (val: STSValue, wrap: boolean = true) => {
 }
 
 export const reverse = (
-  target: STSItem,
-  custom?: (item: STSItem) => string,
+  target: STSQuery,
+  custom?: (item: STSQuery) => string,
   separateWith: string = ''
 ): string => {
   if (custom) {
@@ -476,7 +476,7 @@ type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
 
-type STSItem = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
+type STSQuery = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
 
 type STSValue = string | number | number[] | string[] | STSFilter[] | STSFilter[][];
 
