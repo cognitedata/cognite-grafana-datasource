@@ -187,26 +187,22 @@ export const flattenServerQueryFilters = (items: STSFilter[]): StringMap => {
 
 export const walk = (
   route: STSQuery,
-  iterator: (item: STSQueryItem | STSFunction) => any
+  iterator: (item: STSQueryItem | STSFunction) => void
 ) => {
   if (isArray(route)) {
-    return route.map(r => walk(r, iterator));
-  }
-  const resArr = [];
-  const res = iterator(route);
-  if (res !== undefined) {
-    resArr.push(res);
-  }
-  if (isSTSFunction(route)) {
-    let args: STSQuery;
-    if(isMapFunction(route)) {
-      args = route.args[0];
-    } else {
-      args = route.args;
+    route.forEach(r => walk(r, iterator));
+  } else {
+    iterator(route);
+    if (isSTSFunction(route)) {
+      let args: STSQuery;
+      if(isMapFunction(route)) {
+        args = route.args[0];
+      } else {
+        args = route.args;
+      }
+      walk(args, iterator);
     }
-    resArr.push(...walk(args, iterator));
   }
-  return resArr;
 };
 
 export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
