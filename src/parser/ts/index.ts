@@ -114,8 +114,7 @@ export const convertExpressionToLabel = (
   labelSrc: string,
   tsMap: TSResponseMap
 ) => {
-  const parsed = parse(expression);
-  const labelRes = reverse(parsed, item => {
+  return reverse(parse(expression), item => {
     if (isSTSReference(item)) {
       const [{ value }] = getIdFilters(item);
       const serie = tsMap[String(value)];
@@ -125,7 +124,6 @@ export const convertExpressionToLabel = (
       return `${serie.name || serie.externalId || serie.id}`;
     }
   });
-  return labelRes;
 };
 
 export const getLabelsForExpression = async (
@@ -194,13 +192,10 @@ export const walk = (
   } else {
     iterator(route);
     if (isSTSFunction(route)) {
-      let args: STSQuery;
-      if(isMapFunction(route)) {
-        args = route.args[0];
-      } else {
-        args = route.args;
-      }
-      walk(args, iterator);
+      walk(
+        isMapFunction(route) ? route.args[0] : route.args,
+        iterator
+      );
     }
   }
 };
