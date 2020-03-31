@@ -164,7 +164,7 @@ export const hasAggregates = (
   return hasAggregates
 };
 
-export function flattenServerQueryFilters(items: STSFilter[]): StringMap {
+export const flattenServerQueryFilters = (items: STSFilter[]): StringMap => {
   return items.reduce((res, filter) => {
     let value: any;
     if (isByIdsQuery(filter.value)) {
@@ -237,7 +237,7 @@ export const getServerFilters = (
   return responseArr;
 };
 
-export function flattenClientQueryFilters(filters: STSFilter[], path = []): STSClientFilter[] {
+export const flattenClientQueryFilters = (filters: STSFilter[], path = []): STSClientFilter[] => {
   const res: STSClientFilter[] = [];
   for(const filter of filters) {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
@@ -268,11 +268,11 @@ export const getClientFilters = (route: STSQueryItem[] | STSFunction): STSClient
   return responseArr;
 };
 
-function reverseSTSFilter({ path, filter, value }: STSFilter) {
+const reverseSTSFilter = ({ path, filter, value }: STSFilter) => {
   return `${path}${filter}${stringifyValue(value)}`;
 };
 
-function stringifyValue(val: STSValue, wrap: boolean = true) {
+const stringifyValue = (val: STSValue, wrap: boolean = true) => {
   if(isArray(val)) {
     const items = (val as any).map(item => {
       return isSTSFilter(item) ? reverseSTSFilter(item) : stringifyValue(item)
@@ -320,7 +320,7 @@ export const reverse = (
   return `${target.func}(${stringArgs})`;
 };
 
-function flattenSumFunctions (expression: string): string {
+const flattenSumFunctions =  (expression: string): string => {
   return reverse(parse(expression), item => {
     if (isSumFunction(item)) {
       return `(${reverse(item.args, null, ' + ')})`;
@@ -333,7 +333,7 @@ const isSimpleSyntheticExpression = (expr: string): boolean => {
   return !getServerFilters(parsed).length;
 };
 
-function unwrapId(idEither: IdEither) {
+const unwrapId = (idEither: IdEither) => {
   if ('id' in idEither) {
     return idEither.id;
   } 
@@ -363,22 +363,22 @@ const reduceTsToMap = (timeseries: TimeSeriesResponseItem[]): TSResponseMap => {
   );
 };
 
-export function STSReference(query: STSFilter[] = []): STSReference {
+export const STSReference = (query: STSFilter[] = []): STSReference => {
   return {
     query,
     type: 'ts',
   };
 }
 
-export function STSFilter(
+export const STSFilter = (
   path: string,
   value: STSFilter['value'],
   filter: FilterType = '='
-): STSFilter {
+): STSFilter => {
   return { path, value, filter } as STSFilter;
 }
 
-export function Operator(operator: Operator['operator']): Operator {
+export const Operator = (operator: Operator['operator']): Operator => {
   return { operator };
 }
 
@@ -386,75 +386,75 @@ const getIdFilters = (obj: STSReference) => {
   return obj.query.filter(isIdsFilter);
 };
 
-const hasIdsFilter = (obj: STSReference) => {
+const hasIdsFilter =  (obj: STSReference) => {
   return getIdFilters(obj).length;
 };
 
-function isEqualsFilter(query: any): query is STSServerFilter  {
+const isEqualsFilter = (query: any): query is STSServerFilter  => {
   return isSTSFilter(query) && query.filter === FilterType.Equals;
 }
 
-function isOneOf(value: string, ...arr: string[]) {
+const isOneOf = (value: string, ...arr: string[]) => {
   return arr.indexOf(value) !== -1;
 }
 
-function isSTSAggregateFilter(query: STSFilter) {
+const isSTSAggregateFilter = (query: STSFilter) => {
   return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate');
 }
 
-function isIdsFilter(query: STSFilter): query is STSServerFilter {
+const isIdsFilter = (query: STSFilter): query is STSServerFilter => {
   return isEqualsFilter(query) && isOneOf(query.path, 'id', 'externalId');
 }
 
-function isServerFilter(item: STSFilter): item is STSServerFilter {
+const isServerFilter = (item: STSFilter): item is STSServerFilter => {
   return isEqualsFilter(item) && !isSTSAggregateFilter(item);
 }
 
-function isClientFilter(item: any): item is STSClientFilter {
+const isClientFilter = (item: any): item is STSClientFilter => {
   return isSTSFilter(item) && !isEqualsFilter(item);
 }
 
-function isByIdsQuery(query: any): query is STSFilter[] {
+const isByIdsQuery = (query: any): query is STSFilter[] => {
   return isArray(query) && query.some(isIdsFilter);
 }
 
-function isSTSFilter(item: any): item is STSFilter {
+const isSTSFilter = (item: any): item is STSFilter => {
   return isObjectLike(item) && item.path && item.filter && 'value' in item;
 }
 
-function isSTSFilterArr(query: any): query is STSFilter[] {
+const isSTSFilterArr = (query: any): query is STSFilter[] => {
   return isArray(query) && query.length && query.every(isSTSFilter);
 }
 
-function isWrappedConst(obj: any): obj is WrappedConst {
+const isWrappedConst = (obj: any): obj is WrappedConst => {
   return isObjectLike(obj) && 'constant' in obj;
 }
 
-function isSTSReference(obj: any): obj is STSReference {
+const isSTSReference = (obj: any): obj is STSReference => {
   return isObjectLike(obj) && obj.type === 'ts';
 }
 
-function isOperator(obj: any): obj is Operator {
+const isOperator = (obj: any): obj is Operator => {
   return isObjectLike(obj) && 'operator' in obj;
 }
 
-function isSTSFunction(obj: any): obj is STSFunction {
+const isSTSFunction = (obj: any): obj is STSFunction => {
   return isObjectLike(obj) && 'args' in obj && 'func' in obj;
 }
 
-function isSpecificFunction(obj: any, name: string): obj is STSFunction {
+const isSpecificFunction = (obj: any, name: string): obj is STSFunction => {
   return isSTSFunction(obj) && name === obj.func;
 }
 
-function isMapFunction(obj: any): obj is MapFunction {
+const isMapFunction = (obj: any): obj is MapFunction => {
   return isSpecificFunction(obj, 'map');
 }
 
-function isSumFunction(obj: any): obj is MultiaryFunction {
+const isSumFunction = (obj: any): obj is MultiaryFunction => {
   return isSpecificFunction(obj, 'sum');
 }
 
-function isMultiaryFunction(obj: any): obj is MultiaryFunction {
+const isMultiaryFunction = (obj: any): obj is MultiaryFunction => {
   return isSTSFunction(obj) && isOneOf(
     obj.func,
     'avg',
@@ -525,4 +525,3 @@ export type STSReference = {
   type: 'ts';
   query: STSFilter[];
 };
-
