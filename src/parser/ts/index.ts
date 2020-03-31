@@ -18,22 +18,20 @@ const filterDeep = getFilterDeep(_);
 const compiledGrammar = Grammar.fromCompiled(grammar);
 
 export const formQueriesForExpression = async (
-  expr: string,
+  expression: string,
   target: QueryTarget,
   connector: Connector
 ): Promise<DataQueryRequestItem[]> => {
-  if (isSimpleSyntheticExpression(expr)) {
-    return [{ expression: expr }];
-  }
-  const parsed = parse(expr);
+  const parsed = parse(expression);
   const serverFilters = getServerFilters(parsed);
+  if (!serverFilters.length) {
+    return [{ expression }];
+  }
   const timeseries = await Promise.all(
     serverFilters.map(async filter => {
       const tsResult = await getTimeseries({ filter }, target, connector, false);
       if (!tsResult.length) {
-        throw new Error(
-          `No timeseries found for filter ${JSON.stringify(filter)} in expression ${expr}`
-        );
+        throw NoTimeseriesFound(filter, expression);
       }
       return tsResult;
     })
@@ -50,6 +48,12 @@ export const formQueriesForExpression = async (
   const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
   return queryExpressions.map(expression => ({ expression }));
 };
+
+const NoTimeseriesFound = (filter: StringMap, expr: string) => {
+  return new Error(
+    `No timeseries found for filter ${JSON.stringify(filter)} in expression ${expr}`
+  );
+}
 
 export const injectTSIdsInExpression = (
   parsedData: STSQueryItem[] | STSFunction,
@@ -472,7 +476,7 @@ type TSResponseMap =  { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
 
-type STSItem = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem | STSFunction | WrappedConst;
+type STSItem = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
 
 type STSValue = string | number | number[] | string[] | STSFilter[] | STSFilter[][];
 
