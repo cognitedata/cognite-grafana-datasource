@@ -170,7 +170,7 @@
               ↪ yields one timeseries that is the sum of all temperature timeseries
             <code class="query-keyword">max(ts{aggregate='average'}) - min(ts{aggregate='average'})</code>
               ↪ yields the range of the timeseries aggregated by averages
-            <code class="query-keyword">power(ts{} - avg(ts{}), 2)</code>
+            <code class="query-keyword">pow(ts{} - avg(ts{}), 2)</code>
               ↪ yields the squared deviation of each timeseries from the average <br>
   There is a support for some advanced functions, like <code class="query-keyword">round</code>, <code class="query-keyword">on_error</code> and <code class="query-keyword">map</code>.
   The documentation on how to use them can be found on <a href="https://docs.cognite.com/api">docs.cognite.com/api</a><br>
