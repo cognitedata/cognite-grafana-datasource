@@ -32,7 +32,7 @@ Query for events uses the 'events/list' endpoint. For request parameters <code c
     <code class="query-keyword">'!='</code> – strict inequality, means that provided string is used to strict prop comparing and matched value will be excluded
   Example: <code class="query-keyword">events{type='WORKORDER', subtype=~'SUB.*'}</code>
 Variables templating is also available via <code class="query-keyword">$variable</code>
-  Example: <code class="query-keyword">events{type='WORKORDER', type=$variable}</code>
+  Example: <code class="query-keyword">events{type='WORKORDER', subtype=$variable}</code>
       </pre>
     </div>
   </div>

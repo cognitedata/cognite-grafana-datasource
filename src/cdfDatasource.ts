@@ -21,35 +21,37 @@ import {
   Items,
 } from './types';
 import { get, cloneDeep } from 'lodash';
-import { ms2String, getDatasourceValueString } from './utils';
-import cache from './cache';
+import { ms2String } from './utils';
 import { Connector } from './connector';
+import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+
+const { Asset, Custom, Timeseries} = Tab;
 
 export function formQueryForItems(
   items,
   { tab, aggregation, granularity },
   options
 ): DataQueryRequest {
-  if (tab === Tab.Custom && items[0].expression) {
-    // why zero?
-    // todo: something here, whe might need to assign limits for each synthetic or something
-    // synthetics don't support all those limits etc yet
-    return { items };
-  }
-
   const [start, end] = getRange(options.range);
+  if (tab === Custom) {
+    const isAggregated = items.some(({ expression}) => hasAggregates(expression));
+    const limit = calculateDPLimitPerQuery(isAggregated, items.length);
+    return {
+      items: items.map(({ expression }) => ({ expression, start, end, limit })),
+    };
+  }
   let aggregations: Aggregates & Granularity = null;
-  const hasAggregates = aggregation && aggregation !== 'none';
-  if (hasAggregates) {
+  const isAggregated = aggregation && aggregation !== 'none';
+  if (isAggregated) {
     aggregations = {
       aggregates: [aggregation],
       granularity: granularity || ms2String(options.intervalMs),
     };
   }
-  const limit = Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(items.length, 100));
+  const limit = calculateDPLimitPerQuery(isAggregated, items.length);
   return {
     ...aggregations,
     end,
@@ -57,6 +59,10 @@ export function formQueryForItems(
     items,
     limit,
   };
+}
+
+function calculateDPLimitPerQuery(hasAggregates: boolean, queriesNumber: number) {
+  return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
 }
 
 export function formQueriesForTargets(
@@ -75,7 +81,7 @@ export async function formMetadatasForTargets(
   templateSrv: TemplateSrv
 ): Promise<ResponseMetadata[]> {
   const promises = queriesData.map(async ({ target, items }) => {
-    const rawLabels = await getLabelsForTarget(target, options, items, connector);
+    const rawLabels = await getLabelsForTarget(target, items, connector);
     const labels = rawLabels.map(raw => templateSrv.replace(raw, options.scopedVars));
     return {
       target,
@@ -87,44 +93,26 @@ export async function formMetadatasForTargets(
 
 async function getLabelsForTarget(
   target: QueryTarget,
-  options: QueryOptions,
   queryList: DataQueryRequestItem[],
   connector: Connector
 ): Promise<string[]> {
-  // assign labels to each timeseries
-  const labels = [];
   switch (target.tab) {
     case undefined:
-    case Tab.Timeseries:
-      {
-        labels.push(await getTimeseriesLabel(target.label, target.target, target, connector));
-      }
-      break;
-    case Tab.Asset:
-      {
-        target.assetQuery.timeseries.forEach(ts => {
-          if (ts.selected) {
-            labels.push(getLabelWithInjectedProps(target.label || '', ts));
-          }
-        });
-      }
-      break;
-    case Tab.Custom: {
-      const ts = cache.getTimeseries(options, target);
-      const useExternalId = !target.label && queryList[0].expression; // if using custom functions and no label is specified just use the externalId of the last timeseries in the function
-      for (let i = 0, count = 0; i < ts.length && count < queryList.length; i++) {
-        if (ts[i].selected) {
-          count++; // todo: I don't think this count is needed actually
-          if (useExternalId) {
-            labels.push(ts[i].externalId);
-          } else {
-            labels.push(getLabelWithInjectedProps(target.label || '', ts[i]));
-          }
-        }
-      }
+    case Timeseries: {
+      return [await getTimeseriesLabel(target.label, target.target, target, connector)];
+    }
+    case Asset: {
+      const labelSrc = target.label || '';
+      return target.assetQuery.timeseries
+        .filter(ts => ts.selected)
+        .map(ts => getLabelWithInjectedProps(labelSrc, ts));
+    }
+    case Custom: {
+      const expressions = queryList.map(({ expression }) => expression);
+      const labels = await getLabelsForExpression(expressions, target.label, target, connector);
+      return labels;
     }
   }
-  return labels;
 }
 
 async function getTimeseriesLabel(
@@ -144,7 +132,10 @@ async function getTimeseriesLabel(
 }
 
 // injects prop values to ts label, ex. `{description}} {{metadata.key1}}` -> 'tsDescription tsMetadataKey1Value'
-function getLabelWithInjectedProps(label: string, timeseries: TimeSeriesResponseItem): string {
+export function getLabelWithInjectedProps(
+  label: string,
+  timeseries: TimeSeriesResponseItem
+): string {
   // matches with any text within {{ }}
   const variableRegex = /{{([^{}]*)}}/g;
   return label.replace(variableRegex, (full, group) => get(timeseries, group, full));
@@ -153,7 +144,8 @@ function getLabelWithInjectedProps(label: string, timeseries: TimeSeriesResponse
 export async function getTimeseries(
   data: TimeseriesFilterQuery | Items<IdEither>,
   target: QueryTarget,
-  connector: Connector
+  connector: Connector,
+  filterIsString: boolean = true
 ): Promise<TimeSeriesResponseItem[]> {
   try {
     const method = HttpMethod.POST;
@@ -173,7 +165,7 @@ export async function getTimeseries(
       });
     }
 
-    return cloneDeep(items.filter(ts => !ts.isString));
+    return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
   } catch (error) {
     const { data, status } = error;
     if (data && data.error) {
@@ -218,10 +210,9 @@ export function reduceTimeseries(
 
 export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
-  aggregates: string
+  aggregate: string
 ): Tuple<number>[] {
-  const prop = getDatasourceValueString(aggregates);
-  return datapoints.map(d => datapoint2Tuple(d, prop));
+  return datapoints.map(d => datapoint2Tuple(d, aggregate));
 }
 
 function datapoint2Tuple(

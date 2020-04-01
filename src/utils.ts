@@ -2,30 +2,10 @@ import { isNil, omitBy, get } from 'lodash';
 import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
-import { FilterType, ParsedFilter } from './query-parser/types';
+import { FilterType, ParsedFilter } from './parser/types';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
-}
-
-export function getDatasourceValueString(aggregation: string): string {
-  const mapping = {
-    '': 'value',
-    undefined: 'value',
-    none: 'value',
-    avg: 'average',
-    int: 'interpolation',
-    stepinterpolation: 'stepInterpolation',
-    step: 'stepInterpolation',
-    continuousvariance: 'continuousVariance',
-    continuousVariance: 'continuousVariance',
-    cv: 'continuousVariance',
-    discretevariance: 'discreteVariance',
-    dv: 'discreteVariance',
-    totalvariation: 'totalVariation',
-    tv: 'totalVariation',
-  };
-  return mapping[aggregation] || aggregation;
 }
 
 export function ms2String(milliseconds: number): string {

@@ -1,5 +1,5 @@
-import { applyFilters, checkFilter } from '../utils';
-import { FilterType } from '../query-parser/types';
+import { applyFilters } from '../utils';
+import { FilterType } from '../parser/types';
 
 describe('Utils', () => {
   describe('Filtering', () => {

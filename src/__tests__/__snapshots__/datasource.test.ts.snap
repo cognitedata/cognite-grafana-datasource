@@ -471,11 +471,7 @@ Object {
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -487,9 +483,9 @@ exports[`Datasource Query Given custom queries should generate the correct filte
 Object {
   "data": Object {
     "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
+      "metadata": Object {
+        "key1": "value1",
+      },
     },
     "limit": 1000,
   },
@@ -502,9 +498,10 @@ exports[`Datasource Query Given custom queries should generate the correct filte
 Object {
   "data": Object {
     "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
+      "metadata": Object {
+        "key1": "value1",
+      },
+      "name": "Timeseries1",
     },
     "limit": 1000,
   },
@@ -516,11 +513,7 @@ Object {
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -531,232 +524,221 @@ Object {
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "externalId": "Timeseries1",
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "requestId": "1_12_A",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-      Object {
-        "id": 4,
-      },
-      Object {
-        "id": 5,
-      },
-      Object {
-        "id": 6,
+        "end": 1549338475000,
+        "expression": "ts{id=1, aggregate=\\"discreteVariance\\", granularity=\\"10d\\"}",
+        "limit": 10000,
+        "start": 1549336675000,
       },
     ],
-    "limit": 16666,
-    "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_12_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "requestId": "1_12_B",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
-    "aggregates": Array [
-      "continuousVariance",
-    ],
-    "end": 1549338475000,
-    "granularity": "10d",
     "items": Array [
       Object {
-        "id": 4,
+        "end": 1549338475000,
+        "expression": "ts{id=1, aggregate=\\"discreteVariance\\"}",
+        "limit": 10000,
+        "start": 1549336675000,
       },
     ],
-    "limit": 10000,
-    "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_12_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "requestId": "1_12_C",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
-    "aggregates": Array [
-      "discreteVariance",
-    ],
-    "end": 1549338475000,
-    "granularity": "1d",
     "items": Array [
       Object {
-        "id": 4,
+        "end": 1549338475000,
+        "expression": "ts{externalId=\\"Timeseries1\\"}",
+        "limit": 100000,
+        "start": 1549336675000,
       },
     ],
-    "limit": 10000,
-    "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_12_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "requestId": "1_12_D",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
     "items": Array [
       Object {
-        "id": 1,
+        "end": 1549338475000,
+        "expression": "ts{id=2}",
+        "limit": 50000,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3}",
+        "limit": 50000,
+        "start": 1549336675000,
       },
     ],
-    "limit": 100000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_12_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 15`] = `
-Object {
-  "data": Object {
-    "end": 1549338475000,
-    "items": Array [
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-      Object {
-        "id": 4,
-      },
-      Object {
-        "id": 5,
-      },
-      Object {
-        "id": 6,
-      },
-    ],
-    "limit": 20000,
-    "start": 1549336675000,
   },
   "method": "POST",
   "requestId": "1_12_E",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+  ],
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -767,11 +749,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -782,11 +760,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -797,11 +771,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -812,11 +782,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -827,11 +793,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -842,11 +804,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -857,11 +815,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -872,11 +826,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -887,11 +837,7 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
+    "filter": Object {},
     "limit": 1000,
   },
   "method": "POST",
@@ -902,108 +848,44 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
 Object {
   "data": Object {
-    "end": 1549338475000,
-    "items": Array [
-      Object {
-        "id": 12,
-      },
-      Object {
-        "id": 34,
-      },
-      Object {
-        "id": 56,
-      },
-      Object {
-        "id": 78,
-      },
-      Object {
-        "id": 90,
-      },
-      Object {
-        "id": 123,
-      },
-    ],
-    "limit": 16666,
-    "start": 1549336675000,
+    "filter": Object {},
+    "limit": 1000,
   },
   "method": "POST",
-  "requestId": "1_16_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
 Object {
   "data": Object {
-    "items": Array [
-      Object {
-        "expression": "TS{id=12} + TS{id=12} + TS{id=123}",
-      },
-      Object {
-        "expression": "TS{id=34} + TS{id=34} + TS{id=123}",
-      },
-      Object {
-        "expression": "TS{id=56} + TS{id=56} + TS{id=123}",
-      },
-      Object {
-        "expression": "TS{id=78} + TS{id=78} + TS{id=123}",
-      },
-      Object {
-        "expression": "TS{id=90} + TS{id=90} + TS{id=123}",
-      },
-      Object {
-        "expression": "TS{id=123} + TS{id=123} + TS{id=123}",
-      },
-    ],
+    "filter": Object {},
+    "limit": 1000,
   },
   "method": "POST",
-  "requestId": "1_16_B",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
 Object {
   "data": Object {
-    "items": Array [
-      Object {
-        "expression": "TS{id=12} * TS{id=12,aggregate='average'}- TS{id=12,aggregate='average',granularity='10s'}",
-      },
-      Object {
-        "expression": "TS{id=34} * TS{id=34,aggregate='average'}- TS{id=34,aggregate='average',granularity='10s'}",
-      },
-      Object {
-        "expression": "TS{id=56} * TS{id=56,aggregate='average'}- TS{id=56,aggregate='average',granularity='10s'}",
-      },
-      Object {
-        "expression": "TS{id=78} * TS{id=78,aggregate='average'}- TS{id=78,aggregate='average',granularity='10s'}",
-      },
-      Object {
-        "expression": "TS{id=90} * TS{id=90,aggregate='average'}- TS{id=90,aggregate='average',granularity='10s'}",
-      },
-      Object {
-        "expression": "TS{id=123} * TS{id=123,aggregate='average'}- TS{id=123,aggregate='average',granularity='10s'}",
-      },
-    ],
+    "filter": Object {},
+    "limit": 1000,
   },
   "method": "POST",
-  "requestId": "1_16_C",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
 Object {
   "data": Object {
-    "items": Array [
-      Object {
-        "expression": "TS{id=12,aggregate='none'} * TS{id=12,aggregate='average'} - TS{id=12,aggregate='average',granularity='10m'}",
-      },
-    ],
+    "filter": Object {},
+    "limit": 1000,
   },
   "method": "POST",
-  "requestId": "1_16_D",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
 }
 `;
 
@@ -1012,13 +894,18 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "expression": "1+1",
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
       },
     ],
   },
   "method": "POST",
-  "requestId": "1_16_F",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
@@ -1027,13 +914,18 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "expression": "(TS{id=12} + TS{id=34} + TS{id=56} + TS{id=78} + TS{id=90} + TS{id=123})",
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
       },
     ],
   },
   "method": "POST",
-  "requestId": "1_16_G",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
@@ -1042,28 +934,18 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=12}",
+        "id": 1,
       },
       Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=34}",
+        "id": 2,
       },
       Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=56}",
-      },
-      Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=78}",
-      },
-      Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=90}",
-      },
-      Object {
-        "expression": "(TS{id=12,aggregate='average'} + TS{id=34,aggregate='average'} + TS{id=56,aggregate='average'} + TS{id=78,aggregate='average'} + TS{id=90,aggregate='average'} + TS{id=123,aggregate='average'}) + (TS{id=12,aggregate='average',granularity='1h'} + TS{id=34,aggregate='average',granularity='1h'} + TS{id=56,aggregate='average',granularity='1h'} + TS{id=78,aggregate='average',granularity='1h'} + TS{id=90,aggregate='average',granularity='1h'} + TS{id=123,aggregate='average',granularity='1h'}) * max(TS{id=12,aggregate='count'}, TS{id=34,aggregate='count'}, TS{id=56,aggregate='count'}, TS{id=78,aggregate='count'}, TS{id=90,aggregate='count'}, TS{id=123,aggregate='count'})/ - TS{id=12,aggregate='avg'} - 3*TS{id=123}",
+        "id": 3,
       },
     ],
   },
   "method": "POST",
-  "requestId": "1_16_H",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
@@ -1072,28 +954,21 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "expression": "max(max(TS{id=12},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
+        "id": 1,
       },
       Object {
-        "expression": "max(max(TS{id=34},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
+        "externalId": "Timeseries1",
       },
       Object {
-        "expression": "max(max(TS{id=56},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
+        "id": 2,
       },
       Object {
-        "expression": "max(max(TS{id=78},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
-      },
-      Object {
-        "expression": "max(max(TS{id=90},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
-      },
-      Object {
-        "expression": "max(max(TS{id=123},5),5) + max(TS{id=12}, TS{id=34}, TS{id=56}, TS{id=78}, TS{id=90}, TS{id=123})",
+        "id": 3,
       },
     ],
   },
   "method": "POST",
-  "requestId": "1_16_I",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
@@ -1102,19 +977,618 @@ Object {
   "data": Object {
     "items": Array [
       Object {
-        "expression": "TS{id=12} + [[TimeseriesVariable]]",
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
       },
     ],
   },
   "method": "POST",
-  "requestId": "1_16_J",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 20`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+      Object {
+        "externalId": "Timeseries1",
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 21`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 22`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "externalId": "Timeseries1",
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 23`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} + pi()",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} + pi()",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} + pi()",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_A",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 24`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} + ts{id=1}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} + ts{id=1}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} + ts{id=1}",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_B",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 25`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
+        "limit": 370,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_C",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 26`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_D",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 27`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "(ts{id=1} + ts{id=2} + ts{id=3})",
+        "limit": 100000,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_G",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 28`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "(ts{id=1, aggregate=\\"average\\"} + ts{id=2, aggregate=\\"average\\"} + ts{id=3, aggregate=\\"average\\"}) + (ts{id=1, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=2, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=3, aggregate=\\"average\\", granularity=\\"1h\\"}) * max(ts{id=1, aggregate=\\"count\\"}, ts{id=2, aggregate=\\"count\\"}, ts{id=3, aggregate=\\"count\\"}) / min(ts{externalId=\\"Timeseries1\\"}) - avg(ts{id=1, aggregate=\\"average\\"}, ts{id=2, aggregate=\\"average\\"}, ts{id=3, aggregate=\\"average\\"}) - 3 * ts{id=1}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "(ts{id=1, aggregate=\\"average\\"} + ts{id=2, aggregate=\\"average\\"} + ts{id=3, aggregate=\\"average\\"}) + (ts{id=1, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=2, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=3, aggregate=\\"average\\", granularity=\\"1h\\"}) * max(ts{id=1, aggregate=\\"count\\"}, ts{id=2, aggregate=\\"count\\"}, ts{id=3, aggregate=\\"count\\"}) / min(ts{externalId=\\"Timeseries1\\"}) - avg(ts{id=1, aggregate=\\"average\\"}, ts{id=2, aggregate=\\"average\\"}, ts{id=3, aggregate=\\"average\\"}) - 3 * ts{id=2}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "(ts{id=1, aggregate=\\"average\\"} + ts{id=2, aggregate=\\"average\\"} + ts{id=3, aggregate=\\"average\\"}) + (ts{id=1, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=2, aggregate=\\"average\\", granularity=\\"1h\\"} + ts{id=3, aggregate=\\"average\\", granularity=\\"1h\\"}) * max(ts{id=1, aggregate=\\"count\\"}, ts{id=2, aggregate=\\"count\\"}, ts{id=3, aggregate=\\"count\\"}) / min(ts{externalId=\\"Timeseries1\\"}) - avg(ts{id=1, aggregate=\\"average\\"}, ts{id=2, aggregate=\\"average\\"}, ts{id=3, aggregate=\\"average\\"}) - 3 * ts{id=3}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_H",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 29`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "max(max(ts{id=1}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "max(max(ts{id=2}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "max(max(ts{id=3}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
+        "limit": 33333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_I",
+  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 30`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{externalId=\\"Timeseries1\\"}",
+        "limit": 100000,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "method": "POST",
+  "requestId": "1_15_J",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1 + Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2 + Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3 + Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesA value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesA value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesA value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesA value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesA value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesA value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesA value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesB value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesC value1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "(sum + sum + sum)",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries2",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries3",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "max(max(Timeseries1, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "max(max(Timeseries2, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "max(max(Timeseries3, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA : Timeseries1",
+    },
+  ],
 }
 `;
 
@@ -1163,7 +1637,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_12_A",
+  "requestId": "1_18_A",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
@@ -1201,7 +1675,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_12_A",
+  "requestId": "1_18_A",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;

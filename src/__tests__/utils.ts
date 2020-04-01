@@ -1,6 +1,6 @@
+/* tslint:disable */
 import CogniteDatasource from '../datasource';
 import { DataQueryRequest, QueryTarget } from '../types';
-import { getDatasourceValueString } from '../utils';
 import ms from 'ms';
 
 const variables = [
@@ -10,19 +10,20 @@ const variables = [
 
 export function getDataqueryResponse(
   { items, aggregates }: DataQueryRequest,
-  externalIdPrefix = 'externalId-'
+  externalIdPrefix = 'externalId-',
+  dpNumber: number = 5
 ) {
-  const aggrStr = getDatasourceValueString(aggregates ? aggregates[0] : undefined);
-  const datapoints = [0, 1, 2, 3, 4].map(i => ({
+  const aggregate = aggregates ? aggregates[0] : undefined;
+  const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({
     timestamp: i * ms('10m') + 1549336675000,
-    [aggrStr]: i,
+    [aggregate]: i,
   }));
   const itemsArr = items.map(({ id }) => ({
     id,
     datapoints,
     externalId: `${externalIdPrefix}${id}`,
   }));
-  return getItemsResponseObject(itemsArr, aggregates && aggrStr);
+  return getItemsResponseObject(itemsArr, aggregate);
 }
 
 export function getItemsResponseObject(items, aggregates?: string) {
@@ -47,8 +48,10 @@ const getTemplateSrvMock = () =>
     replace: jest.fn((q, options) => {
       let query = q;
       for (const { name, current } of variables) {
-        query = query.replace(`[[${name}]]`, current.value);
-        query = query.replace(`$${name}`, current.value);
+        const varSyntax1 = new RegExp('\\[\\[' + name + '\\]\\]', 'g');
+        const varSyntax2 = new RegExp('\\$' + name, 'g');
+        query = query.replace(varSyntax1, current.value);
+        query = query.replace(varSyntax2, current.value);
       }
       return query;
     }),
