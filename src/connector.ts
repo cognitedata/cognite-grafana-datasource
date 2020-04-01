@@ -37,10 +37,11 @@ export class Connector {
     request: RequestParams<Req>,
     chunkSize: number = 100
   ): Promise<Res> {
-    const { data } = request;
+    const { data, requestId } = request;
     const chunkedItems = chunk(data.items, chunkSize);
-    const chunkedRequests = chunkedItems.map(items => ({
+    const chunkedRequests = chunkedItems.map((items, i) => ({
       ...request,
+      ...chunkedReqId(requestId, i),
       data: {
         ...data,
         items,
@@ -68,7 +69,7 @@ export class Connector {
   public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
     const maxLimit = 1000;
     const { data: queryData } = params;
-    const fullLimit = queryData.limit;
+    const fullLimit = queryData.limit || maxLimit;
     const { data } = await this.fetchData<CursorResponse<T>>({
       ...params,
       data: {
@@ -101,4 +102,10 @@ export class Connector {
       url: `${this.apiUrl}/${path}`,
     });
   }
+}
+
+const chunkedReqId = (requestId: string, chunk: number) => {
+  return requestId ? {
+    requestId: chunk ? `${requestId}${chunk}` : requestId
+  } : undefined
 }

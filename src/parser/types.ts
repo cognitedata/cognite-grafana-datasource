@@ -1,9 +1,10 @@
-export enum FilterType {
-  RegexNotEquals = '!~',
-  RegexEquals = '=~',
-  NotEquals = '!=',
-  Equals = '=',
-}
+export const FilterType = {
+  RegexNotEquals: '!~' as FilterType,
+  RegexEquals: '=~' as FilterType,
+  NotEquals: '!=' as FilterType,
+  Equals: '=' as FilterType,
+};
+export type FilterType = '!~' | '=~' | '!=' | '=';
 export interface QueryFilter {
   filter: FilterType;
   value: string;

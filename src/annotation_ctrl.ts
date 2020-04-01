@@ -1,5 +1,5 @@
 import { Annotation } from './types';
-import { parse } from './query-parser';
+import { parse } from './parser/events-assets';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
 export class CogniteAnnotationsQueryCtrl {

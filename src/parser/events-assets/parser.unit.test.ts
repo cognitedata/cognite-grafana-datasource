@@ -1,5 +1,5 @@
-import { parseQuery, formatQueryParse, parse } from '../query-parser';
-import { QueryParserTypes } from '../query-parser/types';
+import { parseQuery, formatQueryParse, parse } from './index';
+import { QueryParserTypes } from '../types';
 
 describe('Query parser', () => {
   describe('Query parsing', () => {

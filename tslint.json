@@ -11,7 +11,13 @@
         "datasource": "CogniteDatasource",
         "utils": "Utils"
       }
-    ]
+    ],
+    "function-name": {
+      "options": {
+        "function-regex": "^[\\w\\d]+$"
+      }
+    },
+    "variable-name": ["allow-camel-case"]
   },
   "linterOptions": {
     "exclude": ["*/**/grammar.ts"]
