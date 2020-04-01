@@ -41,7 +41,7 @@ import {
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
-import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
+import { datapointsLimitWarningEvent, failedResponseEvent, parserErrorEvent } from './constants';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -89,7 +89,7 @@ export default class CogniteDatasource {
         const items = await this.getDataQueryRequestItems(target, options);
         return { items, target };
       } catch (e) {
-        appEvents.emit(failedResponseEvent, { refId: target.refId, error: e.message });
+        return null;
       }
     });
     const queryData = await Promise.all(itemsForTargetsPromises);
@@ -108,6 +108,7 @@ export default class CogniteDatasource {
       metadatas,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
+
         return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>({
           data,
           path: `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`,
@@ -270,6 +271,9 @@ export default class CogniteDatasource {
     try {
       ({ params, filters } = parse(query));
     } catch (e) {
+
+      appEvents.emit(parserErrorEvent,)
+
       return [];
     }
 
@@ -316,15 +320,6 @@ export default class CogniteDatasource {
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
-  // we cannot just map them because it's used for visual feedback
-  // TODO: fix it when we move to react?
-  targets.forEach(target => {
-    if (target) {
-      target.error = '';
-      target.warning = '';
-    }
-  });
-
   return targets.filter(target => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
@@ -346,12 +341,12 @@ function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
     .forEach(({ error, metadata }) => {
-      const errmsg =
+      const message =
         error.data && error.data.error
           ? `[${error.status} ERROR] ${error.data.error.message}`
           : 'Unknown error';
 
-      appEvents.emit(failedResponseEvent, { refId: metadata.target.refId, error: errmsg });
+      appEvents.emit(failedResponseEvent, { refId: metadata.target.refId, error: message });
     });
 }
 

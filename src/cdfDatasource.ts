@@ -27,6 +27,8 @@ import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import { appEvents } from "grafana/app/core/core";
+import { failedResponseEvent } from "./constants";
 
 const { Asset, Custom, Timeseries} = Tab;
 
@@ -109,8 +111,8 @@ async function getLabelsForTarget(
     }
     case Custom: {
       const expressions = queryList.map(({ expression }) => expression);
-      const labels = await getLabelsForExpression(expressions, target.label, target, connector);
-      return labels;
+
+      return await getLabelsForExpression(expressions, target.label, target, connector);
     }
   }
 }
@@ -168,11 +170,10 @@ export async function getTimeseries(
     return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
   } catch (error) {
     const { data, status } = error;
-    if (data && data.error) {
-      target.error = `[${status} ERROR] ${data.error.message}`;
-    } else {
-      target.error = 'Unknown error';
-    }
+    const message = data && data.error ? `[${status} ERROR] ${data.error.message}` : `Unknown error`;
+
+    appEvents.emit(failedResponseEvent, { refId: target.refId, error: message });
+
     return [];
   }
 }

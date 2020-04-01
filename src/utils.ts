@@ -48,11 +48,3 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
       return value !== valueToFilter;
   }
 };
-
-/**
- * Comes from grafana, could be imported in future releases hopefully
- * @param name – event name
- */
-export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
-  return { name };
-};

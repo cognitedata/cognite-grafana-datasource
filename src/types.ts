@@ -5,6 +5,19 @@ import {
   TimeRange as GrafanaTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
+
+export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
+  return (<DataQueryError>maybeError).error !== undefined;
+}
+
+/**
+ * Comes from grafana, could be imported in future releases hopefully
+ * @param name – event name
+ */
+export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
+  return { name };
+};
+
 export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
@@ -184,10 +197,6 @@ export type QueriesData = {
 }[];
 
 export type ResponseMetadata = { labels: string[]; target: QueryTarget };
-
-export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
-  return (<DataQueryError>maybeError).error !== undefined;
-}
 
 export interface DataQueryAlias {
   alias: string;
@@ -397,4 +406,14 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;
+}
+
+export interface QueryRequestError {
+  refId: string;
+  error: string;
+}
+
+export interface QueryDatapointsLimitWarning {
+  refId: string;
+  warning: string;
 }

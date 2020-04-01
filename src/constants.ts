@@ -1,4 +1,5 @@
-import { eventFactory } from './utils';
+import {eventFactory, QueryDatapointsLimitWarning, QueryRequestError} from './types';
 
-export const failedResponseEvent = eventFactory('failed-request');
-export const datapointsLimitWarningEvent = eventFactory('datapoints-limit-warning');
+export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
+export const datapointsLimitWarningEvent = eventFactory<QueryDatapointsLimitWarning>('datapoints-limit-warning');
+export const parserErrorEvent = eventFactory('parse-error');
