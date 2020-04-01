@@ -1,9 +1,11 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
+import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
 import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
-import { parse } from './parser/ts'
+import { parse } from './parser/ts';
+import { failedResponseEvent } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -72,7 +74,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.isAllSelected =
       this.target.assetQuery.timeseries &&
       this.target.assetQuery.timeseries.every(ts => ts.selected);
+
+    appEvents.on(failedResponseEvent, this.handleError);
   }
+
+  handleError = (e: any) => {
+    if (this.target.refId !== e.metadata.target.refId) {
+      return;
+    }
+
+    console.log('Error emitted', e.metadata.target);
+  };
 
   getOptions(query: string, type: string) {
     return this.datasource.getOptionsForDropdown(query || '', type).then(options => {
@@ -122,5 +134,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
       return `Custom Query: ${this.target.expr} ${this.target.error}`;
     }
     return '';
+  }
+
+  // tslint:disable-next-line:function-name
+  $onDestroy() {
+    appEvents.off('some', this.handleError);
+    console.log('destroy');
   }
 }

@@ -4,6 +4,7 @@ import { parse } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import { appEvents } from 'grafana/app/core/core';
 import {
   CogniteDataSourceSettings,
   DataQueryRequestItem,
@@ -40,6 +41,7 @@ import {
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
+import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -87,7 +89,7 @@ export default class CogniteDatasource {
         const items = await this.getDataQueryRequestItems(target, options);
         return { items, target };
       } catch (e) {
-        target.error = e.message;
+        appEvents.emit(failedResponseEvent, { refId: target.refId, error: e.message });
       }
     });
     const queryData = await Promise.all(itemsForTargetsPromises);
@@ -344,13 +346,12 @@ function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
     .forEach(({ error, metadata }) => {
-      let errmsg: string;
-      if (error.data && error.data.error) {
-        errmsg = `[${error.status} ERROR] ${error.data.error.message}`;
-      } else {
-        errmsg = 'Unknown error';
-      }
-      metadata.target.error = errmsg;
+      const errmsg =
+        error.data && error.data.error
+          ? `[${error.status} ERROR] ${error.data.error.message}`
+          : 'Unknown error';
+
+      appEvents.emit(failedResponseEvent, { refId: metadata.target.refId, error: errmsg });
     });
 }
 
@@ -363,13 +364,25 @@ export function getRange(range: TimeRange): Tuple<number> {
 function showTooMuchDatapointsWarningIfNeeded(
   responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]
 ) {
-  responses.forEach(({ result, metadata }) => {
-    const limit = result.config.data.limit;
-    const items = result.data.items;
-    const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
-    if (hasMorePoints) {
-      metadata.target.warning =
+  responses.forEach(
+    ({
+      result: {
+        data: { items },
+        config: {
+          data: { limit },
+        },
+      },
+      metadata: {
+        target: { refId },
+      },
+    }) => {
+      const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
+      const warning =
         '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+
+      if (hasMorePoints) {
+        appEvents.emit(datapointsLimitWarningEvent, { refId, warning });
+      }
     }
-  });
+  );
 }

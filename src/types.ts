@@ -81,6 +81,14 @@ export interface Range<T> {
   max?: T;
 }
 
+/**
+ * Comes from grafana, could be imported in future releases hopefully
+ */
+export interface AppEvent<T> {
+  readonly name: string;
+  payload?: T;
+}
+
 export enum HttpMethod {
   POST = 'POST',
   GET = 'GET',

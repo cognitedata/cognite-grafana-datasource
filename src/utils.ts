@@ -1,5 +1,5 @@
 import { isNil, omitBy, get } from 'lodash';
-import { QueryOptions, QueryTarget } from './types';
+import { AppEvent, QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { FilterType, ParsedFilter } from './parser/types';
@@ -47,4 +47,12 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
     case FilterType.NotEquals:
       return value !== valueToFilter;
   }
+};
+
+/**
+ * Comes from grafana, could be imported in future releases hopefully
+ * @param name – event name
+ */
+export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
+  return { name };
 };
