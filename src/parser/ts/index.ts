@@ -166,14 +166,14 @@ export const hasAggregates = (
   return hasAggregates
 };
 
-export const flattenServerQueryFilters = (items: STSFilter[]): StringMap => {
-  return items.reduce((res, filter) => {
+export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
+  return items.filter(isSTSFilter).reduce((res, filter) => {
     let value: any;
     if (isByIdsQuery(filter.value)) {
       value = filter.value.map(item => flattenServerQueryFilters([item]));
-    } else if(isSTSFilterArr(filter.value)) {
+    } else if (isSTSFilterArr(filter.value)) {
       value = {...res[filter.path], ...flattenServerQueryFilters(filter.value)};
-    } else if (isArray(filter.value)){
+    } else if (isSTSFilterArr2d(filter.value)){
       value = filter.value.map(flattenServerQueryFilters);
     } else {
       value = filter.value
@@ -217,24 +217,30 @@ export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
   return responseArr;
 };
 
+export const extractFilters = (
+  route: STSQuery,
+  condition: (_, __, parent) => boolean
+): unknown[][] => {
+  const extracted: unknown[][] = [];
+  walk(route, obj => {
+    if (isSTSReference(obj) && !hasIdsFilter(obj)) {
+      extracted.push(filterDeep(obj.query, condition));
+    }
+  });
+  return extracted;
+};
+
 export const getServerFilters = (
   route: STSQuery
 ): StringMap[] => {
-  const responseArr: StringMap[] = [];
-  const filter = (_, __, parent) => isServerFilter(parent);
-  walk(route, obj => {
-    if (isSTSReference(obj) && !hasIdsFilter(obj)) {
-      const serverQuery = filterDeep(filterDeep(obj.query, filter), filter);
-      const flatFilters = flattenServerQueryFilters(serverQuery || []);
-      responseArr.push(flatFilters);
-    }
-  });
-  return responseArr;
+  const filter = (_, __, parent) => isServerFilter(parent) || !isSTSFilter(parent);
+  return extractFilters(route, filter)
+    .map(filters => flattenServerQueryFilters(filters || [])) as StringMap[];
 };
 
-export const flattenClientQueryFilters = (filters: STSFilter[], path = []): STSClientFilter[] => {
+export const flattenClientQueryFilters = (filters: unknown[], path = []): STSClientFilter[] => {
   const res: STSClientFilter[] = [];
-  for(const filter of filters) {
+  filters.filter(isSTSFilter).forEach(filter => {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
       res.push(
         ...flattenClientQueryFilters(filter.value, [...path, filter.path])
@@ -246,21 +252,14 @@ export const flattenClientQueryFilters = (filters: STSFilter[], path = []): STSC
         filter: filter.filter
       } as STSClientFilter)
     }
-  }
+  })
   return res;
 }
 
 export const getClientFilters = (route: STSQuery): STSClientFilter[][] => {
-  const responseArr: STSClientFilter[][] = [];
   const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
-  walk(route, obj => {
-    if (isSTSReference(obj) && !hasIdsFilter(obj)) {
-      const clientQuery = filterDeep(filterDeep(obj.query, filter) || [], filter);
-      const flatFilters = flattenClientQueryFilters(clientQuery || []);
-      responseArr.push(flatFilters);
-    }
-  });
-  return responseArr;
+  return extractFilters(route, filter)
+    .map(filters => flattenClientQueryFilters(filters || [])) as STSClientFilter[][];
 };
 
 const reverseSTSFilter = ({ path, filter, value }: STSFilter) => {
@@ -421,6 +420,10 @@ const isSTSFilterArr = (query: any): query is STSFilter[] => {
   return isArray(query) && query.length && query.every(isSTSFilter);
 }
 
+const isSTSFilterArr2d = (query: any): query is STSFilter[][] => {
+  return isArray(query) && query.every(isSTSFilterArr);
+}
+
 const isWrappedConst = (obj: any): obj is WrappedConst => {
   return isObjectLike(obj) && 'constant' in obj;
 }
@@ -482,7 +485,7 @@ export type STSClientFilter = {
 export type STSServerFilter = {
   path: string;
   filter: Extract<FilterType, '='>;
-  value: string | number | STSFilter[] | STSFilter[][];
+  value: STSValue;
 };
 
 export type Operator = {
