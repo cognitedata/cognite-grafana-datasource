@@ -1,21 +1,21 @@
 import { Annotation } from './types';
+import CogniteDatasource from './datasource';
 import { parse } from './parser/events-assets';
-import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
 
 export class CogniteAnnotationsQueryCtrl {
   public static templateUrl = 'partials/annotations.editor.html';
   annotation: Annotation;
+  datasource: CogniteDatasource;
 
   /** @ngInject */
-  constructor(private templateSrv: TemplateSrv) {}
+  constructor() {}
 
   onBlur() {
     this.annotation.error = '';
 
     try {
-      const queryWithVariable = this.templateSrv.replace(this.annotation.query);
-
-      parse(queryWithVariable);
+      const withReplacedVariable = this.datasource.replaceVariable(this.annotation.query);
+      parse(withReplacedVariable);
     } catch ({ message }) {
       this.annotation.error = message;
     }

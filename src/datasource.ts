@@ -99,13 +99,11 @@ export default class CogniteDatasource {
     const filteredQueryData = queryData.filter(data => data && data.items && data.items.length);
 
     const queries = formQueriesForTargets(filteredQueryData, options);
-    let metadata = await formMetadatasForTargets(
-      filteredQueryData,
-      options,
-      this.connector,
-    );
-    metadata = metadata.map(({target, labels: labelsWithVariables}) => {
-      const labels = labelsWithVariables.map(label => this.replaceVariable(label, options.scopedVars));
+    let metadata = await formMetadatasForTargets(filteredQueryData, options, this.connector);
+    metadata = metadata.map(({ target, labels: labelsWithVariables }) => {
+      const labels = labelsWithVariables.map(label =>
+        this.replaceVariable(label, options.scopedVars)
+      );
       return { labels, target };
     });
 
@@ -141,14 +139,14 @@ export default class CogniteDatasource {
         return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        const templatedExpr = this.replaceVariable(expr.trim(), options.scopedVars);
+        const templatedExpr = this.replaceVariable(expr, options.scopedVars);
         return formQueriesForExpression(templatedExpr, target, this.connector);
       }
     }
   }
 
   replaceVariable(query: string, scopedVars?): string {
-    return this.templateSrv.replace(query, scopedVars);
+    return this.templateSrv.replace(query.trim(), scopedVars);
   }
 
   /**
