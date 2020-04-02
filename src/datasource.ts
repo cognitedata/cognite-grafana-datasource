@@ -383,7 +383,7 @@ function showTooMuchDatapointsWarningIfNeeded(
       const warning =
         '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
 
-      if (!hasMorePoints) {
+      if (hasMorePoints) {
         appEvents.emit(datapointsLimitWarningEvent, { refId, warning });
       }
     }

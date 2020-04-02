@@ -285,7 +285,7 @@ describe('Annotations Query', () => {
     const annotationOption2: any = {
       ...annotationOption1,
       annotation: {
-        query: "events{assetIds=[$MultiValue]}",
+        query: 'events{assetIds=[${MultiValue:csv}]}',
       },
     };
     const response1 = _.cloneDeep(annotationResponse);
@@ -294,8 +294,8 @@ describe('Annotations Query', () => {
     response1.data.items = annotationResponse.data.items.filter(item =>
       item.assetIds.some(id => id === 123)
     );
-    response2.data.items = annotationResponse.data.items.filter(item =>
-      item.assetIds.some(id => id === 123 || id === 456) // see $MultiValue definition
+    response2.data.items = annotationResponse.data.items.filter(
+      item => item.assetIds.some(id => id === 123 || id === 456) // see $MultiValue definition
     );
 
     beforeAll(async () => {
