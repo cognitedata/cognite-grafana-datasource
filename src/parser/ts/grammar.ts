@@ -4,7 +4,8 @@
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
 
-const join = ([d]) => d.join('');
+const join = ([d]) => joinArr(d);
+const joinArr = (d) => d.join('');
 const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return {
@@ -101,8 +102,6 @@ const extractFunction = ([func, br, args, BR]) => {
   }
   return { func }
 }
-
-const extractVariable = ([_, d]) => "$" + d;
 
 const emptyObject = () => ({});
 const emptyArray = () => ([]);
@@ -320,10 +319,12 @@ const grammar: Grammar = {
     {"name": "value", "symbols": ["value$string$2"], "postprocess": () => false},
     {"name": "value$string$3", "symbols": [{"literal":"n"}, {"literal":"u"}, {"literal":"l"}, {"literal":"l"}], "postprocess": (d) => d.join('')},
     {"name": "value", "symbols": ["value$string$3"], "postprocess": () => null},
-    {"name": "variable", "symbols": [{"literal":"$"}, "prop_name"], "postprocess": extractVariable},
+    {"name": "variable", "symbols": [{"literal":"$"}, "prop_name"], "postprocess": joinArr},
     {"name": "variable$string$1", "symbols": [{"literal":"["}, {"literal":"["}], "postprocess": (d) => d.join('')},
     {"name": "variable$string$2", "symbols": [{"literal":"]"}, {"literal":"]"}], "postprocess": (d) => d.join('')},
-    {"name": "variable", "symbols": ["variable$string$1", "prop_name", "variable$string$2"], "postprocess": extractVariable},
+    {"name": "variable", "symbols": ["variable$string$1", "prop_name", "variable$string$2"], "postprocess": joinArr},
+    {"name": "variable", "symbols": [{"literal":"$"}, "advanced_variable"], "postprocess": joinArr},
+    {"name": "advanced_variable", "symbols": [{"literal":"{"}, "prop_name", {"literal":":"}, "prop_name", {"literal":"}"}], "postprocess": joinArr},
     {"name": "operator", "symbols": ["_", {"literal":"+"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"-"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"/"}, "_"], "postprocess": extractOperator},
