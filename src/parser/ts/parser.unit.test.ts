@@ -202,7 +202,12 @@ describe('nearley parser', () => {
 
   it('template variables', () => {
     const res = parse(`ts{id=[[asset]]}`);
-    expect(res).toEqual(STS([Filter('id', '$asset')]));
+    expect(res).toEqual(STS([Filter('id', '[[asset]]')]));
+  });
+
+  it('advanced template variable', () => {
+    const res = parse('ts{id=${asset:json}}');
+    expect(res).toEqual(STS([Filter('id', '${asset:json}')]));
   });
 });
 
