@@ -3,15 +3,7 @@
   "rules": {
     "no-reference": false,
     "no-increment-decrement": false,
-    "import-name": [
-      true,
-      {
-        "lodash": "_",
-        "react": "React",
-        "datasource": "CogniteDatasource",
-        "utils": "Utils"
-      }
-    ],
+    "import-name": false,
     "function-name": {
       "options": {
         "function-regex": "^\\$?[\\w\\d]+$"

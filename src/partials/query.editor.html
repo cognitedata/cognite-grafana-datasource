@@ -145,7 +145,7 @@
   </div>
   <div class="gf-form" ng-init>
       <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
-      <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-blur="ctrl.onChangeCustom()" placeholder=""/>
+      <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-blur="ctrl.onChangeInternal()" placeholder=""/>
       <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
   </div>
   <div class="gf-form--grow" ng-show="showHelp">

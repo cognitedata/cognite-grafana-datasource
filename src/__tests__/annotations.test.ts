@@ -271,8 +271,9 @@ describe('Annotations Query', () => {
   });
 
   describe('Given an annotation query with variables', () => {
-    let result;
-    const annotationOption: any = {
+    let result1;
+    let result2;
+    const annotationOption1: any = {
       range: {
         from: '1549336675000',
         to: '1549338475000',
@@ -281,27 +282,41 @@ describe('Annotations Query', () => {
         query: "events{assetIds=[$AssetVariable], description!~'event.*'}",
       },
     };
-    const response = _.cloneDeep(annotationResponse);
-    response.data.items = annotationResponse.data.items.filter(item =>
+    const annotationOption2: any = {
+      ...annotationOption1,
+      annotation: {
+        query: "events{assetIds=[$MultiValue]}",
+      },
+    };
+    const response1 = _.cloneDeep(annotationResponse);
+    const response2 = _.cloneDeep(annotationResponse);
+
+    response1.data.items = annotationResponse.data.items.filter(item =>
       item.assetIds.some(id => id === 123)
+    );
+    response2.data.items = annotationResponse.data.items.filter(item =>
+      item.assetIds.some(id => id === 123 || id === 456) // see $MultiValue definition
     );
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(annotationResponse));
-      result = await ds.annotationQuery(annotationOption);
+      result1 = await ds.annotationQuery(annotationOption1);
+      result2 = await ds.annotationQuery(annotationOption2);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(2);
+      backendSrvMock.datasourceRequest.mock.calls.forEach(([request]) => {
+        expect(request).toMatchSnapshot();
+      });
     });
 
     it('should return the correct events', () => {
-      const resultIds = result.map(({ text }) => text);
+      const resultIds = result1.map(({ text }) => text);
 
-      expect(result.length).toEqual(1);
+      expect(result1.length).toEqual(1);
       expect(resultIds.includes('time out of bounds')).toBeTruthy();
     });
   });

@@ -1,3 +1,4 @@
+import { isArray } from 'lodash';
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
 import { getRequestId, applyFilters } from './utils';
 import { parse } from './parser/events-assets';
@@ -42,6 +43,7 @@ import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsLimitWarningEvent, failedResponseEvent, parserErrorEvent } from './constants';
+
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -62,7 +64,7 @@ export default class CogniteDatasource {
   /**
    * used by panels to get timeseries data
    */
-  public async query(options: QueryOptions): Promise<QueryResponse> {
+  async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
 
@@ -80,7 +82,7 @@ export default class CogniteDatasource {
     return { data: responseData };
   }
 
-  public async fetchTimeseriesForTargets(
+  async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions
   ): Promise<MetaResponses> {
@@ -89,6 +91,7 @@ export default class CogniteDatasource {
         const items = await this.getDataQueryRequestItems(target, options);
         return { items, target };
       } catch (e) {
+        appEvents.emit(failedResponseEvent, { refId: target.refId, error: e.message });
         return null;
       }
     });
@@ -96,16 +99,19 @@ export default class CogniteDatasource {
     const filteredQueryData = queryData.filter(data => data && data.items && data.items.length);
 
     const queries = formQueriesForTargets(filteredQueryData, options);
-    const metadatas = await formMetadatasForTargets(
+    let metadata = await formMetadatasForTargets(
       filteredQueryData,
       options,
       this.connector,
-      this.templateSrv
     );
+    metadata = metadata.map(({target, labels: labelsWithVariables}) => {
+      const labels = labelsWithVariables.map(label => this.replaceVariable(label, options.scopedVars));
+      return { labels, target };
+    });
 
     return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
       queries,
-      metadatas,
+      metadata,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
 
@@ -135,20 +141,20 @@ export default class CogniteDatasource {
         return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        const templatedExpr = this.templateSrv.replace(expr.trim(), options.scopedVars);
+        const templatedExpr = this.replaceVariable(expr.trim(), options.scopedVars);
         return formQueriesForExpression(templatedExpr, target, this.connector);
       }
     }
   }
 
-  private replaceVariable(query: string): string {
-    return this.templateSrv.replace(query);
+  replaceVariable(query: string, scopedVars?): string {
+    return this.templateSrv.replace(query, scopedVars);
   }
 
   /**
    * used by dashboards to get annotations (events)
    */
-  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
+  async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const {
       range,
       annotation,
@@ -191,7 +197,7 @@ export default class CogniteDatasource {
   /**
    * used by query editor to search for assets/timeseries
    */
-  public async getOptionsForDropdown(
+  async getOptionsForDropdown(
     query: string,
     type?: string,
     options?: any
@@ -223,11 +229,10 @@ export default class CogniteDatasource {
   }
 
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
-    // replace variables with their values
-    const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
+    const assetId = this.replaceVariable(target.assetQuery.target, options.scopedVars);
     const filter = target.assetQuery.includeSubtrees
       ? {
-          assetSubtreeIds: [{ id: assetId }],
+          assetSubtreeIds: [{ id: Number(assetId) }],
         }
       : {
           assetIds: [assetId],
@@ -271,9 +276,6 @@ export default class CogniteDatasource {
     try {
       ({ params, filters } = parse(query));
     } catch (e) {
-
-      appEvents.emit(parserErrorEvent,)
-
       return [];
     }
 

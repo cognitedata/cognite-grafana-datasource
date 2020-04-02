@@ -80,11 +80,10 @@ export async function formMetadatasForTargets(
   queriesData: QueriesData,
   options: QueryOptions,
   connector: Connector,
-  templateSrv: TemplateSrv
 ): Promise<ResponseMetadata[]> {
   const promises = queriesData.map(async ({ target, items }) => {
-    const rawLabels = await getLabelsForTarget(target, items, connector);
-    const labels = rawLabels.map(raw => templateSrv.replace(raw, options.scopedVars));
+    const labels = await getLabelsForTarget(target, items, connector);
+
     return {
       target,
       labels,
@@ -133,7 +132,7 @@ async function getTimeseriesLabel(
   return resLabel;
 }
 
-// injects prop values to ts label, ex. `{description}} {{metadata.key1}}` -> 'tsDescription tsMetadataKey1Value'
+// injects prop values to ts label, ex. `{{description}} {{metadata.key1}}` -> 'tsDescription tsMetadataKey1Value'
 export function getLabelWithInjectedProps(
   label: string,
   timeseries: TimeSeriesResponseItem

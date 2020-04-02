@@ -65,6 +65,8 @@
       "prettier --write",
       "git add"
     ],
-    "ignore": ["*/**/grammar.ts"]
+    "ignore": [
+      "*/**/grammar.ts"
+    ]
   }
 }
