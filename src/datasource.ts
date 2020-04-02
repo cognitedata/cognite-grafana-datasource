@@ -42,7 +42,7 @@ import {
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
-import { datapointsLimitWarningEvent, failedResponseEvent, parserErrorEvent } from './constants';
+import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -135,6 +135,11 @@ export default class CogniteDatasource {
         return [{ id: tsId }];
       }
       case Asset: {
+        /**
+         *  todo: here target.assetQuery.timeseries mutability is used
+         *  to reuse timeseries data during label generation for Asset tab
+         *  need to be redone in functional way
+         **/
         await this.findAssetTimeseries(target, options);
         return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
@@ -254,8 +259,11 @@ export default class CogniteDatasource {
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, target, this.connector);
     if (ts.length === limit) {
-      target.warning =
+      const warning =
         "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+
+      appEvents.emit(datapointsLimitWarningEvent, { warning, refId: target.refId });
+
       ts.splice(-1);
     }
     target.assetQuery.timeseries = ts.map(ts => {
@@ -375,7 +383,7 @@ function showTooMuchDatapointsWarningIfNeeded(
       const warning =
         '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
 
-      if (hasMorePoints) {
+      if (!hasMorePoints) {
         appEvents.emit(datapointsLimitWarningEvent, { refId, warning });
       }
     }

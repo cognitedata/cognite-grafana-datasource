@@ -26,11 +26,10 @@ import { Connector } from './connector';
 import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
-import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
-import { appEvents } from "grafana/app/core/core";
-import { failedResponseEvent } from "./constants";
+import { appEvents } from 'grafana/app/core/core';
+import { failedResponseEvent } from './constants';
 
-const { Asset, Custom, Timeseries} = Tab;
+const { Asset, Custom, Timeseries } = Tab;
 
 export function formQueryForItems(
   items,
@@ -39,7 +38,7 @@ export function formQueryForItems(
 ): DataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Custom) {
-    const isAggregated = items.some(({ expression}) => hasAggregates(expression));
+    const isAggregated = items.some(({ expression }) => hasAggregates(expression));
     const limit = calculateDPLimitPerQuery(isAggregated, items.length);
     return {
       items: items.map(({ expression }) => ({ expression, start, end, limit })),
@@ -79,7 +78,7 @@ export function formQueriesForTargets(
 export async function formMetadatasForTargets(
   queriesData: QueriesData,
   options: QueryOptions,
-  connector: Connector,
+  connector: Connector
 ): Promise<ResponseMetadata[]> {
   const promises = queriesData.map(async ({ target, items }) => {
     const labels = await getLabelsForTarget(target, items, connector);
@@ -169,10 +168,12 @@ export async function getTimeseries(
     return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
   } catch (error) {
     const { data, status } = error;
-    const message = data && data.error ? `[${status} ERROR] ${data.error.message}` : `Unknown error`;
+    const message =
+      data && data.error ? `[${status} ERROR] ${data.error.message}` : `Unknown error`;
 
     appEvents.emit(failedResponseEvent, { refId: target.refId, error: message });
 
+    // todo: need to be reviewed well, should throw error actually
     return [];
   }
 }

@@ -3,9 +3,15 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
+import {
+  Tab,
+  QueryTarget,
+  TimeSeriesResponseItem,
+  QueryDatapointsLimitWarning,
+  QueryRequestError,
+} from './types';
 import { parse } from './parser/ts';
-import { failedResponseEvent } from './constants';
+import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -76,14 +82,23 @@ export class CogniteQueryCtrl extends QueryCtrl {
       this.target.assetQuery.timeseries.every(ts => ts.selected);
 
     appEvents.on(failedResponseEvent, this.handleError);
+    appEvents.on(datapointsLimitWarningEvent, this.handleWarning);
   }
 
-  handleError = (e: any) => {
-    if (this.target.refId !== e.metadata.target.refId) {
+  handleWarning = ({ refId, warning }: QueryDatapointsLimitWarning) => {
+    if (this.target.refId !== refId) {
       return;
     }
 
-    console.log('Error emitted', e.metadata.target);
+    this.target.warning = warning;
+  };
+
+  handleError = ({ refId, error }: QueryRequestError) => {
+    if (refId !== this.target.refId) {
+      return;
+    }
+
+    this.target.error = error;
   };
 
   getOptions(query: string, type: string) {
@@ -93,18 +108,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
-  onChangeCustom() { // todo: why it doesn't work without this hack?
-    try {
-      parse(this.target.expr);
-      this.target.error = '';
-      this.onChangeInternal();
-    } catch (e) {
-      this.target.error = e.message;
-    }
+  apply() {
+    this.refresh(); // Asks the panel to refresh data.
   }
 
-  onChangeInternal() {
-    this.refresh(); // Asks the panel to refresh data.
+  onChangeQuery() {
+    if (this.target.error) {
+      this.target.error = '';
+    }
+    if (this.target.warning) {
+      this.target.warning = '';
+    }
   }
 
   changeTab(index: number) {
@@ -138,7 +152,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   // tslint:disable-next-line:function-name
   $onDestroy() {
-    appEvents.off('some', this.handleError);
-    console.log('destroy');
+    appEvents.off(failedResponseEvent, this.handleError);
+    appEvents.off(datapointsLimitWarningEvent, this.handleWarning);
   }
 }
