@@ -1,11 +1,11 @@
 @preprocessor typescript
 
-
 @builtin "number.ne"
 @builtin "string.ne"
 
 @{%
-const join = ([d]) => d.join('');
+const join = ([d]) => joinArr(d);
+const joinArr = (d) => d.join('');
 const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return {
@@ -103,8 +103,6 @@ const extractFunction = ([func, br, args, BR]) => {
   return { func }
 }
 
-const extractVariable = ([_, d]) => "$" + d;
-
 const emptyObject = () => ({});
 const emptyArray = () => ([]);
 %}
@@ -166,8 +164,11 @@ value ->
   | "false" {% () => false %}
   | "null" {% () => null %}
 
-variable -> "$" prop_name {% extractVariable %}
-  | "[[" prop_name "]]" {% extractVariable %}
+variable -> "$" prop_name {% joinArr %}
+  | "[[" prop_name "]]" {% joinArr %}
+  | "$" advanced_variable {% joinArr %}
+  
+advanced_variable -> "{" prop_name ":" prop_name "}" {% joinArr %}
 
 operator -> _ "+" _ {% extractOperator %}
   | _ "-" _ {% extractOperator %}
