@@ -68,6 +68,16 @@ describe('get timeseries filters from parsed data', () => {
       expect(getServerFilters(testSeries)).toStrictEqual([{}, { name: 'value' }]);
     });
 
+    it('array filter', () => {
+      const nested = [STS([Filter('assetIds', [123])])];
+      expect(getServerFilters(nested)).toStrictEqual([{ assetIds: [123] }]);
+    });
+
+    it('array nested filter', () => {
+      const nested = [STS([Filter('assetIds', [Filter('id', 1)])])];
+      expect(getServerFilters(nested)).toStrictEqual([{ assetIds: [{ id: 1 }] }]);
+    });
+
     it('nested', () => {
       const nested = [STS([Filter('a', [Filter('b', 'c', '!~')])])];
       expect(getServerFilters(nested)).toStrictEqual([{}]);
