@@ -4,8 +4,8 @@ import { parse } from './parser/events-assets';
 
 const help = (
   <pre>
-    Query for assets uses the '/assets/list' endpoint. For request parameters{' '}
-    <code className="query-keyword">'='</code> sign is used.
+    Variable query uses the <a className="query-keyword" href="https://docs.cognite.com/api/v1/#operation/listAssets" target="_blank">assets/list</a> endpoint for data fetching.{' '}
+    <code className="query-keyword">'='</code> sign is used to provide parameters for the request.
     <br />
     Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
     <br />
@@ -13,10 +13,10 @@ const help = (
     <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]`}</code>
     <br />
     <br />
-    Filtering through the results also possible by adding{' '}
+    Results filtering is also possible by adding{' '}
     <code className="query-keyword">'=~'</code>, <code className="query-keyword">'!~'</code> and{' '}
     <code className="query-keyword">'!='</code> signs to props. Applying few filters for query acts
-    as AND
+    as logic AND
     <br />
     Format:
     <br />
