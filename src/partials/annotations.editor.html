@@ -22,10 +22,10 @@
     </div>
     <div class="gf-form--grow" ng-show="showHelpQuery">
       <pre>
-Query for events uses the 'events/list' endpoint. For request parameters <code class="query-keyword">'='</code> sign is used.
+Annotation query uses the <a class="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank">events/list</a> endpoint for data fetching. <code class="query-keyword">'='</code> sign is used to provide parameters for the request.
   Format: <code class="query-keyword">events{param=number, ...}</code>
   Example: <code class="query-keyword">events{type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}</code>
-  Filtering available by adding <code class="query-keyword">'=~'</code>, <code class="query-keyword">'!~'</code> and <code class="query-keyword">'!='</code> signs to filtered props. Applying few filters for query acts as logic AND
+  Results filtering is available by adding <code class="query-keyword">'=~'</code>, <code class="query-keyword">'!~'</code> and <code class="query-keyword">'!='</code> signs to filtered props. Applying few filters for query acts as logic AND
   Format:
     <code class="query-keyword">'=~'</code> – regex equality, means that provided regexp is used to match defined prop and matched value will be included
     <code class="query-keyword">'!~'</code> – regex inequality, means that provided regexp is used to match defined prop and matched value will be excluded

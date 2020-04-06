@@ -153,15 +153,20 @@
   Format: <code class="query-keyword">ts{options}</code><br>
   Options are of the form: <code class="query-keyword">PROPERTY COMPARATOR VALUE</code><br>
   Comparator can be either
-    =  (strict equality),
-    != (strict inequality),
-    =~ (regex equality),
-    !~ (regex inequality)<br>
+    <code class="query-keyword">=</code> (strict equality),
+    <code class="query-keyword">!=</code> (strict inequality),
+    <code class="query-keyword">=~</code> (regex equality),
+    <code class="query-keyword">!~</code> (regex inequality)<br>
   If you want to reference a specific timeseries, use <code class="query-keyword">ts{id=ID}</code>, or <code class="query-keyword">ts{id=ID, aggregate=AGGREGATE, granularity=GRANULARITY}</code>.
   Example:  <code class="query-keyword">sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}</code>
 
   Templated variables can also be used with <code class="query-keyword">$variable</code>.
-  Example: <code class="query-keyword">ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}</code> <br>
+  Example: <code class="query-keyword">ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}</code>
+
+  In case of multi-value variable, return value can be formatted. To format variable value use <code class="query-keyword">${variable:[formatter]}</code>.
+  Example: <code class="query-keyword">ts{assetIds=[${asset:csv}], granularity='12h', aggregate='average}</code> <br>
+  Check <a class="query-keyword" href="https://grafana.com/docs/grafana/latest/reference/templating/#advanced-formatting-options" target="_blank">Grafana documentation</a> to get list of available formatters.
+
   Synthetic timeseries functions can also be applied on one or multiple timeseries.
   Example: <code class="query-keyword">(ts{name=~'.*temp.*', aggregate='average'} - 32) * 5/9</code>
             <code class="query-keyword">ts{} + sin(ts{granularity='24h', aggregate='average'})</code><br>
@@ -173,7 +178,7 @@
             <code class="query-keyword">pow(ts{} - avg(ts{}), 2)</code>
               ↪ yields the squared deviation of each timeseries from the average <br>
   There is a support for some advanced functions, like <code class="query-keyword">round</code>, <code class="query-keyword">on_error</code> and <code class="query-keyword">map</code>.
-  The documentation on how to use them can be found on <a href="https://docs.cognite.com/api">docs.cognite.com/api</a><br>
+  The documentation on how to use them can be found on <a class="query-keyword" href="https://docs.cognite.com/api">docs.cognite.com/api</a>
     </pre>
   </div>
 </script>
