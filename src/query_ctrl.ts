@@ -86,13 +86,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
   handleWarning = ({ refId, warning }: QueryDatapointsLimitWarning) => {
-    if (this.target.refId !== refId) {
+    if (this.target.refId === refId) {
       this.target.warning = warning;
     }
   };
 
   handleError = ({ refId, error }: QueryRequestError) => {
-    if (refId === this.target.refId) {
+    if (this.target.refId === refId) {
       this.target.error = error;
     }
   };
@@ -104,7 +104,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
-  apply() {
+  refreshData() {
     this.refresh(); // Asks the panel to refresh data.
   }
 

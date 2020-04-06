@@ -135,7 +135,7 @@
   <div class="gf-form-inline">
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
-      <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.apply()" placeholder=""/>
+      <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.refreshData()" placeholder=""/>
       <info-popover mode="right-absolute">
         <span ng-non-bindable>
           Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
@@ -145,7 +145,7 @@
   </div>
   <div class="gf-form" ng-init>
       <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
-      <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.apply()" placeholder=""/>
+      <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.refreshData()" placeholder=""/>
       <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
   </div>
   <div class="gf-form--grow" ng-show="showHelp">
