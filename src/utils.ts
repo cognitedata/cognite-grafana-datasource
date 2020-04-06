@@ -1,5 +1,5 @@
 import { isNil, omitBy, get } from 'lodash';
-import { AppEvent, QueryOptions, QueryTarget } from './types';
+import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { FilterType, ParsedFilter } from './parser/types';

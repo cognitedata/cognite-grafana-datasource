@@ -4,11 +4,13 @@
     "no-reference": false,
     "no-increment-decrement": false,
     "import-name": false,
-    "function-name": {
-      "options": {
-        "function-regex": "^\\$?[\\w\\d]+$"
+    "function-name": [
+      true,
+      {
+        "method-regex": "^\\$?[\\w\\d]+$",
+        "function-regex": "^[A-Za-z][\\w\\d]+$"
       }
-    },
+    ],
     "variable-name": ["allow-camel-case"]
   },
   "linterOptions": {

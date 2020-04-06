@@ -110,7 +110,7 @@ async function getLabelsForTarget(
     case Custom: {
       const expressions = queryList.map(({ expression }) => expression);
 
-      return await getLabelsForExpression(expressions, target.label, target, connector);
+      return getLabelsForExpression(expressions, target.label, target, connector);
     }
   }
 }

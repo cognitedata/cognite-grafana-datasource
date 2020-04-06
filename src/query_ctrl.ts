@@ -87,18 +87,14 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   handleWarning = ({ refId, warning }: QueryDatapointsLimitWarning) => {
     if (this.target.refId !== refId) {
-      return;
+      this.target.warning = warning;
     }
-
-    this.target.warning = warning;
   };
 
   handleError = ({ refId, error }: QueryRequestError) => {
-    if (refId !== this.target.refId) {
-      return;
+    if (refId === this.target.refId) {
+      this.target.error = error;
     }
-
-    this.target.error = error;
   };
 
   getOptions(query: string, type: string) {
@@ -150,7 +146,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
     return '';
   }
 
-  // tslint:disable-next-line:function-name
   $onDestroy() {
     appEvents.off(failedResponseEvent, this.handleError);
     appEvents.off(datapointsLimitWarningEvent, this.handleWarning);

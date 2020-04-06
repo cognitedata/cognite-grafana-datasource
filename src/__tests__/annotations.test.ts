@@ -272,7 +272,6 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with variables', () => {
     let result1;
-    let result2;
     const annotationOption1: any = {
       range: {
         from: '1549336675000',
@@ -288,22 +287,14 @@ describe('Annotations Query', () => {
         query: 'events{assetIds=[${MultiValue:csv}]}',
       },
     };
-    const response1 = _.cloneDeep(annotationResponse);
-    const response2 = _.cloneDeep(annotationResponse);
-
-    response1.data.items = annotationResponse.data.items.filter(item =>
-      item.assetIds.some(id => id === 123)
-    );
-    response2.data.items = annotationResponse.data.items.filter(
-      item => item.assetIds.some(id => id === 123 || id === 456) // see $MultiValue definition
-    );
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(annotationResponse));
+
       result1 = await ds.annotationQuery(annotationOption1);
-      result2 = await ds.annotationQuery(annotationOption2);
+      await ds.annotationQuery(annotationOption2);
     });
 
     it('should generate the correct request', () => {
