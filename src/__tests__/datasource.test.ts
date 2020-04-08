@@ -1,14 +1,21 @@
-import { cloneDeep } from 'lodash';
-import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { Tab, InputQueryTarget } from '../types';
-import ms from 'ms';
+import { failedResponseEvent } from '../constants';
 
 jest.mock('grafana/app/core/utils/datemath');
+jest.mock('grafana/app/core/core');
 jest.mock('../cache');
+
+import { cloneDeep } from 'lodash';
+import { appEvents } from 'grafana/app/core/core';
+import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
+import { Tab, InputQueryTarget, QueryTarget } from '../types';
+import ms from 'ms';
+import { filterEmptyQueryTargets } from '../datasource';
+import Mock = jest.Mock;
 
 type QueryTargetLike = Partial<InputQueryTarget>;
 
 const { ds, backendSrvMock, templateSrvMock } = getMockedDataSource();
+const { Asset, Custom, Timeseries } = Tab;
 
 const tsError = {
   status: 400,
@@ -156,6 +163,7 @@ describe('Datasource Query', () => {
     };
 
     beforeAll(async () => {
+      jest.clearAllMocks();
       options.intervalMs = ms('1m');
       options.targets = [tsTargetA, tsTargetB];
       backendSrvMock.datasourceRequest = jest
@@ -167,17 +175,23 @@ describe('Datasource Query', () => {
 
     it('should generate the correct query', () => {
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(2);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
-      expect(backendSrvMock.datasourceRequest.mock.calls[1][0]).toMatchSnapshot();
+      backendSrvMock.datasourceRequest.mock.calls.forEach(([args]) => {
+        expect(args).toMatchSnapshot();
+      });
     });
     it('should return an empty array', () => {
       expect(result).toEqual({ data: [] });
     });
     it('should display errors for malformed queries', () => {
-      expect(tsTargetA.error).toBeDefined();
-      expect(tsTargetA.error).not.toHaveLength(0);
-      expect(tsTargetB.error).toBeDefined();
-      expect(tsTargetB.error).not.toHaveLength(0);
+      expect(appEvents.emit).toHaveBeenCalledTimes(2);
+      expect((appEvents.emit as Mock).mock.calls[0][1]).toEqual({
+        refId: 'A',
+        error: '[400 ERROR] error message',
+      });
+      expect((appEvents.emit as Mock).mock.calls[1][1]).toEqual({
+        refId: 'B',
+        error: 'Unknown error',
+      });
     });
   });
 
@@ -267,6 +281,7 @@ describe('Datasource Query', () => {
     const tsResponseEmpty = getItemsResponseObject([]);
 
     beforeAll(async () => {
+      jest.clearAllMocks();
       options.intervalMs = ms('6m');
       options.targets = [
         targetA,
@@ -311,8 +326,14 @@ describe('Datasource Query', () => {
     });
 
     it('should display errors for malformed queries', () => {
-      expect(targetError1.error).toBe('[400 ERROR] error message');
-      expect(targetError2.error).toBe('Unknown error');
+      expect(appEvents.emit).toHaveBeenCalledWith(failedResponseEvent, {
+        refId: 'E',
+        error: '[400 ERROR] error message',
+      });
+      expect(appEvents.emit).toHaveBeenCalledWith(failedResponseEvent, {
+        refId: 'F',
+        error: 'Unknown error',
+      });
     });
   });
 
@@ -346,7 +367,7 @@ describe('Datasource Query', () => {
       ...cloneDeep(targetA),
       assetQuery: {
         ...targetA.assetQuery,
-        target: '$AssetVariable'
+        target: '$AssetVariable',
       },
       expr: 'ts{externalId!="$TimeseriesVariable"}',
       label: '{{description}} {{metadata.key1}}',
@@ -395,10 +416,11 @@ describe('Datasource Query', () => {
         externalId: 'Timeseries3',
         description: 'test timeseriesC',
         metadata: { key1: 'value1' },
-      }
+      },
     ]);
 
     beforeAll(async () => {
+      jest.clearAllMocks();
       options.intervalMs = ms('1d');
       options.targets = [
         targetA,
@@ -414,11 +436,12 @@ describe('Datasource Query', () => {
       ];
       const listMock = async () => {
         return cloneDeep(tsResponse);
-      }
+      };
       const dataMock = async x => {
-        return getDataqueryResponse(x.data, externalIdPrefix, 0)
-      }
-      backendSrvMock.datasourceRequest = jest.fn()
+        return getDataqueryResponse(x.data, externalIdPrefix, 0);
+      };
+      backendSrvMock.datasourceRequest = jest
+        .fn()
         .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
@@ -431,7 +454,9 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(dataMock)
         .mockImplementationOnce(dataMock)
         .mockImplementationOnce(dataMock)
-     
+        .mockImplementationOnce(dataMock)
+        .mockImplementationOnce(dataMock);
+
       result = await ds.query(options);
     });
     afterAll(() => {
@@ -450,14 +475,14 @@ describe('Datasource Query', () => {
     });
 
     it('should display errors for malformed queries', () => {
-      expect(targetF.error).toBeDefined();
-      expect(targetF.error).not.toHaveLength(0);
-      expect(targetG.error).toBeDefined();
-      expect(targetG.error).not.toHaveLength(0);
-      expect(targetH.error).toBeDefined();
-      expect(targetH.error).not.toHaveLength(0);
-      expect(targetI.error).toBeDefined();
-      expect(targetJ.error).toBeDefined();
+      const failedQueryRefIds = ['H', 'F', 'G', 'J'];
+
+      expect(appEvents.emit).toHaveBeenCalledTimes(4);
+      expect(
+        (appEvents.emit as Mock).mock.calls.find(([_, { refId }]) =>
+          failedQueryRefIds.includes(refId)
+        )
+      );
     });
   });
 
@@ -543,6 +568,7 @@ describe('Datasource Query', () => {
     ]);
 
     beforeAll(async () => {
+      jest.clearAllMocks();
       options.intervalMs = ms('2.5h');
       options.targets = [
         targetA,
@@ -556,16 +582,15 @@ describe('Datasource Query', () => {
         targetI,
         targetJ,
       ];
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(async (data: any) => {
-          if (data.url.includes('/byids') || data.url.includes('timeseries/list')) {
-            return cloneDeep(tsResponse)
-          }  if (data.url.includes('/synthetic/query')) {
-            return getDataqueryResponse(data.data, externalIdPrefix, 0)
-          }
-          throw new Error('no mock')
-        })
+      backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async (data: any) => {
+        if (data.url.includes('/byids') || data.url.includes('timeseries/list')) {
+          return cloneDeep(tsResponse);
+        }
+        if (data.url.includes('/synthetic/query')) {
+          return getDataqueryResponse(data.data, externalIdPrefix, 0);
+        }
+        throw new Error('no mock');
+      });
       result = await ds.query(options);
     });
 
@@ -581,10 +606,14 @@ describe('Datasource Query', () => {
     });
 
     it('should display errors for malformed queries', () => {
-      expect(targetE.error).toBeDefined();
-      expect(targetE.error).not.toHaveLength(0);
-      expect(targetF.error).toBeDefined();
-      expect(targetF.error).not.toHaveLength(0);
+      const failedQueryRefIds = ['E', 'F'];
+
+      expect(appEvents.emit).toHaveBeenCalledTimes(2);
+      expect(
+        (appEvents.emit as Mock).mock.calls.find(([_, { refId }]) =>
+          failedQueryRefIds.includes(refId)
+        )
+      );
     });
   });
   describe('Given multiple "Select Timeseries from Asset" queries in a row', () => {
@@ -656,6 +685,110 @@ describe('Datasource Query', () => {
       for (const result of results) {
         expect(result).toMatchSnapshot();
       }
+    });
+  });
+  describe('filterQueryTargets', () => {
+    const normalTargets = [
+      {
+        target: '',
+        tab: Asset,
+        assetQuery: {
+          target: 'some id',
+        },
+      },
+      {
+        target: 123,
+      },
+    ] as InputQueryTarget[];
+
+    it('should return empty if empty', () => {
+      expect(filterEmptyQueryTargets([])).toEqual([]);
+    });
+
+    it('should filter if target is empty', () => {
+      expect(filterEmptyQueryTargets([null])).toEqual([]);
+    });
+
+    it('should filter if hide == true', () => {
+      expect(filterEmptyQueryTargets([{ hide: true } as QueryTarget])).toEqual([]);
+    });
+
+    it('should filter out empty asset targets', () => {
+      const targets = [
+        {
+          target: '',
+          tab: Custom,
+        },
+        {
+          target: '',
+          tab: Asset,
+          assetQuery: {
+            target: '',
+          },
+        },
+        ...normalTargets,
+      ] as InputQueryTarget[];
+      expect(filterEmptyQueryTargets(targets)).toEqual(normalTargets);
+    });
+
+    it('should filter out empty timeseries targets', () => {
+      const targets = [
+        {
+          target: '',
+          tab: 'Timeseries',
+        },
+        {
+          target: '',
+        },
+        ...normalTargets,
+      ] as InputQueryTarget[];
+      expect(filterEmptyQueryTargets(targets)).toEqual(normalTargets);
+    });
+
+    it('should not filter valid targets', () => {
+      expect(filterEmptyQueryTargets(normalTargets)).toEqual(normalTargets);
+    });
+
+    it('should filter out all empty (different types)', async () => {
+      const emptyTimeseries: Partial<InputQueryTarget> = {
+        target: '',
+        tab: Timeseries,
+        assetQuery: {
+          target: '',
+          timeseries: [],
+          includeSubtrees: false,
+          func: '',
+        },
+      };
+      const emptyAsset: Partial<InputQueryTarget> = {
+        ...emptyTimeseries,
+        target: '',
+        tab: Asset,
+      };
+      const emptyCustom: Partial<InputQueryTarget> = {
+        ...emptyTimeseries,
+        tab: Custom,
+        target: undefined,
+      };
+      const result = await filterEmptyQueryTargets([
+        emptyTimeseries,
+        emptyAsset,
+        emptyCustom,
+      ] as InputQueryTarget[]);
+      expect(result).toEqual([]);
+    });
+  });
+  describe('replaceVariable', () => {
+    const singleValueQuery = `events{assetIds=[$AssetVariable]}`;
+    const multiValueQuery = `events{assetIds=[\${MultiValue:csv}]}`;
+    const multiVariableQuery = `events{assetIds=[$MultiValue], type=$Type, subtype=$Type}`;
+
+    it('should replace variables properly', () => {
+      expect(ds.replaceVariable(singleValueQuery)).toEqual(`events{assetIds=[123]}`);
+      expect(ds.replaceVariable(multiValueQuery)).toEqual(`events{assetIds=[123,456]}`);
+      expect(ds.replaceVariable(multiVariableQuery)).toEqual(
+        `events{assetIds=[123,456], type="type_or_subtype", subtype="type_or_subtype"}`
+      );
     });
   });
 });

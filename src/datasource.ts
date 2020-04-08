@@ -1,9 +1,11 @@
+import { isArray } from 'lodash';
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
 import { getRequestId, applyFilters } from './utils';
 import { parse } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import { appEvents } from 'grafana/app/core/core';
 import {
   CogniteDataSourceSettings,
   DataQueryRequestItem,
@@ -40,6 +42,8 @@ import {
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
+import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
+
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
@@ -60,7 +64,7 @@ export default class CogniteDatasource {
   /**
    * used by panels to get timeseries data
    */
-  public async query(options: QueryOptions): Promise<QueryResponse> {
+  async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
 
@@ -78,7 +82,7 @@ export default class CogniteDatasource {
     return { data: responseData };
   }
 
-  public async fetchTimeseriesForTargets(
+  async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions
   ): Promise<MetaResponses> {
@@ -87,25 +91,28 @@ export default class CogniteDatasource {
         const items = await this.getDataQueryRequestItems(target, options);
         return { items, target };
       } catch (e) {
-        target.error = e.message;
+        appEvents.emit(failedResponseEvent, { refId: target.refId, error: e.message });
+        return null;
       }
     });
     const queryData = await Promise.all(itemsForTargetsPromises);
     const filteredQueryData = queryData.filter(data => data && data.items && data.items.length);
 
     const queries = formQueriesForTargets(filteredQueryData, options);
-    const metadatas = await formMetadatasForTargets(
-      filteredQueryData,
-      options,
-      this.connector,
-      this.templateSrv
-    );
+    let metadata = await formMetadatasForTargets(filteredQueryData, options, this.connector);
+    metadata = metadata.map(({ target, labels: labelsWithVariables }) => {
+      const labels = labelsWithVariables.map(label =>
+        this.replaceVariable(label, options.scopedVars)
+      );
+      return { labels, target };
+    });
 
     return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
       queries,
-      metadatas,
+      metadata,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
+
         return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>({
           data,
           path: `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`,
@@ -128,24 +135,29 @@ export default class CogniteDatasource {
         return [{ id: tsId }];
       }
       case Asset: {
+        /**
+         *  todo: here target.assetQuery.timeseries mutability is used
+         *  to reuse timeseries data during label generation for Asset tab
+         *  need to be redone in functional way
+         **/
         await this.findAssetTimeseries(target, options);
         return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        const templatedExpr = this.templateSrv.replace(expr.trim(), options.scopedVars);
+        const templatedExpr = this.replaceVariable(expr, options.scopedVars);
         return formQueriesForExpression(templatedExpr, target, this.connector);
       }
     }
   }
 
-  private replaceVariable(query: string): string {
-    return this.templateSrv.replace(query);
+  replaceVariable(query: string, scopedVars?): string {
+    return this.templateSrv.replace(query.trim(), scopedVars);
   }
 
   /**
    * used by dashboards to get annotations (events)
    */
-  public async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
+  async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const {
       range,
       annotation,
@@ -188,7 +200,7 @@ export default class CogniteDatasource {
   /**
    * used by query editor to search for assets/timeseries
    */
-  public async getOptionsForDropdown(
+  async getOptionsForDropdown(
     query: string,
     type?: string,
     options?: any
@@ -220,11 +232,10 @@ export default class CogniteDatasource {
   }
 
   async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
-    // replace variables with their values
-    const assetId = this.templateSrv.replace(target.assetQuery.target, options.scopedVars);
+    const assetId = this.replaceVariable(target.assetQuery.target, options.scopedVars);
     const filter = target.assetQuery.includeSubtrees
       ? {
-          assetSubtreeIds: [{ id: assetId }],
+          assetSubtreeIds: [{ id: Number(assetId) }],
         }
       : {
           assetIds: [assetId],
@@ -248,8 +259,11 @@ export default class CogniteDatasource {
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, target, this.connector);
     if (ts.length === limit) {
-      target.warning =
+      const warning =
         "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+
+      appEvents.emit(datapointsLimitWarningEvent, { warning, refId: target.refId });
+
       ts.splice(-1);
     }
     target.assetQuery.timeseries = ts.map(ts => {
@@ -314,15 +328,6 @@ export default class CogniteDatasource {
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
-  // we cannot just map them because it's used for visual feedback
-  // TODO: fix it when we move to react?
-  targets.forEach(target => {
-    if (target) {
-      target.error = '';
-      target.warning = '';
-    }
-  });
-
   return targets.filter(target => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
@@ -344,13 +349,12 @@ function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
     .forEach(({ error, metadata }) => {
-      let errmsg: string;
-      if (error.data && error.data.error) {
-        errmsg = `[${error.status} ERROR] ${error.data.error.message}`;
-      } else {
-        errmsg = 'Unknown error';
-      }
-      metadata.target.error = errmsg;
+      const message =
+        error.data && error.data.error
+          ? `[${error.status} ERROR] ${error.data.error.message}`
+          : 'Unknown error';
+
+      appEvents.emit(failedResponseEvent, { refId: metadata.target.refId, error: message });
     });
 }
 
@@ -363,13 +367,25 @@ export function getRange(range: TimeRange): Tuple<number> {
 function showTooMuchDatapointsWarningIfNeeded(
   responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]
 ) {
-  responses.forEach(({ result, metadata }) => {
-    const limit = result.config.data.limit;
-    const items = result.data.items;
-    const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
-    if (hasMorePoints) {
-      metadata.target.warning =
+  responses.forEach(
+    ({
+      result: {
+        data: { items },
+        config: {
+          data: { limit },
+        },
+      },
+      metadata: {
+        target: { refId },
+      },
+    }) => {
+      const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
+      const warning =
         '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+
+      if (hasMorePoints) {
+        appEvents.emit(datapointsLimitWarningEvent, { refId, warning });
+      }
     }
-  });
+  );
 }

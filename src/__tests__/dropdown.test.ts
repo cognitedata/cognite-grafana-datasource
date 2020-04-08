@@ -7,12 +7,11 @@ jest.mock('../cache');
 const { ds, backendSrvMock } = getMockedDataSource();
 
 function getTimeseriesResponse(items) {
-  const response = {
+  return {
     data: {
       items,
     },
   };
-  return response;
 }
 
 const assetsResponse = {

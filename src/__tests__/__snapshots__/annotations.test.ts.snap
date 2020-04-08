@@ -113,3 +113,25 @@ Object {
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
 }
 `;
+
+exports[`Annotations Query Given an annotation query with variables should generate the correct request 2`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        123,
+        456,
+      ],
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
