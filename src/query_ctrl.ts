@@ -1,9 +1,17 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
+import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
-import { parse } from './parser/ts'
+import {
+  Tab,
+  QueryTarget,
+  TimeSeriesResponseItem,
+  QueryDatapointsLimitWarning,
+  QueryRequestError,
+} from './types';
+import { parse } from './parser/ts';
+import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -72,7 +80,22 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.isAllSelected =
       this.target.assetQuery.timeseries &&
       this.target.assetQuery.timeseries.every(ts => ts.selected);
+
+    appEvents.on(failedResponseEvent, this.handleError);
+    appEvents.on(datapointsLimitWarningEvent, this.handleWarning);
   }
+
+  handleWarning = ({ refId, warning }: QueryDatapointsLimitWarning) => {
+    if (this.target.refId === refId) {
+      this.target.warning = warning;
+    }
+  };
+
+  handleError = ({ refId, error }: QueryRequestError) => {
+    if (this.target.refId === refId) {
+      this.target.error = error;
+    }
+  };
 
   getOptions(query: string, type: string) {
     return this.datasource.getOptionsForDropdown(query || '', type).then(options => {
@@ -81,18 +104,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
-  onChangeCustom() { // todo: why it doesn't work without this hack?
-    try {
-      parse(this.target.expr);
-      this.target.error = '';
-      this.onChangeInternal();
-    } catch (e) {
-      this.target.error = e.message;
-    }
+  refreshData() {
+    this.refresh(); // Asks the panel to refresh data.
   }
 
-  onChangeInternal() {
-    this.refresh(); // Asks the panel to refresh data.
+  onChangeQuery() {
+    if (this.target.error) {
+      this.target.error = '';
+    }
+    if (this.target.warning) {
+      this.target.warning = '';
+    }
   }
 
   changeTab(index: number) {
@@ -122,5 +144,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
       return `Custom Query: ${this.target.expr} ${this.target.error}`;
     }
     return '';
+  }
+
+  $onDestroy() {
+    appEvents.off(failedResponseEvent, this.handleError);
+    appEvents.off(datapointsLimitWarningEvent, this.handleWarning);
   }
 }

@@ -36,7 +36,7 @@ const parseWith = (parser: Parser, query: string) => {
   }
 
   return result;
-} 
+};
 
 const parseQuery = (query: string): QueryParserResponse => {
   return parseWith(new Parser(compiledGrammar), query);

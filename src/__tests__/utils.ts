@@ -4,8 +4,10 @@ import { DataQueryRequest, QueryTarget } from '../types';
 import ms from 'ms';
 
 const variables = [
-  { name: 'AssetVariable', current: { text: 'asset1', value: '123' } },
+  { name: 'AssetVariable', current: { text: 'asset1', value: 123 } },
   { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
+  { name: 'MultiValue', current: { text: 'asset2', value: [123, 456] } },
+  { name: 'Type', current: { text: 'type', value: '"type_or_subtype"' } },
 ];
 
 export function getDataqueryResponse(
@@ -48,10 +50,14 @@ const getTemplateSrvMock = () =>
     replace: jest.fn((q, options) => {
       let query = q;
       for (const { name, current } of variables) {
-        const varSyntax1 = new RegExp('\\[\\[' + name + '\\]\\]', 'g');
-        const varSyntax2 = new RegExp('\\$' + name, 'g');
+        const varSyntax1 = new RegExp(`\\[\\[${name}\\]\\]`, 'g');
+        const varSyntax2 = new RegExp(`\\$${name}`, 'g');
+        const varSyntax3 = new RegExp(
+          `\\$\\{${name}:(json|csv|glob|regex|pipe|distributed|lucene|percentencode|singlequote|doublequote|sqlstring)}`,
+          'g');
         query = query.replace(varSyntax1, current.value);
         query = query.replace(varSyntax2, current.value);
+        query = query.replace(varSyntax3, current.value);
       }
       return query;
     }),

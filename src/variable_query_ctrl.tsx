@@ -59,8 +59,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
 
       this.props.onChange({ query });
     } catch ({ message }) {
-      const error = message;
-      this.setState({ error });
+      this.setState({ error: message });
       this.props.onChange({ query: '' });
     }
   };

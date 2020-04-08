@@ -56,15 +56,19 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx,js,json,css}": [
-      "tslint -c tslint.json --fix",
-      "prettier --write",
-      "git add"
-    ],
-    "*.{md}": [
-      "prettier --write",
-      "git add"
-    ],
-    "ignore": ["*/**/grammar.ts"]
+    "linters": {
+      "*.{ts,tsx,js,json,css}": [
+        "tslint -c tslint.json --fix",
+        "prettier --write",
+        "git add"
+      ],
+      "*.{md}": [
+        "prettier --write",
+        "git add"
+      ]
+    },
+    "ignore": [
+      "*/**/grammar.ts"
+    ]
   }
 }

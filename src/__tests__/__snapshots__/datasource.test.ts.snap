@@ -21,7 +21,7 @@ Object {
     "filter": Object {
       "assetSubtreeIds": Array [
         Object {
-          "id": "456",
+          "id": 456,
         },
       ],
     },
@@ -68,7 +68,7 @@ Object {
     "filter": Object {
       "assetSubtreeIds": Array [
         Object {
-          "id": "000",
+          "id": 0,
         },
       ],
     },
@@ -730,6 +730,18 @@ Object {
     Object {
       "datapoints": Array [],
       "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "{{description}} {{metadata.key1}}",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "{{description}} {{metadata.key1}}",
     },
   ],
 }
@@ -1613,7 +1625,7 @@ Object {
     "filter": Object {
       "assetSubtreeIds": Array [
         Object {
-          "id": "123",
+          "id": 123,
         },
       ],
     },
@@ -1648,7 +1660,7 @@ Object {
     "filter": Object {
       "assetSubtreeIds": Array [
         Object {
-          "id": "456",
+          "id": 456,
         },
       ],
     },
