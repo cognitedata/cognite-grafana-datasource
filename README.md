@@ -90,9 +90,12 @@ If you want to get a few timeseries associated with an asset
 
 If you want more fine-grained control.
 
-- First select an asset (with/without subassets) to pull timeseries from, or use a template variable with `$Variable` or `[[Variable]]`.
-- Then filter on these timeseries. Click on the help icon for more details about the syntax.
-- If you want to apply custom functions to the timeseries (e.g. for unit conversions), simply add your functions around `timeseries{}[]` -> For example: `(timeseries{name=~"Test.*"}[avg] + 10) / 5` 
+- To reference a specific timeseries, use  `ts{id=ID}`, `ts{externalId=EXTERNAL_ID}` or `ts{id=ID, aggregate=AGGREGATE, granularity=GRANULARITY}`.
+*Example*: `ts{id=12345678}`
+- You can use various filters and template variables.
+*Example*: `ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=true}`
+- If you want to apply custom functions to the timeseries (e.g. for unit conversions), simply add your functions around `ts{}`.
+*For example*: `(ts{name=~'Test.*', aggregate='average'} + 10) / 5` 
     - Click on the info icon next to the text box to see more examples
 
 ![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/img4.png)
