@@ -30,7 +30,7 @@ const help = (
     used to strict prop comparing and matched value will be excluded
     <br />
     Example:{' '}
-    <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'} assetSubtreeIds=[{id=123}]}`}</code>
+    <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'}, assetSubtreeIds=[{id=123}]}`}</code>
   </pre>
 );
 
