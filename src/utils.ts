@@ -13,9 +13,9 @@ export function ms2String(milliseconds: number): string {
 }
 
 export function timeseriesHash(options: QueryOptions, target: QueryTarget) {
-  return `${options.dashboardId}_${options.panelId}_${target.refId}_${
-    target.assetQuery.templatedTarget
-  }_${target.assetQuery.includeSubtrees}`;
+  return `${options.dashboardId}_${options.panelId}_${target.refId}_${target.assetQuery.target}_${
+    target.assetQuery.includeSubtrees
+  }`;
 }
 
 // used for generating the options.requestId
@@ -35,15 +35,11 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
   const valueToFilter = get(obj, path, null);
   const regex = new RegExp(`^${value}$`);
 
-  if (valueToFilter === null) {
-    return false;
-  }
-
   switch (filter) {
     case FilterType.RegexEquals:
-      return valueToFilter.match(regex);
+      return regex.test(valueToFilter);
     case FilterType.RegexNotEquals:
-      return !valueToFilter.match(regex);
+      return !regex.test(valueToFilter);
     case FilterType.NotEquals:
       return value !== valueToFilter;
   }

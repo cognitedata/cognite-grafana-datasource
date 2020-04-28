@@ -58,10 +58,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     assetQuery: {
       target: '',
       old: undefined,
-      timeseries: [],
       includeSubtrees: false,
-      func: '',
-      templatedTarget: '',
     },
   };
   isAllSelected: boolean;
