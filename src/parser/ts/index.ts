@@ -447,19 +447,21 @@ type StringMap = { [key: string]: string };
 
 type STSQuery = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
 
-type STSValue = string | number | number[] | string[] | STSFilter[] | STSFilter[][];
+type STSValue = STSPrimitiveValue | STSPrimitiveValue[] | STSFilter[] | STSFilter[][];
+
+type STSPrimitiveValue = string | number | boolean;
 
 export type STSFilter = STSClientFilter | STSServerFilter;
 
 export type STSClientFilter = {
   path: string;
   filter: Exclude<FilterType, '='>;
-  value: string;
+  value: STSPrimitiveValue;
 };
 
 export type STSServerFilter = {
   path: string;
-  filter: Extract<FilterType, '='>;
+  filter: FilterType;
   value: STSValue;
 };
 

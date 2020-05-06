@@ -139,27 +139,28 @@ type -> "ts" {% id %}
 condition -> curl CURL {% emptyArray %}
   | curl pair (comma pair):* CURL {% extractConditionToArray %}
 
-filter -> "!=" {% id %}
-  | "=~" {% id %}
+regexp -> "=~" {% id %}
   | "!~" {% id %}
 equals -> "=" {% id %}
+not_equals -> "!=" {% id %}
 prop_name -> [A-Za-z0-9_]:+ {% join %}
 
 string -> sqstring {% id %}
   | dqstring {% id %}
+  | variable {% id %}
 number -> decimal {% id %}
 array -> sqr SQR {% emptyArray %}
   | sqr value (comma value):* SQR {% extractArray %}
 object -> curl CURL {% emptyObject %}
   | curl pair (comma pair):* CURL {% extractObject %}
 pair -> prop_name equals value
-  | prop_name filter string
-value ->
-  object {% id %}
+  | prop_name not_equals primitive
+  | prop_name regexp string
+value -> object {% id %}
   | array {% id %}
-  | number {% id %}
+  | primitive {% id %}
+primitive -> number {% id %}
   | string {% id %}
-  | variable {% id %}
   | "true" {% () => true %}
   | "false" {% () => false %}
   | "null" {% () => null %}

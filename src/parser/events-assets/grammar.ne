@@ -51,10 +51,10 @@ type -> "assets" {% id %}
 condition -> "{" "}" {% emptyArray %}
   | "{" _ pair _ ("," _ pair _):* _ "}" {% extractConditionToArray %}
 
-filter -> "!=" {% id %}
-  | "=~" {% id %}
+regexp -> "=~" {% id %}
   | "!~" {% id %}
 equals -> "=" {% id %}
+not_equals -> "!=" {% id %}
 prop_name -> [A-Za-z0-9_]:+ {% join %}
 
 string -> sqstring {% id %}
@@ -65,11 +65,12 @@ array -> "[" _ "]" {% emptyArray %}
 object -> "{" _ "}" {% emptyObject %}
 	| "{" _ pair _ ("," _ pair _):* _ "}" {% extractObject %}
 pair -> prop_name _ equals _ value {% d => [d[0], d[4]] %}
- | prop_name _ filter _ string {% d => [d[0], d[2], d[4]] %}
-value ->
-    object {% id %}
+  | prop_name _ regexp _ string {% d => [d[0], d[2], d[4]] %}
+  | prop_name _ not_equals _ primitive {% d => [d[0], d[2], d[4]] %}
+value -> object {% id %}
   | array {% id %}
-  | number {% id %}
+  | primitive {% id %}
+primitive -> number {% id %}
   | string {% id %}
   | "true" {% d => true %}
   | "false" {% d => false %}
