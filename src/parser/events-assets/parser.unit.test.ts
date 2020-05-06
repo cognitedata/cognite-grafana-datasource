@@ -110,6 +110,19 @@ describe('Query parser', () => {
       });
     });
 
+    it('should parse strict inequality filters with numbers', () => {
+      const query = `assets{id!=1}`;
+      const {
+        filters: [filter],
+      } = parse(query);
+
+      expect(filter).toEqual({
+        path: 'id',
+        filter: '!=',
+        value: 1,
+      });
+    });
+
     it('should produce right number of filters', () => {
       const query = `assets{metadata={key1='value1', key2!~'value2', key2!='value', key2=~'value'}}`;
 

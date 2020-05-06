@@ -1,3 +1,5 @@
+import { STSClientFilter } from './ts';
+
 export const FilterType = {
   RegexNotEquals: '!~' as FilterType,
   RegexEquals: '=~' as FilterType,
@@ -5,10 +7,6 @@ export const FilterType = {
   Equals: '=' as FilterType,
 };
 export type FilterType = '!~' | '=~' | '!=' | '=';
-export interface QueryFilter {
-  filter: FilterType;
-  value: string;
-}
 
 export enum QueryParserTypes {
   assets = 'assets',
@@ -23,9 +21,7 @@ export interface QueryParserResponse extends QueryParserType {
   query: QueryCondition[];
 }
 
-export interface ParsedFilter extends QueryFilter {
-  path: string;
-}
+export type ParsedFilter = STSClientFilter;
 
 export interface QueryCondition {
   [key: string]: any;
