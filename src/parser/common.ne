@@ -1,3 +1,22 @@
+@builtin "number.ne"
+
+@{%
+const formatQuery = ([type, query]) => ({type, query});
+const emptyObject = () => ({});
+const emptyArray = () => ([]);
+%}
+
+# comparators and props
+regexp -> "=~" {% id %}
+  | "!~" {% id %}
+equals -> "=" {% id %}
+not_equals -> "!=" {% id %}
+prop_name -> [A-Za-z0-9_]:+ {% join %}
+
+# number
+number -> decimal {% id %}
+
+# strings
 dqstring -> "\"" dstrchar:* "\"" {% function(d) {return d[1].join(""); } %}
 sqstring -> "'"  sstrchar:* "'"  {% function(d) {return d[1].join(""); } %}
 
@@ -22,3 +41,6 @@ strescape -> ["/bfnrt] {% id %}
         return d.join("");
     }
 %}
+
+# space
+_ -> [\s]:*  {% null %}

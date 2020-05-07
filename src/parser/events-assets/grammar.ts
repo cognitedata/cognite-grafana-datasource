@@ -4,8 +4,12 @@
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
 
-const join = ([d]) => d.join('');
 const formatQuery = ([type, query]) => ({type, query});
+const emptyObject = () => ({});
+const emptyArray = () => ([]);
+
+
+const join = ([d]) => d.join('');
 const extractPair = d => {
   return d.length > 2
 	? {[d[0]+d[1]]:{key: d[0], filter: d[1], value: d[2]}}
@@ -39,9 +43,6 @@ const extractArray = d => {
 
   return output;
 }
-
-const emptyObject = () => ({});
-const emptyArray = () => ([]);
 
 interface NearleyToken {  value: any;
   [key: string]: any;
@@ -158,6 +159,17 @@ const grammar: Grammar = {
             );
         }
         },
+    {"name": "regexp$string$1", "symbols": [{"literal":"="}, {"literal":"~"}], "postprocess": (d) => d.join('')},
+    {"name": "regexp", "symbols": ["regexp$string$1"], "postprocess": id},
+    {"name": "regexp$string$2", "symbols": [{"literal":"!"}, {"literal":"~"}], "postprocess": (d) => d.join('')},
+    {"name": "regexp", "symbols": ["regexp$string$2"], "postprocess": id},
+    {"name": "equals", "symbols": [{"literal":"="}], "postprocess": id},
+    {"name": "not_equals$string$1", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "not_equals", "symbols": ["not_equals$string$1"], "postprocess": id},
+    {"name": "prop_name$ebnf$1", "symbols": [/[A-Za-z0-9_]/]},
+    {"name": "prop_name$ebnf$1", "symbols": ["prop_name$ebnf$1", /[A-Za-z0-9_]/], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "prop_name", "symbols": ["prop_name$ebnf$1"], "postprocess": join},
+    {"name": "number", "symbols": ["decimal"], "postprocess": id},
     {"name": "dqstring$ebnf$1", "symbols": []},
     {"name": "dqstring$ebnf$1", "symbols": ["dqstring$ebnf$1", "dstrchar"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "dqstring", "symbols": [{"literal":"\""}, "dqstring$ebnf$1", {"literal":"\""}], "postprocess": function(d) {return d[1].join(""); }},
@@ -182,6 +194,9 @@ const grammar: Grammar = {
             return d.join("");
         }
         },
+    {"name": "_$ebnf$1", "symbols": []},
+    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": null},
     {"name": "rule", "symbols": ["type", "condition"], "postprocess": formatQuery},
     {"name": "type$string$1", "symbols": [{"literal":"a"}, {"literal":"s"}, {"literal":"s"}, {"literal":"e"}, {"literal":"t"}, {"literal":"s"}], "postprocess": (d) => d.join('')},
     {"name": "type", "symbols": ["type$string$1"], "postprocess": id},
@@ -192,19 +207,8 @@ const grammar: Grammar = {
     {"name": "condition$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "_", "pair", "_"]},
     {"name": "condition$ebnf$1", "symbols": ["condition$ebnf$1", "condition$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "condition", "symbols": [{"literal":"{"}, "_", "pair", "_", "condition$ebnf$1", "_", {"literal":"}"}], "postprocess": extractConditionToArray},
-    {"name": "regexp$string$1", "symbols": [{"literal":"="}, {"literal":"~"}], "postprocess": (d) => d.join('')},
-    {"name": "regexp", "symbols": ["regexp$string$1"], "postprocess": id},
-    {"name": "regexp$string$2", "symbols": [{"literal":"!"}, {"literal":"~"}], "postprocess": (d) => d.join('')},
-    {"name": "regexp", "symbols": ["regexp$string$2"], "postprocess": id},
-    {"name": "equals", "symbols": [{"literal":"="}], "postprocess": id},
-    {"name": "not_equals$string$1", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "not_equals", "symbols": ["not_equals$string$1"], "postprocess": id},
-    {"name": "prop_name$ebnf$1", "symbols": [/[A-Za-z0-9_]/]},
-    {"name": "prop_name$ebnf$1", "symbols": ["prop_name$ebnf$1", /[A-Za-z0-9_]/], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "prop_name", "symbols": ["prop_name$ebnf$1"], "postprocess": join},
     {"name": "string", "symbols": ["sqstring"], "postprocess": id},
     {"name": "string", "symbols": ["dqstring"], "postprocess": id},
-    {"name": "number", "symbols": ["decimal"], "postprocess": id},
     {"name": "array", "symbols": [{"literal":"["}, "_", {"literal":"]"}], "postprocess": emptyArray},
     {"name": "array$ebnf$1", "symbols": []},
     {"name": "array$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "_", "value", "_"]},
@@ -228,10 +232,7 @@ const grammar: Grammar = {
     {"name": "primitive$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": (d) => d.join('')},
     {"name": "primitive", "symbols": ["primitive$string$2"], "postprocess": d => false},
     {"name": "primitive$string$3", "symbols": [{"literal":"n"}, {"literal":"u"}, {"literal":"l"}, {"literal":"l"}], "postprocess": (d) => d.join('')},
-    {"name": "primitive", "symbols": ["primitive$string$3"], "postprocess": d => null},
-    {"name": "_$ebnf$1", "symbols": []},
-    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": null}
+    {"name": "primitive", "symbols": ["primitive$string$3"], "postprocess": d => null}
   ],
   ParserStart: "rule",
 };

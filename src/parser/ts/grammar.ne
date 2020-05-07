@@ -1,12 +1,10 @@
 @preprocessor typescript
 
-@builtin "number.ne"
-@builtin "string.ne"
+@include "../common.ne"
 
 @{%
 const join = ([d]) => joinArr(d);
 const joinArr = (d) => d.join('');
-const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return {
 	  path: d[0],
@@ -55,7 +53,6 @@ const extractArray = d => {
 
   return output;
 }
-
 const extractOperationsArray = d => {
   const output = [d[0]];
 
@@ -66,7 +63,6 @@ const extractOperationsArray = d => {
 
   return output;
 }
-
 const extractCommaSeparatedArray = d => {
   const output = [d[0]];
 
@@ -75,36 +71,27 @@ const extractCommaSeparatedArray = d => {
   }
   return output;
 }
-
 const extractMapFuncArgs = d => {
   return d.filter(d => d !== ',')
 }
-
 const extract2Elements = d => {
 	return [d[0], d[2]]
 }
-
 const extractOperator = ([s, operator, S]) => {
   return { operator }
 }
-
 const extractNumber = ([constant]) => {
   return { constant }
 }
-
 const extractPI = d => {
   return { constant: d[0] + d[2] }
 }
-
 const extractFunction = ([func, br, args, BR]) => {
   if (args && args.length) {
     return { func: func || '', args }
   }
   return { func }
 }
-
-const emptyObject = () => ({});
-const emptyArray = () => ([]);
 %}
 
 query -> _ trimmed _ {% d => d[1] %}
@@ -139,16 +126,9 @@ type -> "ts" {% id %}
 condition -> curl CURL {% emptyArray %}
   | curl pair (comma pair):* CURL {% extractConditionToArray %}
 
-regexp -> "=~" {% id %}
-  | "!~" {% id %}
-equals -> "=" {% id %}
-not_equals -> "!=" {% id %}
-prop_name -> [A-Za-z0-9_]:+ {% join %}
-
 string -> sqstring {% id %}
   | dqstring {% id %}
   | variable {% id %}
-number -> decimal {% id %}
 array -> sqr SQR {% emptyArray %}
   | sqr value (comma value):* SQR {% extractArray %}
 object -> curl CURL {% emptyObject %}
@@ -196,4 +176,3 @@ curl ->  _ "{" {% null %}
 CURL ->  _ "}" {% null %}
 sqr ->  _ "[" {% null %}
 SQR ->  _ "]" {% null %}
-_ -> [\s]:*  {% null %}

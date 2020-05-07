@@ -1,11 +1,9 @@
 @preprocessor typescript
 
-@builtin "number.ne"
-@include "strings.ne"
+@include "../common.ne"
 
 @{%
 const join = ([d]) => d.join('');
-const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return d.length > 2
 	? {[d[0]+d[1]]:{key: d[0], filter: d[1], value: d[2]}}
@@ -39,9 +37,6 @@ const extractArray = d => {
 
   return output;
 }
-
-const emptyObject = () => ({});
-const emptyArray = () => ([]);
 %}
 
 rule -> type condition {% formatQuery %}
@@ -51,15 +46,8 @@ type -> "assets" {% id %}
 condition -> "{" "}" {% emptyArray %}
   | "{" _ pair _ ("," _ pair _):* _ "}" {% extractConditionToArray %}
 
-regexp -> "=~" {% id %}
-  | "!~" {% id %}
-equals -> "=" {% id %}
-not_equals -> "!=" {% id %}
-prop_name -> [A-Za-z0-9_]:+ {% join %}
-
 string -> sqstring {% id %}
   | dqstring {% id %}
-number -> decimal {% id %}
 array -> "[" _ "]" {% emptyArray %}
   | "[" _ value _ ("," _ value _):* _ "]" {% extractArray %}
 object -> "{" _ "}" {% emptyObject %}
@@ -75,4 +63,3 @@ primitive -> number {% id %}
   | "true" {% d => true %}
   | "false" {% d => false %}
   | "null" {% d => null %}
-_ -> [\s]:*  {% null %}
