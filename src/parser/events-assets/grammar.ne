@@ -1,7 +1,6 @@
 @preprocessor typescript
 
 @builtin "number.ne"
-@builtin "string.ne"
 
 @{%
 const join = ([d]) => d.join('');
@@ -76,3 +75,28 @@ primitive -> number {% id %}
   | "false" {% d => false %}
   | "null" {% d => null %}
 _ -> [\s]:*  {% null %}
+
+dqstring -> "\"" dstrchar:* "\"" {% function(d) {return d[1].join(""); } %}
+sqstring -> "'"  sstrchar:* "'"  {% function(d) {return d[1].join(""); } %}
+
+dstrchar -> [\\] {% d => "\\" %}
+    | [^\\"\n] {% id %}
+    | "\\" strescape {%
+    function(d) {
+        return JSON.parse("\""+d.join("")+"\"");
+    }
+%}
+
+sstrchar -> [\\] {% d => "\\" %}
+    | [^\\'\n] {% id %}
+    | "\\" strescape
+        {% function(d) { return JSON.parse("\""+d.join("")+"\""); } %}
+    | "\\'"
+        {% function(d) {return "'"; } %}
+
+strescape -> ["/bfnrt] {% id %}
+    | "u" [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] {%
+    function(d) {
+        return d.join("");
+    }
+%}

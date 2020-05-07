@@ -240,7 +240,7 @@ const grammar: Grammar = {
     {"name": "sstrchar", "symbols": [{"literal":"\\"}, "strescape"], "postprocess": function(d) { return JSON.parse("\""+d.join("")+"\""); }},
     {"name": "sstrchar$string$1", "symbols": [{"literal":"\\"}, {"literal":"'"}], "postprocess": (d) => d.join('')},
     {"name": "sstrchar", "symbols": ["sstrchar$string$1"], "postprocess": function(d) {return "'"; }},
-    {"name": "strescape", "symbols": [/["\\\/bfnrt]/], "postprocess": id},
+    {"name": "strescape", "symbols": [/["\\/bfnrt]/], "postprocess": id},
     {"name": "strescape", "symbols": [{"literal":"u"}, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/], "postprocess": 
         function(d) {
             return d.join("");

@@ -149,5 +149,64 @@ describe('Query parser', () => {
 
       expect(parsedWithSpaces).toEqual(parsedWithoutSpaces);
     });
+    it('should parse escape characters in single quoted string', () => {
+      const querySBS = String.raw`assets{metadata={key1!~'\value2 \d \. - \w+', key2!~"\value2 \d \. - \w+"}}`;
+      const queryDBS = String.raw`assets{metadata={key1=~'\\value2', key2=~"\\value2"}}`;
+      const escapeQuote = String.raw`assets{metadata={key1=~'\\value\'2', key2=~"\\value\"2"}}`;
+      const escapeQuoteBS = String.raw`assets{metadata={key1=~'\\value\\'2', key2=~"\\value\\"2"}}`;
+      const {
+        filters: [filterSBS1, filterSBS2],
+      } = parse(querySBS);
+      const {
+        filters: [filterDBS1, filterDBS2],
+      } = parse(queryDBS);
+      const {
+        filters: [filterEscapeQuote1, filterEscapeQuote2],
+      } = parse(escapeQuote);
+      const {
+        filters: [filterEscapeQuoteBS1, filterEscapeQuoteBS2],
+      } = parse(escapeQuoteBS);
+
+      expect(filterSBS1).toEqual({
+        path: 'metadata.key1',
+        filter: '!~',
+        value: String.raw`\value2 \d \. - \w+`,
+      });
+      expect(filterSBS2).toEqual({
+        path: 'metadata.key2',
+        filter: '!~',
+        value: String.raw`\value2 \d \. - \w+`,
+      });
+      expect(filterDBS1).toEqual({
+        path: 'metadata.key1',
+        filter: '=~',
+        value: String.raw`\\value2`,
+      });
+      expect(filterDBS2).toEqual({
+        path: 'metadata.key2',
+        filter: '=~',
+        value: String.raw`\\value2`,
+      });
+      expect(filterEscapeQuote1).toEqual({
+        path: 'metadata.key1',
+        filter: '=~',
+        value: String.raw`\\value'2`,
+      });
+      expect(filterEscapeQuote2).toEqual({
+        path: 'metadata.key2',
+        filter: '=~',
+        value: String.raw`\\value"2`,
+      });
+      expect(filterEscapeQuoteBS1).toEqual({
+        path: 'metadata.key1',
+        filter: '=~',
+        value: String.raw`\\value\'2`,
+      });
+      expect(filterEscapeQuoteBS2).toEqual({
+        path: 'metadata.key2',
+        filter: '=~',
+        value: String.raw`\\value\"2`,
+      });
+    });
   });
 });
