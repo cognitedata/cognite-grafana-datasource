@@ -44,3 +44,13 @@ strescape -> ["/bfnrt] {% id %}
 
 # space
 _ -> [\s]:*  {% null %}
+
+# complex tokens
+value -> object {% id %}
+  | array {% id %}
+  | primitive {% id %}
+primitive -> number {% id %}
+  | string {% id %}
+  | "true" {% () => true %}
+  | "false" {% () => false %}
+  | "null" {% () => null %}

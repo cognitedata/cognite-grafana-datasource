@@ -55,11 +55,3 @@ object -> "{" _ "}" {% emptyObject %}
 pair -> prop_name _ equals _ value {% d => [d[0], d[4]] %}
   | prop_name _ regexp _ string {% d => [d[0], d[2], d[4]] %}
   | prop_name _ not_equals _ primitive {% d => [d[0], d[2], d[4]] %}
-value -> object {% id %}
-  | array {% id %}
-  | primitive {% id %}
-primitive -> number {% id %}
-  | string {% id %}
-  | "true" {% d => true %}
-  | "false" {% d => false %}
-  | "null" {% d => null %}

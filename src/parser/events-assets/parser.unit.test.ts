@@ -150,10 +150,11 @@ describe('Query parser', () => {
       expect(parsedWithSpaces).toEqual(parsedWithoutSpaces);
     });
     it('should parse escape characters in single quoted string', () => {
-      const querySBS = String.raw`assets{metadata={key1!~'\value2 \d \. - \w+', key2!~"\value2 \d \. - \w+"}}`;
-      const queryDBS = String.raw`assets{metadata={key1=~'\\value2', key2=~"\\value2"}}`;
-      const escapeQuote = String.raw`assets{metadata={key1=~'\\value\'2', key2=~"\\value\"2"}}`;
-      const escapeQuoteBS = String.raw`assets{metadata={key1=~'\\value\\'2', key2=~"\\value\\"2"}}`;
+      const { raw: r } = String;
+      const querySBS = r`assets{metadata={key1!~'\value2 \d \. - \w+', key2!~"\value2 \d \. - \w+"}}`;
+      const queryDBS = r`assets{metadata={key1=~'\\value2', key2=~"\\value2"}}`;
+      const escapeQuote = r`assets{metadata={key1=~'\\value\'2', key2=~"\\value\"2"}}`;
+      const escapeQuoteBS = r`assets{metadata={key1=~'\\value\\'2', key2=~"\\value\\"2"}}`;
       const {
         filters: [filterSBS1, filterSBS2],
       } = parse(querySBS);
@@ -170,42 +171,42 @@ describe('Query parser', () => {
       expect(filterSBS1).toEqual({
         path: 'metadata.key1',
         filter: '!~',
-        value: String.raw`\value2 \d \. - \w+`,
+        value: r`\value2 \d \. - \w+`,
       });
       expect(filterSBS2).toEqual({
         path: 'metadata.key2',
         filter: '!~',
-        value: String.raw`\value2 \d \. - \w+`,
+        value: r`\value2 \d \. - \w+`,
       });
       expect(filterDBS1).toEqual({
         path: 'metadata.key1',
         filter: '=~',
-        value: String.raw`\\value2`,
+        value: r`\\value2`,
       });
       expect(filterDBS2).toEqual({
         path: 'metadata.key2',
         filter: '=~',
-        value: String.raw`\\value2`,
+        value: r`\\value2`,
       });
       expect(filterEscapeQuote1).toEqual({
         path: 'metadata.key1',
         filter: '=~',
-        value: String.raw`\\value'2`,
+        value: r`\\value'2`,
       });
       expect(filterEscapeQuote2).toEqual({
         path: 'metadata.key2',
         filter: '=~',
-        value: String.raw`\\value"2`,
+        value: r`\\value"2`,
       });
       expect(filterEscapeQuoteBS1).toEqual({
         path: 'metadata.key1',
         filter: '=~',
-        value: String.raw`\\value\'2`,
+        value: r`\\value\'2`,
       });
       expect(filterEscapeQuoteBS2).toEqual({
         path: 'metadata.key2',
         filter: '=~',
-        value: String.raw`\\value\"2`,
+        value: r`\\value\"2`,
       });
     });
   });

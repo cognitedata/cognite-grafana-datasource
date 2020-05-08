@@ -21,7 +21,7 @@ import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
 import { cloneDeep } from 'lodash';
 
-const { NotEquals, Equals, RegexEquals } = FilterType;
+const { NotEquals, Equals } = FilterType;
 const STS = STSReference;
 const Filter = STSFilter;
 
@@ -251,17 +251,18 @@ describe('parse & reverse', () => {
 });
 
 describe('escape characters parsing', () => {
+  const { raw: r } = String;
   const inputs = [
-    String.raw`ts{name=~"\d some"}`,
-    String.raw`ts{name=~"\\d some"}`,
-    String.raw`ts{name=~"\\d \" some"}`,
-    String.raw`ts{name=~"\\d \\" some"}`,
+    r`ts{name=~"\d some"}`,
+    r`ts{name=~"\\d some"}`,
+    r`ts{name=~"\\d \" some"}`,
+    r`ts{name=~"\\d \\" some"}`,
   ];
   const outputs = [
-    STS([Filter('name', String.raw`\d some`, RegexEquals)]),
-    STS([Filter('name', String.raw`\\d some`, RegexEquals)]),
-    STS([Filter('name', String.raw`\\d " some`, RegexEquals)]),
-    STS([Filter('name', String.raw`\\d \" some`, RegexEquals)]),
+    STS([Filter('name', r`\d some`)]),
+    STS([Filter('name', r`\\d some`)]),
+    STS([Filter('name', r`\\d " some`)]),
+    STS([Filter('name', r`\\d \" some`)]),
   ];
 
   inputs.map((input, index) =>

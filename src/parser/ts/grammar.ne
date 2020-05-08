@@ -136,15 +136,6 @@ object -> curl CURL {% emptyObject %}
 pair -> prop_name equals value
   | prop_name not_equals primitive
   | prop_name regexp string
-value -> object {% id %}
-  | array {% id %}
-  | primitive {% id %}
-primitive -> number {% id %}
-  | string {% id %}
-  | "true" {% () => true %}
-  | "false" {% () => false %}
-  | "null" {% () => null %}
-
 variable -> "$" prop_name {% joinArr %}
   | "[[" prop_name "]]" {% joinArr %}
   | "$" advanced_variable {% joinArr %}
