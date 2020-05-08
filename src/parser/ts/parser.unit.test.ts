@@ -21,7 +21,7 @@ import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
 import { cloneDeep } from 'lodash';
 
-const { NotEquals, Equals } = FilterType;
+const { NotEquals, Equals, RegexEquals } = FilterType;
 const STS = STSReference;
 const Filter = STSFilter;
 
@@ -259,10 +259,10 @@ describe('escape characters parsing', () => {
     r`ts{name=~"\\d \\" some"}`,
   ];
   const outputs = [
-    STS([Filter('name', r`\d some`)]),
-    STS([Filter('name', r`\\d some`)]),
-    STS([Filter('name', r`\\d " some`)]),
-    STS([Filter('name', r`\\d \" some`)]),
+    STS([Filter('name', r`\d some`, RegexEquals)]),
+    STS([Filter('name', r`\\d some`, RegexEquals)]),
+    STS([Filter('name', r`\\d " some`, RegexEquals)]),
+    STS([Filter('name', r`\\d \" some`, RegexEquals)]),
   ];
 
   inputs.map((input, index) =>
