@@ -209,5 +209,19 @@ describe('Query parser', () => {
         value: r`\\value\"2`,
       });
     });
+    it('should parse special cases', () => {
+      const { raw: r } = String;
+      const query = r`assets{name="\n some", type=~"\n some"}`;
+      const {
+        params: { name },
+        filters: [filter],
+      } = parse(query);
+      expect(filter).toEqual({
+        path: 'type',
+        filter: '=~',
+        value: r`\n some`,
+      });
+      expect(name).toEqual('\n some');
+    });
   });
 });
