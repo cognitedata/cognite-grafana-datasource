@@ -129,13 +129,15 @@ condition -> curl CURL {% emptyArray %}
 string -> sqstring {% id %}
   | dqstring {% id %}
   | variable {% id %}
+regexp_string -> sqregexp {% id %}
+  | dqregexp {% id %}
 array -> sqr SQR {% emptyArray %}
   | sqr value (comma value):* SQR {% extractArray %}
 object -> curl CURL {% emptyObject %}
   | curl pair (comma pair):* CURL {% extractObject %}
-pair -> prop_name equals value
-  | prop_name not_equals primitive
-  | prop_name regexp string
+pair -> prop_name _ equals _ value {% d => ([d[0], d[2], d[4]]) %}
+  | prop_name _ not_equals _ primitive {% d => ([d[0], d[2], d[4]]) %}
+  | prop_name _ regexp _ regexp_string {% d => ([d[0], d[2], d[4]]) %}
 variable -> "$" prop_name {% joinArr %}
   | "[[" prop_name "]]" {% joinArr %}
   | "$" advanced_variable {% joinArr %}

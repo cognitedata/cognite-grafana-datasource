@@ -17,30 +17,35 @@ prop_name -> [A-Za-z0-9_]:+ {% join %}
 number -> decimal {% id %}
 
 # strings
-dqstring -> "\"" dstrchar:* "\"" {% function(d) {return d[1].join(""); } %}
-sqstring -> "'"  sstrchar:* "'"  {% function(d) {return d[1].join(""); } %}
+dqstring -> "\"" dstrchar:* "\"" {% d => d[1].join("") %}
+sqstring -> "'"  sstrchar:* "'"  {% d => d[1].join("") %}
+dqregexp -> "\"" ndstrchar:* "\"" {% d => d[1].join("") %}
+sqregexp -> "'"  nsstrchar:* "'"  {% d => d[1].join("") %}
 
-dstrchar -> [\\] {% d => "\\" %}
-    | [^\\"\n] {% id %}
-    | "\\" strescape {%
-    function(d) {
-        return JSON.parse("\""+d.join("")+"\"");
-    }
-%}
+dstrchar -> [^\\"\n] {% id %}
+    | backslash strescape {% d => JSON.parse("\""+d.join("")+"\"") %}
+	| "\\\"" {% d => "\"" %}
 
-sstrchar -> [\\] {% d => "\\" %}
-    | [^\\'\n] {% id %}
-    | "\\" strescape
-        {% function(d) { return JSON.parse("\""+d.join("")+"\""); } %}
-    | "\\'"
-        {% function(d) {return "'"; } %}
+sstrchar -> [^\\'\n] {% id %}
+    | backslash strescape {% d => JSON.parse("\""+d.join("")+"\"") %}
+    | "\\'" {% d => "'" %}
 
-strescape -> ["/bfnrt] {% id %}
-    | "u" [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] {%
-    function(d) {
-        return d.join("");
-    }
-%}
+ndstrchar -> [^\\"\n] {% id %}
+	| backslash unicode {% d => JSON.parse("\""+d.join("")+"\"") %}
+	| "\\\"" {% d => "\\\"" %}
+	| backslash {% id %} 
+
+nsstrchar -> [^\\'\n] {% id %}
+	| backslash unicode {% d => JSON.parse("\""+d.join("")+"\"") %}
+    | "\\'" {% d => "\\'" %}
+	| backslash {% id %}
+
+strescape -> ["\\/bfnrt] {% id %}
+    | unicode {% id %}
+
+backslash -> "\\" {% d => "\\" %}
+
+unicode -> "u" [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] [a-fA-F0-9] {% d => d.join("") %}
 
 # space
 _ -> [\s]:*  {% null %}

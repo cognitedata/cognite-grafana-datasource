@@ -191,22 +191,22 @@ describe('Query parser', () => {
       expect(filterEscapeQuote1).toEqual({
         path: 'metadata.key1',
         filter: '=~',
-        value: r`\\value'2`,
+        value: r`\\value\'2`,
       });
       expect(filterEscapeQuote2).toEqual({
         path: 'metadata.key2',
         filter: '=~',
-        value: r`\\value"2`,
+        value: r`\\value\"2`,
       });
       expect(filterEscapeQuoteBS1).toEqual({
         path: 'metadata.key1',
         filter: '=~',
-        value: r`\\value\'2`,
+        value: r`\\value\\'2`,
       });
       expect(filterEscapeQuoteBS2).toEqual({
         path: 'metadata.key2',
         filter: '=~',
-        value: r`\\value\"2`,
+        value: r`\\value\\"2`,
       });
     });
     it('should parse special cases', () => {

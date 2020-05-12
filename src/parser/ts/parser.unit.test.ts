@@ -257,12 +257,16 @@ describe('escape characters parsing', () => {
     r`ts{name=~"\\d some"}`,
     r`ts{name=~"\\d \" some"}`,
     r`ts{name=~"\\d \\" some"}`,
+    r`ts{name =~ "dude"}`,
+    r`ts{name=~"\n some"}`,
   ];
   const outputs = [
     STS([Filter('name', r`\d some`, RegexEquals)]),
     STS([Filter('name', r`\\d some`, RegexEquals)]),
-    STS([Filter('name', r`\\d " some`, RegexEquals)]),
     STS([Filter('name', r`\\d \" some`, RegexEquals)]),
+    STS([Filter('name', r`\\d \\" some`, RegexEquals)]),
+    STS([Filter('name', r`dude`, RegexEquals)]),
+    STS([Filter('name', r`\n some`, RegexEquals)]),
   ];
 
   inputs.map((input, index) =>
