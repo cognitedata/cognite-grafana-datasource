@@ -21,7 +21,7 @@ import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
 import { cloneDeep } from 'lodash';
 
-const { NotEquals, Equals } = FilterType;
+const { NotEquals, Equals, RegexEquals } = FilterType;
 const STS = STSReference;
 const Filter = STSFilter;
 
@@ -178,6 +178,11 @@ describe('nearley parser', () => {
     expect(res).toEqual(STS([Filter('id', '${asset:json}')]));
   });
 
+  it('template variables for regexp filter', () => {
+    const res = parse('ts{name=~$name}');
+    expect(res).toEqual(STS([Filter('name', '$name', RegexEquals)]));
+  });
+
   it('not equals filter with boolean', () => {
     const res = parse('ts{isString!=true}');
     expect(res).toEqual(STS([Filter('isString', true, NotEquals)]));
@@ -246,6 +251,32 @@ describe('parse & reverse', () => {
   inputs.map(input =>
     it(input, () => {
       expect(composeSTSQuery(parse(input))).toBe(input);
+    })
+  );
+});
+
+describe('escape characters parsing', () => {
+  const { raw: r } = String;
+  const inputs = [
+    r`ts{name=~"\d some"}`,
+    r`ts{name=~"\\d some"}`,
+    r`ts{name=~"\\d \" some"}`,
+    r`ts{name=~"\\d \\" some"}`,
+    r`ts{name =~ "dude"}`,
+    r`ts{name=~"\n some"}`,
+  ];
+  const outputs = [
+    STS([Filter('name', r`\d some`, RegexEquals)]),
+    STS([Filter('name', r`\\d some`, RegexEquals)]),
+    STS([Filter('name', r`\\d \" some`, RegexEquals)]),
+    STS([Filter('name', r`\\d \\" some`, RegexEquals)]),
+    STS([Filter('name', r`dude`, RegexEquals)]),
+    STS([Filter('name', r`\n some`, RegexEquals)]),
+  ];
+
+  inputs.map((input, index) =>
+    it(input, () => {
+      expect(parse(input)).toEqual(outputs[index]);
     })
   );
 });

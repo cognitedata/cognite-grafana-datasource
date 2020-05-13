@@ -1,12 +1,10 @@
 @preprocessor typescript
 
-@builtin "number.ne"
-@builtin "string.ne"
+@include "../common.ne"
 
 @{%
 const join = ([d]) => joinArr(d);
 const joinArr = (d) => d.join('');
-const formatQuery = ([type, query]) => ({type, query});
 const extractPair = d => {
   return {
 	  path: d[0],
@@ -55,7 +53,6 @@ const extractArray = d => {
 
   return output;
 }
-
 const extractOperationsArray = d => {
   const output = [d[0]];
 
@@ -66,7 +63,6 @@ const extractOperationsArray = d => {
 
   return output;
 }
-
 const extractCommaSeparatedArray = d => {
   const output = [d[0]];
 
@@ -75,36 +71,27 @@ const extractCommaSeparatedArray = d => {
   }
   return output;
 }
-
 const extractMapFuncArgs = d => {
   return d.filter(d => d !== ',')
 }
-
 const extract2Elements = d => {
 	return [d[0], d[2]]
 }
-
 const extractOperator = ([s, operator, S]) => {
   return { operator }
 }
-
 const extractNumber = ([constant]) => {
   return { constant }
 }
-
 const extractPI = d => {
   return { constant: d[0] + d[2] }
 }
-
 const extractFunction = ([func, br, args, BR]) => {
   if (args && args.length) {
     return { func: func || '', args }
   }
   return { func }
 }
-
-const emptyObject = () => ({});
-const emptyArray = () => ([]);
 %}
 
 query -> _ trimmed _ {% d => d[1] %}
@@ -139,32 +126,19 @@ type -> "ts" {% id %}
 condition -> curl CURL {% emptyArray %}
   | curl pair (comma pair):* CURL {% extractConditionToArray %}
 
-regexp -> "=~" {% id %}
-  | "!~" {% id %}
-equals -> "=" {% id %}
-not_equals -> "!=" {% id %}
-prop_name -> [A-Za-z0-9_]:+ {% join %}
-
 string -> sqstring {% id %}
   | dqstring {% id %}
   | variable {% id %}
-number -> decimal {% id %}
+regexp_string -> sqregexp {% id %}
+  | dqregexp {% id %}
+  | variable {% id %}
 array -> sqr SQR {% emptyArray %}
   | sqr value (comma value):* SQR {% extractArray %}
 object -> curl CURL {% emptyObject %}
   | curl pair (comma pair):* CURL {% extractObject %}
-pair -> prop_name equals value
-  | prop_name not_equals primitive
-  | prop_name regexp string
-value -> object {% id %}
-  | array {% id %}
-  | primitive {% id %}
-primitive -> number {% id %}
-  | string {% id %}
-  | "true" {% () => true %}
-  | "false" {% () => false %}
-  | "null" {% () => null %}
-
+pair -> prop_name _ equals _ value {% d => ([d[0], d[2], d[4]]) %}
+  | prop_name _ not_equals _ primitive {% d => ([d[0], d[2], d[4]]) %}
+  | prop_name _ regexp _ regexp_string {% d => ([d[0], d[2], d[4]]) %}
 variable -> "$" prop_name {% joinArr %}
   | "[[" prop_name "]]" {% joinArr %}
   | "$" advanced_variable {% joinArr %}
@@ -196,4 +170,3 @@ curl ->  _ "{" {% null %}
 CURL ->  _ "}" {% null %}
 sqr ->  _ "[" {% null %}
 SQR ->  _ "]" {% null %}
-_ -> [\s]:*  {% null %}
