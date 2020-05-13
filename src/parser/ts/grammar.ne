@@ -131,6 +131,7 @@ string -> sqstring {% id %}
   | variable {% id %}
 regexp_string -> sqregexp {% id %}
   | dqregexp {% id %}
+  | variable {% id %}
 array -> sqr SQR {% emptyArray %}
   | sqr value (comma value):* SQR {% extractArray %}
 object -> curl CURL {% emptyObject %}

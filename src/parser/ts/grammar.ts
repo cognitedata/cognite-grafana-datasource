@@ -315,6 +315,7 @@ const grammar: Grammar = {
     {"name": "string", "symbols": ["variable"], "postprocess": id},
     {"name": "regexp_string", "symbols": ["sqregexp"], "postprocess": id},
     {"name": "regexp_string", "symbols": ["dqregexp"], "postprocess": id},
+    {"name": "regexp_string", "symbols": ["variable"], "postprocess": id},
     {"name": "array", "symbols": ["sqr", "SQR"], "postprocess": emptyArray},
     {"name": "array$ebnf$1", "symbols": []},
     {"name": "array$ebnf$1$subexpression$1", "symbols": ["comma", "value"]},

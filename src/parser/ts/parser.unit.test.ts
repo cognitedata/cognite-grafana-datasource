@@ -178,6 +178,11 @@ describe('nearley parser', () => {
     expect(res).toEqual(STS([Filter('id', '${asset:json}')]));
   });
 
+  it('template variables for regexp filter', () => {
+    const res = parse('ts{name=~$name}');
+    expect(res).toEqual(STS([Filter('name', '$name', RegexEquals)]));
+  });
+
   it('not equals filter with boolean', () => {
     const res = parse('ts{isString!=true}');
     expect(res).toEqual(STS([Filter('isString', true, NotEquals)]));
