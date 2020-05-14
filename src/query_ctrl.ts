@@ -26,6 +26,11 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'discreteVariance', name: 'Discrete Variance' },
     { value: 'totalVariation', name: 'Total Variation' },
   ];
+  customTabAggregation = [
+    { value: 'average', name: 'Average' },
+    { value: 'interpolation', name: 'Interpolation' },
+    { value: 'stepInterpolation', name: 'Step Interpolation' },
+  ];
   tabs = [
     {
       value: Tab.Timeseries,
@@ -117,6 +122,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
       return `Custom Query: ${this.target.expr} ${this.target.error}`;
     }
     return '';
+  }
+
+  getInitAggregate() {
+    if (_.findIndex(this.customTabAggregation, ['value', this.target.aggregation]) === -1) {
+      this.target.aggregation = this.customTabAggregation[0].value;
+      this.refresh();
+    }
   }
 
   $onDestroy() {

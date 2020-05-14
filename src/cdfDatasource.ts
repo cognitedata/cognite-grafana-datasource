@@ -24,11 +24,11 @@ import {
 import { get, cloneDeep } from 'lodash';
 import { ms2String } from './utils';
 import { Connector } from './connector';
-import { getLabelsForExpression, hasAggregates } from './parser/ts';
+import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { appEvents } from 'grafana/app/core/core';
-import { failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
+import { datapointsLimit, failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -39,8 +39,7 @@ export function formQueryForItems(
 ): DataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Custom) {
-    const isAggregated = items.some(({ expression }) => hasAggregates(expression));
-    const limit = calculateDPLimitPerQuery(isAggregated, items.length);
+    const limit = calculateDPLimitPerQuery(items.length);
     return {
       items: items.map(({ expression }) => ({ expression, start, end, limit })),
     };
@@ -53,7 +52,7 @@ export function formQueryForItems(
       granularity: granularity || ms2String(options.intervalMs),
     };
   }
-  const limit = calculateDPLimitPerQuery(isAggregated, items.length);
+  const limit = calculateDPLimitPerQuery(items.length);
   return {
     ...aggregations,
     end,
@@ -63,8 +62,8 @@ export function formQueryForItems(
   };
 }
 
-function calculateDPLimitPerQuery(hasAggregates: boolean, queriesNumber: number) {
-  return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
+function calculateDPLimitPerQuery(queriesNumber: number) {
+  return Math.floor(datapointsLimit / Math.min(queriesNumber, 100));
 }
 
 export function formQueriesForTargets(

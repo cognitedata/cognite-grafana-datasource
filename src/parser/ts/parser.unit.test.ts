@@ -17,6 +17,7 @@ import {
   WrappedConst,
   hasAggregates,
   STSQuery,
+  injectAggregatesToParsed,
 } from './index';
 import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
@@ -491,4 +492,48 @@ describe('parse unary "-" operator', () => {
       expect(parse(query)).toEqual(expected);
     })
   );
+});
+describe('check if default aggregation and granularity will be added', () => {
+  const defaults = { aggregate: 'average', granularity: '1h' };
+  it('should add default aggregate and granularity', () => {
+    const stsWithoutAggregation = STS([Filter('name', 'name')]);
+    const withoutAggregates = injectAggregatesToParsed(stsWithoutAggregation, defaults);
+
+    expect(withoutAggregates).toEqual(
+      STS([Filter('name', 'name'), Filter('aggregate', 'average'), Filter('granularity', '1h')])
+    );
+  });
+  it('should add default granularity only', () => {
+    const stsWithAggregate = STS([Filter('name', 'name'), Filter('aggregate', 'interpolation')]);
+    const withAggregates = injectAggregatesToParsed(stsWithAggregate, defaults);
+
+    expect(withAggregates).toEqual(
+      STS([
+        Filter('name', 'name'),
+        Filter('aggregate', 'interpolation'),
+        Filter('granularity', '1h'),
+      ])
+    );
+  });
+  it('should add default aggregation only', () => {
+    const stsWithGranularity = STS([Filter('name', 'name'), Filter('granularity', '1m')]);
+    const withGranularity = injectAggregatesToParsed(stsWithGranularity, defaults);
+
+    expect(withGranularity).toEqual(
+      STS([Filter('name', 'name'), Filter('granularity', '1m'), Filter('aggregate', 'average')])
+    );
+  });
+  it('should ignore default values', () => {
+    const stsWithAggregateAndGranularity = STS([
+      Filter('name', 'name'),
+      Filter('granularity', '1m'),
+      Filter('aggregate', 'interpolation'),
+    ]);
+    const withAggregatesAndGranularity = injectAggregatesToParsed(
+      stsWithAggregateAndGranularity,
+      defaults
+    );
+
+    expect(withAggregatesAndGranularity).toEqual(stsWithAggregateAndGranularity);
+  });
 });

@@ -1,5 +1,11 @@
-import { DataQueryRequestItem, TimeSeriesResponseItem, QueryTarget, IdEither } from '../../types';
-import _, { isArray, isObjectLike, uniqBy } from 'lodash';
+import {
+  DataQueryRequestItem,
+  TimeSeriesResponseItem,
+  QueryTarget,
+  IdEither,
+  QueryOptions,
+} from '../../types';
+import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
@@ -15,9 +21,16 @@ const compiledGrammar = Grammar.fromCompiled(grammar);
 export const formQueriesForExpression = async (
   expression: string,
   target: QueryTarget,
-  connector: Connector
+  connector: Connector,
+  options: QueryOptions
 ): Promise<DataQueryRequestItem[]> => {
-  const parsed = parse(expression);
+  const rawParsed = parse(expression);
+  const defaultGranularity = target.granularity || options.interval;
+  const defaultAggregation = target.aggregation;
+  const parsed = injectAggregatesToParsed(rawParsed, {
+    aggregate: defaultAggregation,
+    granularity: defaultGranularity,
+  });
   const serverFilters = getServerFilters(parsed);
   if (!serverFilters.length) {
     return [{ expression }];
@@ -46,6 +59,32 @@ const NoTimeseriesFound = (filter: StringMap, expr: string) => {
   return new Error(
     `No timeseries found for filter ${JSON.stringify(filter)} in expression ${expr}`
   );
+};
+
+/**
+ * Injects default values of aggregate and granularity (if it is not provided).
+ * Mutates <query> properties array with default aggregate or granularity values.
+ * @param parsedData: synthetic timeseries parsed data
+ * @param defaultValues: {aggregation, granularity}
+ * @return result – parsed data with default values of aggregation and granularity
+ */
+export const injectAggregatesToParsed = (
+  parsedData: STSQuery,
+  defaultValues: { aggregate: string; granularity: string }
+) => {
+  const result = cloneDeep(parsedData);
+
+  walk(result, obj => {
+    if (isSTSReference(obj)) {
+      Object.keys(defaultValues).forEach(key => {
+        if (findIndex(obj.query, ['path', key]) === -1) {
+          obj.query.push(STSFilter(key, defaultValues[key]));
+        }
+      });
+    }
+  });
+
+  return result;
 };
 
 export const injectTSIdsInExpression = (
