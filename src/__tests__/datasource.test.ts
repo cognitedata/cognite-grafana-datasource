@@ -195,44 +195,30 @@ describe('Datasource Query', () => {
   describe('Given "Select Timeseries from Asset" queries', () => {
     let result;
     const assetQuery = {
-      target: '456',
-      timeseries: [],
+      target: '789',
       includeSubtrees: false,
     };
-    const targetA: QueryTargetLike = {
-      assetQuery,
-      aggregation: 'none',
-      refId: 'A',
-      tab: Tab.Asset,
-    };
     const targetC: QueryTargetLike = {
-      ...targetA,
+      assetQuery,
+      tab: Tab.Asset,
       aggregation: 'max',
       refId: 'C',
       target: '',
       label: '{{description}}-{{externalId}}',
-      assetQuery: {
-        target: '789',
-        timeseries: [],
-        includeSubtrees: false,
-        func: 'should not be evaluated',
-      },
     };
     const targetD: QueryTargetLike = {
-      ...targetA,
+      ...targetC,
       aggregation: 'tv',
       refId: 'D',
       target: '',
       label: '{{description}}',
       assetQuery: {
         target: '[[AssetVariable]]',
-        timeseries: [],
         includeSubtrees: false,
-        func: 'should not be evaluated',
       },
     };
     const targetError1: QueryTargetLike = {
-      ...cloneDeep(targetA),
+      ...cloneDeep(targetC),
       refId: 'E',
       assetQuery: {
         ...assetQuery,
@@ -240,7 +226,7 @@ describe('Datasource Query', () => {
       },
     };
     const targetError2: QueryTargetLike = {
-      ...cloneDeep(targetA),
+      ...cloneDeep(targetC),
       refId: 'F',
       assetQuery: {
         ...assetQuery,
@@ -259,10 +245,9 @@ describe('Datasource Query', () => {
 
     beforeAll(async () => {
       options.intervalMs = ms('6m');
-      options.targets = [targetA, targetC, targetD, targetError1, targetError2];
+      options.targets = [targetC, targetD, targetError1, targetError2];
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementationOnce(() => Promise.resolve(tsResponseC))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockRejectedValueOnce(tsError)
@@ -272,14 +257,14 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct queries', () => {
-      expect(backendSrvMock.datasourceRequest).toHaveBeenCalledTimes(8);
+      expect(backendSrvMock.datasourceRequest).toHaveBeenCalledTimes(6);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
     });
 
     it('should replace filter assetQuery [[variable]] with its value', () => {
-      expect(backendSrvMock.datasourceRequest.mock.calls[2][0].data.filter.assetIds[0]).toEqual(
+      expect(backendSrvMock.datasourceRequest.mock.calls[1][0].data.filter.assetIds[0]).toEqual(
         '123'
       );
     });
@@ -302,31 +287,26 @@ describe('Datasource Query', () => {
 
   describe('Given custom queries', () => {
     let result;
-    const targetA: QueryTargetLike = {
+    const targetB: QueryTargetLike = {
       aggregation: 'none',
-      refId: 'A',
+      refId: 'B',
       target: 123,
       tab: Tab.Custom,
-      expr: 'ts{}',
-    };
-    const targetB: QueryTargetLike = {
-      ...cloneDeep(targetA),
       expr:
         "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
-      refId: 'B',
     };
     const targetD: QueryTargetLike = {
-      ...cloneDeep(targetA),
+      ...cloneDeep(targetB),
       expr: 'ts{externalId="[[TimeseriesVariable]]"}',
       refId: 'D',
     };
     const targetI: QueryTargetLike = {
-      ...cloneDeep(targetA),
+      ...cloneDeep(targetB),
       refId: 'I',
       expr: '',
     };
     const targetJ: QueryTargetLike = {
-      ...cloneDeep(targetA),
+      ...cloneDeep(targetB),
       refId: 'J',
       expr: '-',
     };
@@ -354,7 +334,7 @@ describe('Datasource Query', () => {
     beforeAll(async () => {
       jest.clearAllMocks();
       options.intervalMs = ms('1d');
-      options.targets = [targetA, targetB, targetD, targetI, targetJ];
+      options.targets = [targetB, targetD, targetI, targetJ];
       const listMock = async () => {
         return cloneDeep(tsResponse);
       };
@@ -363,8 +343,6 @@ describe('Datasource Query', () => {
       };
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementationOnce(listMock)
-        .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
@@ -377,7 +355,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(8);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(5);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
@@ -408,12 +386,7 @@ describe('Datasource Query', () => {
       refId: 'D',
       expr:
         'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
-    };
-    const targetH: QueryTargetLike = {
-      ...cloneDeep(targetA),
-      refId: 'H',
-      expr:
-        'sum(ts{aggregate="average"}) + sum(ts{aggregate="average", granularity="1h"}) * max(ts{aggregate="count"})/min(ts{externalId="Timeseries1"}) - avg(ts{aggregate="average"}) - 3*ts{}',
+      label: '',
     };
 
     const tsResponse = getItemsResponseObject([
@@ -440,7 +413,7 @@ describe('Datasource Query', () => {
     beforeAll(async () => {
       jest.clearAllMocks();
       options.intervalMs = ms('2.5h');
-      options.targets = [targetA, targetD, targetH];
+      options.targets = [targetA, targetD];
       backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async (data: any) => {
         if (data.url.includes('/byids') || data.url.includes('timeseries/list')) {
           return cloneDeep(tsResponse);
@@ -454,7 +427,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(7);
+      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(5);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }
@@ -462,42 +435,6 @@ describe('Datasource Query', () => {
 
     it('should return correct datapoints and labels', () => {
       expect(result).toMatchSnapshot();
-    });
-  });
-  describe('Given multiple "Select Timeseries from Asset" queries in a row', () => {
-    const results = [];
-    const targetA: QueryTargetLike = {
-      aggregation: 'none',
-      refId: 'A',
-      tab: Asset,
-      assetQuery: {
-        target: '123',
-        timeseries: [],
-        includeSubtrees: false,
-      },
-    };
-
-    const tsResponseA = getItemsResponseObject([
-      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
-    ]);
-
-    beforeAll(async () => {
-      options.intervalMs = ms('6m');
-      options.targets = [targetA];
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementationOnce(() => Promise.resolve(tsResponseA))
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      await ds.query(options);
-      await ds.query(options);
-      await ds.query(options);
-    });
-
-    it('should generate the correct queries and not requery for asset timeseries', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(2);
-      for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
-        expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
-      }
     });
   });
   describe('filterQueryTargets', () => {
@@ -568,9 +505,7 @@ describe('Datasource Query', () => {
         tab: Timeseries,
         assetQuery: {
           target: '',
-          timeseries: [],
           includeSubtrees: false,
-          func: '',
         },
       };
       const emptyAsset: Partial<InputQueryTarget> = {
