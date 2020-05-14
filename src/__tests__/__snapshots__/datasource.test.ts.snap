@@ -258,7 +258,7 @@ Object {
         "id": 123,
       },
     ],
-    "limit": 100000,
+    "limit": 10000,
     "start": 1549336675000,
   },
   "method": "POST",
@@ -379,7 +379,7 @@ Object {
       Object {
         "end": 1549338475000,
         "expression": "ts{externalId=\\"Timeseries1\\"}",
-        "limit": 100000,
+        "limit": 10000,
         "start": 1549336675000,
       },
     ],
@@ -465,20 +465,20 @@ Object {
     "items": Array [
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=1} + pi()",
-        "limit": 33333,
+        "expression": "ts{id=1, aggregate=\\"none\\", granularity=\\"30s\\"} + pi()",
+        "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=2} + pi()",
-        "limit": 33333,
+        "expression": "ts{id=2, aggregate=\\"none\\", granularity=\\"30s\\"} + pi()",
+        "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=3} + pi()",
-        "limit": 33333,
+        "expression": "ts{id=3, aggregate=\\"none\\", granularity=\\"30s\\"} + pi()",
+        "limit": 3333,
         "start": 1549336675000,
       },
     ],
@@ -495,19 +495,19 @@ Object {
     "items": Array [
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=1} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "expression": "ts{id=1, aggregate=\\"none\\", granularity=\\"30s\\"} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"30s\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
         "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=2} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "expression": "ts{id=2, aggregate=\\"none\\", granularity=\\"30s\\"} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"30s\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
         "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
-        "expression": "ts{id=3} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "expression": "ts{id=3, aggregate=\\"none\\", granularity=\\"30s\\"} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"30s\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
         "limit": 3333,
         "start": 1549336675000,
       },
