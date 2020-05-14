@@ -1,5 +1,3 @@
-jest.mock('../cache');
-
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
@@ -17,7 +15,12 @@ const assetsResponse = {
 };
 
 describe('Metrics Query', () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
   afterEach(() => {
+    jest.runAllTimers();
     jest.clearAllMocks();
   });
   describe('Given an empty metrics query', () => {

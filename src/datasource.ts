@@ -75,7 +75,7 @@ export default class CogniteDatasource {
         showTooMuchDatapointsWarningIfNeeded(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        console.log(error); // not sure it ever happens
+        console.error(error); // not sure it ever happens
       }
     }
 
@@ -240,19 +240,6 @@ export default class CogniteDatasource {
       : {
           assetIds: [assetId],
         };
-
-    // check if assetId has changed, if not we do not need to perform this query again
-    if (
-      target.assetQuery.old &&
-      assetId === target.assetQuery.old.target &&
-      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees
-    ) {
-      return;
-    }
-    target.assetQuery.old = {
-      target: `${assetId}`,
-      includeSubtrees: target.assetQuery.includeSubtrees,
-    };
 
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries

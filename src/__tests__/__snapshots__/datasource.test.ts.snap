@@ -5,7 +5,7 @@ Object {
   "data": Object {
     "filter": Object {
       "assetIds": Array [
-        "123",
+        "456",
       ],
     },
     "limit": 101,
@@ -16,23 +16,6 @@ Object {
 `;
 
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetSubtreeIds": Array [
-        Object {
-          "id": 456,
-        },
-      ],
-    },
-    "limit": 101,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
 Object {
   "data": Object {
     "filter": Object {
@@ -47,12 +30,27 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
 Object {
   "data": Object {
     "filter": Object {
       "assetIds": Array [
         "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "1",
       ],
     },
     "limit": 101,
@@ -66,10 +64,8 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
 Object {
   "data": Object {
     "filter": Object {
-      "assetSubtreeIds": Array [
-        Object {
-          "id": 0,
-        },
+      "assetIds": Array [
+        "2",
       ],
     },
     "limit": 101,
@@ -82,36 +78,6 @@ Object {
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 101,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetIds": Array [
-        "123",
-      ],
-    },
-    "limit": 101,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
-Object {
-  "data": Object {
     "end": 1549338475000,
     "items": Array [
       Object {
@@ -122,37 +88,12 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_8_A",
+  "requestId": "1_7_A",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 9`] = `
-Object {
-  "data": Object {
-    "aggregates": Array [
-      "min",
-    ],
-    "end": 1549338475000,
-    "granularity": "20m",
-    "items": Array [
-      Object {
-        "id": 123,
-      },
-      Object {
-        "id": 456,
-      },
-    ],
-    "limit": 5000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_8_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 10`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -175,12 +116,12 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_8_C",
+  "requestId": "1_7_C",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 11`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
 Object {
   "data": Object {
     "aggregates": Array [
@@ -197,7 +138,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_8_D",
+  "requestId": "1_7_D",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
 }
 `;
@@ -225,48 +166,6 @@ Object {
         ],
       ],
       "target": "Timeseries123",
-    },
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "min Timeseries123",
-    },
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "min Timeseries456",
     },
     Object {
       "datapoints": Array [
@@ -432,42 +331,6 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 1`] = `
-Object {
-  "data": Object {
-    "end": 1549338475000,
-    "items": Array [
-      Object {
-        "id": 123,
-      },
-    ],
-    "limit": 100000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_5_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given "Select Timeseries" queries with errors should generate the correct query 2`] = `
-Object {
-  "data": Object {
-    "end": 1549338475000,
-    "items": Array [
-      Object {
-        "id": 123,
-      },
-    ],
-    "limit": 100000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_5_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
 Object {
   "data": Object {
@@ -497,33 +360,6 @@ Object {
 exports[`Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "metadata": Object {
-        "key1": "value1",
-      },
-      "name": "Timeseries1",
-    },
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
-Object {
-  "data": Object {
     "items": Array [
       Object {
         "id": 1,
@@ -541,7 +377,7 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -555,21 +391,7 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -583,24 +405,7 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 9`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 10`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -625,12 +430,12 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_12_A",
+  "requestId": "1_11_A",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 11`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -643,30 +448,12 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_12_B",
+  "requestId": "1_11_B",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 12`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1, aggregate=\\"discreteVariance\\"}",
-        "limit": 10000,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_12_C",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 13`] = `
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 8`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -679,31 +466,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_12_D",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries should generate the correct filtered queries 14`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2}",
-        "limit": 50000,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3}",
-        "limit": 50000,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_12_E",
+  "requestId": "1_11_D",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -731,18 +494,6 @@ Object {
       "datapoints": Array [],
       "target": "Timeseries1",
     },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "{{description}} {{metadata.key1}}",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "{{description}} {{metadata.key1}}",
-    },
   ],
 }
 `;
@@ -761,307 +512,70 @@ Object {
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
 Object {
   "data": Object {
-    "filter": Object {},
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
 Object {
   "data": Object {
-    "filter": Object {},
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "externalId": "Timeseries1",
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
 Object {
   "data": Object {
-    "filter": Object {},
-    "limit": 1000,
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+      Object {
+        "externalId": "Timeseries1",
+      },
+    ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
 }
 `;
 
 exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 8`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 9`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 10`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 11`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 12`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 13`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 14`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
-    "limit": 1000,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 15`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 16`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 17`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 18`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "externalId": "Timeseries1",
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 19`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 20`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-      Object {
-        "externalId": "Timeseries1",
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 21`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "id": 1,
-      },
-      Object {
-        "id": 2,
-      },
-      Object {
-        "id": 3,
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 22`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "externalId": "Timeseries1",
-      },
-    ],
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 23`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1086,216 +600,12 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_15_A",
+  "requestId": "1_14_A",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 24`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} + ts{id=1}",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} + ts{id=1}",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} + ts{id=1}",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_15_B",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 25`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=1} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=2} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=1, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=2, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=1, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=2, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{id=3} * ts{id=3, aggregate=\\"average\\"} - ts{id=3, aggregate=\\"average\\", granularity=\\"10s\\"}",
-        "limit": 370,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_15_C",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 26`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 6`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1320,30 +630,12 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_15_D",
+  "requestId": "1_14_D",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
 
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 27`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "(ts{id=1} + ts{id=2} + ts{id=3})",
-        "limit": 100000,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_15_G",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 28`] = `
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 7`] = `
 Object {
   "data": Object {
     "items": Array [
@@ -1368,55 +660,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_15_H",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 29`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "max(max(ts{id=1}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "max(max(ts{id=2}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-      Object {
-        "end": 1549338475000,
-        "expression": "max(max(ts{id=3}, 5), 5) + max(ts{id=1}, ts{id=2}, ts{id=3})",
-        "limit": 33333,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_15_I",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
-}
-`;
-
-exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 30`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
-        "end": 1549338475000,
-        "expression": "ts{externalId=\\"Timeseries1\\"}",
-        "limit": 100000,
-        "start": 1549336675000,
-      },
-    ],
-  },
-  "method": "POST",
-  "requestId": "1_15_J",
+  "requestId": "1_14_H",
   "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -1426,27 +670,15 @@ Object {
   "data": Array [
     Object {
       "datapoints": Array [],
-      "target": "Timeseries1 + pi()",
+      "target": "test timeseriesA value1 + pi()",
     },
     Object {
       "datapoints": Array [],
-      "target": "Timeseries2 + pi()",
+      "target": "test timeseriesB value1 + pi()",
     },
     Object {
       "datapoints": Array [],
-      "target": "Timeseries3 + pi()",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries1 + Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries2 + Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries3 + Timeseries1",
+      "target": "test timeseriesC value1 + pi()",
     },
     Object {
       "datapoints": Array [],
@@ -1454,71 +686,7 @@ Object {
     },
     Object {
       "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesA value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesA value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesB value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA value1 * test timeseriesC value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
       "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesA value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesB value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesB value1 * test timeseriesC value1 - test timeseriesC value1",
     },
     Object {
       "datapoints": Array [],
@@ -1526,79 +694,15 @@ Object {
     },
     Object {
       "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesA value1 - test timeseriesB value1",
+      "target": "(test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) + (test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) * max(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) / min(test timeseriesA value1) - avg(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) - 3 * test timeseriesA value1",
     },
     Object {
       "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesA value1 - test timeseriesC value1",
+      "target": "(test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) + (test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) * max(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) / min(test timeseriesA value1) - avg(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) - 3 * test timeseriesB value1",
     },
     Object {
       "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesB value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesA value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesB value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesC value1 * test timeseriesC value1 - test timeseriesC value1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries1 * Timeseries1 - Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries2 * Timeseries1 - Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "Timeseries3 * Timeseries1 - Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "(sum + sum + sum)",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries1",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries2",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "(Timeseries1 + Timeseries2 + Timeseries3) + (Timeseries1 + Timeseries2 + Timeseries3) * max(Timeseries1, Timeseries2, Timeseries3) / min(Timeseries1) - avg(Timeseries1, Timeseries2, Timeseries3) - 3 * Timeseries3",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "max(max(Timeseries1, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "max(max(Timeseries2, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "max(max(Timeseries3, 5), 5) + max(Timeseries1, Timeseries2, Timeseries3)",
-    },
-    Object {
-      "datapoints": Array [],
-      "target": "test timeseriesA : Timeseries1",
+      "target": "(test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) + (test timeseriesA value1 + test timeseriesB value1 + test timeseriesC value1) * max(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) / min(test timeseriesA value1) - avg(test timeseriesA value1, test timeseriesB value1, test timeseriesC value1) - 3 * test timeseriesC value1",
     },
   ],
 }
@@ -1622,23 +726,6 @@ Object {
 exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 2`] = `
 Object {
   "data": Object {
-    "filter": Object {
-      "assetSubtreeIds": Array [
-        Object {
-          "id": 123,
-        },
-      ],
-    },
-    "limit": 101,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 3`] = `
-Object {
-  "data": Object {
     "end": 1549338475000,
     "items": Array [
       Object {
@@ -1649,134 +736,7 @@ Object {
     "start": 1549336675000,
   },
   "method": "POST",
-  "requestId": "1_18_A",
+  "requestId": "1_16_A",
   "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 4`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetSubtreeIds": Array [
-        Object {
-          "id": 456,
-        },
-      ],
-    },
-    "limit": 101,
-  },
-  "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should generate the correct queries and not requery for asset timeseries 5`] = `
-Object {
-  "data": Object {
-    "end": 1549338475000,
-    "items": Array [
-      Object {
-        "id": 123,
-      },
-      Object {
-        "id": 456,
-      },
-    ],
-    "limit": 50000,
-    "start": 1549336675000,
-  },
-  "method": "POST",
-  "requestId": "1_18_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 1`] = `
-Object {
-  "data": Array [],
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 2`] = `
-Object {
-  "data": Array [],
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 3`] = `
-Object {
-  "data": Array [
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "Timeseries123",
-    },
-  ],
-}
-`;
-
-exports[`Datasource Query Given multiple "Select Timeseries from Asset" queries in a row should return correct datapoints and labels 4`] = `
-Object {
-  "data": Array [
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "Timeseries123",
-    },
-    Object {
-      "datapoints": Array [
-        Array [
-          0,
-          1549336675000,
-        ],
-        Array [
-          1,
-          1549337275000,
-        ],
-        Array [
-          2,
-          1549337875000,
-        ],
-        Array [
-          3,
-          1549338475000,
-        ],
-      ],
-      "target": "Timeseries456",
-    },
-  ],
 }
 `;

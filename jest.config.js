@@ -8,5 +8,6 @@ module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   moduleNameMapper: {
     "grafana/app/core/core": "<rootDir>/src/__mocks__/grafana/core/core.ts"
-  }
+  },
+  collectCoverageFrom: ["src/**/{!(grammar),}.ts"]
 };

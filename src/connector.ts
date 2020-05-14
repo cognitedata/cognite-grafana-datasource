@@ -4,14 +4,14 @@ import {
   HttpMethod,
   DataSourceRequestOptions,
   Items,
-  DataResponse,
   CursorResponse,
   Limit,
+  isError,
 } from './types';
 import { getQueryString } from './utils';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
-import cache from './cache';
 import { chunk } from 'lodash';
+import ms from 'ms';
 
 export class Connector {
   public constructor(
@@ -20,8 +20,10 @@ export class Connector {
     private backendSrv: BackendSrv
   ) {}
 
+  cachedRequests = new Map<String, Promise<any>>();
+
   private fetchData<T>(request: RequestParams): Promise<T> {
-    const { path, data, method, params, requestId, playground } = request;
+    const { path, data, method, params, requestId, playground, cacheTime } = request;
     const paramsString = params ? `?${getQueryString(params)}` : '';
     const url = `${this.apiUrl}/${playground ? 'playground' : 'cogniteapi'}/${
       this.project
@@ -30,7 +32,7 @@ export class Connector {
     if (requestId) {
       body.requestId = requestId;
     }
-    return cache.getQuery(body, this.backendSrv);
+    return this.cachedRequest(body, cacheTime);
   }
 
   public async chunkAndFetch<Req extends Items, Res extends Response>(
@@ -102,10 +104,42 @@ export class Connector {
       url: `${this.apiUrl}/${path}`,
     });
   }
+
+  public cachedRequest = async (
+    query: DataSourceRequestOptions,
+    cacheTime: string = '10s'
+  ): Promise<any> => {
+    const { requestId, ...queryWithoutId } = query;
+    const hash = JSON.stringify(queryWithoutId);
+    const timeout = ms(cacheTime);
+
+    if (this.cachedRequests.has(hash)) {
+      return this.cachedRequests.get(hash);
+    }
+
+    const request = (async () => {
+      try {
+        const res = await this.backendSrv.datasourceRequest(query);
+        if (isError(res)) {
+          throw res;
+        }
+        setTimeout(() => this.cachedRequests.delete(hash), timeout);
+        return res;
+      } catch (e) {
+        this.cachedRequests.delete(hash);
+        throw e;
+      }
+    })();
+
+    this.cachedRequests.set(hash, request);
+    return request;
+  };
 }
 
 const chunkedReqId = (requestId: string, chunk: number) => {
-  return requestId ? {
-    requestId: chunk ? `${requestId}${chunk}` : requestId
-  } : undefined
-}
+  return requestId
+    ? {
+        requestId: chunk ? `${requestId}${chunk}` : requestId,
+      }
+    : undefined;
+};

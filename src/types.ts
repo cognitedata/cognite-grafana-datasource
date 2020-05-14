@@ -176,6 +176,7 @@ export interface RequestParams<DataType = any> {
   params?: { [s: string]: any };
   requestId?: string;
   playground?: boolean;
+  cacheTime?: string;
 }
 
 export type DataQueryError = {

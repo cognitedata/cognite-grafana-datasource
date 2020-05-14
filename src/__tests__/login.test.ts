@@ -1,7 +1,5 @@
 import { getMockedDataSource } from './utils';
 
-jest.mock('../cache');
-
 const { ds, backendSrvMock } = getMockedDataSource();
 
 function makeLoginResponse(loggedIn: boolean, project: string) {

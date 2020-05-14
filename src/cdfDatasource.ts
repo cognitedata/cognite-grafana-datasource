@@ -156,12 +156,14 @@ export async function getTimeseries(
         data,
         method,
         path: `/timeseries/byids`,
+        cacheTime: '1h',
       });
     } else {
       items = await connector.fetchAndPaginate({
         data,
         method,
         path: `/timeseries/list`,
+        cacheTime: '1h',
       });
     }
 

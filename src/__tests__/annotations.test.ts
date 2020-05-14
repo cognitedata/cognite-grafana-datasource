@@ -1,8 +1,6 @@
 import * as _ from 'lodash';
 import { getMockedDataSource } from './utils';
 
-jest.mock('../cache');
-
 const { ds, backendSrvMock } = getMockedDataSource();
 
 describe('Annotations Query', () => {
@@ -59,7 +57,12 @@ describe('Annotations Query', () => {
     },
   };
 
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
   afterEach(() => {
+    jest.runAllTimers();
     jest.clearAllMocks();
   });
 
