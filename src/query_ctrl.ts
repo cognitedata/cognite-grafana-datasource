@@ -61,7 +61,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
       includeSubtrees: false,
     },
   };
-  isAllSelected: boolean;
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -70,13 +69,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
     _.defaultsDeep(this.target, this.defaults);
 
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
-    if (this.target.tab !== Tab.Asset) {
-      this.target.assetQuery.timeseries = [];
-      this.target.assetQuery.old = undefined;
-    }
-    this.isAllSelected =
-      this.target.assetQuery.timeseries &&
-      this.target.assetQuery.timeseries.every(ts => ts.selected);
 
     appEvents.on(failedResponseEvent, this.handleError);
     appEvents.on(datapointsLimitWarningEvent, this.handleWarning);
@@ -118,16 +110,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
     this.refresh();
-  }
-
-  toggleCheckboxes() {
-    this.isAllSelected = !this.isAllSelected;
-    this.target.assetQuery.timeseries.forEach(ts => (ts.selected = this.isAllSelected));
-  }
-
-  selectOption(timeseries: TimeSeriesResponseItem) {
-    timeseries.selected = !timeseries.selected;
-    this.isAllSelected = this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getCollapsedText() {

@@ -252,12 +252,14 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockRejectedValueOnce(tsError)
         .mockRejectedValueOnce({})
+        .mockImplementationOnce(() => Promise.resolve(tsResponseC))
+        .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
 
     it('should generate the correct queries', () => {
-      expect(backendSrvMock.datasourceRequest).toHaveBeenCalledTimes(6);
+      expect(backendSrvMock.datasourceRequest).toHaveBeenCalledTimes(8);
       for (let i = 0; i < backendSrvMock.datasourceRequest.mock.calls.length; ++i) {
         expect(backendSrvMock.datasourceRequest.mock.calls[i][0]).toMatchSnapshot();
       }

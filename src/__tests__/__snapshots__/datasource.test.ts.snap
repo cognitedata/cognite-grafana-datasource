@@ -63,6 +63,40 @@ Object {
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
 Object {
   "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+      Object {
+        "id": 456,
+      },
+      Object {
+        "id": 789,
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+Object {
+  "data": Object {
     "aggregates": Array [
       "max",
     ],
@@ -88,7 +122,7 @@ Object {
 }
 `;
 
-exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
 Object {
   "data": Object {
     "aggregates": Array [
