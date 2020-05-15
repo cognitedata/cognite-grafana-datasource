@@ -1,10 +1,4 @@
-import {
-  DataQueryRequestItem,
-  TimeSeriesResponseItem,
-  QueryTarget,
-  IdEither,
-  QueryOptions,
-} from '../../types';
+import { DataQueryRequestItem, TimeSeriesResponseItem, QueryTarget, IdEither } from '../../types';
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
@@ -25,15 +19,12 @@ export const formQueriesForExpression = async (
   defaultInterval: string
 ): Promise<DataQueryRequestItem[]> => {
   const rawParsed = parse(expression);
-  const defaultGranularity = target.granularity || defaultInterval;
-  const defaultAggregation = target.aggregation;
-  const parsed =
-    defaultAggregation === 'none'
-      ? rawParsed
-      : injectAggregatesToParsed(rawParsed, {
-          aggregate: defaultAggregation,
-          granularity: defaultGranularity,
-        });
+  const { aggregation, granularity } = target;
+  const parsed = enrichWithDefaultAggregates(
+    rawParsed,
+    { granularity, aggregate: aggregation },
+    defaultInterval
+  );
   const serverFilters = getServerFilters(parsed);
   if (!serverFilters.length) {
     return [{ expression }];
@@ -68,15 +59,24 @@ const NoTimeseriesFound = (filter: StringMap, expr: string) => {
  * Injects default values of aggregate and granularity (if it is not provided).
  * Mutates <query> properties array with default aggregate or granularity values.
  * @param parsedData: synthetic timeseries parsed data
- * @param defaultValues: {aggregation, granularity}
+ * @param target: {aggregation, granularity}
+ * @param defaultInterval – interval that comes from grafana options
  * @return result – parsed data with default values of aggregation and granularity
  */
-export const injectAggregatesToParsed = (
+export const enrichWithDefaultAggregates = (
   parsedData: STSQuery,
-  defaultValues: { aggregate: string; granularity: string }
+  { aggregate, granularity }: { aggregate: string; granularity: string },
+  defaultInterval: string
 ) => {
-  const result = cloneDeep(parsedData);
+  if (aggregate === 'none') {
+    return parsedData;
+  }
 
+  const result = cloneDeep(parsedData);
+  const defaultValues = {
+    aggregate,
+    granularity: granularity || defaultInterval,
+  };
   walk(result, obj => {
     if (isSTSReference(obj)) {
       Object.keys(defaultValues).forEach(key => {

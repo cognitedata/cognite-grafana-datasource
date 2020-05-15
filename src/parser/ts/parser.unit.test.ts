@@ -17,7 +17,7 @@ import {
   WrappedConst,
   hasAggregates,
   STSQuery,
-  injectAggregatesToParsed,
+  enrichWithDefaultAggregates,
 } from './index';
 import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
@@ -495,9 +495,15 @@ describe('parse unary "-" operator', () => {
 });
 describe('check if default aggregation and granularity will be added', () => {
   const defaults = { aggregate: 'average', granularity: '1h' };
+  const defaultOnlyAggregate = { aggregate: 'average', granularity: '' };
+  const defaultInterval = '6h';
   it('should add default aggregate and granularity', () => {
     const stsWithoutAggregation = STS([Filter('name', 'name')]);
-    const withoutAggregates = injectAggregatesToParsed(stsWithoutAggregation, defaults);
+    const withoutAggregates = enrichWithDefaultAggregates(
+      stsWithoutAggregation,
+      defaults,
+      defaultInterval
+    );
 
     expect(withoutAggregates).toEqual(
       STS([Filter('name', 'name'), Filter('aggregate', 'average'), Filter('granularity', '1h')])
@@ -505,7 +511,7 @@ describe('check if default aggregation and granularity will be added', () => {
   });
   it('should add default granularity only', () => {
     const stsWithAggregate = STS([Filter('name', 'name'), Filter('aggregate', 'interpolation')]);
-    const withAggregates = injectAggregatesToParsed(stsWithAggregate, defaults);
+    const withAggregates = enrichWithDefaultAggregates(stsWithAggregate, defaults, defaultInterval);
 
     expect(withAggregates).toEqual(
       STS([
@@ -517,7 +523,11 @@ describe('check if default aggregation and granularity will be added', () => {
   });
   it('should add default aggregation only', () => {
     const stsWithGranularity = STS([Filter('name', 'name'), Filter('granularity', '1m')]);
-    const withGranularity = injectAggregatesToParsed(stsWithGranularity, defaults);
+    const withGranularity = enrichWithDefaultAggregates(
+      stsWithGranularity,
+      defaults,
+      defaultInterval
+    );
 
     expect(withGranularity).toEqual(
       STS([Filter('name', 'name'), Filter('granularity', '1m'), Filter('aggregate', 'average')])
@@ -529,17 +539,30 @@ describe('check if default aggregation and granularity will be added', () => {
       Filter('granularity', '1m'),
       Filter('aggregate', 'interpolation'),
     ]);
-    const withAggregatesAndGranularity = injectAggregatesToParsed(
+    const withAggregatesAndGranularity = enrichWithDefaultAggregates(
       stsWithAggregateAndGranularity,
-      defaults
+      defaults,
+      defaultInterval
     );
 
     expect(withAggregatesAndGranularity).toEqual(stsWithAggregateAndGranularity);
   });
   it('should not add default values in case of default aggregate is none', () => {
     const sts = STS([Filter('name', 'name')]);
-    const stsWithInjected = injectAggregatesToParsed(sts, { aggregate: 'none', granularity: '2h' });
+    const stsWithInjected = enrichWithDefaultAggregates(
+      sts,
+      { aggregate: 'none', granularity: '2h' },
+      defaultInterval
+    );
 
-    expect(sts).toEqual(sts);
+    expect(stsWithInjected).toEqual(sts);
+  });
+  it('should set default interval if is is not provided in defaults', () => {
+    const sts = STS([Filter('name', 'name')]);
+    const stsWithInjected = enrichWithDefaultAggregates(sts, defaultOnlyAggregate, defaultInterval);
+
+    expect(stsWithInjected).toEqual(
+      STS([Filter('name', 'name'), Filter('aggregate', 'average'), Filter('granularity', '6h')])
+    );
   });
 });
