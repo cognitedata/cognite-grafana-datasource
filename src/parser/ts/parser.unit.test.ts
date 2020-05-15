@@ -536,4 +536,10 @@ describe('check if default aggregation and granularity will be added', () => {
 
     expect(withAggregatesAndGranularity).toEqual(stsWithAggregateAndGranularity);
   });
+  it('should not add default values in case of default aggregate is none', () => {
+    const sts = STS([Filter('name', 'name')]);
+    const stsWithInjected = injectAggregatesToParsed(sts, { aggregate: 'none', granularity: '2h' });
+
+    expect(sts).toEqual(sts);
+  });
 });

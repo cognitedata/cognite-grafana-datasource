@@ -27,10 +27,13 @@ export const formQueriesForExpression = async (
   const rawParsed = parse(expression);
   const defaultGranularity = target.granularity || options.interval;
   const defaultAggregation = target.aggregation;
-  const parsed = injectAggregatesToParsed(rawParsed, {
-    aggregate: defaultAggregation,
-    granularity: defaultGranularity,
-  });
+  const parsed =
+    defaultAggregation === 'none'
+      ? rawParsed
+      : injectAggregatesToParsed(rawParsed, {
+          aggregate: defaultAggregation,
+          granularity: defaultGranularity,
+        });
   const serverFilters = getServerFilters(parsed);
   if (!serverFilters.length) {
     return [{ expression }];

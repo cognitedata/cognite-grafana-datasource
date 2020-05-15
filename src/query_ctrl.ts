@@ -27,6 +27,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'totalVariation', name: 'Total Variation' },
   ];
   customTabAggregation = [
+    { value: 'none', name: 'None' },
     { value: 'average', name: 'Average' },
     { value: 'interpolation', name: 'Interpolation' },
     { value: 'stepInterpolation', name: 'Step Interpolation' },
