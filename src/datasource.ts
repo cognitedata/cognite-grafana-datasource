@@ -47,6 +47,9 @@ import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
+  id: number;
+  url: string;
+  name: string;
   project: string;
   connector: Connector;
 
@@ -56,6 +59,9 @@ export default class CogniteDatasource {
     backendSrv: BackendSrv,
     private templateSrv: TemplateSrv
   ) {
+    this.id = instanceSettings.id;
+    this.url = instanceSettings.url;
+    this.name = instanceSettings.name;
     const { url, jsonData } = instanceSettings;
     this.project = jsonData.cogniteProject;
     this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
