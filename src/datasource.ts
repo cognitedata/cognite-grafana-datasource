@@ -151,7 +151,7 @@ export default class CogniteDatasource {
       }
       case Tab.Custom: {
         const templatedExpr = this.replaceVariable(expr, options.scopedVars);
-        return formQueriesForExpression(templatedExpr, target, this.connector, options);
+        return formQueriesForExpression(templatedExpr, target, this.connector, options.interval);
       }
     }
   }

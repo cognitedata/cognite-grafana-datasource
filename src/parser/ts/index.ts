@@ -22,10 +22,10 @@ export const formQueriesForExpression = async (
   expression: string,
   target: QueryTarget,
   connector: Connector,
-  options: QueryOptions
+  defaultInterval: string
 ): Promise<DataQueryRequestItem[]> => {
   const rawParsed = parse(expression);
-  const defaultGranularity = target.granularity || options.interval;
+  const defaultGranularity = target.granularity || defaultInterval;
   const defaultAggregation = target.aggregation;
   const parsed =
     defaultAggregation === 'none'
