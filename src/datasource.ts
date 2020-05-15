@@ -47,9 +47,13 @@ import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
 const { Asset, Custom, Timeseries } = Tab;
 
 export default class CogniteDatasource {
+  /**
+   * Parameters that are needed by grafana
+   */
   id: number;
   url: string;
   name: string;
+
   project: string;
   connector: Connector;
 
