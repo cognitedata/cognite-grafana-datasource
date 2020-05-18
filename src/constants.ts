@@ -6,7 +6,7 @@ export const datapointsLimitWarningEvent = eventFactory<QueryDatapointsLimitWarn
 );
 
 export const CacheTime = {
-  TimeseriesList: '151s',
+  TimeseriesList: '61s',
   TimeseriesByIds: '61m',
   Default: '11s',
 };
