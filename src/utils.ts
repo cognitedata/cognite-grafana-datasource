@@ -12,12 +12,6 @@ export function ms2String(milliseconds: number): string {
   return ms(milliseconds < 1000 ? 1000 : milliseconds);
 }
 
-export function timeseriesHash(options: QueryOptions, target: QueryTarget) {
-  return `${options.dashboardId}_${options.panelId}_${target.refId}_${target.assetQuery.target}_${
-    target.assetQuery.includeSubtrees
-  }`;
-}
-
 // used for generating the options.requestId
 export function getRequestId(options: QueryOptions, target: QueryTarget) {
   return `${options.dashboardId}_${options.panelId}_${target.refId}`;

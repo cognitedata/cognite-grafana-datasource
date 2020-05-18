@@ -114,20 +114,6 @@
         </info-popover>
     </div>
   </div>
-  <div class="panel-container" style="overflow: auto; max-height: 110px; padding: 2px" ng-if="ctrl.target.assetQuery.timeseries && ctrl.target.assetQuery.timeseries.length > 0">
-    <ul>
-      <li class="gf-form-inline variable-option">
-        <input type="checkbox" ng-checked="ctrl.isAllSelected" ng-show="false">
-        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.toggleCheckboxes();ctrl.refreshData()"></span>
-        <a ng-click="ctrl.toggleCheckboxes();ctrl.refreshData()">Select All</a>
-      </li>
-      <li ng-repeat="timeseries in ctrl.target.assetQuery.timeseries" class="gf-form-inline variable-option">
-        <input type="checkbox" ng-model="timeseries.selected" ng-show="false">
-        <span class="gf-form-switch__checkbox cognite-timeseries-list-checkbox" ng-click="ctrl.selectOption(timeseries);ctrl.refreshData()"></span>
-        <a ng-click="ctrl.selectOption(timeseries);ctrl.refreshData()">{{timeseries.name}}</a>
-      </li>
-    </ul>
-  </div>
 </script>
 
 <!-- Custom Query Tab -->

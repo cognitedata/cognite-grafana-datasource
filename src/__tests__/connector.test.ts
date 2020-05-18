@@ -2,20 +2,14 @@ import { Connector } from '../connector';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
 
-jest.mock('../cache');
-
 describe('connector', () => {
-  let connector: Connector;
   const datasourceRequest = jest.fn();
   const project = 'test';
   const protocol = 'protocol:/';
-
-  beforeAll(() => {
-    const backendSrv: BackendSrv = { datasourceRequest } as any;
-    connector = new Connector(project, protocol, backendSrv);
-  });
+  let connector: Connector;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.resetAllMocks();
   });
 
@@ -28,6 +22,10 @@ describe('connector', () => {
     const path = '/ø';
     const url = `${protocol}/cogniteapi/${project}${path}`;
     const reqBase = { url, method };
+
+    beforeEach(() => {
+      connector = new Connector(project, protocol, { datasourceRequest } as any);
+    });
 
     it('should not chunk under the limit', async () => {
       datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
@@ -71,6 +69,7 @@ describe('connector', () => {
   });
 
   describe('auto-pagination with fetchAndPaginate', () => {
+    let cursor = 0;
     const limit = 10000;
     const query = {
       path: '',
@@ -78,22 +77,22 @@ describe('connector', () => {
       method: HttpMethod.POST,
     };
     const items1000 = Array.from({ length: 1000 }, (_, i) => i);
-    const response = { data: { items: items1000, nextCursor: 'next' } };
+    const response = async () => ({ data: { items: items1000, nextCursor: `${++cursor}` } });
 
     beforeEach(() => {
-      jest.resetAllMocks();
+      connector = new Connector(project, protocol, { datasourceRequest } as any);
     });
 
     it('returns all 10k elements', async () => {
-      datasourceRequest.mockImplementation(async () => response);
+      datasourceRequest.mockImplementation(response);
       const res = await connector.fetchAndPaginate(query);
       expect(res.length).toBe(limit);
     });
 
     it('returns as many as it can', async () => {
       datasourceRequest
-        .mockImplementationOnce(async () => response)
-        .mockImplementationOnce(async () => response)
+        .mockImplementationOnce(response)
+        .mockImplementationOnce(response)
         .mockImplementationOnce(async () => ({ data: { items: items1000.slice(500) } }));
       const res = await connector.fetchAndPaginate(query);
       expect(res).toEqual([...items1000, ...items1000, ...items1000.slice(500)]);
@@ -101,13 +100,81 @@ describe('connector', () => {
     });
 
     it('returns 1000 by default', async () => {
-      datasourceRequest.mockImplementation(async () => response);
+      datasourceRequest.mockImplementation(response);
       const res = await connector.fetchAndPaginate({
         ...query,
         data: { ...query.data, limit: undefined },
       });
       expect(res).toEqual(items1000);
       expect(res.length).toBe(1000);
+    });
+  });
+
+  describe('cached requests', () => {
+    const data = { filter: {} };
+    const request = {
+      data,
+      url: '/',
+      method: HttpMethod.POST,
+    };
+    const response = async () => ({ data: { items: [1] } });
+
+    beforeEach(() => {
+      connector = new Connector(project, protocol, { datasourceRequest } as any);
+      jest.useFakeTimers();
+    });
+
+    it('takes response from cache', async () => {
+      datasourceRequest.mockImplementation(response);
+      await connector.cachedRequest(request);
+      const cached = await connector.cachedRequest(request);
+      expect(datasourceRequest).toBeCalledTimes(1);
+      expect(cached.data.items).toEqual([1]);
+    });
+
+    it('cache is removed after timeout', async () => {
+      datasourceRequest.mockImplementation(response);
+      await connector.cachedRequest(request, '1s');
+      jest.advanceTimersByTime(2000);
+      await connector.cachedRequest(request);
+      expect(datasourceRequest).toBeCalledTimes(2);
+    });
+
+    it('no cache if url is different', async () => {
+      datasourceRequest.mockImplementation(response);
+      await connector.cachedRequest(request);
+      await connector.cachedRequest({ ...request, url: '/other' });
+      expect(datasourceRequest).toBeCalledTimes(2);
+    });
+
+    const error = { error: { message: 1 } };
+    it('throws error', async () => {
+      datasourceRequest.mockImplementation(async () => error);
+      expect.assertions(1);
+      expect(connector.cachedRequest(request)).rejects.toEqual(error);
+    });
+
+    it('throws error 2', async () => {
+      datasourceRequest.mockImplementation(async () => {
+        throw error;
+      });
+      expect.assertions(1);
+      try {
+        await connector.cachedRequest(request);
+      } catch (e) {
+        expect(e).toEqual(error);
+      }
+    });
+
+    it('do not cache on error', async () => {
+      datasourceRequest.mockImplementation(async () => error);
+      try {
+        await connector.cachedRequest(request);
+      } catch {}
+      try {
+        await connector.cachedRequest(request);
+      } catch {}
+      expect(datasourceRequest).toBeCalledTimes(2);
     });
   });
 });

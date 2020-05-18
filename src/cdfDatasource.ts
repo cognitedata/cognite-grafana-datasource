@@ -27,7 +27,7 @@ import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { appEvents } from 'grafana/app/core/core';
-import { failedResponseEvent } from './constants';
+import { failedResponseEvent, CacheTime } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -103,9 +103,13 @@ async function getLabelsForTarget(
     }
     case Asset: {
       const labelSrc = target.label || '';
-      return target.assetQuery.timeseries
-        .filter(ts => ts.selected)
-        .map(ts => getLabelWithInjectedProps(labelSrc, ts));
+      const tsIds = queryList.map(({ id }) => ({ id }));
+      /**
+       * TODO: While this is ok perfomence-wise as we have caching, it is not very nice code here.
+       * We should refactor labels logic someday
+       */
+      const timeseries = await getTimeseries({ items: tsIds }, target, connector, false);
+      return timeseries.map(ts => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Custom: {
       const expressions = queryList.map(({ expression }) => expression);
@@ -156,12 +160,14 @@ export async function getTimeseries(
         data,
         method,
         path: `/timeseries/byids`,
+        cacheTime: CacheTime.TimeseriesByIds,
       });
     } else {
       items = await connector.fetchAndPaginate({
         data,
         method,
         path: `/timeseries/list`,
+        cacheTime: CacheTime.TimeseriesList,
       });
     }
 

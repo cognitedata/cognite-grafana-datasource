@@ -85,7 +85,7 @@ export default class CogniteDatasource {
         showTooMuchDatapointsWarningIfNeeded(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        console.log(error); // not sure it ever happens
+        console.error(error); // not sure it ever happens
       }
     }
 
@@ -145,13 +145,8 @@ export default class CogniteDatasource {
         return [{ id: tsId }];
       }
       case Asset: {
-        /**
-         *  todo: here target.assetQuery.timeseries mutability is used
-         *  to reuse timeseries data during label generation for Asset tab
-         *  need to be redone in functional way
-         **/
-        await this.findAssetTimeseries(target, options);
-        return assetQuery.timeseries.filter(ts => ts.selected).map(({ id }) => ({ id }));
+        const timeseries = await this.findAssetTimeseries(target, options);
+        return timeseries.map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
         const templatedExpr = this.replaceVariable(expr, options.scopedVars);
@@ -241,7 +236,10 @@ export default class CogniteDatasource {
     });
   }
 
-  async findAssetTimeseries(target: QueryTarget, options: QueryOptions): Promise<void> {
+  async findAssetTimeseries(
+    target: QueryTarget,
+    options: QueryOptions
+  ): Promise<TimeSeriesResponseItem[]> {
     const assetId = this.replaceVariable(target.assetQuery.target, options.scopedVars);
     const filter = target.assetQuery.includeSubtrees
       ? {
@@ -250,19 +248,6 @@ export default class CogniteDatasource {
       : {
           assetIds: [assetId],
         };
-
-    // check if assetId has changed, if not we do not need to perform this query again
-    if (
-      target.assetQuery.old &&
-      assetId === target.assetQuery.old.target &&
-      target.assetQuery.includeSubtrees === target.assetQuery.old.includeSubtrees
-    ) {
-      return;
-    }
-    target.assetQuery.old = {
-      target: `${assetId}`,
-      includeSubtrees: target.assetQuery.includeSubtrees,
-    };
 
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
@@ -276,10 +261,7 @@ export default class CogniteDatasource {
 
       ts.splice(-1);
     }
-    target.assetQuery.timeseries = ts.map(ts => {
-      ts.selected = true;
-      return ts;
-    });
+    return ts;
   }
 
   /**

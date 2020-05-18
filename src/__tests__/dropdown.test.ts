@@ -2,8 +2,6 @@ import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { Tab } from '../types';
 
-jest.mock('../cache');
-
 const { ds, backendSrvMock } = getMockedDataSource();
 
 function getTimeseriesResponse(items) {
