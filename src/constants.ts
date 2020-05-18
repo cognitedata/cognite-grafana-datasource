@@ -4,3 +4,9 @@ export const failedResponseEvent = eventFactory<QueryRequestError>('failed-reque
 export const datapointsLimitWarningEvent = eventFactory<QueryDatapointsLimitWarning>(
   'datapoints-limit-warning'
 );
+
+export const CacheTime = {
+  TimeseriesList: '151s',
+  TimeseriesByIds: '61m',
+  Default: '11s',
+};

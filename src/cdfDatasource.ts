@@ -27,7 +27,7 @@ import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { appEvents } from 'grafana/app/core/core';
-import { failedResponseEvent } from './constants';
+import { failedResponseEvent, CacheTime } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -160,14 +160,14 @@ export async function getTimeseries(
         data,
         method,
         path: `/timeseries/byids`,
-        cacheTime: '1h',
+        cacheTime: CacheTime.TimeseriesByIds,
       });
     } else {
       items = await connector.fetchAndPaginate({
         data,
         method,
         path: `/timeseries/list`,
-        cacheTime: '1h',
+        cacheTime: CacheTime.TimeseriesList,
       });
     }
 

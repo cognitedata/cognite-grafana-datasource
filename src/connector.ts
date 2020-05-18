@@ -11,6 +11,7 @@ import {
 import { getQueryString } from './utils';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { chunk } from 'lodash';
+import { CacheTime } from './constants';
 import ms from 'ms';
 
 export class Connector {
@@ -107,7 +108,7 @@ export class Connector {
 
   public cachedRequest = async (
     query: DataSourceRequestOptions,
-    cacheTime: string = '10s'
+    cacheTime: string = CacheTime.Default
   ): Promise<any> => {
     const { requestId, ...queryWithoutId } = query;
     const hash = JSON.stringify(queryWithoutId);
