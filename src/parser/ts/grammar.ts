@@ -60,11 +60,14 @@ const extractArray = d => {
   return output;
 }
 const extractOperationsArray = d => {
-  const output = [d[0]];
+  const output = d[0] ? [d[0][0], d[1]] : [d[1]];
 
-  for (let i in d[1]) {
-    output.push(d[1][i][0]);
-	  output.push(d[1][i][1]);
+  for (let i in d[2]) {
+    output.push(d[2][i][0]);
+	if (d[2][i][1]) {
+	  output.push(d[2][i][1][0]);	
+	}
+	output.push(d[2][i][2]);
   }
 
   return output;
@@ -97,6 +100,16 @@ const extractFunction = ([func, br, args, BR]) => {
     return { func: func || '', args }
   }
   return { func }
+}
+const extractUnaryOperator = ([operator, element]) => 
+  operator ? [operator[0], element] : element
+const brakedUnaryOperator = ([_, operator, element]) => {
+  const args = [element];
+  if (operator) {
+  	args.unshift(operator);
+  }
+
+  return {func: '', args}
 }
 
 interface NearleyToken {  value: any;
@@ -276,7 +289,8 @@ const grammar: Grammar = {
     {"name": "query", "symbols": ["_", "trimmed", "_"], "postprocess": d => d[1]},
     {"name": "trimmed", "symbols": ["compositeElement"], "postprocess": id},
     {"name": "trimmed", "symbols": ["function"], "postprocess": id},
-    {"name": "function", "symbols": ["unary", "br", "arithmethicElements", "BR"], "postprocess": extractFunction},
+    {"name": "function", "symbols": ["br", "unary_operator", "element", "BR"], "postprocess": brakedUnaryOperator},
+    {"name": "function", "symbols": ["unary", "br", "arithmeticElements", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["unary", "br", "oneElement", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["binary", "br", "twoElements", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["n_ary", "br", "commaSeparatedElements", "BR"], "postprocess": extractFunction},
@@ -288,14 +302,26 @@ const grammar: Grammar = {
     {"name": "commaSeparatedElements$ebnf$1$subexpression$1", "symbols": ["comma", "compositeElement"]},
     {"name": "commaSeparatedElements$ebnf$1", "symbols": ["commaSeparatedElements$ebnf$1", "commaSeparatedElements$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "commaSeparatedElements", "symbols": ["compositeElement", "commaSeparatedElements$ebnf$1"], "postprocess": extractCommaSeparatedArray},
-    {"name": "arithmethicElements$ebnf$1$subexpression$1", "symbols": ["operator", "element"]},
-    {"name": "arithmethicElements$ebnf$1", "symbols": ["arithmethicElements$ebnf$1$subexpression$1"]},
-    {"name": "arithmethicElements$ebnf$1$subexpression$2", "symbols": ["operator", "element"]},
-    {"name": "arithmethicElements$ebnf$1", "symbols": ["arithmethicElements$ebnf$1", "arithmethicElements$ebnf$1$subexpression$2"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "arithmethicElements", "symbols": ["element", "arithmethicElements$ebnf$1"], "postprocess": extractOperationsArray},
+    {"name": "arithmeticElements$ebnf$1$subexpression$1", "symbols": ["unary_operator"]},
+    {"name": "arithmeticElements$ebnf$1", "symbols": ["arithmeticElements$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "arithmeticElements$ebnf$1", "symbols": [], "postprocess": () => null},
+    {"name": "arithmeticElements$ebnf$2$subexpression$1$ebnf$1$subexpression$1", "symbols": ["unary_operator"]},
+    {"name": "arithmeticElements$ebnf$2$subexpression$1$ebnf$1", "symbols": ["arithmeticElements$ebnf$2$subexpression$1$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "arithmeticElements$ebnf$2$subexpression$1$ebnf$1", "symbols": [], "postprocess": () => null},
+    {"name": "arithmeticElements$ebnf$2$subexpression$1", "symbols": ["operator", "arithmeticElements$ebnf$2$subexpression$1$ebnf$1", "element"]},
+    {"name": "arithmeticElements$ebnf$2", "symbols": ["arithmeticElements$ebnf$2$subexpression$1"]},
+    {"name": "arithmeticElements$ebnf$2$subexpression$2$ebnf$1$subexpression$1", "symbols": ["unary_operator"]},
+    {"name": "arithmeticElements$ebnf$2$subexpression$2$ebnf$1", "symbols": ["arithmeticElements$ebnf$2$subexpression$2$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "arithmeticElements$ebnf$2$subexpression$2$ebnf$1", "symbols": [], "postprocess": () => null},
+    {"name": "arithmeticElements$ebnf$2$subexpression$2", "symbols": ["operator", "arithmeticElements$ebnf$2$subexpression$2$ebnf$1", "element"]},
+    {"name": "arithmeticElements$ebnf$2", "symbols": ["arithmeticElements$ebnf$2", "arithmeticElements$ebnf$2$subexpression$2"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "arithmeticElements", "symbols": ["arithmeticElements$ebnf$1", "element", "arithmeticElements$ebnf$2"], "postprocess": extractOperationsArray},
     {"name": "map_func_args", "symbols": ["compositeElement", {"literal":","}, "array", {"literal":","}, "array", "comma", "number"], "postprocess": extractMapFuncArgs},
-    {"name": "compositeElement", "symbols": ["element"], "postprocess": id},
-    {"name": "compositeElement", "symbols": ["arithmethicElements"], "postprocess": id},
+    {"name": "compositeElement$ebnf$1$subexpression$1", "symbols": ["unary_operator"]},
+    {"name": "compositeElement$ebnf$1", "symbols": ["compositeElement$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "compositeElement$ebnf$1", "symbols": [], "postprocess": () => null},
+    {"name": "compositeElement", "symbols": ["compositeElement$ebnf$1", "element"], "postprocess": extractUnaryOperator},
+    {"name": "compositeElement", "symbols": ["arithmeticElements"], "postprocess": id},
     {"name": "element", "symbols": ["function"], "postprocess": id},
     {"name": "element", "symbols": ["type", "condition"], "postprocess": formatQuery},
     {"name": "element", "symbols": ["number"], "postprocess": extractNumber},
@@ -335,6 +361,7 @@ const grammar: Grammar = {
     {"name": "variable", "symbols": ["variable$string$1", "prop_name", "variable$string$2"], "postprocess": joinArr},
     {"name": "variable", "symbols": [{"literal":"$"}, "advanced_variable"], "postprocess": joinArr},
     {"name": "advanced_variable", "symbols": [{"literal":"{"}, "prop_name", {"literal":":"}, "prop_name", {"literal":"}"}], "postprocess": joinArr},
+    {"name": "unary_operator", "symbols": ["_", {"literal":"-"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"+"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"-"}, "_"], "postprocess": extractOperator},
     {"name": "operator", "symbols": ["_", {"literal":"/"}, "_"], "postprocess": extractOperator},

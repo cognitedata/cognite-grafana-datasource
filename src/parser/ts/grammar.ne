@@ -54,11 +54,14 @@ const extractArray = d => {
   return output;
 }
 const extractOperationsArray = d => {
-  const output = [d[0]];
+  const output = d[0] ? [d[0][0], d[1]] : [d[1]];
 
-  for (let i in d[1]) {
-    output.push(d[1][i][0]);
-	  output.push(d[1][i][1]);
+  for (let i in d[2]) {
+    output.push(d[2][i][0]);
+	if (d[2][i][1]) {
+	  output.push(d[2][i][1][0]);	
+	}
+	output.push(d[2][i][2]);
   }
 
   return output;
@@ -92,6 +95,17 @@ const extractFunction = ([func, br, args, BR]) => {
   }
   return { func }
 }
+const extractUnaryOperator = ([operator, element]) => 
+  operator ? [operator[0], element] : element
+const brakedUnaryOperator = ([_, operator, element]) => {
+  const args = [element];
+  
+  if (operator) {
+  	args.unshift(operator);
+  }
+
+  return {func: '', args}
+}
 %}
 
 query -> _ trimmed _ {% d => d[1] %}
@@ -99,7 +113,8 @@ query -> _ trimmed _ {% d => d[1] %}
 trimmed -> compositeElement {% id %}
   | function {% id %}
 
-function -> unary br arithmethicElements BR {% extractFunction %}
+function -> br unary_operator element BR {% brakedUnaryOperator %}
+  | unary br arithmeticElements BR {% extractFunction %}
   | unary br oneElement BR {% extractFunction %}
   | binary br twoElements BR {% extractFunction %}
   | n_ary br commaSeparatedElements BR {% extractFunction %}
@@ -108,12 +123,12 @@ function -> unary br arithmethicElements BR {% extractFunction %}
 oneElement -> element {% extractCommaSeparatedArray %}
 twoElements -> compositeElement comma compositeElement {% extract2Elements %}
 commaSeparatedElements -> compositeElement (comma compositeElement):* {% extractCommaSeparatedArray %}
-arithmethicElements -> element (operator element):+ {% extractOperationsArray %}
+arithmeticElements -> (unary_operator):? element (operator (unary_operator):? element):+ {% extractOperationsArray %}
 
 map_func_args -> compositeElement "," array "," array comma number {% extractMapFuncArgs %}
 
-compositeElement -> element {% id %}
-  | arithmethicElements {% id %}
+compositeElement -> (unary_operator):? element {% extractUnaryOperator %}
+  | arithmeticElements {% id %}
 
 element -> function {% id %}
   | type condition {% formatQuery %}
@@ -145,6 +160,7 @@ variable -> "$" prop_name {% joinArr %}
   
 advanced_variable -> "{" prop_name ":" prop_name "}" {% joinArr %}
 
+unary_operator -> _ "-" _ {% extractOperator %}
 operator -> _ "+" _ {% extractOperator %}
   | _ "-" _ {% extractOperator %}
   | _ "/" _ {% extractOperator %}
