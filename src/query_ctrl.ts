@@ -94,6 +94,8 @@ export class CogniteQueryCtrl extends QueryCtrl {
   }
 
   refreshData() {
+    this.onChangeQuery();
+    debugger;
     this.refresh(); // Asks the panel to refresh data.
   }
 
