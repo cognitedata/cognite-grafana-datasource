@@ -57,7 +57,8 @@ const extractOperationsArray = d => {
   const output = Array.isArray(d[0]) ? [...d[0]] : [d[0]];
 
   for (let i in d[1]) {
-    output.push(...d[1][i].flat());
+    const flatten = [].concat(...d[1][i])
+    output.push(...flatten);
   }
 
   return output;
