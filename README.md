@@ -47,7 +47,7 @@ To set up CDF, do the following:
 - Give the data source a name, provide the name of the project and your API key.
 - Hit `Save & Test`
 
-![Configuring Data Source](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image1.png)
+![Configuring Data Source](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image1.png)
 
 You're now ready to start using the datasource!
 
@@ -68,7 +68,7 @@ If you only want to see the data from one specific timeseries.
 - Aggregation and granularity can be specified using corresponding fields (by default aggregation set to `average` and granularity calculated based on the time interval displayed)
 - You can also set a custom label and use the format `{{property}}` to pull data from the timeseries. E.g. `{{name}} - {{description}}`
 
-![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image2.png)
+![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image2.png)
 
 #### Select Timeseries from Asset
 
@@ -77,7 +77,7 @@ If you want to get a few timeseries associated with an asset
 - Choose an asset to pull timeseries associated with it. `Include Subassets` switcher can be used to get timeseries related to subassets.
 - Aggregation, granularity, and labels can be modified in the same way as in  `Timeseries` tab.
 
-![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image3.png)
+![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image3.png)
 
 ##### Custom Query
 
@@ -92,7 +92,7 @@ ts{id=123}
 Query above requests for the timeseries using `id` equals `123`. You can request timeseries with `id`, `externalId` or timeseries filters, which you can find in 
 [CDF documentation](https://docs.cognite.com/api/v1/#operation/listTimeSeries). 
 
-![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image4.png)
+![Custom Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image4.png)
 
 There are several property types that can be specified with STS:
 
@@ -201,9 +201,9 @@ Query above requests for assets with parameter `parentIds=[123]` and filter resu
 
 Full list of params is available in [CDF documentation](https://docs.cognite.com/api/v1/#operation/listAssets) 
 
-![Variable Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image5.png)
+![Variable Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image5.png)
 
-![Variable as root asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image6.png)
+![Variable as root asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image6.png)
 
 Variables can be also formatted in way to fit it into the query, for instance in case when you have multivalue variable:
 ```
@@ -226,9 +226,9 @@ Query above requests for events with parameter `type="some"` and filter results 
 
 Full list of params is available in [CDF documentation](https://docs.cognite.com/api/v1/#operation/listAssets)
 
-![Annotation Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image7.png)
+![Annotation Query](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image7.png)
 
-![Annotation Labels](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image8.png)
+![Annotation Labels](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image8.png)
 
 ### Feedback
 
