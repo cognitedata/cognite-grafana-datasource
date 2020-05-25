@@ -26,6 +26,8 @@ export class Connector {
   private fetchData<T>(request: RequestParams): Promise<T> {
     const { path, data, method, params, requestId, playground, cacheTime } = request;
     const paramsString = params ? `?${getQueryString(params)}` : '';
+
+    // todo: need to be changed after STS release
     const url = `${this.apiUrl}/${playground ? 'playground' : 'cogniteapi'}/${
       this.project
     }${path}${paramsString}`;

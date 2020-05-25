@@ -43,15 +43,15 @@ For more help with Docker, see the [step-by-step guide](./instructions.md).
 
 To set up CDF, do the following:
 
-- Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Fusion.
+- Go to `Configuration` click `Data Sources`, then `Add data source`, and choose `Cognite Data Fusion`.
 - Give the data source a name, provide the name of the project and your API key.
-- Hit "Save & Test"
+- Hit `Save & Test`
 
 ![Configuring Data Source](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image1.png)
 
 You're now ready to start using the datasource!
 
-To make a chart, click on the plus sign on the left sidebar and select Dashboard here. Click on `Add panel` do add a new chart.
+To make a chart, click on the plus sign on the left sidebar and select `Dashboard` here. Click on `Add panel` do add a new chart.
 You need to specify datasource for the chart. To do this, select one of the available datasources from the dropdown list below chart.
 
 By default, it refers to default datasource in Grafana instance.   
@@ -65,7 +65,7 @@ There are three ways to get timeseries into Grafana:
 If you only want to see the data from one specific timeseries.
 
 - Simply start typing the name of the desired timeseries and then select it from the dropdown list.
-- Aggregation and granularity can be specified using corresponding fields (by default aggregation set to `avarage` and granularity calculated based on the time interval displayed)
+- Aggregation and granularity can be specified using corresponding fields (by default aggregation set to `average` and granularity calculated based on the time interval displayed)
 - You can also set a custom label and use the format `{{property}}` to pull data from the timeseries. E.g. `{{name}} - {{description}}`
 
 ![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image2.png)
@@ -74,8 +74,8 @@ If you only want to see the data from one specific timeseries.
 
 If you want to get a few timeseries associated with an asset
 
-- Choose an asset to pull timeseries associated with it. 'Include Subassets' switcher can be used to get timeseries related to subassets.
-- Aggregation, granularity, and labels can be modified in the same way as in Timeseries tab.
+- Choose an asset to pull timeseries associated with it. `Include Subassets` switcher can be used to get timeseries related to subassets.
+- Aggregation, granularity, and labels can be modified in the same way as in  `Timeseries` tab.
 
 ![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/master/images/readme/image3.png)
 
@@ -137,7 +137,7 @@ Query above requests for the timeseries with:
 **Aggregation and granularity**
 
 Aggregation and granularity can be specified for each timeseries using corresponded dropdowns in UI. Default values for them are the same as in previous tabs.
-Let's assume, that aggregation is set to `avarege` and granularity equals `1h`. Then all queries in the tab request datapoints with the selected aggregation and granularity.
+Let's assume, that aggregation is set to `average` and granularity equals `1h`. Then all queries in the tab request datapoints with the selected aggregation and granularity.
 
 But STS query syntax allows us to define aggregation and granularity to each timeseries separately:
 ```
@@ -165,7 +165,7 @@ Then, the result of the query above is 3 plots, which are a combination of summe
 STS supports a bunch of functions, that can be applied on timeseries:
 - trigonometric: `sin(ts{})`, `cos(ts{})`, `pi()`
 - variable-length functions: `max(ts{}, ...)`, `min(ts{}, ...)`, `avg(ts{}, ...)`    
-- special: `ln(ts{})`, `pow(ts{}, exponent)`, `sqrt(ts{})`, `exp(ts{})`, `abs(ts{})`   
+- algebraic: `ln(ts{})`, `pow(ts{}, exponent)`, `sqrt(ts{})`, `exp(ts{})`, `abs(ts{})`   
 - `on_error(ts{}, default)` – for handling errors like overflow or division by zero
 - `map(expression, [list of strings to map from], [list of values to map to], default)` - function, that allows tto work with string timeseries
 
@@ -191,8 +191,8 @@ Aggregates on string timeseries is not supported right now, not even interpolati
 
 In order to perform templating, we enable the use of variables via `$variable` or `[[variable]]` syntax.
 
-- To add variables, go to your dashboard's settings, and then select "Variables" from the right side.
-- Make sure the "Type" is set to "Query", and then set your Cognite Data Source as the Data Source.
+- To add variables, go to your dashboard's settings, and then select `Variables` from the left side.
+- Make sure the `Type` is set to `Query`, and then set your Cognite Data Source as the `Data Source`.
 - You can then specify the query to pull assets from CDF, and also filter on these assets. For instance:
 ```
 assets{parentIds=[123], name=~"test-.*"}
@@ -209,15 +209,15 @@ Variables can be also formatted in way to fit it into the query, for instance in
 ```
 ts{assetIds=[${variable:csv}]}
 ```
-Variable will be parsed to comma separated value in case if few assets will be selected from the dropdown.
+Variable will be serialised to comma separated value in case if few assets will be selected from the dropdown.
 More about variables formatting in Grafana you can find in [Grafana Docs](https://grafana.com/docs/grafana/latest/variables/advanced-variable-format-options/) 
 
 ## Annotations / Events
 
 Events from CDF can also be shown in Grafana via annotations.
 
-- To add annotations, go to your dashboard's settings, and then select "Annotations" from the left side.
-- Choose your Cognite Data Source as the Data Source.
+- To add annotations, go to your dashboard's settings, and then select `Annotations` from the left side.
+- Choose your Cognite Data Source as the `Data Source`.
 - You can then specify the query to pull events from CDF, and filter on these events. For instance:
 ```
 events{type="some", subtype=~"sub.*"}
