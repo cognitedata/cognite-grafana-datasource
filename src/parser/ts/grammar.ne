@@ -54,14 +54,10 @@ const extractArray = d => {
   return output;
 }
 const extractOperationsArray = d => {
-  const output = d[0] ? [d[0][0], d[1]] : [d[1]];
+  const output = Array.isArray(d[0]) ? [...d[0]] : [d[0]];
 
-  for (let i in d[2]) {
-    output.push(d[2][i][0]);
-	if (d[2][i][1]) {
-	  output.push(d[2][i][1][0]);	
-	}
-	output.push(d[2][i][2]);
+  for (let i in d[1]) {
+    output.push(...d[1][i].flat());
   }
 
   return output;
@@ -95,17 +91,8 @@ const extractFunction = ([func, br, args, BR]) => {
   }
   return { func }
 }
-const extractUnaryOperator = ([operator, element]) => 
-  operator ? [operator[0], element] : element
-const brakedUnaryOperator = ([_, operator, element]) => {
-  const args = [element];
-  
-  if (operator) {
-  	args.unshift(operator);
-  }
-
-  return {func: '', args}
-}
+const brakedUnaryOperator = ([_, operator, element]) => ({func: '', args: [operator, element]});
+const extractUnaryOperator = ([operator, element]) => operator ? [operator[0], element] : element;
 %}
 
 query -> _ trimmed _ {% d => d[1] %}
@@ -123,12 +110,14 @@ function -> br unary_operator element BR {% brakedUnaryOperator %}
 oneElement -> element {% extractCommaSeparatedArray %}
 twoElements -> compositeElement comma compositeElement {% extract2Elements %}
 commaSeparatedElements -> compositeElement (comma compositeElement):* {% extractCommaSeparatedArray %}
-arithmeticElements -> (unary_operator):? element (operator (unary_operator):? element):+ {% extractOperationsArray %}
+arithmeticElements -> arithmeticElement (operator arithmeticElement):+ {% extractOperationsArray %}
 
 map_func_args -> compositeElement "," array "," array comma number {% extractMapFuncArgs %}
 
-compositeElement -> (unary_operator):? element {% extractUnaryOperator %}
+compositeElement -> arithmeticElement {% id %}
   | arithmeticElements {% id %}
+
+arithmeticElement -> (unary_operator):? element {% extractUnaryOperator %}
 
 element -> function {% id %}
   | type condition {% formatQuery %}
