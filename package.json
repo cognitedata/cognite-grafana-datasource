@@ -5,6 +5,10 @@
   "repository": "https://github.com/cognitedata/cognite-grafana-datasource",
   "author": "Cognite AS",
   "license": "Apache-2.0",
+  "contributors": [
+    "Roman Vizniak <roman.vizniak@itera.no>",
+    "Ivan Polomanyi <ivan.polomanyi@cognite.com>"
+  ],
   "scripts": {
     "build": "yarn build-parser && webpack --config webpack.config.prod.js",
     "dev": "yarn build-parser && webpack --config webpack.config.js --mode development",
