@@ -97,7 +97,6 @@ const extractFunction = ([func, br, args, BR]) => {
   }
   return { func }
 }
-const brakedUnaryOperator = ([_, operator, element]) => ({func: '', args: [operator, element]});
 const extractUnaryOperator = ([operator, element]) => operator ? [operator[0], element] : element;
 
 interface NearleyToken {  value: any;
@@ -277,14 +276,13 @@ const grammar: Grammar = {
     {"name": "query", "symbols": ["_", "trimmed", "_"], "postprocess": d => d[1]},
     {"name": "trimmed", "symbols": ["compositeElement"], "postprocess": id},
     {"name": "trimmed", "symbols": ["function"], "postprocess": id},
-    {"name": "function", "symbols": ["br", "unary_operator", "element", "BR"], "postprocess": brakedUnaryOperator},
     {"name": "function", "symbols": ["unary", "br", "arithmeticElements", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["unary", "br", "oneElement", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["binary", "br", "twoElements", "BR"], "postprocess": extractFunction},
     {"name": "function", "symbols": ["n_ary", "br", "commaSeparatedElements", "BR"], "postprocess": extractFunction},
     {"name": "function$string$1", "symbols": [{"literal":"m"}, {"literal":"a"}, {"literal":"p"}], "postprocess": (d) => d.join('')},
     {"name": "function", "symbols": ["function$string$1", "br", "map_func_args", "BR"], "postprocess": extractFunction},
-    {"name": "oneElement", "symbols": ["element"], "postprocess": extractCommaSeparatedArray},
+    {"name": "oneElement", "symbols": ["arithmeticElement"], "postprocess": ([d]) => Array.isArray(d) ? d : [d]},
     {"name": "twoElements", "symbols": ["compositeElement", "comma", "compositeElement"], "postprocess": extract2Elements},
     {"name": "commaSeparatedElements$ebnf$1", "symbols": []},
     {"name": "commaSeparatedElements$ebnf$1$subexpression$1", "symbols": ["comma", "compositeElement"]},

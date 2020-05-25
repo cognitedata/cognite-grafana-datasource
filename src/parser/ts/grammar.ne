@@ -91,7 +91,6 @@ const extractFunction = ([func, br, args, BR]) => {
   }
   return { func }
 }
-const brakedUnaryOperator = ([_, operator, element]) => ({func: '', args: [operator, element]});
 const extractUnaryOperator = ([operator, element]) => operator ? [operator[0], element] : element;
 %}
 
@@ -100,14 +99,13 @@ query -> _ trimmed _ {% d => d[1] %}
 trimmed -> compositeElement {% id %}
   | function {% id %}
 
-function -> br unary_operator element BR {% brakedUnaryOperator %}
-  | unary br arithmeticElements BR {% extractFunction %}
+function ->  unary br arithmeticElements BR {% extractFunction %}
   | unary br oneElement BR {% extractFunction %}
   | binary br twoElements BR {% extractFunction %}
   | n_ary br commaSeparatedElements BR {% extractFunction %}
   | "map" br map_func_args BR {% extractFunction %}
 
-oneElement -> element {% extractCommaSeparatedArray %}
+oneElement -> arithmeticElement {% ([d]) => Array.isArray(d) ? d : [d] %}
 twoElements -> compositeElement comma compositeElement {% extract2Elements %}
 commaSeparatedElements -> compositeElement (comma compositeElement):* {% extractCommaSeparatedArray %}
 arithmeticElements -> arithmeticElement (operator arithmeticElement):+ {% extractOperationsArray %}
