@@ -29,7 +29,7 @@ The easiest way to install this plugin is to go to [https://grafana.com/plugins/
 #### Docker
 
 The official image is hosted on Docker Hub as
-[cognite/grafana-cdp](https://hub.docker.com/r/cognite/grafana-cdp/)
+[cognite/grafana-cdf](https://hub.docker.com/r/cognite/grafana-cdf/)
 
 To run it, first create a Docker volume to store your dashboards
 and settings.
@@ -38,7 +38,7 @@ and settings.
 
 Run the Docker image using this volume:
 
-`docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdp`
+`docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdf`
 
 Now you can access Grafana at http://localhost:3000
 
