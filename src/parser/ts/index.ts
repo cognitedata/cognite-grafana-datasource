@@ -359,6 +359,10 @@ export const Operator = (operator: Operator['operator']): Operator => {
   return { operator };
 };
 
+export const Constant = (constant: number): WrappedConst => {
+  return { constant };
+};
+
 const getIdFilters = (obj: STSReference) => {
   return obj.query.filter(isIdsFilter);
 };
@@ -445,11 +449,11 @@ type TSResponseMap = { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
 
-type STSQuery = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
-
 type STSValue = STSPrimitiveValue | STSPrimitiveValue[] | STSFilter[] | STSFilter[][];
 
 type STSPrimitiveValue = string | number | boolean;
+
+export type STSQuery = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
 
 export type STSFilter = STSClientFilter | STSServerFilter;
 
