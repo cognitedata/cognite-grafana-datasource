@@ -16,6 +16,7 @@ import {
   getClientFilters,
   WrappedConst,
   hasAggregates,
+  STSQuery,
 } from './index';
 import { FilterType } from '../types';
 import { TimeSeriesResponseItem } from '../../types';
@@ -448,4 +449,46 @@ describe('check if expression has aggregates', () => {
     expect(hasAggregates('ts{aggregate="something"}')).toBeTruthy();
     expect(hasAggregates('ts{granularity="1s"}')).toBeTruthy();
   });
+});
+
+describe('parse unary "-" operator', () => {
+  const queries: [string, STSQuery][] = [
+    ['-ts{name="test"}', [Operator('-'), STS([Filter('name', 'test')])]],
+    [
+      'ts{name="test1"} + - ts{name="test2"}',
+      [
+        STS([Filter('name', 'test1')]),
+        Operator('+'),
+        Operator('-'),
+        STS([Filter('name', 'test2')]),
+      ],
+    ],
+    [
+      'ts{name="test1"} * (-ts{name="test2"})',
+      [
+        STS([Filter('name', 'test1')]),
+        Operator('*'),
+        STSFunction('', [Operator('-'), STS([Filter('name', 'test2')])]),
+      ],
+    ],
+    [
+      'ts{name="test1"} * ( - ts{name="test2"} + -5)',
+      [
+        STS([Filter('name', 'test1')]),
+        Operator('*'),
+        STSFunction('', [
+          Operator('-'),
+          STS([Filter('name', 'test2')]),
+          Operator('+'),
+          Constant(-5),
+        ]),
+      ],
+    ],
+  ];
+
+  queries.map(([query, expected], index) =>
+    it(query, () => {
+      expect(parse(query)).toEqual(expected);
+    })
+  );
 });
