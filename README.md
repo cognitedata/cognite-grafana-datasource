@@ -79,7 +79,7 @@ If you want to get a few timeseries associated with an asset
 
 ![Select Timeseries from Asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image3.png)
 
-##### Custom Query
+#### Custom Query
 
 If you want more fine-grained control on timeseries fetching. This tab allows timeseries combination (arithmetic operations, special functions, etc.). Synthetic timeseries (STS) have special syntax described below.
 
@@ -107,14 +107,14 @@ ts{name="test", assetSubtreeIds=[{id=123}, {externalId="external_123"}]}
 
 **Filtering**
 
-Synthetic timeseries (STS) query also supports filtering based on timeseries properties which applies as logical `AND`. For instance,
+Synthetic timeseries (STS) query also supports filtering based on timeseries properties which apply as logical `AND`. For instance,
 if you want to filter timeseries which: 
 - belongs to asset with `id` equals `123`
 - `name` starts with `"Begin"`
 - `name` doesn't end with `"end"`
 - `name` doesn't equal `"Begin query"`
 
-query will be:
+query should be:
 ```
 ts{assetIds=[123], name=~"Begin.*", name!~".*end", name!="Begin query"}
 ```
@@ -185,6 +185,9 @@ map(TS{externalId='stringstate'}, ['OPEN', 'CLOSED'], [1, 0], -1)
 ```
 `"OPEN"` is mapped to 1, `"CLOSED"` to 0, and everything else to -1
 
+<!-- todo: link has to updated after STS release -->
+List of available functions can be found in [CDF documentation](https://docs.cognite.com/api/playground/#section/Functions)
+
 Aggregates on string timeseries is not supported right now, not even interpolation. All string time series are considered step timeseries
 
 ## Templating / Variables
@@ -205,11 +208,11 @@ Full list of params is available in [CDF documentation](https://docs.cognite.com
 
 ![Variable as root asset](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image6.png)
 
-Variables can be also formatted in way to fit it into the query, for instance in case when you have multivalue variable:
+Variables can be also formatted in a way to fit it into the query, for instance in the case when you have a multivalue variable:
 ```
 ts{assetIds=[${variable:csv}]}
 ```
-Variable will be serialised to comma separated value in case if few assets will be selected from the dropdown.
+Variable will be serialized to comma-separated value in case if few assets will be selected from the dropdown.
 More about variables formatting in Grafana you can find in [Grafana Docs](https://grafana.com/docs/grafana/latest/variables/advanced-variable-format-options/) 
 
 ## Annotations / Events
@@ -218,7 +221,7 @@ Events from CDF can also be shown in Grafana via annotations.
 
 - To add annotations, go to your dashboard's settings, and then select `Annotations` from the left side.
 - Choose your Cognite Data Source as the `Data Source`.
-- You can then specify the query to pull events from CDF, and filter on these events. For instance:
+- You can then specify the query to pull events from CDF and filter on these events. For instance:
 ```
 events{type="some", subtype=~"sub.*"}
 ```
