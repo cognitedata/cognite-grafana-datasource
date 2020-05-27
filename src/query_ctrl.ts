@@ -3,15 +3,8 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import {
-  Tab,
-  QueryTarget,
-  TimeSeriesResponseItem,
-  QueryDatapointsLimitWarning,
-  QueryRequestError,
-} from './types';
-import { parse } from './parser/ts';
-import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
+import { Tab, QueryTarget, QueryDatapointsWarning, QueryRequestError } from './types';
+import { datapointsWarningEvent, failedResponseEvent } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -71,12 +64,12 @@ export class CogniteQueryCtrl extends QueryCtrl {
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
 
     appEvents.on(failedResponseEvent, this.handleError);
-    appEvents.on(datapointsLimitWarningEvent, this.handleWarning);
+    appEvents.on(datapointsWarningEvent, this.handleWarning);
   }
 
-  handleWarning = ({ refId, warning }: QueryDatapointsLimitWarning) => {
+  handleWarning = ({ refId, warning }: QueryDatapointsWarning) => {
     if (this.target.refId === refId) {
-      this.target.warning = warning;
+      this.target.warning = `[WARNING] ${warning}`;
     }
   };
 
@@ -128,6 +121,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   $onDestroy() {
     appEvents.off(failedResponseEvent, this.handleError);
-    appEvents.off(datapointsLimitWarningEvent, this.handleWarning);
+    appEvents.off(datapointsWarningEvent, this.handleWarning);
   }
 }

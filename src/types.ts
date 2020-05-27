@@ -414,7 +414,7 @@ export interface QueryRequestError {
   error: string;
 }
 
-export interface QueryDatapointsLimitWarning {
+export interface QueryDatapointsWarning {
   refId: string;
   warning: string;
 }
