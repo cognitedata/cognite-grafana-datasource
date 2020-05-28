@@ -39,8 +39,7 @@ export function formQueryForItems(
 ): DataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Custom) {
-    const isAggregated = items.some(({ expression }) => hasAggregates(expression));
-    const limit = calculateDPLimitPerQuery(isAggregated, items.length);
+    const limit = calculateDPLimitPerQuery(true, items.length);
     return {
       items: items.map(({ expression }) => ({ expression, start, end, limit })),
     };
