@@ -4,7 +4,7 @@ import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
 import { Tab, QueryTarget, QueryDatapointsWarning, QueryRequestError } from './types';
-import { datapointsWarningEvent, failedResponseEvent } from './constants';
+import { datapointsWarningEvent, failedResponseEvent, WARNING } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -69,7 +69,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
   handleWarning = ({ refId, warning }: QueryDatapointsWarning) => {
     if (this.target.refId === refId) {
-      this.target.warning = `[WARNING] ${warning}`;
+      this.target.warning = `${WARNING} ${warning}`;
     }
   };
 
