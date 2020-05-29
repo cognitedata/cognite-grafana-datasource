@@ -43,12 +43,7 @@ import {
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
-import {
-  datapointsWarningEvent,
-  failedResponseEvent,
-  DATAPOINTS_LIMIT_WARNING,
-  TIMESERIES_LIMIT_WARNING,
-} from './constants';
+import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
