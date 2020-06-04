@@ -19,6 +19,7 @@ import {
   Responses,
   IdEither,
   Items,
+  Datapoint,
 } from './types';
 import { get, cloneDeep } from 'lodash';
 import { ms2String } from './utils';
@@ -27,7 +28,7 @@ import { getLabelsForExpression, hasAggregates } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { appEvents } from 'grafana/app/core/core';
-import { failedResponseEvent, CacheTime } from './constants';
+import { failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -251,4 +252,24 @@ export async function promiser<Query, Metadata, Response>(
     succeded,
     failed,
   };
+}
+
+export function getLimitsWarnings(items: Datapoint[], limit: number) {
+  const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
+  return hasMorePoints ? DATAPOINTS_LIMIT_WARNING : '';
+}
+
+export function getCalculationWarnings(items: Datapoint[]) {
+  const datapointsErrors = new Set<string>();
+
+  items.forEach(({ datapoints }) => {
+    (datapoints as [])
+      .map(({ error }) => error)
+      .filter(Boolean)
+      .forEach(error => {
+        datapointsErrors.add(error);
+      });
+  });
+
+  return Array.from(datapointsErrors).join('\n');
 }
