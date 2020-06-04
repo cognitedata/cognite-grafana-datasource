@@ -1,4 +1,3 @@
-import { isArray } from 'lodash';
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
 import { getRequestId, applyFilters } from './utils';
 import { parse } from './parser/events-assets';
@@ -38,11 +37,13 @@ import {
   reduceTimeseries,
   formMetadatasForTargets,
   promiser,
+  getLimitsWarnings,
+  getCalculationWarnings,
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
 import { ParsedFilter, QueryCondition } from './parser/types';
-import { datapointsLimitWarningEvent, failedResponseEvent } from './constants';
+import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -82,7 +83,7 @@ export default class CogniteDatasource {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
         handleFailedTargets(failed);
-        showTooMuchDatapointsWarningIfNeeded(succeded);
+        showWarnings(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
         console.error(error); // not sure it ever happens
@@ -254,10 +255,10 @@ export default class CogniteDatasource {
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, target, this.connector);
     if (ts.length === limit) {
-      const warning =
-        "[WARNING] Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
-
-      appEvents.emit(datapointsLimitWarningEvent, { warning, refId: target.refId });
+      appEvents.emit(datapointsWarningEvent, {
+        warning: TIMESERIES_LIMIT_WARNING,
+        refId: target.refId,
+      });
 
       ts.splice(-1);
     }
@@ -356,28 +357,17 @@ export function getRange(range: TimeRange): Tuple<number> {
   return [timeFrom, timeTo];
 }
 
-function showTooMuchDatapointsWarningIfNeeded(
-  responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]
-) {
-  responses.forEach(
-    ({
-      result: {
-        data: { items },
-        config: {
-          data: { limit },
-        },
-      },
-      metadata: {
-        target: { refId },
-      },
-    }) => {
-      const hasMorePoints = items.some(({ datapoints }) => datapoints.length >= limit);
-      const warning =
-        '[WARNING] Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+function showWarnings(responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]) {
+  responses.forEach(({ result, metadata }) => {
+    const items = result.data.items;
+    const limit = result.config.data.limit;
+    const refId = metadata.target.refId;
+    const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
+      .filter(Boolean)
+      .join('\n');
 
-      if (hasMorePoints) {
-        appEvents.emit(datapointsLimitWarningEvent, { refId, warning });
-      }
+    if (warning) {
+      appEvents.emit(datapointsWarningEvent, { refId, warning });
     }
-  );
+  });
 }
