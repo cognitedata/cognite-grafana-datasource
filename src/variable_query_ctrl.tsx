@@ -4,8 +4,16 @@ import { parse } from './parser/events-assets';
 
 const help = (
   <pre>
-    Variable query uses the <a className="query-keyword" href="https://docs.cognite.com/api/v1/#operation/listAssets" target="_blank">assets/list</a> endpoint for data fetching.{' '}
-    <code className="query-keyword">'='</code> sign is used to provide parameters for the request.
+    Variable query uses the{' '}
+    <a
+      className="query-keyword"
+      href="https://docs.cognite.com/api/v1/#operation/listAssets"
+      target="_blank"
+    >
+      assets/list
+    </a>{' '}
+    endpoint for data fetching. <code className="query-keyword">'='</code> sign is used to provide
+    parameters for the request.
     <br />
     Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
     <br />
@@ -13,10 +21,9 @@ const help = (
     <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]`}</code>
     <br />
     <br />
-    Results filtering is also possible by adding{' '}
-    <code className="query-keyword">'=~'</code>, <code className="query-keyword">'!~'</code> and{' '}
-    <code className="query-keyword">'!='</code> signs to props. Applying few filters for query acts
-    as logic AND
+    Results filtering is also possible by adding <code className="query-keyword">'=~'</code>,{' '}
+    <code className="query-keyword">'!~'</code> and <code className="query-keyword">'!='</code>{' '}
+    signs to props. Applying few filters for query acts as logic AND
     <br />
     Format:
     <br />
@@ -57,10 +64,10 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
       const { query } = this.state;
       parse(query);
 
-      this.props.onChange({ query });
+      this.props.onChange({ query }, query);
     } catch ({ message }) {
       this.setState({ error: message });
-      this.props.onChange({ query: '' });
+      this.props.onChange({ query: '' }, '');
     }
   };
 

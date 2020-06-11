@@ -346,7 +346,7 @@ export interface VariableQueryData {
 
 export interface VariableQueryProps {
   query: string;
-  onChange: (query: VariableQueryData) => void;
+  onChange: (query: VariableQueryData, description: string) => void;
   datasource: any;
   templateSrv: any;
 }
