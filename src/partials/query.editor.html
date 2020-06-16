@@ -128,11 +128,24 @@
         </span>
       </info-popover>
     </div>
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+      <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-init="ctrl.getInitAggregate()" ng-change="ctrl.refreshData()">
+        <option ng-repeat="fn in ctrl.customTabAggregation" value="{{fn.value}}">{{fn.name}}</option>
+      </select>
+    </div>
+    <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
+      <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+      <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.refreshData()" placeholder="default"/>
+      <info-popover mode="right-absolute">
+        The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
+      </info-popover>
+    </div>
   </div>
-  <div class="gf-form" ng-init>
-      <label class="gf-form-label query-keyword fix-query-keyword width-8">Filter</label>
-      <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.refreshData()" placeholder=""/>
-      <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
+  <div class="gf-form gf-form--grow" ng-init>
+    <label class="gf-form-label query-keyword fix-query-keyword width-8">Query</label>
+    <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.refreshData()" placeholder=""/>
+    <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
   </div>
   <div class="gf-form--grow" ng-show="showHelp">
       <pre>
