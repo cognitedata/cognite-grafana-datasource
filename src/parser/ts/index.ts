@@ -56,8 +56,7 @@ const NoTimeseriesFound = (filter: StringMap, expr: string) => {
 };
 
 /**
- * Injects default values of aggregate and granularity (if it is not provided).
- * Mutates <query> properties array with default aggregate or granularity values.
+ * Injects default values of aggregate and granularity (if it is not provided).s
  * @param parsedData: synthetic timeseries parsed data
  * @param target: {aggregation, granularity}
  * @param defaultInterval – interval that comes from grafana options

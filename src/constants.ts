@@ -13,4 +13,3 @@ export const CacheTime = {
   TimeseriesByIds: '61m',
   Default: '11s',
 };
-export const datapointsLimit = 10_000;

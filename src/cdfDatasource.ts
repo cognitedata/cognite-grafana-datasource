@@ -28,7 +28,7 @@ import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
 import { appEvents } from 'grafana/app/core/core';
-import { datapointsLimit, failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
+import { failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 
@@ -52,7 +52,7 @@ export function formQueryForItems(
       granularity: granularity || ms2String(options.intervalMs),
     };
   }
-  const limit = calculateDPLimitPerQuery(items.length);
+  const limit = calculateDPLimitPerQuery(items.length, isAggregated);
   return {
     ...aggregations,
     end,
@@ -62,8 +62,8 @@ export function formQueryForItems(
   };
 }
 
-function calculateDPLimitPerQuery(queriesNumber: number) {
-  return Math.floor(datapointsLimit / Math.min(queriesNumber, 100));
+function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean = true) {
+  return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
 }
 
 export function formQueriesForTargets(

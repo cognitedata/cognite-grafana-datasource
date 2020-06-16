@@ -499,13 +499,13 @@ describe('check if default aggregation and granularity will be added', () => {
   const defaultInterval = '6h';
   it('should add default aggregate and granularity', () => {
     const stsWithoutAggregation = STS([Filter('name', 'name')]);
-    const withoutAggregates = enrichWithDefaultAggregates(
+    const withAggregates = enrichWithDefaultAggregates(
       stsWithoutAggregation,
       defaults,
       defaultInterval
     );
 
-    expect(withoutAggregates).toEqual(
+    expect(withAggregates).toEqual(
       STS([Filter('name', 'name'), Filter('aggregate', 'average'), Filter('granularity', '1h')])
     );
   });
