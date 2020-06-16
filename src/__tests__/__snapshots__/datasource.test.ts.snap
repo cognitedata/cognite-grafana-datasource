@@ -379,7 +379,7 @@ Object {
       Object {
         "end": 1549338475000,
         "expression": "ts{externalId=\\"Timeseries1\\"}",
-        "limit": 100000,
+        "limit": 10000,
         "start": 1549336675000,
       },
     ],
@@ -466,19 +466,19 @@ Object {
       Object {
         "end": 1549338475000,
         "expression": "ts{id=1} + pi()",
-        "limit": 33333,
+        "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
         "expression": "ts{id=2} + pi()",
-        "limit": 33333,
+        "limit": 3333,
         "start": 1549336675000,
       },
       Object {
         "end": 1549338475000,
         "expression": "ts{id=3} + pi()",
-        "limit": 33333,
+        "limit": 3333,
         "start": 1549336675000,
       },
     ],
