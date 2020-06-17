@@ -272,3 +272,7 @@ export function getCalculationWarnings(items: Datapoint[]) {
 
   return Array.from(datapointsErrors).join('\n');
 }
+
+export function datapointsPath(isSynthetic: boolean) {
+  return `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`;
+}

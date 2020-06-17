@@ -175,7 +175,6 @@ export interface RequestParams<DataType = any> {
   method: HttpMethod;
   params?: { [s: string]: any };
   requestId?: string;
-  playground?: boolean;
   cacheTime?: string;
 }
 
