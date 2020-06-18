@@ -24,13 +24,9 @@ export class Connector {
   cachedRequests = new Map<String, Promise<any>>();
 
   private fetchData<T>(request: RequestParams): Promise<T> {
-    const { path, data, method, params, requestId, playground, cacheTime } = request;
-    const paramsString = params ? `?${getQueryString(params)}` : '';
-
-    // todo: need to be changed after STS release
-    const url = `${this.apiUrl}/${playground ? 'playground' : 'cogniteapi'}/${
-      this.project
-    }${path}${paramsString}`;
+    const { path, data, method, params, requestId, cacheTime } = request;
+    const queryString = params ? `?${getQueryString(params)}` : '';
+    const url = `${this.apiUrl}/cogniteapi/${this.project}${path}${queryString}`;
     const body: DataSourceRequestOptions = { url, data, method };
     if (requestId) {
       body.requestId = requestId;
