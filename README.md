@@ -185,8 +185,7 @@ map(TS{externalId='stringstate'}, ['OPEN', 'CLOSED'], [1, 0], -1)
 ```
 `"OPEN"` is mapped to 1, `"CLOSED"` to 0, and everything else to -1
 
-<!-- todo: link has to updated after STS release -->
-List of available functions can be found in [CDF documentation](https://docs.cognite.com/api/playground/#section/Functions)
+List of available functions can be found in [CDF documentation](https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series)
 
 Aggregates on string timeseries is not supported right now, not even interpolation. All string time series are considered step timeseries
 

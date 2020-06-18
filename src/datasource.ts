@@ -39,6 +39,7 @@ import {
   promiser,
   getLimitsWarnings,
   getCalculationWarnings,
+  datapointsPath,
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
@@ -46,6 +47,7 @@ import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
+const { POST } = HttpMethod;
 
 export default class CogniteDatasource {
   /**
@@ -123,14 +125,17 @@ export default class CogniteDatasource {
       metadata,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
+        const chunkSize = isSynthetic ? 10 : 100;
 
-        return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>({
-          data,
-          path: `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`,
-          method: HttpMethod.POST,
-          requestId: getRequestId(options, target),
-          playground: isSynthetic,
-        });
+        return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>(
+          {
+            data,
+            path: datapointsPath(isSynthetic),
+            method: POST,
+            requestId: getRequestId(options, target),
+          },
+          chunkSize
+        );
       }
     );
   }
@@ -189,7 +194,7 @@ export default class CogniteDatasource {
     const items = await this.connector.fetchItems<any>({
       data,
       path: `/events/list`,
-      method: HttpMethod.POST,
+      method: POST,
     });
     const response = applyFilters(items, filters);
 
@@ -224,7 +229,7 @@ export default class CogniteDatasource {
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
       data,
       path: `/${resources[type]}/search`,
-      method: HttpMethod.POST,
+      method: POST,
       params: options,
     });
 
@@ -286,7 +291,7 @@ export default class CogniteDatasource {
     const assets = await this.connector.fetchItems<any>({
       data,
       path: `/assets/list`,
-      method: HttpMethod.POST,
+      method: POST,
     });
 
     const filteredAssets = applyFilters(assets, filters);

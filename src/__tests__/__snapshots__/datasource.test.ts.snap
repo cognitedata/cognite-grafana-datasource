@@ -368,7 +368,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_11_B",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -386,7 +386,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_11_D",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -485,7 +485,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_A",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -515,7 +515,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_D",
-  "url": "/api/datasources/proxy/6/playground/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
 }
 `;
 
