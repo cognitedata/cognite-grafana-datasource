@@ -163,7 +163,7 @@ describe('Metrics Query', () => {
       const variableQuery: VariableQueryData = {
         query: "assets{name=~'*.foo'}",
       };
-      expect(ds.metricFindQuery(variableQuery)).toThrowErrorMatchingSnapshot();
+      expect(ds.metricFindQuery(variableQuery)).rejects.toMatchSnapshot();
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
     });
   });
