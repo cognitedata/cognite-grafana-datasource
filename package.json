@@ -52,7 +52,7 @@
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.0.1",
     "webpack": "^4.29.3",
-    "webpack-cli": "^3.2.3"
+    "webpack-cli": "^3.3.12"
   },
   "husky": {
     "hooks": {
