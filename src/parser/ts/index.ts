@@ -27,7 +27,7 @@ export const formQueriesForExpression = async (
   );
   const serverFilters = getServerFilters(parsed);
   if (!serverFilters.length) {
-    return [{ expression }];
+    return [{ expression: composeSTSQuery(parsed) }];
   }
   const timeseries = await Promise.all(
     serverFilters.map(async filter => {
