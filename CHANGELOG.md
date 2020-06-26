@@ -63,10 +63,10 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ### Other
 
-The **Cognite Data Source for Grafana 2.0.0** is compatible with CDF [API v1](/dev/API_versioning.html#current-api-versions).
+The **Cognite Data Source for Grafana 2.0.0** is compatible with CDF [API v1](https://docs.cognite.com/dev/API_versioning.html#current-api-versions).
 
 Cognite Data Source for **Grafana 2.0.0 is not backward compatible** with dashboards created using older versions of the connector.
-Follow the steps in the [**upgrade guide**](/cdf/dashboards/guides/grafana/upgrade.html) to upgrade your existing installation.
+Follow the steps in the [**upgrade guide**](https://docs.cognite.com/cdf/dashboards/guides/grafana/upgrade.html) to upgrade your existing installation.
 
 ## 1.0.1 - May 27, 2019
 
@@ -76,7 +76,7 @@ Follow the steps in the [**upgrade guide**](/cdf/dashboards/guides/grafana/upgra
 
 ### Other
 
-The **Cognite Data Source for Grafana 1.0.1** is compatible with CDF [API 0.5](/dev/API_versioning.html#current-api-versions).
+The **Cognite Data Source for Grafana 1.0.1** is compatible with CDF [API 0.5](https://docs.cognite.com/dev/API_versioning.html#current-api-versions).
 
 ## 1.0.0 - March 26, 2019
 
@@ -90,5 +90,5 @@ The **Cognite Data Source for Grafana 1.0.1** is compatible with CDF [API 0.5](/
 
 ### Other
 
-The **Cognite Data Source for Grafana 1.0.0** is compatible with CDF [API 0.5](/dev/API_versioning.html#current-api-versions)
+The **Cognite Data Source for Grafana 1.0.0** is compatible with CDF [API 0.5](https://docs.cognite.com/dev/API_versioning.html#current-api-versions)
 
