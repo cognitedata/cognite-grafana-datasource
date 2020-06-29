@@ -12,7 +12,7 @@
 - Add event annotations to graphs
 - Apply custom functions to timeseries
 
-![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/docs/dashboard-development/images/readme/image2.png)
+![Select Timeseries](https://github.com/cognitedata/cognite-grafana-datasource/raw/master/images/readme/image2.png)
 
 
 ## Installation
