@@ -200,7 +200,7 @@ const grammar: Grammar = {
     {"name": "nsstrchar$string$1", "symbols": [{"literal":"\\"}, {"literal":"'"}], "postprocess": (d) => d.join('')},
     {"name": "nsstrchar", "symbols": ["nsstrchar$string$1"], "postprocess": d => "\\'"},
     {"name": "nsstrchar", "symbols": ["backslash"], "postprocess": id},
-    {"name": "strescape", "symbols": [/["\\/bfnrt]/], "postprocess": id},
+    {"name": "strescape", "symbols": [/["\\\/bfnrt]/], "postprocess": id},
     {"name": "strescape", "symbols": ["unicode"], "postprocess": id},
     {"name": "backslash", "symbols": [{"literal":"\\"}], "postprocess": d => "\\"},
     {"name": "unicode", "symbols": [{"literal":"u"}, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/, /[a-fA-F0-9]/], "postprocess": d => d.join("")},

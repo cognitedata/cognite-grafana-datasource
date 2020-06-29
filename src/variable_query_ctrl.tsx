@@ -38,6 +38,15 @@ const help = (
     <br />
     Example:{' '}
     <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'}, assetSubtreeIds=[{id=123}]}`}</code>
+    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit
+    our{' '}
+    <a
+      className="query-keyword"
+      href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html"
+    >
+      documentation
+    </a>
+    .
   </pre>
 );
 
