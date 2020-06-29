@@ -1,0 +1,137 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Annotations Query Given an annotation query should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        123,
+      ],
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+      "type": "type 1",
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+      "type": "non-existant type",
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "metadata": Object {
+        "key1": "value1",
+        "key2": "value2",
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query with an incomplete event expression should throw a parse error 1`] = `
+"Parser: Unexpected end of input:
+events{
+       ^"
+`;
+
+exports[`Annotations Query Given an annotation query with an incorrect event expression should throw a parse error 1`] = `
+"Parser: Syntax error:
+events{ name=~event, foo}
+              ^"
+`;
+
+exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        123,
+      ],
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query with variables should generate the correct request 2`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        123,
+        456,
+      ],
+      "endTime": Object {
+        "min": 1549336675000,
+      },
+      "startTime": Object {
+        "max": 1549338475000,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+}
+`;

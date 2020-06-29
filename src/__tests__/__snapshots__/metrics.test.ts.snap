@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {},
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/list",
+}
+`;
+
+exports[`Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {},
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/list",
+}
+`;
+
+exports[`Metrics Query Given a metrics query with unmatched filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {},
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/list",
+}
+`;
+
+exports[`Metrics Query Given a simple metrics query should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "id": 123,
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/list",
+}
+`;
+
+exports[`Metrics Query Given an incorrect filter query should throw an error if filter regexp is wrong 1`] = `[SyntaxError: Invalid regular expression: /^*.foo$/: Nothing to repeat]`;

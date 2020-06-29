@@ -2,14 +2,23 @@ import {
   DataQueryOptions,
   DataQuery,
   TimeSeries,
-  TimeRange,
-  RawTimeRange,
+  TimeRange as GrafanaTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
 
-export interface QueryResponse {
-  data: TimeSeries[];
+export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
+  return (<DataQueryError>maybeError).error !== undefined;
 }
+
+/**
+ * Comes from grafana, could be imported in future releases hopefully
+ * @param name – event name
+ */
+export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
+  return { name };
+};
+
+export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -31,7 +40,9 @@ export enum ParseType {
 }
 
 export interface TimeSeriesResponseItem {
-  name: string;
+  id: number;
+  externalId?: string;
+  name?: string;
   isString?: boolean;
   metadata?: object;
   unit?: string;
@@ -40,17 +51,12 @@ export interface TimeSeriesResponseItem {
   description?: string;
   source?: string;
   sourceId?: string;
-  id: number;
   createdTime: number;
   lastUpdatedTime: number;
   selected: boolean;
 }
 
-export interface TimeSeriesResponse {
-  data: {
-    items: TimeSeriesResponseItem[];
-  };
-}
+export type TimeSeriesResponse = Items<TimeSeriesResponseItem>;
 
 export interface AssetQuery {
   target: string;
@@ -61,8 +67,8 @@ export interface AssetQuery {
   templatedTarget?: string;
 }
 
-export interface QueryTarget extends DataQuery {
-  target: string;
+export interface InputQueryTarget extends DataQuery {
+  target: number | '';
   aggregation: string;
   granularity: string;
   error: string;
@@ -73,11 +79,35 @@ export interface QueryTarget extends DataQuery {
   warning: string;
 }
 
+export interface QueryTarget extends InputQueryTarget {
+  target: number;
+}
+
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<QueryTarget>;
+export type QueryOptions = DataQueryOptions<InputQueryTarget>;
 
-export type HttpMethod = 'POST' | 'GET' | 'PATCH' | 'DELETE';
+export type Tuple<T> = [T, T];
+
+export interface Range<T> {
+  min?: T;
+  max?: T;
+}
+
+/**
+ * Comes from grafana, could be imported in future releases hopefully
+ */
+export interface AppEvent<T> {
+  readonly name: string;
+  payload?: T;
+}
+
+export enum HttpMethod {
+  POST = 'POST',
+  GET = 'GET',
+  PATCH = 'PATCH',
+  DELETE = 'DELETE',
+}
 
 export interface DataSourceRequestOptions {
   url: string;
@@ -86,35 +116,66 @@ export interface DataSourceRequestOptions {
   requestId?: string;
   headers?: { [s: string]: string };
   silent?: boolean;
-  data?: DataQueryRequest;
+  data?: object;
 }
 
-export interface TimeSeriesDatapoint {
+export interface Timestamp {
   timestamp: number;
+}
+
+export type MetaResponses = Responses<ResponseMetadata, DataQueryRequestResponse>;
+
+export type SuccessResponse<Metadata, Response> = { metadata: Metadata; result: Response };
+export type FailResponse<Metadata> = { metadata: Metadata; error: any };
+export type Responses<Metadata, Response> = {
+  failed: FailResponse<Metadata>[];
+  succeded: SuccessResponse<Metadata, Response>[];
+};
+
+export interface TimeSeriesDatapoint extends Timestamp {
   value: string;
 }
 
+export interface TimeSeriesAggregateDatapoint extends Timestamp {
+  average?: number;
+  max?: number;
+  min?: number;
+  count?: number;
+  sum?: number;
+  interpolation?: number;
+  stepInterpolation?: number;
+  continuousVariance?: number;
+  discreteVariance?: number;
+  totalVariation?: number;
+}
+
 export interface Datapoint {
-  name: string;
-  datapoints: TimeSeriesDatapoint[];
+  id: number;
+  externalId?: string;
+  isStep: boolean;
+  isString: boolean;
+  unit?: string;
+  datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
 }
 
-export interface Datapoints {
-  items: Datapoint[];
-}
+export type Datapoints = Items<Datapoint>;
 
-export interface DataDatapoints {
-  data: Datapoints;
-}
-
-export interface DataQueryRequestResponse {
-  data: DataDatapoints;
+export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
     data: {
       aggregates: string;
       limit: number;
     };
   };
+}
+
+export interface RequestParams<DataType = any> {
+  path: string;
+  data: DataType;
+  method: HttpMethod;
+  params?: { [s: string]: any };
+  requestId?: string;
+  cacheTime?: string;
 }
 
 export type DataQueryError = {
@@ -130,9 +191,12 @@ export type DataQueryError = {
   };
 };
 
-export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
-  return (<DataQueryError>maybeError).error !== undefined;
-}
+export type QueriesData = {
+  items: DataQueryRequestItem[];
+  target: QueryTarget;
+}[];
+
+export type ResponseMetadata = { labels: string[]; target: QueryTarget };
 
 export interface DataQueryAlias {
   alias: string;
@@ -141,23 +205,33 @@ export interface DataQueryAlias {
   granularity?: string;
 }
 
-export interface DataQueryRequestItem {
-  name: string;
+export type IdEither =
+  | {
+      id: number;
+    }
+  | {
+      externalId: string;
+    };
+
+export type DataQueryRequestItem = {
+  expression?: string;
   start?: string | number;
   end?: string | number;
   limit?: number;
   granularity?: string;
-  aggregates?: string;
-  function?: string;
-  aliases?: DataQueryAlias[];
-}
+  aggregates?: string[];
+  id?: number;
+};
+
+export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
+export type Granularity = Pick<DataQueryRequest, 'granularity'>;
 
 export interface DataQueryRequest {
   items: DataQueryRequestItem[];
-  start: string | number;
-  end: string | number;
+  start?: string | number;
+  end?: string | number;
   limit?: number;
-  aggregates?: string;
+  aggregates?: string[];
   granularity?: string;
 }
 
@@ -168,7 +242,7 @@ export interface Annotation {
   iconColor: string;
   limit: number;
   name: string;
-  expr: string;
+  query: string;
   filter: string;
   error: string;
   type: string;
@@ -176,8 +250,8 @@ export interface Annotation {
 }
 
 export interface AnnotationQueryOptions {
-  range: TimeRange;
-  rangeRaw: RawTimeRange;
+  range: GrafanaTimeRange;
+  rangeRaw: GrafanaTimeRange;
   annotation: Annotation;
   dashboard: number;
 }
@@ -226,35 +300,52 @@ export interface Event {
   sourceId: string;
 }
 
-export interface Events {
-  items: Event[];
+export type Events = Items<Event>;
+
+export type DataEvents = DataResponse<Events>;
+
+export type AnnotationQueryRequestResponse = DataResponse<DataEvents>;
+
+export interface DataResponse<T> {
+  data: T;
 }
 
-export interface DataEvents {
-  data: Events;
-}
+export type Items<T = object> = {
+  items: T[];
+};
 
-export interface AnnotationQueryRequestResponse {
-  data: DataEvents;
-}
+export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
-export interface TimeseriesSearchQuery {
-  q: string;
-  description: string;
-  limit: number;
-  includeMetadata: boolean;
-  path: string[];
-  assetId: string;
+export type Response<T = object> = DataResponse<{
+  items: T[];
+}>;
+
+export type TimeseriesFilterQuery = {
+  filter?: {
+    description?: string;
+    assetSubtreeIds?: IdEither[];
+    assetIds?: string[];
+    [s: string]: any; // so we auto-support next features
+  };
+  cursor?: string;
+} & Limit;
+
+export type Limit = {
+  limit?: number;
+};
+
+export interface Cursor {
+  cursor?: string;
 }
 
 export interface VariableQueryData {
   query: string;
-  filter: string;
+  error?: string;
 }
 
 export interface VariableQueryProps {
-  query: any;
-  onChange: (query: any, definition: string) => void;
+  query: string;
+  onChange: (query: VariableQueryData, description: string) => void;
   datasource: any;
   templateSrv: any;
 }
@@ -267,22 +358,62 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
   };
 }
 
-export enum FilterType {
-  Equals = '=',
-  NotEquals = '!=',
-  RegexEquals = '=~',
-  RegexNotEquals = '!~',
+export interface Metadata {
+  [name: string]: string;
 }
 
-export interface Filter {
-  property: string;
-  value: string;
-  type: FilterType;
+export type TimeRange = Range<number>;
+export type CogniteInternalId = number;
+export type CogniteExternallId = string;
+
+export interface FilterRequestParams {
+  metadata?: Metadata;
+  assetSubtreeIds?: IdEither[];
+  createdTime?: TimeRange;
+  lastUpdatedTime?: TimeRange;
+  externalIdPrefix?: string;
 }
 
-export interface FilterOptions {
-  filters: Filter[];
-  granularity: string;
-  aggregation: string;
+export interface AssetsFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  parentIds?: CogniteInternalId[];
+  parentExternalIds?: CogniteExternallId[];
+  rootIds?: IdEither[];
+  source?: string;
+  root?: boolean;
+}
+
+export interface TimeseriesFilterRequestParams extends FilterRequestParams {
+  name?: string;
+  unit?: string;
+  isString?: boolean;
+  isStep?: boolean;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+}
+
+export interface EventsFilterRequestParams extends FilterRequestParams {
+  startTime?: TimeRange;
+  endTime?: TimeRange;
+  assetIds?: CogniteInternalId[];
+  assetExternalIds?: CogniteExternallId[];
+  rootAssetIds?: IdEither[];
+  source?: string;
+  type?: string;
+  subtype?: string;
+}
+
+export interface FilterRequest<Filter> extends Limit, Cursor {
+  filter: Filter;
+}
+
+export interface QueryRequestError {
+  refId: string;
   error: string;
+}
+
+export interface QueryDatapointsWarning {
+  refId: string;
+  warning: string;
 }

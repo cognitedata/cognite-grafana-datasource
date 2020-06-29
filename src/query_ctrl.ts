@@ -1,8 +1,10 @@
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
+import { appEvents } from 'grafana/app/core/core';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
+import { Tab, QueryTarget, QueryDatapointsWarning, QueryRequestError } from './types';
+import { datapointsWarningEvent, failedResponseEvent } from './constants';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -24,6 +26,12 @@ export class CogniteQueryCtrl extends QueryCtrl {
     { value: 'discreteVariance', name: 'Discrete Variance' },
     { value: 'totalVariation', name: 'Total Variation' },
   ];
+  customTabAggregation = [
+    { value: 'none', name: 'None' },
+    { value: 'average', name: 'Average' },
+    { value: 'interpolation', name: 'Interpolation' },
+    { value: 'stepInterpolation', name: 'Step Interpolation' },
+  ];
   tabs = [
     {
       value: Tab.Timeseries,
@@ -39,7 +47,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
   ];
   currentTabIndex: number;
   defaults = {
-    target: 'Start typing tag id here',
+    target: '',
     type: 'timeserie',
     aggregation: 'average',
     granularity: '',
@@ -49,13 +57,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
     assetQuery: {
       target: '',
       old: undefined,
-      timeseries: [],
       includeSubtrees: false,
-      func: '',
-      templatedTarget: '',
     },
   };
-  isAllSelected: boolean;
 
   /** @ngInject **/
   constructor($scope, $injector, private templateSrv) {
@@ -64,14 +68,22 @@ export class CogniteQueryCtrl extends QueryCtrl {
     _.defaultsDeep(this.target, this.defaults);
 
     this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
-    if (this.target.tab !== Tab.Asset) {
-      this.target.assetQuery.timeseries = [];
-      this.target.assetQuery.old = undefined;
-    }
-    this.isAllSelected =
-      this.target.assetQuery.timeseries &&
-      this.target.assetQuery.timeseries.every(ts => ts.selected);
+
+    appEvents.on(failedResponseEvent, this.handleError);
+    appEvents.on(datapointsWarningEvent, this.handleWarning);
   }
+
+  handleWarning = ({ refId, warning }: QueryDatapointsWarning) => {
+    if (this.target.refId === refId) {
+      this.target.warning = warning;
+    }
+  };
+
+  handleError = ({ refId, error }: QueryRequestError) => {
+    if (this.target.refId === refId) {
+      this.target.error = error;
+    }
+  };
 
   getOptions(query: string, type: string) {
     return this.datasource.getOptionsForDropdown(query || '', type).then(options => {
@@ -80,24 +92,24 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
-  onChangeInternal() {
+  refreshData() {
+    this.onChangeQuery();
     this.refresh(); // Asks the panel to refresh data.
+  }
+
+  onChangeQuery() {
+    if (this.target.error) {
+      this.target.error = '';
+    }
+    if (this.target.warning) {
+      this.target.warning = '';
+    }
   }
 
   changeTab(index: number) {
     this.currentTabIndex = index;
     this.target.tab = this.tabs[index].value;
     this.refresh();
-  }
-
-  toggleCheckboxes() {
-    this.isAllSelected = !this.isAllSelected;
-    this.target.assetQuery.timeseries.forEach(ts => (ts.selected = this.isAllSelected));
-  }
-
-  selectOption(timeseries: TimeSeriesResponseItem) {
-    timeseries.selected = !timeseries.selected;
-    this.isAllSelected = this.target.assetQuery.timeseries.every(ts => ts.selected);
   }
 
   getCollapsedText() {
@@ -111,5 +123,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
       return `Custom Query: ${this.target.expr} ${this.target.error}`;
     }
     return '';
+  }
+
+  getInitAggregate() {
+    if (_.findIndex(this.customTabAggregation, ['value', this.target.aggregation]) === -1) {
+      this.target.aggregation = this.customTabAggregation[0].value;
+      this.refresh();
+    }
+  }
+
+  $onDestroy() {
+    appEvents.off(failedResponseEvent, this.handleError);
+    appEvents.off(datapointsWarningEvent, this.handleWarning);
   }
 }

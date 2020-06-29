@@ -20,9 +20,9 @@ After download, log in to launch Docker.
 
 3. Run Docker using the volume just created
 
-   docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdp
+   docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdf
 
-The download from cognite/grafana-cdp will start immediately.
+The download from cognite/grafana-cdf will start immediately.
 
 ![Download Cognite plug-in](./images/image5.png)
 

@@ -1,0 +1,154 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Dropdown Options Query Given a request for asset options should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "search": Object {
+      "query": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
+}
+`;
+
+exports[`Dropdown Options Query Given a request for asset options should return the assets with asset in their name 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+  Object {
+    "text": "asset 2 (test asset 2)",
+    "value": "456",
+  },
+  Object {
+    "text": "asset 3 (test asset 3)",
+    "value": "789",
+  },
+]
+`;
+
+exports[`Dropdown Options Query Given a request for asset options with additional options should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "search": Object {
+      "query": "asset",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
+}
+`;
+
+exports[`Dropdown Options Query Given a request for asset options with additional options should return the assets with asset in their name and metadata.key1 = value1 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+]
+`;
+
+exports[`Dropdown Options Query Given a request for timeseries options should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "search": Object {
+      "query": "Timeseries",
+    },
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
+}
+`;
+
+exports[`Dropdown Options Query Given a request for timeseries options should return timeseries with Timeseries in their name 1`] = `
+Array [
+  Object {
+    "text": "Timeseries1 (testA)",
+    "value": 1,
+  },
+  Object {
+    "text": "Timeseries2 (testB)",
+    "value": 2,
+  },
+  Object {
+    "text": "Timeseries3 (testC)",
+    "value": 3,
+  },
+  Object {
+    "text": "Timeseries4 (testD)",
+    "value": 4,
+  },
+  Object {
+    "text": "Timeseries5 (testE)",
+    "value": 5,
+  },
+]
+`;
+
+exports[`Dropdown Options Query Given an empty request for asset options should generate the correct request 1`] = `
+Object {
+  "data": Object {},
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/assets/search",
+}
+`;
+
+exports[`Dropdown Options Query Given an empty request for asset options should return all assets 1`] = `
+Array [
+  Object {
+    "text": "asset 1 (test asset 1)",
+    "value": "123",
+  },
+  Object {
+    "text": "asset 2 (test asset 2)",
+    "value": "456",
+  },
+  Object {
+    "text": "asset 3 (test asset 3)",
+    "value": "789",
+  },
+  Object {
+    "text": "foo (bar)",
+    "value": "999",
+  },
+]
+`;
+
+exports[`Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
+Object {
+  "data": Object {},
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/search",
+}
+`;
+
+exports[`Dropdown Options Query Given an empty request for timeseries options should return all timeseries 1`] = `
+Array [
+  Object {
+    "text": "Timeseries1 (testA)",
+    "value": 1,
+  },
+  Object {
+    "text": "Timeseries2 (testB)",
+    "value": 2,
+  },
+  Object {
+    "text": "Timeseries3 (testC)",
+    "value": 3,
+  },
+  Object {
+    "text": "Timeseries4 (testD)",
+    "value": 4,
+  },
+  Object {
+    "text": "Timeseries5 (testE)",
+    "value": 5,
+  },
+  Object {
+    "text": "Test",
+    "value": 6,
+  },
+]
+`;

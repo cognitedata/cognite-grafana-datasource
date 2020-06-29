@@ -3,14 +3,17 @@
   "rules": {
     "no-reference": false,
     "no-increment-decrement": false,
-    "import-name": [
+    "import-name": false,
+    "function-name": [
       true,
       {
-        "lodash": "_",
-        "react": "React",
-        "datasource": "CogniteDatasource",
-        "utils": "Utils"
+        "method-regex": "^\\$?[\\w\\d]+$",
+        "function-regex": "^[A-Za-z][\\w\\d]+$"
       }
-    ]
+    ],
+    "variable-name": ["allow-camel-case"]
+  },
+  "linterOptions": {
+    "exclude": ["*/**/grammar.ts"]
   }
 }

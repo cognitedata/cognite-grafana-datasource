@@ -34,20 +34,22 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin("dist", { allowExternal: true }),
     new webpack.optimize.OccurrenceOrderPlugin(),
-    new CopyWebpackPlugin([
-      { from: "plugin.json", to: "." },
-      { from: "../README.md", to: "." },
-      { from: "partials/*", to: "." },
-      { from: "img/*", to: "." },
-      { from: "css/*", to: "." }
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: "plugin.json", to: "." },
+        { from: "../README.md", to: "." },
+        { from: "partials/*", to: "." },
+        { from: "img/*", to: "." },
+        { from: "css/*", to: "." }
+      ]
+    }),
     new ReplaceInFileWebpackPlugin([
       {
         dir: "dist",
         files: ["plugin.json"],
         rules: [
           {
-            search: "%VERSION%",
+            search: /%VERSION%/g,
             replace: packageJson.version
           },
           {

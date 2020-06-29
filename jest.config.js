@@ -5,5 +5,9 @@ module.exports = {
   },
   testEnvironment: "node",
   testRegex: "(/spec/.*|(\\.|/)(test|spec))\\.tsx?$",
-  moduleFileExtensions: ["d.ts", "ts", "tsx", "js", "jsx", "json", "node"]
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  moduleNameMapper: {
+    "grafana/app/core/core": "<rootDir>/src/__mocks__/grafana/app/core/core.ts"
+  },
+  collectCoverageFrom: ["src/**/{!(grammar),}.ts"]
 };

@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Query parser Query parsing should throw error if wrong filter provided 1`] = `
+"Parser: Syntax error:
+assets{name~='name'}
+           ^"
+`;
+
+exports[`Query parser Query parsing should throw error if wrong type provided 1`] = `
+"Parser: Syntax error:
+asset{name='name'}
+     ^"
+`;
+
+exports[`Query parser Query parsing should throw error in case of empty query 1`] = `
+"Parser: Unexpected end of input:
+
+^"
+`;

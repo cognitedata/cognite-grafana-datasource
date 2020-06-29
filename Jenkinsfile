@@ -1,8 +1,8 @@
 @Library('jenkins-helpers@v0.1.19') _
 
 def label = "cognite-grafana-datasource-${UUID.randomUUID().toString().substring(0, 5)}"
-def imageName = "cognite/grafana-cdp"
-def devImageName = "cognite/grafana-cdp-dev"
+def imageName = "cognite/grafana-cdf"
+def devImageName = "cognite/grafana-cdf-dev"
 
 podTemplate(
   label: label,
@@ -53,7 +53,7 @@ podTemplate(
         }
 
         stage('Test') {
-          sh('yarn test')
+          sh('yarn test --maxWorkers=1')
         }
       }
 

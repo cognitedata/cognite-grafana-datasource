@@ -1,6 +1,54 @@
-import _ from 'lodash';
 import React from 'react';
 import { VariableQueryData, VariableQueryProps } from './types';
+import { parse } from './parser/events-assets';
+
+const help = (
+  <pre>
+    Variable query uses the{' '}
+    <a
+      className="query-keyword"
+      href="https://docs.cognite.com/api/v1/#operation/listAssets"
+      target="_blank"
+    >
+      assets/list
+    </a>{' '}
+    endpoint for data fetching. <code className="query-keyword">'='</code> sign is used to provide
+    parameters for the request.
+    <br />
+    Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
+    <br />
+    Example:{' '}
+    <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]`}</code>
+    <br />
+    <br />
+    Results filtering is also possible by adding <code className="query-keyword">'=~'</code>,{' '}
+    <code className="query-keyword">'!~'</code> and <code className="query-keyword">'!='</code>{' '}
+    signs to props. Applying few filters for query acts as logic AND
+    <br />
+    Format:
+    <br />
+    <code className="query-keyword">'=~'</code> – regex equality, means that provided regexp is used
+    to match defined prop and matched value will be included
+    <br />
+    <code className="query-keyword">'!~'</code> – regex inequality, means that provided regexp is
+    used to match defined prop and matched value will be excluded
+    <br />
+    <code className="query-keyword">'!='</code> – strict inequality, means that provided string is
+    used to strict prop comparing and matched value will be excluded
+    <br />
+    Example:{' '}
+    <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'}, assetSubtreeIds=[{id=123}]}`}</code>
+    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit
+    our{' '}
+    <a
+      className="query-keyword"
+      href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html"
+    >
+      documentation
+    </a>
+    .
+  </pre>
+);
 
 export class CogniteVariableQueryCtrl extends React.PureComponent<
   VariableQueryProps,
@@ -8,7 +56,7 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
 > {
   defaults: VariableQueryData = {
     query: '',
-    filter: '',
+    error: '',
   };
 
   constructor(props: VariableQueryProps) {
@@ -16,16 +64,21 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
     this.state = Object.assign(this.defaults, this.props.query);
   }
 
-  handleChange(event, prop: 'query' | 'filter') {
-    const state: any = {
-      [prop]: event.target.value,
-    };
-    this.setState(state);
-  }
+  handleQueryChange = event => {
+    this.setState({ query: event.target.value, error: '' });
+  };
 
-  handleBlur() {
-    this.props.onChange(this.state, this.state.query);
-  }
+  handleBlur = () => {
+    try {
+      const { query } = this.state;
+      parse(query);
+
+      this.props.onChange({ query }, query);
+    } catch ({ message }) {
+      this.setState({ error: message });
+      this.props.onChange({ query: '' }, '');
+    }
+  };
 
   render() {
     return (
@@ -36,31 +89,14 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
             type="text"
             className="gf-form-input"
             value={this.state.query}
-            onChange={e => this.handleChange(e, 'query')}
-            onBlur={e => this.handleBlur()}
-            placeholder="eg: asset{name='example', assetSubtrees=[123456789]}"
-            required
-          />
-        </div>
-        <div className="gf-form gf-form--grow">
-          <span className="gf-form-label query-keyword fix-query-keyword width-10">Filter</span>
-          <input
-            type="text"
-            className="gf-form-input"
-            value={this.state.filter}
-            onChange={e => this.handleChange(e, 'filter')}
-            onBlur={e => this.handleBlur()}
-            placeholder="eg: filter{name=~'.*test.*', isStep=1, metadata.key1!=false}"
+            onChange={this.handleQueryChange}
+            onBlur={this.handleBlur}
+            placeholder="eg: assets{name='example', assetSubtreeIds=[{id=123456789, externalId='externalId'}]}"
           />
         </div>
         <div className="gf-form--grow">
-          <pre>
-            {`  Query for assets using the '/assets/search' endpoint
-    Format is asset{param=value,...}
-  Then, filter on these assets
-    Format is filter{property comparator value,...}
-    Comparator can be =, !=, =~, !~ `}
-          </pre>
+          {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
+          {help}
         </div>
       </div>
     );

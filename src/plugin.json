@@ -36,11 +36,15 @@
   "routes": [
     {
       "path": "cogniteapi",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/0.5/projects",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/v1/projects",
       "headers": [
         {
           "name": "api-key",
           "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        },
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:%VERSION%"
         }
       ]
     },
