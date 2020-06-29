@@ -47,7 +47,7 @@ Now you can access Grafana at http://localhost:3000
 Standard username/password for logging in is admin/admin. See
 [http://docs.grafana.org/installation/docker/](http://docs.grafana.org/installation/docker/) for configuration details.
 
-For more help with Docker, see the [step-by-step guide](./instructions.md).
+For more help with Docker, see the [step-by-step guide](https://github.com/cognitedata/cognite-grafana-datasource/blob/master/instructions.md).
 
 
 ## Developing
