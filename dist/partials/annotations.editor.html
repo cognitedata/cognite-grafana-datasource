@@ -1,0 +1,40 @@
+<div class="gf-form-group">
+  <div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8"
+        >Query</label
+      >
+      <input
+        type="text"
+        class="gf-form-input custom-query width-auto"
+        ng-model="ctrl.annotation.query"
+        ng-blur="ctrl.onBlur()"
+        placeholder=""
+      />
+      <info-popover
+        mode="right-absolute"
+        ng-click="showHelpQuery = !showHelpQuery"
+        >Click for help</info-popover
+      >
+    </div>
+    <div class="gf-form--grow">
+      <pre class="gf-formatted-error" ng-if="ctrl.annotation.error">{{ ctrl.annotation.error }}</pre>
+    </div>
+    <div class="gf-form--grow" ng-show="showHelpQuery">
+      <pre>
+Annotation query uses the <a class="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank">events/list</a> endpoint for data fetching. <code class="query-keyword">'='</code> sign is used to provide parameters for the request.
+  Format: <code class="query-keyword">events{param=number, ...}</code>
+  Example: <code class="query-keyword">events{type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}</code>
+  Results filtering is available by adding <code class="query-keyword">'=~'</code>, <code class="query-keyword">'!~'</code> and <code class="query-keyword">'!='</code> signs to filtered props. Applying few filters for query acts as logic AND
+  Format:
+    <code class="query-keyword">'=~'</code> – regex equality, means that provided regexp is used to match defined prop and matched value will be included
+    <code class="query-keyword">'!~'</code> – regex inequality, means that provided regexp is used to match defined prop and matched value will be excluded
+    <code class="query-keyword">'!='</code> – strict inequality, means that provided string is used to strict prop comparing and matched value will be excluded
+  Example: <code class="query-keyword">events{type='WORKORDER', subtype=~'SUB.*'}</code>
+Variables templating is also available via <code class="query-keyword">$variable</code>
+  Example: <code class="query-keyword">events{type='WORKORDER', subtype=$variable}</code>
+  To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a class="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
+      </pre>
+    </div>
+  </div>
+</div>
