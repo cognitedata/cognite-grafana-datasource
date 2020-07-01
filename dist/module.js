@@ -3762,7 +3762,7 @@ define([
               }
             },
             { name: "nsstrchar", symbols: ["backslash"], postprocess: s },
-            { name: "strescape", symbols: [/["\\\/bfnrt]/], postprocess: s },
+            { name: "strescape", symbols: [/["\\/bfnrt]/], postprocess: s },
             { name: "strescape", symbols: ["unicode"], postprocess: s },
             {
               name: "backslash",
@@ -4538,7 +4538,7 @@ define([
               }
             },
             { name: "nsstrchar", symbols: ["backslash"], postprocess: s },
-            { name: "strescape", symbols: [/["\\\/bfnrt]/], postprocess: s },
+            { name: "strescape", symbols: [/["\\/bfnrt]/], postprocess: s },
             { name: "strescape", symbols: ["unicode"], postprocess: s },
             {
               name: "backslash",
