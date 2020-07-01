@@ -949,14 +949,14 @@ define([
                       return [
                         2,
                         o.sent().map(function(e) {
-                          var n = e.name,
-                            r = e.externalId,
-                            s = e.id,
-                            o = e.description,
-                            a = n || r;
+                          var t = e.name,
+                            n = e.externalId,
+                            r = e.id,
+                            s = e.description,
+                            o = t || n;
                           return {
-                            text: o ? a + " (" + o + ")" : a,
-                            value: t === p.Tab.Timeseries ? s : s.toString()
+                            text: s ? o + " (" + s + ")" : o,
+                            value: r.toString()
                           };
                         })
                       ];
@@ -2124,25 +2124,25 @@ define([
         S = function(e) {
           return C(e).length;
         },
-        T = function(e) {
+        k = function(e) {
           return R(e) && e.filter === d.FilterType.Equals;
         },
-        k = function(e) {
+        T = function(e) {
           for (var t = [], n = 1; n < arguments.length; n++)
             t[n - 1] = arguments[n];
           return -1 !== t.indexOf(e);
         },
         O = function(e) {
-          return T(e) && k(e.path, "granularity", "aggregate");
+          return k(e) && T(e.path, "granularity", "aggregate");
         },
         q = function(e) {
-          return T(e) && k(e.path, "id", "externalId");
+          return k(e) && T(e.path, "id", "externalId");
         },
         I = function(e) {
-          return T(e) && !O(e);
+          return k(e) && !O(e);
         },
         P = function(e) {
-          return R(e) && !T(e);
+          return R(e) && !k(e);
         },
         F = function(e) {
           return p.isArray(e) && e.some(q);
@@ -2180,7 +2180,7 @@ define([
         G = function(e) {
           return (
             D(e) &&
-            k(e.func, "avg", "sum", "min", "max", "pow", "round", "on_error")
+            T(e.func, "avg", "sum", "min", "max", "pow", "round", "on_error")
           );
         };
     },
@@ -3762,7 +3762,7 @@ define([
               }
             },
             { name: "nsstrchar", symbols: ["backslash"], postprocess: s },
-            { name: "strescape", symbols: [/["\\/bfnrt]/], postprocess: s },
+            { name: "strescape", symbols: [/["\\\/bfnrt]/], postprocess: s },
             { name: "strescape", symbols: ["unicode"], postprocess: s },
             {
               name: "backslash",
@@ -4538,7 +4538,7 @@ define([
               }
             },
             { name: "nsstrchar", symbols: ["backslash"], postprocess: s },
-            { name: "strescape", symbols: [/["\\/bfnrt]/], postprocess: s },
+            { name: "strescape", symbols: [/["\\\/bfnrt]/], postprocess: s },
             { name: "strescape", symbols: ["unicode"], postprocess: s },
             {
               name: "backslash",
