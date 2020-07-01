@@ -237,7 +237,7 @@ export default class CogniteDatasource {
       const displayName = name || externalId;
       return {
         text: description ? `${displayName} (${description})` : displayName,
-        value: type === Tab.Timeseries ? id : id.toString(),
+        value: id.toString(),
       };
     });
   }
