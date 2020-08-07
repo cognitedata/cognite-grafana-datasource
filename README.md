@@ -48,7 +48,7 @@ For debugging and development, use `yarn dev:watch`, and for testing use `yarn t
 ## Docker
 
 The Grafana image is also hosted on Docker Hub as
-[cognite/grafana-cdf](https://hub.docker.com/r/cognite/grafana-cdf/) or [cognite/grafana-cdf-dev](https://hub.docker.com/r/cognite/grafana-cdf-dev/) and bundled with a Cognite Data Source. You may use it for development purposes only.
+[cognite/grafana-cdf](https://hub.docker.com/r/cognite/grafana-cdf/) or [cognite/grafana-cdf-dev](https://hub.docker.com/r/cognite/grafana-cdf-dev/) and bundled with a Cognite Data Source. You may use it for development and testing purposes only.
 
 To run it, first create a Docker volume to store your dashboards
 and settings.
