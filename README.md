@@ -28,27 +28,6 @@ To learn more about the connector please visit our [documentation](https://docs.
 If you find any bugs, or have any suggestions, please [visit support portal](https://support.cognite.com/).
 
 ---
-## Docker
-
-The official image is hosted on Docker Hub as
-[cognite/grafana-cdf](https://hub.docker.com/r/cognite/grafana-cdf/)
-
-To run it, first create a Docker volume to store your dashboards
-and settings.
-
-`docker volume create grafana-storage`
-
-Run the Docker image using this volume:
-
-`docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdf`
-
-Now you can access Grafana at http://localhost:3000
-
-Standard username/password for logging in is admin/admin. See
-[http://docs.grafana.org/installation/docker/](http://docs.grafana.org/installation/docker/) for configuration details.
-
-For more help with Docker, see the [step-by-step guide](https://github.com/cognitedata/cognite-grafana-datasource/blob/master/instructions.md).
-
 
 ## Developing
 
@@ -65,3 +44,24 @@ ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 `yarn` followed by `yarn build` should work on systems with a shell.
 
 For debugging and development, use `yarn dev:watch`, and for testing use `yarn test`.
+
+## Docker
+
+The Grafana image is also hosted on Docker Hub as
+[cognite/grafana-cdf](https://hub.docker.com/r/cognite/grafana-cdf/) or [cognite/grafana-cdf-dev](https://hub.docker.com/r/cognite/grafana-cdf-dev/) and bundled with a Cognite Data Source. You may use it for development purposes only.
+
+To run it, first create a Docker volume to store your dashboards
+and settings.
+
+`docker volume create grafana-storage`
+
+Run the Docker image using this volume:
+
+`docker run -d --name grafana -p 3000:3000 -v grafana-storage:/var/lib/grafana cognite/grafana-cdf`
+
+Now you can access Grafana at http://localhost:3000
+
+Standard username/password for logging in is admin/admin. See
+[http://docs.grafana.org/installation/docker/](http://docs.grafana.org/installation/docker/) for configuration details.
+
+For more help with Docker, see the [step-by-step guide](https://github.com/cognitedata/cognite-grafana-datasource/blob/master/instructions.md).
