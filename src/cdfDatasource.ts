@@ -31,6 +31,7 @@ import { appEvents } from 'grafana/app/core/core';
 import { failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
+const variableLabelRegex = /{{([^{}]*)}}/g;
 
 export function formQueryForItems(
   items,
@@ -112,9 +113,12 @@ async function getLabelsForTarget(
       return timeseries.map(ts => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Custom: {
-      const expressions = queryList.map(({ expression }) => expression);
-
-      return getLabelsForExpression(expressions, target.label, target, connector);
+      const userDefinedLabel = target.label;
+      if (!target.label || labelContainsVariableProps(userDefinedLabel)) {
+        const expressions = queryList.map(({ expression }) => expression);
+        return getLabelsForExpression(expressions, userDefinedLabel, target, connector);
+      }
+      return queryList.map(() => userDefinedLabel);
     }
   }
 }
@@ -141,8 +145,11 @@ export function getLabelWithInjectedProps(
   timeseries: TimeSeriesResponseItem
 ): string {
   // matches with any text within {{ }}
-  const variableRegex = /{{([^{}]*)}}/g;
-  return label.replace(variableRegex, (full, group) => get(timeseries, group, full));
+  return label.replace(variableLabelRegex, (full, group) => get(timeseries, group, full));
+}
+
+export function labelContainsVariableProps(label: string): boolean {
+  return variableLabelRegex.test(label);
 }
 
 export async function getTimeseries(

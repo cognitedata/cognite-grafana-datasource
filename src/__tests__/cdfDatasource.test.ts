@@ -1,4 +1,9 @@
-import { datapoints2Tuples, promiser, reduceTimeseries } from '../cdfDatasource';
+import {
+  datapoints2Tuples,
+  promiser,
+  reduceTimeseries,
+  labelContainsVariableProps,
+} from '../cdfDatasource';
 import { getDataqueryResponse, getMeta } from './utils';
 
 describe('CDF datasource', () => {
@@ -73,6 +78,16 @@ describe('CDF datasource', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('label contains {{}}', () => {
+    test('{{prop}}', () => {
+      expect(labelContainsVariableProps('anything {{prop}}')).toEqual(true);
+    });
+
+    test('no props', () => {
+      expect(labelContainsVariableProps('pure text')).toEqual(false);
     });
   });
 });

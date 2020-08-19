@@ -26,22 +26,21 @@ const tsError = {
   },
 };
 const externalIdPrefix = 'Timeseries';
+const options: any = {
+  targets: [],
+  range: {
+    from: '1549336675000',
+    to: '1549338475000',
+  },
+  interval: '30s',
+  intervalMs: ms('30s'),
+  maxDataPoints: 760,
+  format: 'json',
+  panelId: 1,
+  dashboardId: 1,
+};
 
 describe('Datasource Query', () => {
-  const options: any = {
-    targets: [],
-    range: {
-      from: '1549336675000',
-      to: '1549338475000',
-    },
-    interval: '30s',
-    intervalMs: ms('30s'),
-    maxDataPoints: 760,
-    format: 'json',
-    panelId: 1,
-    dashboardId: 1,
-  };
-
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -540,5 +539,27 @@ describe('Datasource Query', () => {
         `events{assetIds=[123,456], type="type_or_subtype", subtype="type_or_subtype"}`
       );
     });
+  });
+});
+
+describe('Given custom query with pure text label', () => {
+  beforeAll(async () => {
+    jest.clearAllMocks();
+    backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async x => {
+      return getDataqueryResponse(x.data, externalIdPrefix, 0);
+    });
+  });
+
+  it('should return pure text label', async () => {
+    const targetA: QueryTargetLike = {
+      tab: Tab.Custom,
+      expr: 'ts{id=1}',
+      label: 'Pure text',
+    };
+    const result = await ds.query({
+      ...options,
+      targets: [targetA],
+    });
+    expect(result.data[0].target).toEqual('Pure text');
   });
 });
