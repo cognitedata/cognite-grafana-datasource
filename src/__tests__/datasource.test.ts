@@ -39,6 +39,8 @@ const options: any = {
   panelId: 1,
   dashboardId: 1,
 };
+const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
+  getItemsResponseObject([{ id, externalId, description }]);
 
 describe('Datasource Query', () => {
   beforeEach(() => {
@@ -561,5 +563,24 @@ describe('Given custom query with pure text label', () => {
       targets: [targetA],
     });
     expect(result.data[0].target).toEqual('Pure text');
+  });
+});
+
+describe('custom query granularity less then a second', () => {
+  const targetA = {
+    tab: Tab.Custom,
+    expr: 'ts{id=1}',
+    aggregation: 'average',
+  } as any;
+  beforeAll(async () => {
+    jest.clearAllMocks();
+    backendSrvMock.datasourceRequest = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
+  });
+
+  it('defaults to one second', async () => {
+    await ds.fetchTimeseriesForTargets([targetA], { ...options, intervalMs: 99 });
+    expect(backendSrvMock.datasourceRequest.mock.calls[1][0].data.items[0].expression).toMatch(
+      'granularity="1s"}'
+    );
   });
 });
