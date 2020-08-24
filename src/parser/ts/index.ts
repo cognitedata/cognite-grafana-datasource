@@ -31,7 +31,7 @@ export const formQueriesForExpression = async (
   }
   const timeseries = await Promise.all(
     serverFilters.map(async filter => {
-      const tsResult = await getTimeseries({ filter }, target, connector, false);
+      const tsResult = await getTimeseries({ filter }, connector, false);
       if (!tsResult.length) {
         throw NoTimeseriesFound(filter, expression);
       }
@@ -163,12 +163,11 @@ export const convertExpressionToLabel = (
 export const getLabelsForExpression = async (
   expressions: string[],
   labelSrc: string,
-  target,
   connector: Connector
 ) => {
   const tsIds = getReferencedIdsInExpressions(expressions);
   const tsUniqueIds = uniqBy(tsIds, unwrapId);
-  const referencedTS = await getTimeseries({ items: tsUniqueIds }, target, connector, false);
+  const referencedTS = await getTimeseries({ items: tsUniqueIds }, connector, false);
   const tsMap = reduceTsToMap(referencedTS);
   return expressions.map(expr => convertExpressionToLabel(expr, labelSrc, tsMap));
 };
@@ -369,16 +368,13 @@ const getReferencedIdsInExpressions = (expressions: string[]) => {
 };
 
 const reduceTsToMap = (timeseries: TimeSeriesResponseItem[]): TSResponseMap => {
-  return timeseries.reduce(
-    (map, serie) => {
-      map[serie.id] = serie;
-      if (serie.externalId) {
-        map[serie.externalId] = serie;
-      }
-      return map;
-    },
-    {} as TSResponseMap
-  );
+  return timeseries.reduce((map, serie) => {
+    map[serie.id] = serie;
+    if (serie.externalId) {
+      map[serie.externalId] = serie;
+    }
+    return map;
+  }, {} as TSResponseMap);
 };
 
 export const STSReference = (query: STSFilter[] = []): STSReference => {

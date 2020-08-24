@@ -27,11 +27,10 @@ import { Connector } from './connector';
 import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
 import { TimeSeries } from '@grafana/ui';
-import { appEvents } from 'grafana/app/core/core';
-import { failedResponseEvent, CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
+import { CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
-const variableLabelRegex = /{{([^{}]*)}}/g;
+const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
   items,
@@ -76,65 +75,45 @@ export function formQueriesForTargets(
   });
 }
 
-export async function formMetadatasForTargets(
-  queriesData: QueriesData,
-  options: QueryOptions,
-  connector: Connector
-): Promise<ResponseMetadata[]> {
-  const promises = queriesData.map(async ({ target, items }) => {
-    const labels = await getLabelsForTarget(target, items, connector);
-
-    return {
-      target,
-      labels,
-    };
-  });
-  return Promise.all(promises);
-}
-
-async function getLabelsForTarget(
+export async function getLabelsForTarget(
   target: QueryTarget,
   queryList: DataQueryRequestItem[],
   connector: Connector
 ): Promise<string[]> {
+  const labelSrc = target.label || '';
   switch (target.tab) {
     case undefined:
     case Timeseries: {
-      return [await getTimeseriesLabel(target.label, target.target, target, connector)];
+      return [await getTimeseriesLabel(labelSrc, target.target, connector)];
     }
     case Asset: {
-      const labelSrc = target.label || '';
       const tsIds = queryList.map(({ id }) => ({ id }));
       /**
        * TODO: While this is ok perfomence-wise as we have caching, it is not very nice code here.
        * We should refactor labels logic someday
        */
-      const timeseries = await getTimeseries({ items: tsIds }, target, connector, false);
+      const timeseries = await getTimeseries({ items: tsIds }, connector, false);
       return timeseries.map(ts => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Custom: {
-      const userDefinedLabel = target.label;
-      if (!target.label || labelContainsVariableProps(userDefinedLabel)) {
+      if (!labelSrc || labelContainsVariableProps(labelSrc)) {
         const expressions = queryList.map(({ expression }) => expression);
-        return getLabelsForExpression(expressions, userDefinedLabel, target, connector);
+        return getLabelsForExpression(expressions, labelSrc, connector);
       }
-      return queryList.map(() => userDefinedLabel);
+      return queryList.map(() => labelSrc);
     }
   }
 }
 
 async function getTimeseriesLabel(
-  label: string = '',
+  label: string,
   id: number,
-  target: QueryTarget,
   connector: Connector
 ): Promise<string> {
   let resLabel = label;
-  if (label && label.match(/{{.*}}/)) {
-    try {
-      const [ts] = await getTimeseries({ items: [{ id }] }, target, connector);
-      resLabel = getLabelWithInjectedProps(label, ts);
-    } catch {}
+  if (label && labelContainsVariableProps(label)) {
+    const [ts] = await getTimeseries({ items: [{ id }] }, connector);
+    resLabel = getLabelWithInjectedProps(label, ts);
   }
   return resLabel;
 }
@@ -149,46 +128,41 @@ export function getLabelWithInjectedProps(
 }
 
 export function labelContainsVariableProps(label: string): boolean {
-  return variableLabelRegex.test(label);
+  return label && !!label.match(variableLabelRegex);
 }
 
 export async function getTimeseries(
   data: TimeseriesFilterQuery | Items<IdEither>,
-  target: QueryTarget,
   connector: Connector,
   filterIsString: boolean = true
 ): Promise<TimeSeriesResponseItem[]> {
-  try {
-    const method = HttpMethod.POST;
-    let items: TimeSeriesResponseItem[];
+  const method = HttpMethod.POST;
+  let items: TimeSeriesResponseItem[];
 
-    if ('items' in data) {
-      items = await connector.fetchItems({
-        data,
-        method,
-        path: `/timeseries/byids`,
-        cacheTime: CacheTime.TimeseriesByIds,
-      });
-    } else {
-      items = await connector.fetchAndPaginate({
-        data,
-        method,
-        path: `/timeseries/list`,
-        cacheTime: CacheTime.TimeseriesList,
-      });
-    }
-
-    return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
-  } catch (error) {
-    const { data, status } = error;
-    const message =
-      data && data.error ? `[${status} ERROR] ${data.error.message}` : `Unknown error`;
-
-    appEvents.emit(failedResponseEvent, { refId: target.refId, error: message });
-
-    // todo: need to be reviewed well, should throw error actually
-    return [];
+  if ('items' in data) {
+    items = await connector.fetchItems({
+      data,
+      method,
+      path: `/timeseries/byids`,
+      cacheTime: CacheTime.TimeseriesByIds,
+    });
+  } else {
+    items = await connector.fetchAndPaginate({
+      data,
+      method,
+      path: `/timeseries/list`,
+      cacheTime: CacheTime.TimeseriesList,
+    });
   }
+
+  return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
+}
+
+export function stringifyError(error: any) {
+  const { data, status } = error;
+  const errorMessage = data?.error?.message || error.message;
+  const errorCode = status ? `${status} ` : '';
+  return errorMessage ? `[${errorCode}ERROR] ${errorMessage}` : `Unknown error`;
 }
 
 export function reduceTimeseries(
