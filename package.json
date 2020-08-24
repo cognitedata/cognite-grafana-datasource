@@ -41,7 +41,7 @@
     "ms": "^2.1.2",
     "nearley": "^2.19.1",
     "ng-annotate-webpack-plugin": "^0.3.0",
-    "prettier": "1.16.3",
+    "prettier": "~1.19.0",
     "query-string": "^6.10.1",
     "replace-in-file-webpack-plugin": "^1.0.6",
     "style-loader": "^0.23.1",

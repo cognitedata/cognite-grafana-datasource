@@ -95,7 +95,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 123,
-      tab: Tab.Timeseries,
+      tab: Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
@@ -157,7 +157,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 1,
-      tab: Tab.Timeseries,
+      tab: Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
@@ -199,7 +199,7 @@ describe('Datasource Query', () => {
     };
     const targetC: QueryTargetLike = {
       assetQuery,
-      tab: Tab.Asset,
+      tab: Asset,
       aggregation: 'max',
       refId: 'C',
       target: '',
@@ -292,7 +292,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'B',
       target: 123,
-      tab: Tab.Custom,
+      tab: Custom,
       expr:
         "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
     };
@@ -378,7 +378,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 123,
-      tab: Tab.Custom,
+      tab: Custom,
       expr: 'ts{} + pi()',
       label: '{{description}} {{metadata.key1}}',
     };
@@ -438,6 +438,54 @@ describe('Datasource Query', () => {
       expect(result).toMatchSnapshot();
     });
   });
+
+  describe('Given "Custom queries" with errors', () => {
+    const targets: QueryTargetLike[] = [
+      {
+        refId: 'A',
+        tab: Custom,
+        expr: 'ts{name=""}',
+      },
+    ];
+    const query = { ...options, targets };
+    const emptyResult = { data: [] };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('400 error', async () => {
+      backendSrvMock.datasourceRequest = jest.fn().mockRejectedValueOnce(tsError);
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual('[400 ERROR] error message');
+    });
+
+    test('unknown error', async () => {
+      backendSrvMock.datasourceRequest = jest.fn().mockRejectedValueOnce({});
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual('Unknown error');
+    });
+
+    test('empty ts filter result', async () => {
+      backendSrvMock.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual(
+        '[ERROR] No timeseries found for filter {"name":""} in expression ts{name=""}'
+      );
+    });
+  });
+
   describe('filterQueryTargets', () => {
     const normalTargets = [
       {
@@ -552,7 +600,7 @@ describe('Given custom query with pure text label', () => {
 
   it('should return pure text label', async () => {
     const targetA: QueryTargetLike = {
-      tab: Tab.Custom,
+      tab: Custom,
       expr: 'ts{id=1}',
       label: 'Pure text',
     };

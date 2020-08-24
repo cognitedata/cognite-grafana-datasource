@@ -35,11 +35,12 @@ import {
   formQueriesForTargets,
   getTimeseries,
   reduceTimeseries,
-  formMetadatasForTargets,
   promiser,
   getLimitsWarnings,
   getCalculationWarnings,
   datapointsPath,
+  stringifyError,
+  getLabelsForTarget,
 } from './cdfDatasource';
 import { Connector } from './connector';
 import { TimeRange } from '@grafana/ui';
@@ -104,21 +105,27 @@ export default class CogniteDatasource {
         const items = await this.getDataQueryRequestItems(target, options);
         return { items, target };
       } catch (e) {
-        appEvents.emit(failedResponseEvent, { refId: target.refId, error: e.message });
-        return null;
+        handleError(e, target.refId);
       }
     });
-    const queryData = await Promise.all(itemsForTargetsPromises);
-    const filteredQueryData = queryData.filter(data => data && data.items && data.items.length);
+    const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
+      data => data?.items?.length
+    );
 
-    const queries = formQueriesForTargets(filteredQueryData, options);
-    let metadata = await formMetadatasForTargets(filteredQueryData, options, this.connector);
-    metadata = metadata.map(({ target, labels: labelsWithVariables }) => {
-      const labels = labelsWithVariables.map(label =>
-        this.replaceVariable(label, options.scopedVars)
-      );
-      return { labels, target };
-    });
+    const queries = formQueriesForTargets(queryData, options);
+    const metadata = await Promise.all(
+      queryData.map(async ({ target, items }) => {
+        let labels = [];
+        try {
+          labels = (await getLabelsForTarget(target, items, this.connector)).map(label =>
+            this.replaceVariable(label, options.scopedVars)
+          );
+        } catch (err) {
+          handleError(err, target.refId);
+        }
+        return { target, labels };
+      })
+    );
 
     return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
       queries,
@@ -243,11 +250,11 @@ export default class CogniteDatasource {
   }
 
   async findAssetTimeseries(
-    target: QueryTarget,
-    options: QueryOptions
+    { refId, assetQuery }: QueryTarget,
+    { scopedVars }: QueryOptions
   ): Promise<TimeSeriesResponseItem[]> {
-    const assetId = this.replaceVariable(target.assetQuery.target, options.scopedVars);
-    const filter = target.assetQuery.includeSubtrees
+    const assetId = this.replaceVariable(assetQuery.target, scopedVars);
+    const filter = assetQuery.includeSubtrees
       ? {
           assetSubtreeIds: [{ id: Number(assetId) }],
         }
@@ -258,11 +265,11 @@ export default class CogniteDatasource {
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
     const limit = 101;
-    const ts = await getTimeseries({ filter, limit }, target, this.connector);
+    const ts = await getTimeseries({ filter, limit }, this.connector);
     if (ts.length === limit) {
       appEvents.emit(datapointsWarningEvent, {
+        refId,
         warning: TIMESERIES_LIMIT_WARNING,
-        refId: target.refId,
       });
 
       ts.splice(-1);
@@ -346,20 +353,18 @@ function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
   failed
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
-    .forEach(({ error, metadata }) => {
-      const message =
-        error.data && error.data.error
-          ? `[${error.status} ERROR] ${error.data.error.message}`
-          : 'Unknown error';
-
-      appEvents.emit(failedResponseEvent, { refId: metadata.target.refId, error: message });
-    });
+    .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
 }
 
 export function getRange(range: TimeRange): Tuple<number> {
   const timeFrom = Math.ceil(parseDate(range.from));
   const timeTo = Math.ceil(parseDate(range.to));
   return [timeFrom, timeTo];
+}
+
+function handleError(error: any, refId: string) {
+  const errMessage = stringifyError(error);
+  appEvents.emit(failedResponseEvent, { refId, error: errMessage });
 }
 
 function showWarnings(responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]) {

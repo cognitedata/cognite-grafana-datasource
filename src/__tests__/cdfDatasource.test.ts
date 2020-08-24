@@ -10,17 +10,32 @@ describe('CDF datasource', () => {
   describe('datapoints to tuples', () => {
     it('converts non aggregated values', () => {
       expect(
-        datapoints2Tuples([{ timestamp: 1, value: 2 }, { timestamp: 1, value: 2 }], '')
-      ).toEqual([[2, 1], [2, 1]]);
+        datapoints2Tuples(
+          [
+            { timestamp: 1, value: 2 },
+            { timestamp: 1, value: 2 },
+          ],
+          ''
+        )
+      ).toEqual([
+        [2, 1],
+        [2, 1],
+      ]);
     });
 
     it('converts aggregated values', () => {
       expect(
         datapoints2Tuples(
-          [{ timestamp: 1, aggregate: 2 }, { timestamp: 1, aggregate: 2 }],
+          [
+            { timestamp: 1, aggregate: 2 },
+            { timestamp: 1, aggregate: 2 },
+          ],
           'aggregate'
         )
-      ).toEqual([[2, 1], [2, 1]]);
+      ).toEqual([
+        [2, 1],
+        [2, 1],
+      ]);
     });
   });
 
@@ -41,7 +56,10 @@ describe('CDF datasource', () => {
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
-      expect(reduced.datapoints).toEqual([[0, 1549336675000], [1, 1549337275000]]);
+      expect(reduced.datapoints).toEqual([
+        [0, 1549336675000],
+        [1, 1549337275000],
+      ]);
       expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
     });
   });
@@ -84,6 +102,10 @@ describe('CDF datasource', () => {
   describe('label contains {{}}', () => {
     test('{{prop}}', () => {
       expect(labelContainsVariableProps('anything {{prop}}')).toEqual(true);
+    });
+
+    test('{{id}}', () => {
+      expect(labelContainsVariableProps('{{id}}')).toEqual(true);
     });
 
     test('no props', () => {
