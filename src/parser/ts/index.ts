@@ -185,16 +185,6 @@ export const getReferencedTimeseries = (route: STSQuery): StringMap[] => {
   }));
 };
 
-export const hasAggregates = (expression: string): boolean => {
-  let hasAggregates = false;
-  walk(parse(expression), obj => {
-    if (isSTSReference(obj) && obj.query.some(isSTSAggregateFilter)) {
-      hasAggregates = true;
-    }
-  });
-  return hasAggregates;
-};
-
 export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
   return items.filter(isSTSFilter).reduce((res, filter) => {
     let value: any;
@@ -417,7 +407,7 @@ const isOneOf = (value: string, ...arr: string[]) => {
 };
 
 const isSTSAggregateFilter = (query: STSFilter) => {
-  return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate');
+  return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate', 'alignment');
 };
 
 const isIdsFilter = (query: STSFilter): query is STSServerFilter => {
