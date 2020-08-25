@@ -97,16 +97,16 @@ define([
         return e && e.__esModule ? e : { default: e };
       };
       Object.defineProperty(t, "__esModule", { value: !0 }),
-        (t.checkFilter = t.applyFilters = t.getRequestId = t.ms2String = t.getQueryString = void 0);
+        (t.checkFilter = t.applyFilters = t.getRequestId = t.toGranularityWithLowerBound = t.getQueryString = void 0);
       var s = n(0),
         o = n(17),
-        a = r(n(10)),
-        i = n(11);
+        a = r(n(9)),
+        i = n(10);
       (t.getQueryString = function(e) {
         return o.stringify(s.omitBy(e, s.isNil));
       }),
-        (t.ms2String = function(e) {
-          return a.default(e < 1e3 ? 1e3 : e);
+        (t.toGranularityWithLowerBound = function(e, t) {
+          return void 0 === t && (t = 1e3), a.default(Math.max(e, t));
         }),
         (t.getRequestId = function(e, t) {
           return e.dashboardId + "_" + e.panelId + "_" + t.refId;
@@ -185,12 +185,12 @@ define([
         u = i(n(5)),
         c = i(n(27)),
         p = i(n(28)),
-        f = n(12),
+        f = n(11),
         m = i(n(30)),
         b = f.Grammar.fromCompiled(m.default),
         d = u.default(l.default),
-        h = c.default(l.default),
-        y = p.default(l.default),
+        y = c.default(l.default),
+        h = p.default(l.default),
         $ = function(e, t) {
           var n,
             r = t.trim();
@@ -230,8 +230,8 @@ define([
                   return r(r({}, e), t);
                 }, {})
               : {},
-            a = y(o, ["filter", "value", "key"]),
-            i = h(a, { pathFormat: "array" }).map(function(e) {
+            a = h(o, ["filter", "value", "key"]),
+            i = y(a, { pathFormat: "array" }).map(function(e) {
               var t = e.join("."),
                 n = e.slice(0, -1),
                 r = l.get(o, t),
@@ -480,9 +480,6 @@ define([
         };
       };
     },
-    function(e, n) {
-      e.exports = t;
-    },
     function(e, t, n) {
       "use strict";
       var r = function() {
@@ -622,15 +619,15 @@ define([
       var a = n(16),
         i = n(2),
         l = n(3),
-        u = n(13),
-        c = n(8),
+        u = n(12),
+        c = n(14),
         p = n(1),
-        f = n(14),
+        f = n(13),
         m = n(32),
         b = n(4),
         d = p.Tab.Asset,
-        h = p.Tab.Custom,
-        y = p.Tab.Timeseries,
+        y = p.Tab.Custom,
+        h = p.Tab.Timeseries,
         $ = p.HttpMethod.POST,
         g = (function() {
           function e(e, t, n) {
@@ -670,19 +667,7 @@ define([
                               return !e.error.cancelled;
                             })
                             .forEach(function(e) {
-                              var t = e.error,
-                                n = e.metadata,
-                                r =
-                                  t.data && t.data.error
-                                    ? "[" +
-                                      t.status +
-                                      " ERROR] " +
-                                      t.data.error.message
-                                    : "Unknown error";
-                              c.appEvents.emit(b.failedResponseEvent, {
-                                refId: n.target.refId,
-                                error: r
-                              });
+                              return j(e.error, e.metadata.target.refId);
                             });
                         })(s),
                         a.forEach(function(e) {
@@ -720,33 +705,24 @@ define([
                   r,
                   a,
                   l,
-                  u,
-                  p = this;
-                return o(this, function(m) {
-                  switch (m.label) {
+                  u = this;
+                return o(this, function(c) {
+                  switch (c.label) {
                     case 0:
                       return (
                         (n = e.map(function(e) {
-                          return s(p, void 0, void 0, function() {
-                            var n;
-                            return o(this, function(r) {
-                              switch (r.label) {
+                          return s(u, void 0, void 0, function() {
+                            return o(this, function(n) {
+                              switch (n.label) {
                                 case 0:
                                   return (
-                                    r.trys.push([0, 2, , 3]),
+                                    n.trys.push([0, 2, , 3]),
                                     [4, this.getDataQueryRequestItems(e, t)]
                                   );
                                 case 1:
-                                  return [2, { items: r.sent(), target: e }];
+                                  return [2, { items: n.sent(), target: e }];
                                 case 2:
-                                  return (
-                                    (n = r.sent()),
-                                    c.appEvents.emit(b.failedResponseEvent, {
-                                      refId: e.refId,
-                                      error: n.message
-                                    }),
-                                    [2, null]
-                                  );
+                                  return j(n.sent(), e.refId), [3, 3];
                                 case 3:
                                   return [2];
                               }
@@ -757,29 +733,68 @@ define([
                       );
                     case 1:
                       return (
-                        (r = m.sent()),
-                        (a = r.filter(function(e) {
-                          return e && e.items && e.items.length;
+                        (r = c.sent().filter(function(e) {
+                          var t;
+                          return null === (t = null == e ? void 0 : e.items) ||
+                            void 0 === t
+                            ? void 0
+                            : t.length;
                         })),
-                        (l = f.formQueriesForTargets(a, t)),
-                        [4, f.formMetadatasForTargets(a, t, this.connector)]
+                        (a = f.formQueriesForTargets(r, t)),
+                        [
+                          4,
+                          Promise.all(
+                            r.map(function(e) {
+                              var n = e.target,
+                                r = e.items;
+                              return s(u, void 0, void 0, function() {
+                                var e,
+                                  s = this;
+                                return o(this, function(o) {
+                                  switch (o.label) {
+                                    case 0:
+                                      (e = []), (o.label = 1);
+                                    case 1:
+                                      return (
+                                        o.trys.push([1, 3, , 4]),
+                                        [
+                                          4,
+                                          f.getLabelsForTarget(
+                                            n,
+                                            r,
+                                            this.connector
+                                          )
+                                        ]
+                                      );
+                                    case 2:
+                                      return (
+                                        (e = o.sent().map(function(e) {
+                                          return s.replaceVariable(
+                                            e,
+                                            t.scopedVars
+                                          );
+                                        })),
+                                        [3, 4]
+                                      );
+                                    case 3:
+                                      return j(o.sent(), n.refId), [3, 4];
+                                    case 4:
+                                      return [2, { target: n, labels: e }];
+                                  }
+                                });
+                              });
+                            })
+                          )
+                        ]
                       );
                     case 2:
                       return (
-                        (u = (u = m.sent()).map(function(e) {
-                          var n = e.target;
-                          return {
-                            labels: e.labels.map(function(e) {
-                              return p.replaceVariable(e, t.scopedVars);
-                            }),
-                            target: n
-                          };
-                        })),
+                        (l = c.sent()),
                         [
                           2,
-                          f.promiser(l, u, function(e, n) {
+                          f.promiser(a, l, function(e, n) {
                             var r = n.target;
-                            return s(p, void 0, void 0, function() {
+                            return s(u, void 0, void 0, function() {
                               var n, s;
                               return o(this, function(o) {
                                 return (
@@ -811,7 +826,7 @@ define([
             }),
             (e.prototype.getDataQueryRequestItems = function(e, t) {
               return s(this, void 0, void 0, function() {
-                var n, r, s, a;
+                var n, r, s, a, l;
                 return o(this, function(o) {
                   switch (o.label) {
                     case 0:
@@ -823,7 +838,7 @@ define([
                         n)
                       ) {
                         case void 0:
-                        case y:
+                        case h:
                           return [3, 1];
                         case d:
                           return [3, 2];
@@ -845,15 +860,8 @@ define([
                     case 4:
                       return (
                         (a = this.replaceVariable(s, t.scopedVars)),
-                        [
-                          2,
-                          u.formQueriesForExpression(
-                            a,
-                            e,
-                            this.connector,
-                            t.interval
-                          )
-                        ]
+                        (l = i.toGranularityWithLowerBound(t.intervalMs)),
+                        [2, u.formQueriesForExpression(a, e, this.connector, l)]
                       );
                     case 5:
                       return [2];
@@ -866,7 +874,7 @@ define([
             }),
             (e.prototype.annotationQuery = function(e) {
               return s(this, void 0, void 0, function() {
-                var t, n, s, a, u, c, p, f, m, b, d, h, y, g, v;
+                var t, n, s, a, u, c, p, f, m, b, d, y, h, g, v;
                 return o(this, function(o) {
                   switch (o.label) {
                     case 0:
@@ -884,12 +892,12 @@ define([
                           : ((m = this.replaceVariable(a)),
                             (b = l.parse(m)),
                             (d = b.filters),
-                            (h = b.params),
-                            (y = {
+                            (y = b.params),
+                            (h = {
                               startTime: { max: f },
                               endTime: { min: p }
                             }),
-                            (g = { filter: r(r({}, h), y), limit: 1e3 }),
+                            (g = { filter: r(r({}, y), h), limit: 1e3 }),
                             [
                               4,
                               this.connector.fetchItems({
@@ -965,38 +973,37 @@ define([
               });
             }),
             (e.prototype.findAssetTimeseries = function(e, t) {
+              var n = e.refId,
+                r = e.assetQuery,
+                a = t.scopedVars;
               return s(this, void 0, void 0, function() {
-                var n, r, s, a;
+                var e, t, s, i;
                 return o(this, function(o) {
                   switch (o.label) {
                     case 0:
                       return (
-                        (n = this.replaceVariable(
-                          e.assetQuery.target,
-                          t.scopedVars
-                        )),
-                        (r = e.assetQuery.includeSubtrees
-                          ? { assetSubtreeIds: [{ id: Number(n) }] }
-                          : { assetIds: [n] }),
+                        (e = this.replaceVariable(r.target, a)),
+                        (t = r.includeSubtrees
+                          ? { assetSubtreeIds: [{ id: Number(e) }] }
+                          : { assetIds: [e] }),
                         (s = 101),
                         [
                           4,
                           f.getTimeseries(
-                            { filter: r, limit: s },
-                            e,
+                            { filter: t, limit: s },
                             this.connector
                           )
                         ]
                       );
                     case 1:
                       return (
-                        (a = o.sent()).length === s &&
+                        (i = o.sent()).length === s &&
                           (c.appEvents.emit(b.datapointsWarningEvent, {
-                            warning: b.TIMESERIES_LIMIT_WARNING,
-                            refId: e.refId
+                            refId: n,
+                            warning: b.TIMESERIES_LIMIT_WARNING
                           }),
-                          a.splice(-1)),
-                        [2, a]
+                          i.splice(-1)),
+                        [2, i]
                       );
                   }
                 });
@@ -1090,9 +1097,9 @@ define([
             switch (t) {
               case d:
                 return n && n.target;
-              case h:
-                return e.expr;
               case y:
+                return e.expr;
+              case h:
               case void 0:
                 return e.target;
             }
@@ -1101,6 +1108,10 @@ define([
       }
       function x(e) {
         return [Math.ceil(a.parse(e.from)), Math.ceil(a.parse(e.to))];
+      }
+      function j(e, t) {
+        var n = f.stringifyError(e);
+        c.appEvents.emit(b.failedResponseEvent, { refId: t, error: n });
       }
       (t.default = g), (t.filterEmptyQueryTargets = v), (t.getRange = x);
     },
@@ -1746,17 +1757,17 @@ define([
       Object.defineProperty(t, "__esModule", { value: !0 }),
         (t.Constant = t.Operator = t.STSFilter = t.STSReference = t.composeSTSQuery = t.getClientFilters = t.flattenClientQueryFilters = t.getServerFilters = t.extractFilters = t.getIndicesOfMultiaryFunctionArgs = t.walk = t.flattenServerQueryFilters = t.hasAggregates = t.getReferencedTimeseries = t.getLabelsForExpression = t.convertExpressionToLabel = t.generateAllPossiblePermutations = t.parse = t.injectTSIdsInExpression = t.enrichWithDefaultAggregates = t.formQueriesForExpression = void 0);
       var p = a(n(0)),
-        f = n(12),
+        f = n(11),
         m = c(n(31)),
-        b = n(14),
-        d = n(11),
-        h = n(2),
-        y = n(3),
+        b = n(13),
+        d = n(10),
+        y = n(2),
+        h = n(3),
         $ = c(n(5)).default(p.default),
         g = f.Grammar.fromCompiled(m.default);
       t.formQueriesForExpression = function(e, n, r, s) {
         return i(void 0, void 0, void 0, function() {
-          var o, a, u, c, p, f, m, d, y, $;
+          var o, a, u, c, p, f, m, d, h, $;
           return l(this, function(g) {
             switch (g.label) {
               case 0:
@@ -1775,17 +1786,17 @@ define([
                         Promise.all(
                           p.map(function(t) {
                             return i(void 0, void 0, void 0, function() {
-                              var s;
-                              return l(this, function(o) {
-                                switch (o.label) {
+                              var n;
+                              return l(this, function(s) {
+                                switch (s.label) {
                                   case 0:
                                     return [
                                       4,
-                                      b.getTimeseries({ filter: t }, n, r, !1)
+                                      b.getTimeseries({ filter: t }, r, !1)
                                     ];
                                   case 1:
-                                    if (!(s = o.sent()).length) throw v(t, e);
-                                    return [2, s];
+                                    if (!(n = s.sent()).length) throw v(t, e);
+                                    return [2, n];
                                 }
                               });
                             });
@@ -1799,10 +1810,10 @@ define([
                   (f = g.sent()),
                   (m = t.getClientFilters(c)),
                   (d = f.map(function(e, t) {
-                    return h.applyFilters(e, m[t]);
+                    return y.applyFilters(e, m[t]);
                   })),
-                  (y = t.getIndicesOfMultiaryFunctionArgs(c)),
-                  ($ = t.generateAllPossiblePermutations(d, y)),
+                  (h = t.getIndicesOfMultiaryFunctionArgs(c)),
+                  ($ = t.generateAllPossiblePermutations(d, h)),
                   [
                     2,
                     $.map(function(e) {
@@ -1862,7 +1873,7 @@ define([
           return E(s);
         }),
         (t.parse = function(e) {
-          return y.parseWith(new f.Parser(g), e);
+          return h.parseWith(new f.Parser(g), e);
         }),
         (t.generateAllPossiblePermutations = function(e, t) {
           void 0 === t && (t = []);
@@ -1900,25 +1911,25 @@ define([
             }
           });
         }),
-        (t.getLabelsForExpression = function(e, n, r, s) {
+        (t.getLabelsForExpression = function(e, n, r) {
           return i(void 0, void 0, void 0, function() {
-            var o, a, i, u;
+            var s, o, a, i;
             return l(this, function(l) {
               switch (l.label) {
                 case 0:
                   return (
-                    (o = _(e)),
-                    (a = p.uniqBy(o, w)),
-                    [4, b.getTimeseries({ items: a }, r, s, !1)]
+                    (s = _(e)),
+                    (o = p.uniqBy(s, w)),
+                    [4, b.getTimeseries({ items: o }, r, !1)]
                   );
                 case 1:
                   return (
-                    (i = l.sent()),
-                    (u = A(i)),
+                    (a = l.sent()),
+                    (i = A(a)),
                     [
                       2,
                       e.map(function(e) {
-                        return t.convertExpressionToLabel(e, n, u);
+                        return t.convertExpressionToLabel(e, n, i);
                       })
                     ]
                   );
@@ -1983,7 +1994,7 @@ define([
             s = 0;
           return (
             t.walk(e, function(e) {
-              G(e) && 1 === e.args.length
+              V(e) && 1 === e.args.length
                 ? r.push.apply(r, e.args)
                 : B(e) && !S(e) && (r.includes(e) && n.push(s), s++);
             }),
@@ -2067,7 +2078,7 @@ define([
         if (B(e)) return e.type + "{" + j(e.query, !1) + "}";
         if (L(e)) return " " + e.operator + " ";
         if (Q(e)) return "" + e.constant;
-        var o = G(e) ? ", " : "",
+        var o = V(e) ? ", " : "",
           a = "";
         if (W(e)) {
           var i = e.args,
@@ -2086,7 +2097,7 @@ define([
       };
       var E = function(e) {
           return t.composeSTSQuery(t.parse(e), function(e) {
-            if (V(e)) return "(" + t.composeSTSQuery(e.args, null, " + ") + ")";
+            if (G(e)) return "(" + t.composeSTSQuery(e.args, null, " + ") + ")";
           });
         },
         w = function(e) {
@@ -2124,25 +2135,25 @@ define([
         S = function(e) {
           return C(e).length;
         },
-        k = function(e) {
+        T = function(e) {
           return R(e) && e.filter === d.FilterType.Equals;
         },
-        T = function(e) {
+        k = function(e) {
           for (var t = [], n = 1; n < arguments.length; n++)
             t[n - 1] = arguments[n];
           return -1 !== t.indexOf(e);
         },
         O = function(e) {
-          return k(e) && T(e.path, "granularity", "aggregate");
+          return T(e) && k(e.path, "granularity", "aggregate");
         },
         q = function(e) {
-          return k(e) && T(e.path, "id", "externalId");
+          return T(e) && k(e.path, "id", "externalId");
         },
         I = function(e) {
-          return k(e) && !O(e);
+          return T(e) && !O(e);
         },
         P = function(e) {
-          return R(e) && !k(e);
+          return R(e) && !T(e);
         },
         F = function(e) {
           return p.isArray(e) && e.some(q);
@@ -2174,13 +2185,13 @@ define([
         W = function(e) {
           return U(e, "map");
         },
-        V = function(e) {
+        G = function(e) {
           return U(e, "sum");
         },
-        G = function(e) {
+        V = function(e) {
           return (
             D(e) &&
-            T(e.func, "avg", "sum", "min", "max", "pow", "round", "on_error")
+            k(e.func, "avg", "sum", "min", "max", "pow", "round", "on_error")
           );
         };
     },
@@ -2319,43 +2330,43 @@ define([
           }
         };
       Object.defineProperty(t, "__esModule", { value: !0 }),
-        (t.datapointsPath = t.getCalculationWarnings = t.getLimitsWarnings = t.promiser = t.datapoints2Tuples = t.reduceTimeseries = t.getTimeseries = t.getLabelWithInjectedProps = t.formMetadatasForTargets = t.formQueriesForTargets = t.formQueryForItems = void 0);
+        (t.datapointsPath = t.getCalculationWarnings = t.getLimitsWarnings = t.promiser = t.datapoints2Tuples = t.reduceTimeseries = t.stringifyError = t.getTimeseries = t.labelContainsVariableProps = t.getLabelWithInjectedProps = t.getLabelsForTarget = t.formQueriesForTargets = t.formQueryForItems = void 0);
       var a = n(1),
         i = n(0),
         l = n(2),
-        u = n(13),
-        c = n(9),
-        p = n(8),
-        f = n(4),
-        m = a.Tab.Asset,
-        b = a.Tab.Custom,
-        d = a.Tab.Timeseries;
-      function h(e, t, n) {
+        u = n(12),
+        c = n(8),
+        p = n(4),
+        f = a.Tab.Asset,
+        m = a.Tab.Custom,
+        b = a.Tab.Timeseries,
+        d = /{{([^{}]+)}}/g;
+      function y(e, t, n) {
         var s = t.tab,
           o = t.aggregation,
           a = t.granularity,
           i = c.getRange(n.range),
           u = i[0],
           p = i[1];
-        if (s === b) {
-          var f = y(e.length);
+        if (s === m) {
+          var f = h(e.length);
           return {
             items: e.map(function(e) {
               return { expression: e.expression, start: u, end: p, limit: f };
             })
           };
         }
-        var m = null,
+        var b = null,
           d = o && "none" !== o;
         d &&
-          (m = {
+          (b = {
             aggregates: [o],
-            granularity: a || l.ms2String(n.intervalMs)
+            granularity: a || l.toGranularityWithLowerBound(n.intervalMs)
           });
-        var h = y(e.length, d);
-        return r(r({}, m), { end: p, start: u, items: e, limit: h });
+        var y = h(e.length, d);
+        return r(r({}, b), { end: p, start: u, items: e, limit: y });
       }
-      function y(e, t) {
+      function h(e, t) {
         return (
           void 0 === t && (t = !0),
           Math.floor((t ? 1e4 : 1e5) / Math.min(e, 100))
@@ -2367,154 +2378,73 @@ define([
           return o(this, function(o) {
             switch (o.label) {
               case 0:
-                switch (e.tab) {
-                  case void 0:
-                  case d:
-                    return [3, 1];
-                  case m:
-                    return [3, 3];
-                  case b:
-                    return [3, 5];
-                }
-                return [3, 6];
+                return (
+                  (r = e),
+                  e && v(e) ? [4, x({ items: [{ id: t }] }, n)] : [3, 2]
+                );
               case 1:
-                return [4, g(e.label, e.target, e, n)];
+                (s = o.sent()[0]), (r = g(e, s)), (o.label = 2);
               case 2:
-                return [2, [o.sent()]];
-              case 3:
-                return (
-                  (r = e.label || ""),
-                  [
-                    4,
-                    x(
-                      {
-                        items: t.map(function(e) {
-                          return { id: e.id };
-                        })
-                      },
-                      e,
-                      n,
-                      !1
-                    )
-                  ]
-                );
-              case 4:
-                return [
-                  2,
-                  o.sent().map(function(e) {
-                    return v(r, e);
-                  })
-                ];
-              case 5:
-                return (
-                  (s = t.map(function(e) {
-                    return e.expression;
-                  })),
-                  [2, u.getLabelsForExpression(s, e.label, e, n)]
-                );
-              case 6:
-                return [2];
+                return [2, r];
             }
           });
         });
       }
-      function g(e, t, n, r) {
-        return (
-          void 0 === e && (e = ""),
-          s(this, void 0, void 0, function() {
-            var s, a;
-            return o(this, function(o) {
-              switch (o.label) {
-                case 0:
-                  if (((s = e), !e || !e.match(/{{.*}}/))) return [3, 4];
-                  o.label = 1;
-                case 1:
-                  return (
-                    o.trys.push([1, 3, , 4]),
-                    [4, x({ items: [{ id: t }] }, n, r)]
-                  );
-                case 2:
-                  return (a = o.sent()[0]), (s = v(e, a)), [3, 4];
-                case 3:
-                  return o.sent(), [3, 4];
-                case 4:
-                  return [2, s];
-              }
-            });
-          })
-        );
-      }
-      function v(e, t) {
-        return e.replace(/{{([^{}]*)}}/g, function(e, n) {
+      function g(e, t) {
+        return e.replace(d, function(e, n) {
           return i.get(t, n, e);
         });
       }
-      function x(e, t, n, r) {
+      function v(e) {
+        return e && !!e.match(d);
+      }
+      function x(e, t, n) {
         return (
-          void 0 === r && (r = !0),
+          void 0 === n && (n = !0),
           s(this, void 0, void 0, function() {
-            var s, l, u, c, m, b;
+            var r, s;
             return o(this, function(o) {
               switch (o.label) {
                 case 0:
                   return (
-                    o.trys.push([0, 5, , 6]),
-                    (s = a.HttpMethod.POST),
-                    (l = void 0),
+                    (r = a.HttpMethod.POST),
                     "items" in e
                       ? [
                           4,
-                          n.fetchItems({
+                          t.fetchItems({
                             data: e,
-                            method: s,
+                            method: r,
                             path: "/timeseries/byids",
-                            cacheTime: f.CacheTime.TimeseriesByIds
+                            cacheTime: p.CacheTime.TimeseriesByIds
                           })
                         ]
                       : [3, 2]
                   );
                 case 1:
-                  return (l = o.sent()), [3, 4];
+                  return (s = o.sent()), [3, 4];
                 case 2:
                   return [
                     4,
-                    n.fetchAndPaginate({
+                    t.fetchAndPaginate({
                       data: e,
-                      method: s,
+                      method: r,
                       path: "/timeseries/list",
-                      cacheTime: f.CacheTime.TimeseriesList
+                      cacheTime: p.CacheTime.TimeseriesList
                     })
                   ];
                 case 3:
-                  (l = o.sent()), (o.label = 4);
+                  (s = o.sent()), (o.label = 4);
                 case 4:
                   return [
                     2,
                     i.cloneDeep(
-                      r
-                        ? l.filter(function(e) {
+                      n
+                        ? s.filter(function(e) {
                             return !e.isString;
                           })
-                        : l
+                        : s
                     )
                   ];
-                case 5:
-                  return (
-                    (u = o.sent()),
-                    (c = u.data),
-                    (m = u.status),
-                    (b =
-                      c && c.error
-                        ? "[" + m + " ERROR] " + c.error.message
-                        : "Unknown error"),
-                    p.appEvents.emit(f.failedResponseEvent, {
-                      refId: t.refId,
-                      error: b
-                    }),
-                    [2, []]
-                  );
-                case 6:
-                  return [2];
               }
             });
           })
@@ -2526,41 +2456,84 @@ define([
           var n, r;
         });
       }
-      (t.formQueryForItems = h),
+      (t.formQueryForItems = y),
         (t.formQueriesForTargets = function(e, t) {
           return e.map(function(e) {
             var n = e.target;
-            return h(e.items, n, t);
+            return y(e.items, n, t);
           });
         }),
-        (t.formMetadatasForTargets = function(e, t, n) {
+        (t.getLabelsForTarget = function(e, t, n) {
           return s(this, void 0, void 0, function() {
-            var t,
-              r = this;
-            return o(this, function(a) {
-              return (
-                (t = e.map(function(e) {
-                  var t = e.target,
-                    a = e.items;
-                  return s(r, void 0, void 0, function() {
-                    var e;
-                    return o(this, function(r) {
-                      switch (r.label) {
-                        case 0:
-                          return [4, $(t, a, n)];
-                        case 1:
-                          return (e = r.sent()), [2, { target: t, labels: e }];
-                      }
-                    });
-                  });
-                })),
-                [2, Promise.all(t)]
-              );
+            var r, s;
+            return o(this, function(o) {
+              switch (o.label) {
+                case 0:
+                  switch (((r = e.label || ""), e.tab)) {
+                    case void 0:
+                    case b:
+                      return [3, 1];
+                    case f:
+                      return [3, 3];
+                    case m:
+                      return [3, 5];
+                  }
+                  return [3, 6];
+                case 1:
+                  return [4, $(r, e.target, n)];
+                case 2:
+                  return [2, [o.sent()]];
+                case 3:
+                  return [
+                    4,
+                    x(
+                      {
+                        items: t.map(function(e) {
+                          return { id: e.id };
+                        })
+                      },
+                      n,
+                      !1
+                    )
+                  ];
+                case 4:
+                  return [
+                    2,
+                    o.sent().map(function(e) {
+                      return g(r, e);
+                    })
+                  ];
+                case 5:
+                  return !r || v(r)
+                    ? ((s = t.map(function(e) {
+                        return e.expression;
+                      })),
+                      [2, u.getLabelsForExpression(s, r, n)])
+                    : [
+                        2,
+                        t.map(function() {
+                          return r;
+                        })
+                      ];
+                case 6:
+                  return [2];
+              }
             });
           });
         }),
-        (t.getLabelWithInjectedProps = v),
+        (t.getLabelWithInjectedProps = g),
+        (t.labelContainsVariableProps = v),
         (t.getTimeseries = x),
+        (t.stringifyError = function(e) {
+          var t,
+            n = e.data,
+            r = e.status,
+            s =
+              (null === (t = null == n ? void 0 : n.error) || void 0 === t
+                ? void 0
+                : t.message) || e.message;
+          return s ? "[" + (r ? r + " " : "") + "ERROR] " + s : "Unknown error";
+        }),
         (t.reduceTimeseries = function(e, t) {
           var n = t[0],
             r = t[1],
@@ -2644,7 +2617,7 @@ define([
           return e.some(function(e) {
             return e.datapoints.length >= t;
           })
-            ? f.DATAPOINTS_LIMIT_WARNING
+            ? p.DATAPOINTS_LIMIT_WARNING
             : "";
         }),
         (t.getCalculationWarnings = function(e) {
@@ -2667,6 +2640,9 @@ define([
           return "/timeseries/" + (e ? "synthetic/query" : "data/list");
         });
     },
+    function(e, n) {
+      e.exports = t;
+    },
     function(e, t, n) {
       "use strict";
       var r = function(e) {
@@ -2674,7 +2650,7 @@ define([
       };
       Object.defineProperty(t, "__esModule", { value: !0 }),
         (t.VariableQueryEditor = t.AnnotationsQueryCtrl = t.ConfigCtrl = t.QueryCtrl = t.Datasource = void 0);
-      var s = r(n(9));
+      var s = r(n(8));
       t.Datasource = s.default;
       var o = n(33);
       Object.defineProperty(t, "QueryCtrl", {
@@ -2998,13 +2974,13 @@ define([
         return function r(s, a, i, l, u, c, p, f, m, b) {
           if (!i.break) {
             var d,
-              h = {
+              y = {
                 value: s,
                 key: l,
                 path: "array" == i.pathFormat ? u : t(u),
                 parent: p
               },
-              y = f.concat([h]),
+              h = f.concat([y]),
               $ = void 0,
               g = void 0,
               v = void 0;
@@ -3040,8 +3016,8 @@ define([
                 }
               };
               void 0 !== i.childrenPath &&
-                ((h.childrenPath = "array" == i.pathFormat ? b : t(b)),
-                (E.childrenPath = h.childrenPath));
+                ((y.childrenPath = "array" == i.pathFormat ? b : t(b)),
+                (E.childrenPath = y.childrenPath));
               try {
                 d = a(s, l, p && p.value, E);
               } catch (e) {
@@ -3058,7 +3034,7 @@ define([
                     e.isObject(t) &&
                     e.forOwn(t, function(e, t) {
                       var s = (u || []).concat(n || [], [t]);
-                      r(e, a, i, t, s, c + 1, h, y, m, n);
+                      r(e, a, i, t, s, c + 1, y, h, m, n);
                     });
                 }
                 !c && i.rootIsChildren
@@ -3070,7 +3046,7 @@ define([
                 e.forOwn(s, function(t, n) {
                   if (!e.isArray(s) || void 0 !== t || n in s) {
                     var o = (u || []).concat([n]);
-                    r(t, a, i, n, o, c + 1, h, y, m);
+                    r(t, a, i, n, o, c + 1, y, h, m);
                   }
                 });
             if (i.callbackAfterIterate && j) {
@@ -5337,7 +5313,7 @@ define([
         c = n(2),
         p = n(0),
         f = n(4),
-        m = l(n(10)),
+        m = l(n(9)),
         b = (function() {
           function e(e, t, n) {
             var r = this;
@@ -5542,27 +5518,28 @@ define([
     function(e, t, n) {
       "use strict";
       var r,
-        s = ((r = function(e, t) {
-          return (r =
-            Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array &&
+        s =
+          ((r = function(e, t) {
+            return (r =
+              Object.setPrototypeOf ||
+              ({ __proto__: [] } instanceof Array &&
+                function(e, t) {
+                  e.__proto__ = t;
+                }) ||
               function(e, t) {
-                e.__proto__ = t;
-              }) ||
-            function(e, t) {
-              for (var n in t) t.hasOwnProperty(n) && (e[n] = t[n]);
-            })(e, t);
-        }),
-        function(e, t) {
-          function n() {
-            this.constructor = e;
-          }
-          r(e, t),
-            (e.prototype =
-              null === t
-                ? Object.create(t)
-                : ((n.prototype = t.prototype), new n()));
-        }),
+                for (var n in t) t.hasOwnProperty(n) && (e[n] = t[n]);
+              })(e, t);
+          }),
+          function(e, t) {
+            function n() {
+              this.constructor = e;
+            }
+            r(e, t),
+              (e.prototype =
+                null === t
+                  ? Object.create(t)
+                  : ((n.prototype = t.prototype), new n()));
+          }),
         o = function(e) {
           return e && e.__esModule ? e : { default: e };
         };
@@ -5570,7 +5547,7 @@ define([
         (t.CogniteQueryCtrl = void 0);
       var a = o(n(0)),
         i = n(34),
-        l = n(8);
+        l = n(14);
       n(35);
       var u = n(1),
         c = n(4),
@@ -5744,10 +5721,11 @@ define([
                   r = e[3];
                 if (!r) return n;
                 if (t && "function" == typeof btoa) {
-                  var s = ((a = r),
-                    "/*# sourceMappingURL=data:application/json;charset=utf-8;base64," +
-                      btoa(unescape(encodeURIComponent(JSON.stringify(a)))) +
-                      " */"),
+                  var s =
+                      ((a = r),
+                      "/*# sourceMappingURL=data:application/json;charset=utf-8;base64," +
+                        btoa(unescape(encodeURIComponent(JSON.stringify(a)))) +
+                        " */"),
                     o = r.sources.map(function(e) {
                       return "/*# sourceURL=" + r.sourceRoot + e + " */";
                     });
@@ -5785,12 +5763,13 @@ define([
       var r,
         s,
         o = {},
-        a = ((r = function() {
-          return window && document && document.all && !window.atob;
-        }),
-        function() {
-          return void 0 === s && (s = r.apply(this, arguments)), s;
-        }),
+        a =
+          ((r = function() {
+            return window && document && document.all && !window.atob;
+          }),
+          function() {
+            return void 0 === s && (s = r.apply(this, arguments)), s;
+          }),
         i = function(e, t) {
           return t ? t.querySelector(e) : document.querySelector(e);
         },
@@ -5866,13 +5845,13 @@ define([
           n.insertBefore(t, s);
         }
       }
-      function h(e) {
+      function y(e) {
         if (null === e.parentNode) return !1;
         e.parentNode.removeChild(e);
         var t = p.indexOf(e);
         t >= 0 && p.splice(t, 1);
       }
-      function y(e) {
+      function h(e) {
         var t = document.createElement("style");
         if (
           (void 0 === e.attrs.type && (e.attrs.type = "text/css"),
@@ -5905,7 +5884,7 @@ define([
         }
         if (t.singleton) {
           var a = c++;
-          (n = u || (u = y(t))),
+          (n = u || (u = h(t))),
             (r = j.bind(null, n, a, !1)),
             (s = j.bind(null, n, a, !0));
         } else
@@ -5927,12 +5906,12 @@ define([
               })(t)),
               (r = w.bind(null, n, t)),
               (s = function() {
-                h(n), n.href && URL.revokeObjectURL(n.href);
+                y(n), n.href && URL.revokeObjectURL(n.href);
               }))
-            : ((n = y(t)),
+            : ((n = h(t)),
               (r = E.bind(null, n)),
               (s = function() {
-                h(n);
+                y(n);
               }));
         return (
           r(e),
@@ -5978,10 +5957,11 @@ define([
         );
       };
       var v,
-        x = ((v = []),
-        function(e, t) {
-          return (v[e] = t), v.filter(Boolean).join("\n");
-        });
+        x =
+          ((v = []),
+          function(e, t) {
+            return (v[e] = t), v.filter(Boolean).join("\n");
+          });
       function j(e, t, n, r) {
         var s = n ? "" : r.css;
         if (e.styleSheet) e.styleSheet.cssText = x(t, s);
@@ -6088,27 +6068,28 @@ define([
     function(e, t, n) {
       "use strict";
       var r,
-        s = ((r = function(e, t) {
-          return (r =
-            Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array &&
+        s =
+          ((r = function(e, t) {
+            return (r =
+              Object.setPrototypeOf ||
+              ({ __proto__: [] } instanceof Array &&
+                function(e, t) {
+                  e.__proto__ = t;
+                }) ||
               function(e, t) {
-                e.__proto__ = t;
-              }) ||
-            function(e, t) {
-              for (var n in t) t.hasOwnProperty(n) && (e[n] = t[n]);
-            })(e, t);
-        }),
-        function(e, t) {
-          function n() {
-            this.constructor = e;
-          }
-          r(e, t),
-            (e.prototype =
-              null === t
-                ? Object.create(t)
-                : ((n.prototype = t.prototype), new n()));
-        }),
+                for (var n in t) t.hasOwnProperty(n) && (e[n] = t[n]);
+              })(e, t);
+          }),
+          function(e, t) {
+            function n() {
+              this.constructor = e;
+            }
+            r(e, t),
+              (e.prototype =
+                null === t
+                  ? Object.create(t)
+                  : ((n.prototype = t.prototype), new n()));
+          }),
         o = function(e) {
           return e && e.__esModule ? e : { default: e };
         };
@@ -6151,7 +6132,7 @@ define([
           a.default.createElement(
             "code",
             { className: "query-keyword" },
-            "assets{assetSubtreeIds=[{id=123}, {externalId='external'}]"
+            "assets{assetSubtreeIds=[{id=123}, {externalId='external'}]}"
           ),
           a.default.createElement("br", null),
           a.default.createElement("br", null),

@@ -24,8 +24,8 @@
         "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
       }
     ],
-    "version": "2.0.0",
-    "updated": "2020-07-01"
+    "version": "2.0.1",
+    "updated": "2020-08-25"
   },
 
   "dependencies": {
@@ -44,7 +44,7 @@
         },
         {
           "name": "x-cdp-sdk",
-          "content": "CogniteGrafanaDatasource:2.0.0"
+          "content": "CogniteGrafanaDatasource:2.0.1"
         }
       ]
     },
