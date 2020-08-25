@@ -2,6 +2,20 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 2.0.1 - August 25, 2020
+### Bug fixes:
+- **\[Custom query\]** Option to display legend label as a plain text instead of expression
+
+  Example for query: `ts{id=1} + ts{id=2} + 1`:
+
+  * User label `custom name` will result to `custom name` label. (No specific timeseries referenced in the label)
+  * User label `{{name}}` will result to `timeseries_name_1 + timeseries_name_2 + 1` label. (This works the same way as before)
+- **\[Custom query\]** Error handling improved
+  * HTTP 500 errors messages are visible from GUI
+- **\[Custom query\]** Default granularity falls back to 1 second if shorter value is provided 
+  * this used to happen when user chose time span less than 10 minutes, resulting with HTTP 400 error
+
+ 
 ## 2.0.0 - June 29, 2020
 
 ### General improvements
