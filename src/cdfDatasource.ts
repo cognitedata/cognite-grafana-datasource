@@ -22,7 +22,7 @@ import {
   Datapoint,
 } from './types';
 import { get, cloneDeep } from 'lodash';
-import { ms2String } from './utils';
+import { toGranularityWithLowerBound } from './utils';
 import { Connector } from './connector';
 import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
@@ -50,7 +50,7 @@ export function formQueryForItems(
   if (isAggregated) {
     aggregations = {
       aggregates: [aggregation],
-      granularity: granularity || ms2String(options.intervalMs),
+      granularity: granularity || toGranularityWithLowerBound(options.intervalMs),
     };
   }
   const limit = calculateDPLimitPerQuery(items.length, isAggregated);
