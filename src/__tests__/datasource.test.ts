@@ -26,22 +26,23 @@ const tsError = {
   },
 };
 const externalIdPrefix = 'Timeseries';
+const options: any = {
+  targets: [],
+  range: {
+    from: '1549336675000',
+    to: '1549338475000',
+  },
+  interval: '30s',
+  intervalMs: ms('30s'),
+  maxDataPoints: 760,
+  format: 'json',
+  panelId: 1,
+  dashboardId: 1,
+};
+const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
+  getItemsResponseObject([{ id, externalId, description }]);
 
 describe('Datasource Query', () => {
-  const options: any = {
-    targets: [],
-    range: {
-      from: '1549336675000',
-      to: '1549338475000',
-    },
-    interval: '30s',
-    intervalMs: ms('30s'),
-    maxDataPoints: 760,
-    format: 'json',
-    panelId: 1,
-    dashboardId: 1,
-  };
-
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -96,7 +97,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 123,
-      tab: Tab.Timeseries,
+      tab: Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
@@ -158,7 +159,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 1,
-      tab: Tab.Timeseries,
+      tab: Timeseries,
     };
     const tsTargetB: QueryTargetLike = {
       ...tsTargetA,
@@ -200,7 +201,7 @@ describe('Datasource Query', () => {
     };
     const targetC: QueryTargetLike = {
       assetQuery,
-      tab: Tab.Asset,
+      tab: Asset,
       aggregation: 'max',
       refId: 'C',
       target: '',
@@ -293,7 +294,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'B',
       target: 123,
-      tab: Tab.Custom,
+      tab: Custom,
       expr:
         "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
     };
@@ -379,7 +380,7 @@ describe('Datasource Query', () => {
       aggregation: 'none',
       refId: 'A',
       target: 123,
-      tab: Tab.Custom,
+      tab: Custom,
       expr: 'ts{} + pi()',
       label: '{{description}} {{metadata.key1}}',
     };
@@ -439,6 +440,54 @@ describe('Datasource Query', () => {
       expect(result).toMatchSnapshot();
     });
   });
+
+  describe('Given "Custom queries" with errors', () => {
+    const targets: QueryTargetLike[] = [
+      {
+        refId: 'A',
+        tab: Custom,
+        expr: 'ts{name=""}',
+      },
+    ];
+    const query = { ...options, targets };
+    const emptyResult = { data: [] };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('400 error', async () => {
+      backendSrvMock.datasourceRequest = jest.fn().mockRejectedValueOnce(tsError);
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual('[400 ERROR] error message');
+    });
+
+    test('unknown error', async () => {
+      backendSrvMock.datasourceRequest = jest.fn().mockRejectedValueOnce({});
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual('Unknown error');
+    });
+
+    test('empty ts filter result', async () => {
+      backendSrvMock.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
+      const result = await ds.query(query);
+      expect(result).toEqual(emptyResult);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      const emitted = (appEvents.emit as Mock).mock.calls[0][1];
+      expect(emitted.error).toEqual(
+        '[ERROR] No timeseries found for filter {"name":""} in expression ts{name=""}'
+      );
+    });
+  });
+
   describe('filterQueryTargets', () => {
     const normalTargets = [
       {
@@ -540,5 +589,46 @@ describe('Datasource Query', () => {
         `events{assetIds=[123,456], type="type_or_subtype", subtype="type_or_subtype"}`
       );
     });
+  });
+});
+
+describe('Given custom query with pure text label', () => {
+  beforeAll(async () => {
+    jest.clearAllMocks();
+    backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async x => {
+      return getDataqueryResponse(x.data, externalIdPrefix, 0);
+    });
+  });
+
+  it('should return pure text label', async () => {
+    const targetA: QueryTargetLike = {
+      tab: Custom,
+      expr: 'ts{id=1}',
+      label: 'Pure text',
+    };
+    const result = await ds.query({
+      ...options,
+      targets: [targetA],
+    });
+    expect(result.data[0].target).toEqual('Pure text');
+  });
+});
+
+describe('custom query granularity less then a second', () => {
+  const targetA = {
+    tab: Tab.Custom,
+    expr: 'ts{id=1}',
+    aggregation: 'average',
+  } as any;
+  beforeAll(async () => {
+    jest.clearAllMocks();
+    backendSrvMock.datasourceRequest = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
+  });
+
+  it('defaults to one second', async () => {
+    await ds.fetchTimeseriesForTargets([targetA], { ...options, intervalMs: 99 });
+    expect(backendSrvMock.datasourceRequest.mock.calls[1][0].data.items[0].expression).toMatch(
+      'granularity="1s"}'
+    );
   });
 });

@@ -8,8 +8,8 @@ export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
 }
 
-export function ms2String(milliseconds: number): string {
-  return ms(milliseconds < 1000 ? 1000 : milliseconds);
+export function toGranularityWithLowerBound(milliseconds: number, lowerBound = 1000): string {
+  return ms(Math.max(milliseconds, lowerBound));
 }
 
 // used for generating the options.requestId

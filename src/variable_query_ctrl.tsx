@@ -18,7 +18,7 @@ const help = (
     Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
     <br />
     Example:{' '}
-    <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]`}</code>
+    <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]}`}</code>
     <br />
     <br />
     Results filtering is also possible by adding <code className="query-keyword">'=~'</code>,{' '}
