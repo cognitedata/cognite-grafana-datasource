@@ -1,5 +1,5 @@
 import { parse as parseDate } from 'grafana/app/core/utils/datemath';
-import { getRequestId, applyFilters } from './utils';
+import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
 import { parse } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
@@ -163,7 +163,8 @@ export default class CogniteDatasource {
       }
       case Tab.Custom: {
         const templatedExpr = this.replaceVariable(expr, options.scopedVars);
-        return formQueriesForExpression(templatedExpr, target, this.connector, options.interval);
+        const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
+        return formQueriesForExpression(templatedExpr, target, this.connector, defaultInterval);
       }
     }
   }
