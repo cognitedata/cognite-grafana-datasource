@@ -156,7 +156,7 @@
     <code class="query-keyword">!=</code> (strict inequality),
     <code class="query-keyword">=~</code> (regex equality),
     <code class="query-keyword">!~</code> (regex inequality)<br>
-  If you want to reference a specific timeseries, use <code class="query-keyword">ts{id=ID}</code>, or <code class="query-keyword">ts{id=ID, aggregate=AGGREGATE, granularity=GRANULARITY}</code>.
+  If you want to reference a specific timeseries, use <code class="query-keyword">ts{id=ID}</code>, or <code class="query-keyword">ts{externalId='EXTERNAL_ID', aggregate='AGGREGATE', granularity='GRANULARITY', alignment=ALIGNMENT}</code>.
   Example:  <code class="query-keyword">sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}</code>
 
   Templated variables can also be used with <code class="query-keyword">$variable</code>.
@@ -177,7 +177,7 @@
             <code class="query-keyword">pow(ts{} - avg(ts{}), 2)</code>
               ↪ yields the squared deviation of each timeseries from the average <br>
   There is a support for some advanced functions, like <code class="query-keyword">round</code>, <code class="query-keyword">on_error</code> and <code class="query-keyword">map</code>.
-  The documentation on how to use them can be found on <a class="query-keyword" href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series">docs.cognite.com/api</a>
+  The documentation on how to use them can be found on <a class="query-keyword" href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series">docs.cognite.com/dev</a>
   To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a class="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
     </pre>
   </div>
