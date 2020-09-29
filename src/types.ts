@@ -1,10 +1,11 @@
 import {
-  DataQueryOptions,
+  DataQueryRequest,
   DataQuery,
   TimeSeries,
   TimeRange as GrafanaTimeRange,
   DataSourceSettings,
-} from '@grafana/ui';
+  DataFrame,
+} from '@grafana/data';
 
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
@@ -18,7 +19,7 @@ export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
   return { name };
 };
 
-export type QueryResponse = DataResponse<TimeSeries[]>;
+export type QueryResponse = DataResponse<(TimeSeries | DataFrame)[]>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -31,6 +32,7 @@ export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Event = 'Event',
 }
 
 export enum ParseType {
@@ -61,10 +63,13 @@ export type TimeSeriesResponse = Items<TimeSeriesResponseItem>;
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
-  old?: AssetQuery;
   timeseries?: TimeSeriesResponseItem[];
   func?: string;
   templatedTarget?: string;
+}
+
+export interface EventQuery {
+  expr: string;
 }
 
 export interface InputQueryTarget extends DataQuery {
@@ -75,6 +80,7 @@ export interface InputQueryTarget extends DataQuery {
   label: string;
   tab: Tab;
   assetQuery: AssetQuery;
+  eventQuery: EventQuery;
   expr: string;
   warning: string;
 }
@@ -85,7 +91,7 @@ export interface QueryTarget extends InputQueryTarget {
 
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<InputQueryTarget>;
+export type QueryOptions = DataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
@@ -129,7 +135,7 @@ export type SuccessResponse<Metadata, Response> = { metadata: Metadata; result: 
 export type FailResponse<Metadata> = { metadata: Metadata; error: any };
 export type Responses<Metadata, Response> = {
   failed: FailResponse<Metadata>[];
-  succeded: SuccessResponse<Metadata, Response>[];
+  succeeded: SuccessResponse<Metadata, Response>[];
 };
 
 export interface TimeSeriesDatapoint extends Timestamp {
@@ -215,6 +221,7 @@ export type IdEither =
 
 export type DataQueryRequestItem = {
   expression?: string;
+  eventExpression?: string;
   start?: string | number;
   end?: string | number;
   limit?: number;
@@ -223,10 +230,10 @@ export type DataQueryRequestItem = {
   id?: number;
 };
 
-export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
-export type Granularity = Pick<DataQueryRequest, 'granularity'>;
+export type Aggregates = Pick<CogniteDataQueryRequest, 'aggregates'>;
+export type Granularity = Pick<CogniteDataQueryRequest, 'granularity'>;
 
-export interface DataQueryRequest {
+export interface CogniteDataQueryRequest {
   items: DataQueryRequestItem[];
   start?: string | number;
   end?: string | number;

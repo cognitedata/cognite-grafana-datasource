@@ -44,6 +44,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
       src: 'assettab.html',
     },
     { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
+    { value: Tab.Event, name: 'Event Query', src: 'eventtab.html' },
   ];
   currentTabIndex: number;
   defaults = {
@@ -56,8 +57,10 @@ export class CogniteQueryCtrl extends QueryCtrl {
     expr: '',
     assetQuery: {
       target: '',
-      old: undefined,
       includeSubtrees: false,
+    },
+    eventQuery: {
+      expr: '',
     },
   };
 
@@ -121,6 +124,9 @@ export class CogniteQueryCtrl extends QueryCtrl {
     }
     if (this.target.tab === Tab.Custom) {
       return `Custom Query: ${this.target.expr} ${this.target.error}`;
+    }
+    if (this.target.tab === Tab.Event) {
+      return `Event Query: ${this.target.eventQuery.expr} ${this.target.error}`;
     }
     return '';
   }

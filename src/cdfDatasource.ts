@@ -1,7 +1,7 @@
 import {
   Tab,
   QueryTarget,
-  DataQueryRequest,
+  CogniteDataQueryRequest,
   DataQueryRequestItem,
   QueryOptions,
   TimeSeriesResponseItem,
@@ -26,7 +26,7 @@ import { toGranularityWithLowerBound } from './utils';
 import { Connector } from './connector';
 import { getLabelsForExpression } from './parser/ts';
 import { getRange } from './datasource';
-import { TimeSeries } from '@grafana/ui';
+import { TimeSeries } from '@grafana/data';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
 
 const { Asset, Custom, Timeseries } = Tab;
@@ -36,7 +36,7 @@ export function formQueryForItems(
   items,
   { tab, aggregation, granularity },
   options
-): DataQueryRequest {
+): CogniteDataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Custom) {
     const limit = calculateDPLimitPerQuery(items.length);
@@ -69,7 +69,7 @@ function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean 
 export function formQueriesForTargets(
   queriesData: QueriesData,
   options: QueryOptions
-): DataQueryRequest[] {
+): CogniteDataQueryRequest[] {
   return queriesData.map(({ target, items }) => {
     return formQueryForItems(items, target, options);
   });
@@ -216,20 +216,20 @@ export async function promiser<Query, Metadata, Response>(
   metadatas: Metadata[],
   toPromise: (query: Query, metadata: Metadata) => Promise<Response>
 ): Promise<Responses<Metadata, Response>> {
-  const succeded = [];
+  const succeeded = [];
   const failed = [];
   const promises = queries.map(async (query, i) => {
     const metadata = metadatas[i];
     try {
       const result = await toPromise(query, metadata);
-      succeded.push({ result, metadata });
+      succeeded.push({ result, metadata });
     } catch (error) {
       failed.push({ error, metadata });
     }
   });
   await Promise.all(promises);
   return {
-    succeded,
+    succeeded,
     failed,
   };
 }

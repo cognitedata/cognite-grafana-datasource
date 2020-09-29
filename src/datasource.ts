@@ -17,7 +17,7 @@ import {
   TimeSeriesResponseItem,
   VariableQueryData,
   HttpMethod,
-  DataQueryRequest,
+  CogniteDataQueryRequest,
   ResponseMetadata,
   isError,
   Tuple,
@@ -30,6 +30,7 @@ import {
   FilterRequest,
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
+  Event,
 } from './types';
 import {
   formQueriesForTargets,
@@ -43,11 +44,11 @@ import {
   getLabelsForTarget,
 } from './cdfDatasource';
 import { Connector } from './connector';
-import { TimeRange } from '@grafana/ui';
+import { TableData, TimeRange } from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 
-const { Asset, Custom, Timeseries } = Tab;
+const { Asset, Custom, Timeseries, Event } = Tab;
 const { POST } = HttpMethod;
 
 export default class CogniteDatasource {
@@ -80,17 +81,40 @@ export default class CogniteDatasource {
    */
   async query(options: QueryOptions): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
-    let responseData = [];
+    const responseData = [];
+
+    // if (queryTargets.length) {
+    //   try {
+    //     const { failed, succeeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
+    //     handleFailedTargets(failed);
+    //     showWarnings(succeeded);
+    //     responseData = reduceTimeseries(succeeded, getRange(options.range));
+    //   } catch (error) {
+    //     console.error(error); // not sure it ever happens
+    //   }
+    // }
 
     if (queryTargets.length) {
-      try {
-        const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
-        handleFailedTargets(failed);
-        showWarnings(succeded);
-        responseData = reduceTimeseries(succeded, getRange(options.range));
-      } catch (error) {
-        console.error(error); // not sure it ever happens
-      }
+      const t = queryTargets.filter(queryTarget => queryTarget.tab === Tab.Event);
+      const events = await Promise.all(
+        t.map(async q => {
+          const { eventQuery } = q;
+          const replacedEventQuery = this.replaceVariable(eventQuery.expr);
+          const { filters, params } = parse(eventQuery.expr);
+
+          const items = await this.eventsQuery(params, options.range);
+          const response = applyFilters(items, filters);
+
+          const props = ['id', 'externalId', 'type', 'startTime', 'endTime', 'subtype', 'source'];
+          const table: TableData = {
+            name: q.label,
+            columns: props.map(v => ({ text: v })),
+            rows: response.map(({ type, startTime }) => [type, startTime]),
+          };
+          return table;
+        })
+      );
+      return { data: events as any };
     }
 
     return { data: responseData };
@@ -127,14 +151,14 @@ export default class CogniteDatasource {
       })
     );
 
-    return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
+    return promiser<CogniteDataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
       queries,
       metadata,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
         const chunkSize = isSynthetic ? 10 : 100;
 
-        return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>(
+        return this.connector.chunkAndFetch<CogniteDataQueryRequest, DataQueryRequestResponse>(
           {
             data,
             path: datapointsPath(isSynthetic),
@@ -182,7 +206,6 @@ export default class CogniteDatasource {
       annotation,
       annotation: { query, error },
     } = options;
-    const [startTime, endTime] = getRange(range);
 
     if (error || !query) {
       return [];
@@ -190,20 +213,8 @@ export default class CogniteDatasource {
 
     const replacedVariablesQuery = this.replaceVariable(query);
     const { filters, params } = parse(replacedVariablesQuery);
-    const timeFrame = {
-      startTime: { max: endTime },
-      endTime: { min: startTime },
-    };
-    const data: FilterRequest<EventsFilterRequestParams> = {
-      filter: { ...params, ...timeFrame },
-      limit: 1000,
-    };
 
-    const items = await this.connector.fetchItems<any>({
-      data,
-      path: `/events/list`,
-      method: POST,
-    });
+    const items = await this.eventsQuery(params, range);
     const response = applyFilters(items, filters);
 
     return response.map(({ description, startTime, endTime, type }) => ({
@@ -214,6 +225,27 @@ export default class CogniteDatasource {
       timeEnd: endTime,
       title: type,
     }));
+  }
+
+  async eventsQuery(params: EventsFilterRequestParams, range: TimeRange): Promise<Event[]> {
+    const [endTime, startTime] = getRange(range);
+
+    const timeFrame = {
+      startTime: { max: endTime },
+      endTime: { min: startTime },
+    };
+
+    const data: FilterRequest<EventsFilterRequestParams> = {
+      filter: { ...params, ...timeFrame },
+      limit: 1000,
+    };
+
+    const items = await this.connector.fetchItems<Event>({
+      data,
+      path: `/events/list`,
+      method: POST,
+    });
+    return items;
   }
 
   /**
@@ -336,7 +368,7 @@ export default class CogniteDatasource {
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
   return targets.filter(target => {
     if (target && !target.hide) {
-      const { tab, assetQuery } = target;
+      const { tab, assetQuery, eventQuery } = target;
       switch (tab) {
         case Asset:
           return assetQuery && assetQuery.target;
@@ -345,6 +377,8 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
         case Timeseries:
         case undefined:
           return target.target;
+        case Event:
+          return eventQuery && eventQuery.expr;
       }
     }
   }) as QueryTarget[];

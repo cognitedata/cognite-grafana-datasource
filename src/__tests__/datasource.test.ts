@@ -82,11 +82,11 @@ describe('Datasource Query', () => {
     });
 
     it('should give correct meta responses', async () => {
-      expect(results.succeded[0].metadata).toEqual({
+      expect(results.succeeded[0].metadata).toEqual({
         target: oldTarget,
         labels: [''],
       });
-      expect(results.succeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
+      expect(results.succeeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
     });
   });
 
@@ -610,7 +610,7 @@ describe('Given custom query with pure text label', () => {
       ...options,
       targets: [targetA],
     });
-    expect(result.data[0].target).toEqual('Pure text');
+    expect((result.data[0] as any).target).toEqual('Pure text');
   });
 });
 

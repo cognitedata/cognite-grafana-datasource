@@ -182,3 +182,18 @@
     </pre>
   </div>
 </script>
+
+  <!-- Events Tab -->
+<script type="text/ng-template" id="eventtab.html">
+  <div class="gf-form-inline">
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+      <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.refreshData()" placeholder=""/>
+    </div>
+  </div>
+  <div class="gf-form gf-form--grow" ng-init>
+    <label class="gf-form-label query-keyword fix-query-keyword width-8">Query</label>
+    <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.eventQuery.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.refreshData()" placeholder=""/>
+    <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
+  </div>
+</script>

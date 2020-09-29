@@ -85,7 +85,7 @@ describe('CDF datasource', () => {
             metadata: 'd',
           },
         ],
-        succeded: [
+        succeeded: [
           {
             result: 0,
             metadata: 'a',
