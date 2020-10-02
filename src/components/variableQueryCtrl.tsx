@@ -1,6 +1,6 @@
 import React from 'react';
-import { VariableQueryData, VariableQueryProps } from './types';
-import { parse } from './parser/events-assets';
+import { VariableQueryData, VariableQueryProps } from '../types';
+import { parse } from '../parser/events-assets';
 
 const help = (
   <pre>

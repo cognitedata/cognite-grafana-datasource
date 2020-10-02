@@ -11,7 +11,7 @@ module.exports = {
     fs: "empty"
   },
   context: __dirname + "/src",
-  entry: "./module.ts",
+  entry: "./module.tsx",
   output: {
     filename: "module.js",
     path: path.resolve(__dirname, "dist"),

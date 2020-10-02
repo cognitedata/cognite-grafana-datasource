@@ -1,10 +1,35 @@
 import {
   DataQueryOptions,
-  DataQuery,
+  DataQuery as DataQueryUI,
   TimeSeries,
   TimeRange as GrafanaTimeRange,
   DataSourceSettings,
 } from '@grafana/ui';
+
+import { DataQuery, DataSourceJsonData } from '@grafana/data';
+
+export interface MyQuery extends DataQuery {
+  queryText?: string;
+  constant: number;
+}
+
+export const defaultQuery: Partial<MyQuery> = {
+  constant: 6.5,
+};
+
+/**
+ * These are options configured for each DataSource instance
+ */
+export interface MyDataSourceOptions extends DataSourceJsonData {
+  path?: string;
+}
+
+/**
+ * Value that is used in the backend, but never sent over HTTP to the frontend
+ */
+export interface MySecureJsonData {
+  apiKey?: string;
+}
 
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
@@ -67,7 +92,7 @@ export interface AssetQuery {
   templatedTarget?: string;
 }
 
-export interface InputQueryTarget extends DataQuery {
+export interface InputQueryTarget extends DataQueryUI {
   target: number | '';
   aggregation: string;
   granularity: string;
