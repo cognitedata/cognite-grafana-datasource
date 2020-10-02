@@ -1,5 +1,6 @@
 import { parseQuery, formatQueryParse, parse } from './index';
 import { QueryParserTypes } from '../types';
+import { describe, expect, it } from '@jest/globals';
 
 describe('Query parser', () => {
   describe('Query parsing', () => {
