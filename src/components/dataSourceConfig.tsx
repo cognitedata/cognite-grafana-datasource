@@ -2,10 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { css, cx } from 'emotion';
 import { DataSourceSettings, SelectableValue } from '@grafana/data';
 
-import { FormField, Select, Input } from '@grafana/ui';
-// import { LegacyForms } from '@grafana/ui';
+import { LegacyForms } from '@grafana/ui';
+import { MyDataSourceOptions } from 'types';
 
-// const { FormField, Input, Select } = LegacyForms;
+const { FormField, Input, Select } = LegacyForms;
 
 // import { InlineFormLabel } from '../FormLabel/FormLabel';
 // import { TagsInput } from '../TagsInput/TagsInput';
@@ -13,7 +13,7 @@ import { FormField, Select, Input } from '@grafana/ui';
 
 export interface HttpSettingsBaseProps {
   /** The configuration object of the data source */
-  dataSourceConfig: DataSourceSettings<any, any>;
+  dataSourceConfig: DataSourceSettings<MyDataSourceOptions, any>;
   /** Callback for handling changes to the configuration object */
   onChange: (config: DataSourceSettings) => void;
 }
@@ -80,7 +80,7 @@ export const DataSourceConfig: React.FC<HttpSettingsProps> = props => {
     <Input
       className={inputStyle}
       placeholder={defaultUrl}
-      value={dataSourceConfig.project}
+      value={dataSourceConfig.jsonData.project}
       onChange={event => onSettingsChange({ url: event.currentTarget.value })}
     />
   );
@@ -89,7 +89,7 @@ export const DataSourceConfig: React.FC<HttpSettingsProps> = props => {
     <Input
       className={inputStyle}
       placeholder={defaultUrl}
-      value={dataSourceConfig.project}
+      value={dataSourceConfig.jsonData.project}
       onChange={event => onSettingsChange({ url: event.currentTarget.value })}
     />
   );

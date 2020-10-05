@@ -1,5 +1,5 @@
 import React from 'react';
-import { DataSourceConfig } from './components/dataSourceConfig';
+import { DataSourceConfig } from './dataSourceConfig';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { MyDataSourceOptions } from '../types';
 

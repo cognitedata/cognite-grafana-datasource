@@ -17,7 +17,7 @@ import {
   TimeSeriesResponseItem,
   VariableQueryData,
   HttpMethod,
-  DataQueryRequest,
+  CDFDataQueryRequest,
   ResponseMetadata,
   isError,
   Tuple,
@@ -43,7 +43,7 @@ import {
   getLabelsForTarget,
 } from './cdfDatasource';
 import { Connector } from './connector';
-import { TimeRange } from '@grafana/ui';
+import { TimeRange } from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 
@@ -127,14 +127,14 @@ export default class CogniteDatasource {
       })
     );
 
-    return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
+    return promiser<CDFDataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
       queries,
       metadata,
       async (data, { target }) => {
         const isSynthetic = data.items.some(q => !!q.expression);
         const chunkSize = isSynthetic ? 10 : 100;
 
-        return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>(
+        return this.connector.chunkAndFetch<CDFDataQueryRequest, DataQueryRequestResponse>(
           {
             data,
             path: datapointsPath(isSynthetic),

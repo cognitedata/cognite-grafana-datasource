@@ -1,12 +1,12 @@
 import {
-  DataQueryOptions,
+  DataQueryRequest,
   DataQuery as DataQueryUI,
   TimeSeries,
   TimeRange as GrafanaTimeRange,
   DataSourceSettings,
-} from '@grafana/ui';
-
-import { DataQuery, DataSourceJsonData } from '@grafana/data';
+  DataQuery,
+  DataSourceJsonData,
+} from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
   queryText?: string;
@@ -22,6 +22,7 @@ export const defaultQuery: Partial<MyQuery> = {
  */
 export interface MyDataSourceOptions extends DataSourceJsonData {
   path?: string;
+  project: string;
 }
 
 /**
@@ -110,7 +111,7 @@ export interface QueryTarget extends InputQueryTarget {
 
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<InputQueryTarget>;
+export type QueryOptions = DataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
@@ -248,10 +249,10 @@ export type DataQueryRequestItem = {
   id?: number;
 };
 
-export type Aggregates = Pick<DataQueryRequest, 'aggregates'>;
-export type Granularity = Pick<DataQueryRequest, 'granularity'>;
+export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
+export type Granularity = Pick<CDFDataQueryRequest, 'granularity'>;
 
-export interface DataQueryRequest {
+export interface CDFDataQueryRequest {
   items: DataQueryRequestItem[];
   start?: string | number;
   end?: string | number;

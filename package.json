@@ -22,10 +22,12 @@
     "build-parser": "nearleyc ./src/parser/events-assets/grammar.ne -o ./src/parser/events-assets/grammar.ts && nearleyc ./src/parser/ts/grammar.ne -o ./src/parser/ts/grammar.ts"
   },
   "devDependencies": {
+    "@grafana/toolkit": "^7.2.0",
     "@grafana/ui": "^7.2.0",
     "@types/grafana": "https://git@github.com/CorpGlory/types-grafana.git",
     "@types/jest": "^26",
     "@types/lodash": "^4.14.120",
+    "@types/ms": "^0.7.31",
     "@types/node": "^10.12.21",
     "@types/react": "^16.7.22",
     "babel-core": "^6.26.3",

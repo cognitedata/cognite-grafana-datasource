@@ -345,11 +345,6 @@ const flattenSumFunctions = (expression: string): string => {
   });
 };
 
-const isSimpleSyntheticExpression = (expr: string): boolean => {
-  const parsed = parse(expr);
-  return !getServerFilters(parsed).length;
-};
-
 const unwrapId = (idEither: IdEither) => {
   if ('id' in idEither) {
     return idEither.id;

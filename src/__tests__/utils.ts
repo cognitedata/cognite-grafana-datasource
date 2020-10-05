@@ -1,6 +1,6 @@
 /* tslint:disable */
 import CogniteDatasource from '../datasource';
-import { DataQueryRequest, QueryTarget } from '../types';
+import { CDFDataQueryRequest, QueryTarget } from '../types';
 import ms from 'ms';
 
 const variables = [
@@ -11,11 +11,11 @@ const variables = [
 ];
 
 export function getDataqueryResponse(
-  { items, aggregates }: DataQueryRequest,
+  { items, aggregates }: CDFDataQueryRequest,
   externalIdPrefix = 'externalId-',
   dpNumber: number = 5
 ) {
-  const aggregate = aggregates ? aggregates[0] : undefined;
+  const aggregate = aggregates ? aggregates[0] : '';
   const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({
     timestamp: i * ms('10m') + 1549336675000,
     [aggregate]: i,
@@ -54,7 +54,8 @@ const getTemplateSrvMock = () =>
         const varSyntax2 = new RegExp(`\\$${name}`, 'g');
         const varSyntax3 = new RegExp(
           `\\$\\{${name}:(json|csv|glob|regex|pipe|distributed|lucene|percentencode|singlequote|doublequote|sqlstring)}`,
-          'g');
+          'g'
+        );
         query = query.replace(varSyntax1, current.value);
         query = query.replace(varSyntax2, current.value);
         query = query.replace(varSyntax3, current.value);
@@ -85,6 +86,7 @@ const instanceSettings = {
   },
   readOnly: false,
   withCredentials: false,
+  secureJsonFields: {},
 };
 
 export const getMockedDataSource = () => {
