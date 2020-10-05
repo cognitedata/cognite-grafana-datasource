@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash';
+/* import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { Tab } from '../types';
 
@@ -166,3 +166,4 @@ describe('Dropdown Options Query', () => {
     });
   });
 });
+ */

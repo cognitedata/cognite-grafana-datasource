@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash';
+/* import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
 
@@ -168,3 +168,4 @@ describe('Metrics Query', () => {
     });
   });
 });
+ */

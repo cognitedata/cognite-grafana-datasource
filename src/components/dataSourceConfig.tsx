@@ -25,18 +25,6 @@ export interface HttpSettingsProps extends HttpSettingsBaseProps {
   showAccessOptions?: boolean;
 }
 
-/*
-const ACCESS_OPTIONS: Array<SelectableValue<string>> = [
-  {
-    label: 'Server (default)',
-    value: 'proxy',
-  },
-  {
-    label: 'Browser',
-    value: 'direct',
-  },
-];
-*/
 const DEFAULT_ACCESS_OPTION = {
   label: 'Server (default)',
   value: 'proxy',

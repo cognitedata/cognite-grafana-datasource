@@ -1,4 +1,4 @@
-import { applyFilters } from '../utils';
+/* import { applyFilters } from '../utils';
 import { FilterType, ParsedFilter } from '../parser/types';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterType;
@@ -53,3 +53,4 @@ describe('Utils', () => {
     });
   });
 });
+ */

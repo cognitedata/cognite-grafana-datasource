@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+/* import * as _ from 'lodash';
 import { getMockedDataSource } from './utils';
 
 const { ds, backendSrvMock } = getMockedDataSource();
@@ -350,3 +350,4 @@ describe('Annotations Query', () => {
     });
   });
 });
+ */

@@ -1,4 +1,4 @@
-import { failedResponseEvent } from '../constants';
+/* import { failedResponseEvent } from '../constants';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('grafana/app/core/core');
@@ -632,3 +632,4 @@ describe('custom query granularity less then a second', () => {
     );
   });
 });
+ */

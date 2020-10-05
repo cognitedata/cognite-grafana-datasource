@@ -1,4 +1,4 @@
-import { Connector } from '../connector';
+/* import { Connector } from '../connector';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
 
@@ -178,3 +178,4 @@ describe('connector', () => {
     });
   });
 });
+ */

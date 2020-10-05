@@ -1,4 +1,4 @@
-import { getMockedDataSource } from './utils';
+/* import { getMockedDataSource } from './utils';
 
 const { ds, backendSrvMock } = getMockedDataSource();
 
@@ -51,3 +51,4 @@ describe('Login', () => {
     });
   });
 });
+ */

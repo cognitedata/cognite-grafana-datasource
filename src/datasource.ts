@@ -43,25 +43,39 @@ import {
   getLabelsForTarget,
 } from './cdfDatasource';
 import { Connector } from './connector';
-import { TimeRange } from '@grafana/data';
+import {
+  TimeRange,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  DataQueryRequest
+} from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
-
+import { MyQuery, MyDataSourceOptions, defaultQuery } from './types';
 const { Asset, Custom, Timeseries } = Tab;
 const { POST } = HttpMethod;
 
-export default class CogniteDatasource {
+export default class CogniteDatasource extends DataSourceApi<InputQueryTarget, MyDataSourceOptions> {
   /**
    * Parameters that are needed by grafana
    */
+  baseUrl: string;
+
+  /*
   id: number;
   url: string;
   name: string;
-
+  */
   project: string;
   connector: Connector;
 
-  /** @ngInject */
+  constructor(instanceSettings: DataSourceInstanceSettings<MyDataSourceOptions>) {
+    super(instanceSettings);
+
+    this.baseUrl = instanceSettings.url!;
+  }
+
+  /** @ngInject
   constructor(
     instanceSettings: CogniteDataSourceSettings,
     backendSrv: BackendSrv,
@@ -73,12 +87,12 @@ export default class CogniteDatasource {
     const { url, jsonData } = instanceSettings;
     this.project = jsonData.cogniteProject;
     this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
-  }
+  }*/
 
   /**
    * used by panels to get timeseries data
    */
-  async query(options: QueryOptions): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<InputQueryTarget>): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
 
@@ -170,12 +184,13 @@ export default class CogniteDatasource {
   }
 
   replaceVariable(query: string, scopedVars?): string {
-    return this.templateSrv.replace(query.trim(), scopedVars);
+    return ""; //this.templateSrv.replace(query.trim(), scopedVars);
   }
 
   /**
    * used by dashboards to get annotations (events)
    */
+  /*
   async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
     const {
       range,
@@ -215,7 +230,7 @@ export default class CogniteDatasource {
       title: type,
     }));
   }
-
+  */
   /**
    * used by query editor to search for assets/timeseries
    */
