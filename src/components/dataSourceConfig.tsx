@@ -79,7 +79,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
             // FIXME: ctrl.current.jsonData.cogniteApiUrl
           }
           <FormField
-            label="API url"
+            label="API URL"
             labelWidth={11}
             tooltip={tooltip}
             inputEl={urlInput}
@@ -150,8 +150,12 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
     return (
       <div className="gf-form-inline">
         <div className="gf-form">
-          <span className="gf-form-label width-9">API key</span>
-          {input}
+          <FormField
+            label="API Key"
+            labelWidth={11}
+            tooltip="Cognite Data Fusion API key."
+            inputEl={input}
+          />
         </div>
       </div>
     )
