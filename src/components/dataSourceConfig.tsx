@@ -73,14 +73,35 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
     />
   );
 
-  const apiKeyInput = (
-    <Input
-      className={inputStyle}
-      placeholder={defaultUrl}
-      value={dataSourceConfig.jsonData.project}
-      onChange={event => onSettingsChange({ url: event.currentTarget.value })}
-    />
-  );
+  function ApiKeyInput(props) {
+    if (dataSourceConfig.url) {
+      return (
+        <Input
+          className={inputStyle}
+          placeholder={defaultUrl}
+          value={dataSourceConfig.jsonData.project}
+          onChange={event => onSettingsChange({ url: event.currentTarget.value /** Set Api-key instead of URL */})}
+        />
+      );
+    }
+    return (
+      <>
+        <Input
+        className={inputStyle}
+        placeholder="Configured"
+        value={dataSourceConfig.jsonData.project}
+        disabled={true}
+        />
+        <a
+          className="btn btn-secondary gf-form-btn"
+          href="#"
+          onClick={/*Unset API key here?*/()=>(null)}
+        >
+          Reset
+        </a>
+      </>
+    )
+  };
 
   return (
     <div>
