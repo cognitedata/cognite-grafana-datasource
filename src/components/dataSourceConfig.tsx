@@ -55,51 +55,105 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
 
   const inputStyle = cx({ [`width-20`]: true, [notValidStyle]: !isValidUrl });
 
-  const urlInput = (
-    <Input
-      className={inputStyle}
-      placeholder={defaultUrl}
-      value={dataSourceConfig.url}
-      onChange={event => onSettingsChange({ url: event.currentTarget.value })}
-    />
-  );
+  function ApiUrlInput(props) {
+    const urlInput = (
+      <Input
+        className={props.inputStyle}
+        placeholder={props.defaultUrl}
+        value={props.dataSourceConfig.url}
+        onChange={event => onSettingsChange({ url: event.currentTarget.value })}
+      />
+    );
+    let tooltip =
+      `This is the URL used to reach the API.
+      If the project is deployed on the default multi-tenant installation (most are),
+      then keep the default value and do not change the URL.
+      If the project is deployed on a separate custom cluster,
+      then change the URL to point at the API server for that cluster.
+      If unsure, leave the URL as default.`;
 
-  const projectInput = (
-    <Input
-      className={inputStyle}
-      placeholder={defaultProject}
-      value={dataSourceConfig.jsonData.project}
-      onChange={event => onSettingsChange({ url: event.currentTarget.value })}
-    />
-  );
+    return (
+      <div className="gf-form-inline">
+        <div className="gf-form">
+          {
+            // FIXME: ctrl.current.jsonData.cogniteApiUrl
+          }
+          <FormField
+            label="API url"
+            labelWidth={11}
+            tooltip={tooltip}
+            inputEl={urlInput}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  function ProjectInput(props) {
+    let projectInput = (
+      <Input
+        className={inputStyle}
+        placeholder={defaultProject}
+        value={dataSourceConfig.jsonData.project}
+        onChange={event => onSettingsChange({ url: event.currentTarget.value })}
+      />)
+
+    return (
+      <div className="gf-form-inline">
+        <div className="gf-form">
+          <FormField
+            label="Project"
+            labelWidth={11}
+            tooltip="Cognite Data Fusion project name."
+            inputEl={projectInput}
+          />
+        </div>
+      </div>
+    )
+  }
 
   function ApiKeyInput(props) {
-    if (dataSourceConfig.url) {
-      return (
+    let input;
+    if (props.dataSourceConfig.url) {
+      input = (
         <Input
           className={inputStyle}
           placeholder={defaultUrl}
           value={dataSourceConfig.jsonData.project}
           onChange={event => onSettingsChange({ url: event.currentTarget.value /** Set Api-key instead of URL */})}
+          type="password"
         />
+        /* <info-popover mode="right-absolute">
+                <p>Cognite Data Fusion API key.</p>
+            </info-popover> */
       );
+    } else {
+      input = (
+        <>
+          <Input
+          className={inputStyle}
+          placeholder="Configured"
+          value={dataSourceConfig.jsonData.project}
+          disabled={true}
+          />
+          <a
+            className="btn btn-secondary gf-form-btn"
+            href="#"
+            onClick={/*Unset API key here?*/()=>(null)} // ctrl.current.secureJsonFields.cogniteDataPlatformApiKey
+          >
+            Reset
+          </a>
+        </>
+      )
     }
+
     return (
-      <>
-        <Input
-        className={inputStyle}
-        placeholder="Configured"
-        value={dataSourceConfig.jsonData.project}
-        disabled={true}
-        />
-        <a
-          className="btn btn-secondary gf-form-btn"
-          href="#"
-          onClick={/*Unset API key here?*/()=>(null)}
-        >
-          Reset
-        </a>
-      </>
+      <div className="gf-form-inline">
+        <div className="gf-form">
+          <span className="gf-form-label width-9">API key</span>
+          {input}
+        </div>
+      </div>
     )
   };
 
@@ -108,70 +162,9 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
       <h3 className="page-heading">Authentication</h3>
 
       <div className="gf-form-group">
-        <div className="gf-form-inline">
-          <div className="gf-form">
-            <span className="gf-form-label width-9">Project</span>
-            <FormField
-              label="URL"
-              labelWidth={11}
-              tooltip="Cognite Data Fusion project"
-              inputEl={projectInput}
-            />
-
-            {/* <info-popover mode="right-absolute">
-                <p>Cognite Data Fusion project name.</p>
-            </info-popover> */}
-          </div>
-        </div>
-        <div className="gf-form-inline">
-          <div className="gf-form" ng-if="!ctrl.current.secureJsonFields.cogniteDataPlatformApiKey">
-            <span className="gf-form-label width-9">API key</span>
-            <input
-              type="password"
-              className="gf-form-input"
-              ng-model="ctrl.current.secureJsonData.cogniteDataPlatformApiKey"
-              placeholder="Cognite Data Fusion API key"
-            />
-            {/* <info-popover mode="right-absolute">
-                <p>Cognite Data Fusion API key.</p>
-            </info-popover> */}
-          </div>
-          <div className="gf-form" ng-if="ctrl.current.secureJsonFields.cogniteDataPlatformApiKey">
-            <span className="gf-form-label width-9">API key</span>
-            <input
-              type="text"
-              className="gf-form-input max-width-12"
-              disabled={false}
-              value="Configured"
-            />
-            <a
-              className="btn btn-secondary gf-form-btn"
-              href="#"
-              ng-click="ctrl.current.secureJsonData.cogniteDataPlatformApiKey = undefined; ctrl.current.secureJsonFields.cogniteDataPlatformApiKey = false;"
-            >
-              Reset
-            </a>
-          </div>
-        </div>
-        <div className="gf-form-inline">
-          <div className="gf-form">
-            <span className="gf-form-label width-9">API url</span>
-            <input
-              type="text"
-              className="gf-form-input"
-              ng-model="ctrl.current.jsonData.cogniteApiUrl"
-              placeholder="api.cognitedata.com"
-            />
-            {/* <info-popover mode="right-absolute">
-                <p>This is the URL used to reach the API.
-                If the project is deployed on the default multi-tenant installation (most are),
-                then keep the default value and do not change the URL.
-                If the project is deployed on a separate custom cluster,
-                then change the URL to point at the API server for that cluster.
-                If unsure, leave the URL as default.</p>
-            </info-popover> */}
-          </div>
-        </div>
+        <ApiKeyInput dataSourceConfig={DataSourceConfig} />
+        <ProjectInput />
+        <ApiUrlInput inputStyle={inputStyle} defaultUrl={defaultUrl} dataSourceConfig={dataSourceConfig}/>
       </div>
     </div>
   );
