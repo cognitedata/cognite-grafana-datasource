@@ -7,12 +7,13 @@ import {
   DataQuery,
   DataSourceJsonData,
 } from '@grafana/data';
+import { HttpSettingsProps } from '@grafana/ui/components/DataSourceSettings/types';
 
 export interface MyQuery extends DataQuery {
   queryText?: string;
   constant: number;
 
-  target: number | '';
+  target: number | ''; // FIXME:
   aggregation: string;
   granularity: string;
   error: string;
@@ -33,6 +34,11 @@ export const defaultQuery: Partial<MyQuery> = {
 export interface MyDataSourceOptions extends DataSourceJsonData {
   path?: string;
   project: string;
+}
+
+
+export interface DataSourceProps extends HttpSettingsProps {
+  defaultProject: string
 }
 
 /**

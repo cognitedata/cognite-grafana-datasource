@@ -9,6 +9,7 @@ export const ConfigEditor: React.FC<Props> = ({ onOptionsChange, options }) => {
   return (
     <DataSourceConfig
       defaultUrl="https://api.example.com"
+      defaultProject="publicdata"
       dataSourceConfig={options}
       onChange={onOptionsChange}
     />

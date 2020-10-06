@@ -3,7 +3,7 @@ import { css, cx } from 'emotion';
 import { DataSourceSettings, SelectableValue } from '@grafana/data';
 
 import { LegacyForms } from '@grafana/ui';
-import { MyDataSourceOptions } from 'types';
+import { DataSourceProps, MyDataSourceOptions } from 'types';
 
 const { FormField, Input, Select } = LegacyForms;
 
@@ -30,8 +30,8 @@ const DEFAULT_ACCESS_OPTION = {
   value: 'proxy',
 };
 
-export const DataSourceConfig: React.FC<HttpSettingsProps> = props => {
-  const { defaultUrl, dataSourceConfig, onChange, showAccessOptions } = props;
+export const DataSourceConfig: React.FC<DataSourceProps> = props => {
+  const { defaultUrl, defaultProject, dataSourceConfig, onChange, showAccessOptions } = props;
   const [isAccessHelpVisible, setIsAccessHelpVisible] = useState(false);
   // const theme = useTheme();
 
@@ -67,7 +67,7 @@ export const DataSourceConfig: React.FC<HttpSettingsProps> = props => {
   const projectInput = (
     <Input
       className={inputStyle}
-      placeholder={defaultUrl}
+      placeholder={defaultProject}
       value={dataSourceConfig.jsonData.project}
       onChange={event => onSettingsChange({ url: event.currentTarget.value })}
     />
