@@ -11,6 +11,16 @@ import {
 export interface MyQuery extends DataQuery {
   queryText?: string;
   constant: number;
+
+  target: number | '';
+  aggregation: string;
+  granularity: string;
+  error: string;
+  label: string;
+  tab: Tab;
+  assetQuery: AssetQuery;
+  expr: string;
+  warning: string;
 }
 
 export const defaultQuery: Partial<MyQuery> = {

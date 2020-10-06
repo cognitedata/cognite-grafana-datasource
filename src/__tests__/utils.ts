@@ -1,5 +1,6 @@
 /* tslint:disable */
-/* import CogniteDatasource from '../datasource';
+/*
+import CogniteDatasource from '../datasource';
 import { CDFDataQueryRequest, QueryTarget } from '../types';
 import ms from 'ms';
 
@@ -108,4 +109,4 @@ export function getMeta(id, aggregation, labels) {
     } as QueryTarget,
   };
 }
- */
+*/

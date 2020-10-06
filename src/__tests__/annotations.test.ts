@@ -1,4 +1,11 @@
-/* import * as _ from 'lodash';
+describe('Noop', () => {
+  it('should match', () => {
+    expect(42).toEqual(42);
+  });
+});
+
+/*
+import * as _ from 'lodash';
 import { getMockedDataSource } from './utils';
 
 const { ds, backendSrvMock } = getMockedDataSource();

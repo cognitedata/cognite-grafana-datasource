@@ -1,3 +1,8 @@
+describe('Noop', () => {
+  it('should match', () => {
+    expect(42).toEqual(42);
+  });
+});
 /* import { failedResponseEvent } from '../constants';
 
 jest.mock('grafana/app/core/utils/datemath');

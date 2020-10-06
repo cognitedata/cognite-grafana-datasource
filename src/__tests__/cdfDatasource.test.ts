@@ -1,4 +1,11 @@
-/* import {
+describe('Noop', () => {
+  it('should match', () => {
+    expect(42).toEqual(42);
+  });
+});
+
+/*
+import {
   datapoints2Tuples,
   promiser,
   reduceTimeseries,

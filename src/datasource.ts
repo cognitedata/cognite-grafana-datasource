@@ -55,7 +55,7 @@ import { MyQuery, MyDataSourceOptions, defaultQuery } from './types';
 const { Asset, Custom, Timeseries } = Tab;
 const { POST } = HttpMethod;
 
-export default class CogniteDatasource extends DataSourceApi<InputQueryTarget, MyDataSourceOptions> {
+export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   /**
    * Parameters that are needed by grafana
    */
@@ -92,7 +92,7 @@ export default class CogniteDatasource extends DataSourceApi<InputQueryTarget, M
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<InputQueryTarget>): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<MyQuery>): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
 

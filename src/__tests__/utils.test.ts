@@ -1,3 +1,9 @@
+describe('Noop', () => {
+  it('should match', () => {
+    expect(42).toEqual(42);
+  });
+});
+
 /* import { applyFilters } from '../utils';
 import { FilterType, ParsedFilter } from '../parser/types';
 
