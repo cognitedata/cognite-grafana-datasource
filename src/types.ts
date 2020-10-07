@@ -165,13 +165,20 @@ export interface Timestamp {
   timestamp: number;
 }
 
-export type MetaResponses = Responses<ResponseMetadata, DataQueryRequestResponse>;
+export type SuccessResponse = {
+  metadata: ResponseMetadata;
+  result: DataQueryRequestResponse
+};
 
-export type SuccessResponse<Metadata, Response> = { metadata: Metadata; result: Response };
-export type FailResponse<Metadata> = { metadata: Metadata; error: any };
-export type Responses<Metadata, Response> = {
-  failed: FailResponse<Metadata>[];
-  succeded: SuccessResponse<Metadata, Response>[];
+export type FailResponse =
+{
+  metadata: ResponseMetadata;
+  error: any
+};
+
+export type Responses = {
+  failed: FailResponse[];
+  succeded: SuccessResponse[];
 };
 
 export interface TimeSeriesDatapoint extends Timestamp {

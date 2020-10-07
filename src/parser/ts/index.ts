@@ -2,7 +2,7 @@ import { DataQueryRequestItem, TimeSeriesResponseItem, QueryTarget, IdEither } f
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
-import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
+import { getTimeseries, getLabelWithInjectedProps } from '../../cdfClient';
 import { Connector } from '../../connector';
 import { FilterType } from '../types';
 import { applyFilters } from '../../utils';

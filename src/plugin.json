@@ -40,7 +40,7 @@
       "headers": [
         {
           "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+          "content": "{{.SecureJsonData.apiKey}}"
         },
         {
           "name": "x-cdp-sdk",
@@ -55,7 +55,7 @@
       "headers": [
         {
           "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+          "content": "{{.SecureJsonData.apiKey}}"
         }
       ]
     }

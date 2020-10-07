@@ -21,7 +21,7 @@ import {
   ResponseMetadata,
   isError,
   Tuple,
-  MetaResponses,
+  Responses,
   FailResponse,
   SuccessResponse,
   InputQueryTarget,
@@ -41,7 +41,7 @@ import {
   datapointsPath,
   stringifyError,
   getLabelsForTarget,
-} from './cdfDatasource';
+} from './cdfClient';
 import { Connector } from './connector';
 import {
   TimeRange,
@@ -110,10 +110,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     return { data: responseData };
   }
 
-  async fetchTimeseriesForTargets(
-    queryTargets: QueryTarget[],
-    options: QueryOptions
-  ): Promise<MetaResponses> {
+  async fetchTimeseriesForTargets(queryTargets: QueryTarget[], options: QueryOptions): Promise<Responses> {
     const itemsForTargetsPromises = queryTargets.map(async target => {
       try {
         const items = await this.getDataQueryRequestItems(target, options);
@@ -140,25 +137,21 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         return { target, labels };
       })
     );
+    const client = async (data, { target }) => {
+      const isSynthetic = data.items.some(q => !!q.expression);
+      const chunkSize = isSynthetic ? 10 : 100;
 
-    return promiser<CDFDataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
-      queries,
-      metadata,
-      async (data, { target }) => {
-        const isSynthetic = data.items.some(q => !!q.expression);
-        const chunkSize = isSynthetic ? 10 : 100;
-
-        return this.connector.chunkAndFetch<CDFDataQueryRequest, DataQueryRequestResponse>(
-          {
-            data,
-            path: datapointsPath(isSynthetic),
-            method: POST,
-            requestId: getRequestId(options, target),
-          },
-          chunkSize
-        );
-      }
-    );
+      return this.connector.chunkAndFetch<CDFDataQueryRequest, DataQueryRequestResponse>(
+        {
+          data,
+          path: datapointsPath(isSynthetic),
+          method: POST,
+          requestId: getRequestId(options, target),
+        },
+        chunkSize
+      );
+    }
+    return promiser(queries, metadata, client);
   }
 
   private async getDataQueryRequestItems(
@@ -365,7 +358,7 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
   }) as QueryTarget[];
 }
 
-function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
+function handleFailedTargets(failed: FailResponse[]) {
   failed
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
@@ -383,7 +376,7 @@ function handleError(error: any, refId: string) {
   appEvents.emit(failedResponseEvent, { refId, error: errMessage });
 }
 
-function showWarnings(responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]) {
+function showWarnings(responses: SuccessResponse[]) {
   responses.forEach(({ result, metadata }) => {
     const items = result.data.items;
     const limit = result.config.data.limit;

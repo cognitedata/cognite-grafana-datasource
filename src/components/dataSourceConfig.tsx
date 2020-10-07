@@ -3,7 +3,7 @@ import { css, cx } from 'emotion';
 import { DataSourceSettings, SelectableValue } from '@grafana/data';
 
 import { LegacyForms } from '@grafana/ui';
-import { DataSourceProps, MyDataSourceOptions } from 'types';
+import { DataSourceProps, MyDataSourceOptions, MySecureJsonData } from 'types';
 
 const { FormField, Input, Select } = LegacyForms;
 
@@ -34,6 +34,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
   const { defaultUrl, defaultProject, dataSourceConfig, onChange, showAccessOptions } = props;
   const [isAccessHelpVisible, setIsAccessHelpVisible] = useState(false);
   // const theme = useTheme();
+  const secureJsonData = (dataSourceConfig.secureJsonData || {}) as MySecureJsonData;
 
   const onSettingsChange = useCallback(
     (change: Partial<DataSourceSettings<any, any>>) => {
@@ -80,7 +81,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           }
           <FormField
             label="API URL"
-            labelWidth={11}
+            labelWidth={10}
             tooltip={tooltip}
             inputEl={urlInput}
           />
@@ -103,7 +104,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
         <div className="gf-form">
           <FormField
             label="Project"
-            labelWidth={11}
+            labelWidth={10}
             tooltip="Cognite Data Fusion project name."
             inputEl={projectInput}
           />
@@ -114,18 +115,15 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
 
   function ApiKeyInput(props) {
     let input;
-    if (props.dataSourceConfig.url) {
+    if (props.dataSourceConfig?.secureJsonFields?.apiKey) {
       input = (
         <Input
           className={inputStyle}
           placeholder={defaultUrl}
           value={dataSourceConfig.jsonData.project}
-          onChange={event => onSettingsChange({ url: event.currentTarget.value /** Set Api-key instead of URL */})}
+          onChange={event => props.onSettingsChange({ ...dataSourceConfig, secureJsonData: { apiKey: event.currentTarget.value }})}
           type="password"
         />
-        /* <info-popover mode="right-absolute">
-                <p>Cognite Data Fusion API key.</p>
-            </info-popover> */
       );
     } else {
       input = (
@@ -139,7 +137,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           <a
             className="btn btn-secondary gf-form-btn"
             href="#"
-            onClick={/*Unset API key here?*/()=>(null)} // ctrl.current.secureJsonFields.cogniteDataPlatformApiKey
+            onClick={event => props.onSettingsChange({ ...dataSourceConfig, secureJsonFields: { apiKey: false }, secureJsonData: { apiKey: ""}})} // ctrl.current.secureJsonFields.cogniteDataPlatformApiKey
           >
             Reset
           </a>
@@ -151,8 +149,8 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
       <div className="gf-form-inline">
         <div className="gf-form">
           <FormField
-            label="API Key"
-            labelWidth={11}
+            label="Cognite Data Fusion API key."
+            labelWidth={10}
             tooltip="Cognite Data Fusion API key."
             inputEl={input}
           />
@@ -167,7 +165,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
 
       <div className="gf-form-group">
         <ApiKeyInput dataSourceConfig={DataSourceConfig} />
-        <ProjectInput />
+        <ProjectInput dataSourceConfig={DataSourceConfig} />
         <ApiUrlInput inputStyle={inputStyle} defaultUrl={defaultUrl} dataSourceConfig={dataSourceConfig}/>
       </div>
     </div>
