@@ -8,6 +8,7 @@ import {
   DataSourceJsonData,
 } from '@grafana/data';
 import { HttpSettingsProps } from '@grafana/ui/components/DataSourceSettings/types';
+import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from 'cdf/types';
 
 export interface MyQuery extends DataQuery {
   queryText?: string;
@@ -81,25 +82,6 @@ export enum ParseType {
   Event = 'Event',
 }
 
-export interface TimeSeriesResponseItem {
-  id: number;
-  externalId?: string;
-  name?: string;
-  isString?: boolean;
-  metadata?: object;
-  unit?: string;
-  assetId?: string;
-  isStep: boolean;
-  description?: string;
-  source?: string;
-  sourceId?: string;
-  createdTime: number;
-  lastUpdatedTime: number;
-  selected: boolean;
-}
-
-export type TimeSeriesResponse = Items<TimeSeriesResponseItem>;
-
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
@@ -131,11 +113,6 @@ export type QueryOptions = DataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
-export interface Range<T> {
-  min?: T;
-  max?: T;
-}
-
 /**
  * Comes from grafana, could be imported in future releases hopefully
  */
@@ -161,10 +138,6 @@ export interface DataSourceRequestOptions {
   data?: object;
 }
 
-export interface Timestamp {
-  timestamp: number;
-}
-
 export type SuccessResponse = {
   metadata: ResponseMetadata;
   result: DataQueryRequestResponse
@@ -181,33 +154,6 @@ export type Responses = {
   succeded: SuccessResponse[];
 };
 
-export interface TimeSeriesDatapoint extends Timestamp {
-  value: string;
-}
-
-export interface TimeSeriesAggregateDatapoint extends Timestamp {
-  average?: number;
-  max?: number;
-  min?: number;
-  count?: number;
-  sum?: number;
-  interpolation?: number;
-  stepInterpolation?: number;
-  continuousVariance?: number;
-  discreteVariance?: number;
-  totalVariation?: number;
-}
-
-export interface Datapoint {
-  id: number;
-  externalId?: string;
-  isStep: boolean;
-  isString: boolean;
-  unit?: string;
-  datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
-}
-
-export type Datapoints = Items<Datapoint>;
 
 export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
@@ -253,14 +199,6 @@ export interface DataQueryAlias {
   aggregate?: string;
   granularity?: string;
 }
-
-export type IdEither =
-  | {
-      id: number;
-    }
-  | {
-      externalId: string;
-    };
 
 export type DataQueryRequestItem = {
   expression?: string;
@@ -337,31 +275,9 @@ export interface AnnotationSearchQuery {
   offset: 0;
 }
 
-export interface Event {
-  id: number;
-  startTime: number;
-  endTime: number;
-  description: string;
-  type: string;
-  subtype: string;
-  assetIds: number[];
-  source: string;
-  sourceId: string;
-}
-
-export type Events = Items<Event>;
-
-export type DataEvents = DataResponse<Events>;
-
-export type AnnotationQueryRequestResponse = DataResponse<DataEvents>;
-
 export interface DataResponse<T> {
   data: T;
 }
-
-export type Items<T = object> = {
-  items: T[];
-};
 
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
@@ -379,13 +295,6 @@ export type TimeseriesFilterQuery = {
   cursor?: string;
 } & Limit;
 
-export type Limit = {
-  limit?: number;
-};
-
-export interface Cursor {
-  cursor?: string;
-}
 
 export interface VariableQueryData {
   query: string;
@@ -407,55 +316,6 @@ export interface CogniteDataSourceSettings extends DataSourceSettings {
   };
 }
 
-export interface Metadata {
-  [name: string]: string;
-}
-
-export type TimeRange = Range<number>;
-export type CogniteInternalId = number;
-export type CogniteExternallId = string;
-
-export interface FilterRequestParams {
-  metadata?: Metadata;
-  assetSubtreeIds?: IdEither[];
-  createdTime?: TimeRange;
-  lastUpdatedTime?: TimeRange;
-  externalIdPrefix?: string;
-}
-
-export interface AssetsFilterRequestParams extends FilterRequestParams {
-  name?: string;
-  parentIds?: CogniteInternalId[];
-  parentExternalIds?: CogniteExternallId[];
-  rootIds?: IdEither[];
-  source?: string;
-  root?: boolean;
-}
-
-export interface TimeseriesFilterRequestParams extends FilterRequestParams {
-  name?: string;
-  unit?: string;
-  isString?: boolean;
-  isStep?: boolean;
-  assetIds?: CogniteInternalId[];
-  assetExternalIds?: CogniteExternallId[];
-  rootAssetIds?: IdEither[];
-}
-
-export interface EventsFilterRequestParams extends FilterRequestParams {
-  startTime?: TimeRange;
-  endTime?: TimeRange;
-  assetIds?: CogniteInternalId[];
-  assetExternalIds?: CogniteExternallId[];
-  rootAssetIds?: IdEither[];
-  source?: string;
-  type?: string;
-  subtype?: string;
-}
-
-export interface FilterRequest<Filter> extends Limit, Cursor {
-  filter: Filter;
-}
 
 export interface QueryRequestError {
   refId: string;

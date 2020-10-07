@@ -1,8 +1,9 @@
-import { DataQueryRequestItem, TimeSeriesResponseItem, QueryTarget, IdEither } from '../../types';
+import { TimeSeriesResponseItem, IdEither } from '../../cdf/types';
+import { DataQueryRequestItem, QueryTarget } from '../../types';
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
-import { getTimeseries, getLabelWithInjectedProps } from '../../cdfClient';
+import { getTimeseries, getLabelWithInjectedProps } from '../../cdf/client';
 import { Connector } from '../../connector';
 import { FilterType } from '../types';
 import { applyFilters } from '../../utils';

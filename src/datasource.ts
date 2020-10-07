@@ -14,7 +14,6 @@ import {
   QueryResponse,
   QueryTarget,
   Tab,
-  TimeSeriesResponseItem,
   VariableQueryData,
   HttpMethod,
   CDFDataQueryRequest,
@@ -27,10 +26,13 @@ import {
   InputQueryTarget,
   AnnotationResponse,
   AnnotationQueryOptions,
+  } from './types';
+import {
+  TimeSeriesResponseItem,
   FilterRequest,
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
-} from './types';
+} from './cdf/types';
 import {
   formQueriesForTargets,
   getTimeseries,
@@ -41,7 +43,7 @@ import {
   datapointsPath,
   stringifyError,
   getLabelsForTarget,
-} from './cdfClient';
+} from './cdf/client';
 import { Connector } from './connector';
 import {
   TimeRange,
@@ -52,8 +54,6 @@ import {
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 import { MyQuery, MyDataSourceOptions, defaultQuery } from './types';
-const { Asset, Custom, Timeseries } = Tab;
-const { POST } = HttpMethod;
 
 export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   /**
@@ -119,6 +119,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         handleError(e, target.refId);
       }
     });
+
     const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
       data => data?.items?.length
     );
@@ -137,7 +138,8 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         return { target, labels };
       })
     );
-    const client = async (data, { target }) => {
+
+    const proxy = async (data, { target }) => {
       const isSynthetic = data.items.some(q => !!q.expression);
       const chunkSize = isSynthetic ? 10 : 100;
 
@@ -145,13 +147,13 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         {
           data,
           path: datapointsPath(isSynthetic),
-          method: POST,
+          method: HttpMethod.POST,
           requestId: getRequestId(options, target),
         },
         chunkSize
       );
     }
-    return promiser(queries, metadata, client);
+    return promiser(queries, metadata, proxy);
   }
 
   private async getDataQueryRequestItems(
@@ -161,10 +163,10 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const { tab, target: tsId, assetQuery, expr } = target;
     switch (tab) {
       case undefined:
-      case Timeseries: {
+      case Tab.Timeseries: {
         return [{ id: tsId }];
       }
-      case Asset: {
+      case Tab.Asset: {
         const timeseries = await this.findAssetTimeseries(target, options);
         return timeseries.map(({ id }) => ({ id }));
       }
@@ -245,7 +247,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
       data,
       path: `/${resources[type]}/search`,
-      method: POST,
+      method: HttpMethod.POST,
       params: options,
     });
 
@@ -307,7 +309,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const assets = await this.connector.fetchItems<any>({
       data,
       path: `/assets/list`,
-      method: POST,
+      method: HttpMethod.POST,
     });
 
     const filteredAssets = applyFilters(assets, filters);
@@ -346,11 +348,11 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
       switch (tab) {
-        case Asset:
+        case Tab.Asset:
           return assetQuery && assetQuery.target;
-        case Custom:
+        case Tab.Custom:
           return target.expr;
-        case Timeseries:
+        case Tab.Timeseries:
         case undefined:
           return target.target;
       }

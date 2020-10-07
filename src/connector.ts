@@ -3,11 +3,13 @@ import {
   Response,
   HttpMethod,
   DataSourceRequestOptions,
-  Items,
   CursorResponse,
-  Limit,
   isError,
 } from './types';
+import {
+  Items,
+  Limit,
+} from './cdf/types';
 import { getQueryString } from './utils';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { chunk } from 'lodash';

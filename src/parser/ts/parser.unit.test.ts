@@ -20,7 +20,7 @@ import {
   enrichWithDefaultAggregates,
 } from './index';
 import { FilterType } from '../types';
-import { TimeSeriesResponseItem } from '../../types';
+import { TimeSeriesResponseItem } from '../../cdf/types';
 import { cloneDeep } from 'lodash';
 
 const { NotEquals, Equals, RegexEquals } = FilterType;

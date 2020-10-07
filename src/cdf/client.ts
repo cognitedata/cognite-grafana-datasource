@@ -1,14 +1,19 @@
 import {
+  TimeSeriesDatapoint,
+  Timestamp,
+  Items,
+  Datapoint,
+  IdEither,
+  TimeSeriesResponseItem
+} from './types';
+import {
   Tab,
   QueryTarget,
   CDFDataQueryRequest,
   DataQueryRequestItem,
   QueryOptions,
-  TimeSeriesResponseItem,
   HttpMethod,
   TimeseriesFilterQuery,
-  TimeSeriesDatapoint,
-  Timestamp,
   DataQueryRequestResponse,
   ResponseMetadata,
   Aggregates,
@@ -17,17 +22,14 @@ import {
   QueriesData,
   SuccessResponse,
   Responses,
-  IdEither,
-  Items,
-  Datapoint,
-} from './types';
+} from '../types';
 import { get, cloneDeep } from 'lodash';
-import { toGranularityWithLowerBound } from './utils';
-import { Connector } from './connector';
-import { getLabelsForExpression } from './parser/ts';
-import { getRange } from './datasource';
+import { toGranularityWithLowerBound } from '../utils';
+import { Connector } from '../connector';
+import { getLabelsForExpression } from '../parser/ts';
+import { getRange } from '../datasource';
 import { TimeSeries } from '@grafana/data';
-import { CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
+import { CacheTime, DATAPOINTS_LIMIT_WARNING } from '../constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
