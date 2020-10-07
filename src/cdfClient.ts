@@ -166,7 +166,7 @@ export function stringifyError(error: any) {
 }
 
 export function reduceTimeseries(
-  metaResponses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[],
+  metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
 ): TimeSeries[] {
   const responseTimeseries: TimeSeries[] = [];
@@ -211,11 +211,11 @@ function datapoint2Tuple(
   return [value, dp.timestamp];
 }
 
-export async function promiser<Query, Metadata, Response>(
-  queries: Query[],
-  metadatas: Metadata[],
-  toPromise: (query: Query, metadata: Metadata) => Promise<Response>
-): Promise<Responses<Metadata, Response>> {
+export async function promiser(
+  queries: CDFDataQueryRequest[],
+  metadatas: ResponseMetadata[],
+  toPromise: (query: CDFDataQueryRequest, metadata: ResponseMetadata) => Promise<DataQueryRequestResponse>
+): Promise<Responses> {
   const succeded = [];
   const failed = [];
   const promises = queries.map(async (query, i) => {
