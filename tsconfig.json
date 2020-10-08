@@ -8,7 +8,8 @@
     "strict": false /* Enable all strict type-checking options. */,
     "noImplicitAny": false,
     "noImplicitReturns": false,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "jsx": "react"
     // "allowSyntheticDefaultImports": true,
     // "esModuleInterop": true,
   }

@@ -59,5 +59,5 @@ module.exports = {
         // FIXME: Should we enforce blank lines between class members? It makes code a tad bit more readable. If not, set this to "off"
         "@typescript-eslint/lines-between-class-members": "warn",
     },
-    "ignorePatterns":["*/**/grammar.ts"]
+    "ignorePatterns":["*/**/grammar.ts", "src/__tests__/__snap__/**"]
 };
