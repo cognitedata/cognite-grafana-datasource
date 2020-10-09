@@ -6,7 +6,7 @@ It represents the closest reasonable ESLint configuration to this
 project's original TSLint configuration.
 
 We recommend eventually switching this configuration to extend from
-the recommended rulesets in typescript-eslint. 
+the recommended rulesets in typescript-eslint.
 https://github.com/typescript-eslint/tslint-to-eslint-config/blob/master/docs/FAQs.md
 
 Happy linting! 💖
@@ -52,12 +52,14 @@ module.exports = {
         "@typescript-eslint/no-use-before-define" : "off",
         "react/prop-types": "off",
         "prettier/prettier": ["error", {"endOfLine":"auto"}],
+        "import/no-cycle": "off",
         // Disable "prefer default export" since we don't use default exports
         "import/prefer-default-export": "off",
         // FIXME: Should we use this rule? It looks like "no-extraneous-dependencies" complains about deps that may be provided by grafana toolkit. (deps that aren't defined in package.json)
         "import/no-extraneous-dependencies": "off",
         // FIXME: Should we enforce blank lines between class members? It makes code a tad bit more readable. If not, set this to "off"
-        "@typescript-eslint/lines-between-class-members": "warn",
+        "@typescript-eslint/lines-between-class-members": "off",
+        "@typescript-eslint/no-shadow": "off"
     },
-    "ignorePatterns":["*/**/grammar.ts", "src/__tests__/__snap__/**"]
+    //"ignorePatterns":["*/**/grammar.ts", "src/__tests__/**", "node_modules/**", "/src/parser/**"]
 };

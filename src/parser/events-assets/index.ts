@@ -1,3 +1,4 @@
+/* eslint-disable */
 import _, { get, isUndefined } from 'lodash';
 import getFilterDeep from 'deepdash/getFilterDeep';
 import getPaths from 'deepdash/getPaths';

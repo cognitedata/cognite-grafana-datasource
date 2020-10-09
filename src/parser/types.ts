@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { STSClientFilter } from './ts';
 
 export const FilterType = {

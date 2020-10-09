@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import { appEvents } from 'grafana/app/core/core';

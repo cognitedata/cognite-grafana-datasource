@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { css, cx } from 'emotion';
-import { DataSourceSettings, SelectableValue } from '@grafana/data';
+import {
+  DataSourceSettings,
+  SelectableValue,
+  DataSourcePluginOptionsEditorProps,
+} from '@grafana/data';
 
 import { LegacyForms } from '@grafana/ui';
-import { DataSourceProps, MyDataSourceOptions, MySecureJsonData } from 'types';
+import { DataSourceProps, MyDataSourceOptions, MySecureJsonData } from '../types';
 
 const { FormField, Input, Select } = LegacyForms;
 
@@ -11,27 +15,14 @@ const { FormField, Input, Select } = LegacyForms;
 // import { TagsInput } from '../TagsInput/TagsInput';
 // import { useTheme } from '../../themes';
 
-export interface HttpSettingsBaseProps {
-  /** The configuration object of the data source */
-  dataSourceConfig: DataSourceSettings<MyDataSourceOptions, any>;
-  /** Callback for handling changes to the configuration object */
-  onChange: (config: DataSourceSettings) => void;
-}
-
-export interface HttpSettingsProps extends HttpSettingsBaseProps {
-  /** The default url for the data source */
-  defaultUrl: string;
-  /** Show the http access help box */
-  showAccessOptions?: boolean;
-}
+type Props = DataSourcePluginOptionsEditorProps<MyDataSourceOptions>;
 
 const DEFAULT_ACCESS_OPTION = {
   label: 'Server (default)',
   value: 'proxy',
 };
 
-export const DataSourceConfig: React.FC<DataSourceProps> = props => {
-  const { defaultUrl, defaultProject, dataSourceConfig, onChange, showAccessOptions } = props;
+export const DataSourceConfig: React.FC<Props> = ({ onOptionsChange, options }) => {
   const [isAccessHelpVisible, setIsAccessHelpVisible] = useState(false);
   // const theme = useTheme();
   const secureJsonData = (dataSourceConfig.secureJsonData || {}) as MySecureJsonData;
@@ -62,11 +53,10 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
         className={props.inputStyle}
         placeholder={props.defaultUrl}
         value={props.dataSourceConfig.url}
-        onChange={event => onSettingsChange({ url: event.currentTarget.value })}
+        onChange={(event) => onSettingsChange({ url: event.currentTarget.value })}
       />
     );
-    let tooltip =
-      `This is the URL used to reach the API.
+    const tooltip = `This is the URL used to reach the API.
       If the project is deployed on the default multi-tenant installation (most are),
       then keep the default value and do not change the URL.
       If the project is deployed on a separate custom cluster,
@@ -79,25 +69,21 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           {
             // FIXME: ctrl.current.jsonData.cogniteApiUrl
           }
-          <FormField
-            label="API URL"
-            labelWidth={10}
-            tooltip={tooltip}
-            inputEl={urlInput}
-          />
+          <FormField label="API URL" labelWidth={10} tooltip={tooltip} inputEl={urlInput} />
         </div>
       </div>
-    )
+    );
   }
 
   function ProjectInput(props) {
-    let projectInput = (
+    const projectInput = (
       <Input
         className={inputStyle}
         placeholder={defaultProject}
         value={dataSourceConfig.jsonData.project}
-        onChange={event => onSettingsChange({ url: event.currentTarget.value })}
-      />)
+        onChange={(event) => onSettingsChange({ url: event.currentTarget.value })}
+      />
+    );
 
     return (
       <div className="gf-form-inline">
@@ -110,7 +96,7 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           />
         </div>
       </div>
-    )
+    );
   }
 
   function ApiKeyInput(props) {
@@ -121,7 +107,12 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           className={inputStyle}
           placeholder={defaultUrl}
           value={dataSourceConfig.jsonData.project}
-          onChange={event => props.onSettingsChange({ ...dataSourceConfig, secureJsonData: { apiKey: event.currentTarget.value }})}
+          onChange={(event) =>
+            props.onSettingsChange({
+              ...dataSourceConfig,
+              secureJsonData: { apiKey: event.currentTarget.value },
+            })
+          }
           type="password"
         />
       );
@@ -129,20 +120,26 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
       input = (
         <>
           <Input
-          className={inputStyle}
-          placeholder="Configured"
-          value={dataSourceConfig.jsonData.project}
-          disabled={true}
+            className={inputStyle}
+            placeholder="Configured"
+            value={dataSourceConfig.jsonData.project}
+            disabled
           />
           <a
             className="btn btn-secondary gf-form-btn"
             href="#"
-            onClick={event => props.onSettingsChange({ ...dataSourceConfig, secureJsonFields: { apiKey: false }, secureJsonData: { apiKey: ""}})} // ctrl.current.secureJsonFields.cogniteDataPlatformApiKey
+            onClick={(event) =>
+              props.onSettingsChange({
+                ...dataSourceConfig,
+                secureJsonFields: { apiKey: false },
+                secureJsonData: { apiKey: '' },
+              })
+            } // ctrl.current.secureJsonFields.cogniteDataPlatformApiKey
           >
             Reset
           </a>
         </>
-      )
+      );
     }
 
     return (
@@ -156,8 +153,8 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
           />
         </div>
       </div>
-    )
-  };
+    );
+  }
 
   return (
     <div>
@@ -166,7 +163,11 @@ export const DataSourceConfig: React.FC<DataSourceProps> = props => {
       <div className="gf-form-group">
         <ApiKeyInput dataSourceConfig={DataSourceConfig} />
         <ProjectInput dataSourceConfig={DataSourceConfig} />
-        <ApiUrlInput inputStyle={inputStyle} defaultUrl={defaultUrl} dataSourceConfig={dataSourceConfig}/>
+        <ApiUrlInput
+          inputStyle={inputStyle}
+          defaultUrl={defaultUrl}
+          dataSourceConfig={dataSourceConfig}
+        />
       </div>
     </div>
   );

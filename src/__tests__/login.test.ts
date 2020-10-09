@@ -1,3 +1,4 @@
+/* eslint-disable */
 describe('Noop', () => {
   it('should match', () => {
     expect(42).toEqual(42);

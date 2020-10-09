@@ -7,8 +7,7 @@ import {
   DataQuery,
   DataSourceJsonData,
 } from '@grafana/data';
-import { HttpSettingsProps } from '@grafana/ui/components/DataSourceSettings/types';
-import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from 'cdf/types';
+import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export interface MyQuery extends DataQuery {
   queryText?: string;
@@ -32,23 +31,24 @@ export const defaultQuery: Partial<MyQuery> = {
 /**
  * These are options configured for each DataSource instance
  */
+
 export interface MyDataSourceOptions extends DataSourceJsonData {
   path?: string;
   project: string;
+  authType: string;
+  defaultRegion: string;
+  cogniteProject: string;
 }
 
-
-export interface DataSourceProps extends HttpSettingsProps {
-  defaultProject: string
-}
-
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
 export interface MySecureJsonData {
   apiKey?: string;
 }
 
+export type CogniteDataSourceSettings = DataSourceSettings<MyDataSourceOptions, MySecureJsonData>;
+
+/**
+ * Value that is used in the backend, but never sent over HTTP to the frontend
+ */
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
@@ -135,25 +135,23 @@ export interface DataSourceRequestOptions {
   requestId?: string;
   headers?: { [s: string]: string };
   silent?: boolean;
-  data?: object;
+  data?: any;
 }
 
 export type SuccessResponse = {
   metadata: ResponseMetadata;
-  result: DataQueryRequestResponse
+  result: DataQueryRequestResponse;
 };
 
-export type FailResponse =
-{
+export type FailResponse = {
   metadata: ResponseMetadata;
-  error: any
+  error: any;
 };
 
 export type Responses = {
   failed: FailResponse[];
   succeded: SuccessResponse[];
 };
-
 
 export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
@@ -281,7 +279,7 @@ export interface DataResponse<T> {
 
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
-export type Response<T = object> = DataResponse<{
+export type Response<T = any> = DataResponse<{
   items: T[];
 }>;
 
@@ -295,7 +293,6 @@ export type TimeseriesFilterQuery = {
   cursor?: string;
 } & Limit;
 
-
 export interface VariableQueryData {
   query: string;
   error?: string;
@@ -307,15 +304,6 @@ export interface VariableQueryProps {
   datasource: any;
   templateSrv: any;
 }
-
-export interface CogniteDataSourceSettings extends DataSourceSettings {
-  jsonData: {
-    authType: string;
-    defaultRegion: string;
-    cogniteProject: string;
-  };
-}
-
 
 export interface QueryRequestError {
   refId: string;

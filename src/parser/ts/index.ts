@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { TimeSeriesResponseItem, IdEither } from '../../cdf/types';
 import { DataQueryRequestItem, QueryTarget } from '../../types';
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';

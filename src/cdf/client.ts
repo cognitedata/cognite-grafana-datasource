@@ -1,10 +1,12 @@
+import { get, cloneDeep } from 'lodash';
+import { TimeSeries } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
   Items,
   Datapoint,
   IdEither,
-  TimeSeriesResponseItem
+  TimeSeriesResponseItem,
 } from './types';
 import {
   Tab,
@@ -23,12 +25,10 @@ import {
   SuccessResponse,
   Responses,
 } from '../types';
-import { get, cloneDeep } from 'lodash';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
 import { getRange } from '../datasource';
-import { TimeSeries } from '@grafana/data';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING } from '../constants';
 
 const { Asset, Custom, Timeseries } = Tab;
@@ -84,7 +84,6 @@ export async function getLabelsForTarget(
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
-    case undefined:
     case Timeseries: {
       return [await getTimeseriesLabel(labelSrc, target.target, connector)];
     }
@@ -95,7 +94,7 @@ export async function getLabelsForTarget(
        * We should refactor labels logic someday
        */
       const timeseries = await getTimeseries({ items: tsIds }, connector, false);
-      return timeseries.map(ts => getLabelWithInjectedProps(labelSrc, ts));
+      return timeseries.map((ts) => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Custom: {
       if (!labelSrc || labelContainsVariableProps(labelSrc)) {
@@ -104,6 +103,8 @@ export async function getLabelsForTarget(
       }
       return queryList.map(() => labelSrc);
     }
+    default:
+      throw new Error('Internal error: unexpected tab');
   }
 }
 
@@ -157,7 +158,7 @@ export async function getTimeseries(
     });
   }
 
-  return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
+  return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
 }
 
 export function stringifyError(error: any) {
@@ -202,7 +203,7 @@ export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
   aggregate: string
 ): Tuple<number>[] {
-  return datapoints.map(d => datapoint2Tuple(d, aggregate));
+  return datapoints.map((d) => datapoint2Tuple(d, aggregate));
 }
 
 function datapoint2Tuple(
@@ -216,7 +217,10 @@ function datapoint2Tuple(
 export async function promiser(
   queries: CDFDataQueryRequest[],
   metadatas: ResponseMetadata[],
-  toPromise: (query: CDFDataQueryRequest, metadata: ResponseMetadata) => Promise<DataQueryRequestResponse>
+  toPromise: (
+    query: CDFDataQueryRequest,
+    metadata: ResponseMetadata
+  ) => Promise<DataQueryRequestResponse>
 ): Promise<Responses> {
   const succeded = [];
   const failed = [];
@@ -248,7 +252,7 @@ export function getCalculationWarnings(items: Datapoint[]) {
     (datapoints as [])
       .map(({ error }) => error)
       .filter(Boolean)
-      .forEach(error => {
+      .forEach((error) => {
         datapointsErrors.add(error);
       });
   });

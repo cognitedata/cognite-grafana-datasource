@@ -1,4 +1,3 @@
-
 export type Datapoints = Items<Datapoint>;
 export type Events = Items<Event>;
 
@@ -89,7 +88,7 @@ export interface TimeSeriesResponseItem {
   externalId?: string;
   name?: string;
   isString?: boolean;
-  metadata?: object;
+  metadata?: Record<string, string>;
   unit?: string;
   assetId?: string;
   isStep: boolean;
@@ -111,7 +110,6 @@ export interface Cursor {
   cursor?: string;
 }
 
-
 export interface Metadata {
   [name: string]: string;
 }
@@ -120,13 +118,11 @@ export type TimeRange = Range<number>;
 export type CogniteInternalId = number;
 export type CogniteExternallId = string;
 
-
-
 export interface Timestamp {
   timestamp: number;
 }
 
-export type Items<T = object> = {
+export type Items<T = any> = {
   items: T[];
 };
 
@@ -142,4 +138,3 @@ export interface Range<T> {
   min?: T;
   max?: T;
 }
-

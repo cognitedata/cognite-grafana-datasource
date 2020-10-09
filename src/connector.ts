@@ -1,3 +1,6 @@
+import { chunk } from 'lodash';
+import { getBackendSrv, BackendSrv } from '@grafana/runtime';
+import ms from 'ms';
 import {
   RequestParams,
   Response,
@@ -6,15 +9,9 @@ import {
   CursorResponse,
   isError,
 } from './types';
-import {
-  Items,
-  Limit,
-} from './cdf/types';
+import { Items, Limit } from './cdf/types';
 import { getQueryString } from './utils';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
-import { chunk } from 'lodash';
 import { CacheTime } from './constants';
-import ms from 'ms';
 
 export class Connector {
   public constructor(
@@ -23,7 +20,7 @@ export class Connector {
     private backendSrv: BackendSrv
   ) {}
 
-  cachedRequests = new Map<String, Promise<any>>();
+  cachedRequests = new Map<string, Promise<any>>();
 
   private fetchData<T>(request: RequestParams): Promise<T> {
     const { path, data, method, params, requestId, cacheTime } = request;
@@ -50,7 +47,7 @@ export class Connector {
         items,
       },
     }));
-    const promises = chunkedRequests.map(chunk => this.fetchData<Res>(chunk));
+    const promises = chunkedRequests.map((chunk) => this.fetchData<Res>(chunk));
     const results = await Promise.all(promises);
     const mergedItems = results.reduce((all, { data }) => {
       return [...all, ...data.items];
@@ -81,6 +78,8 @@ export class Connector {
       },
     });
     let { nextCursor: cursor, items } = data;
+
+    /* eslint no-await-in-loop: "off" */
     while (cursor && fullLimit > items.length) {
       const { data: current } = await this.fetchData<CursorResponse<T>>({
         ...params,
@@ -122,7 +121,7 @@ export class Connector {
       try {
         const res = await this.backendSrv.datasourceRequest(query);
         if (isError(res)) {
-          throw res;
+          throw new Error('FIXME');
         }
         setTimeout(() => this.cachedRequests.delete(hash), timeout);
         return res;

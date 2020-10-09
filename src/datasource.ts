@@ -1,10 +1,13 @@
-import { parse as parseDate } from 'grafana/app/core/utils/datemath';
+import { BackendSrv, TemplateSrv } from '@grafana/runtime';
+import {
+  TimeRange,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  DataQueryRequest,
+} from '@grafana/data';
 import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
-import { parse } from './parser/events-assets';
+import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
-import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
-import { appEvents } from 'grafana/app/core/core';
 import {
   CogniteDataSourceSettings,
   DataQueryRequestItem,
@@ -26,7 +29,10 @@ import {
   InputQueryTarget,
   AnnotationResponse,
   AnnotationQueryOptions,
-  } from './types';
+  MyQuery,
+  MyDataSourceOptions,
+  defaultQuery,
+} from './types';
 import {
   TimeSeriesResponseItem,
   FilterRequest,
@@ -45,15 +51,8 @@ import {
   getLabelsForTarget,
 } from './cdf/client';
 import { Connector } from './connector';
-import {
-  TimeRange,
-  DataSourceApi,
-  DataSourceInstanceSettings,
-  DataQueryRequest
-} from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
-import { MyQuery, MyDataSourceOptions, defaultQuery } from './types';
 
 export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   /**
@@ -87,7 +86,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const { url, jsonData } = instanceSettings;
     this.project = jsonData.cogniteProject;
     this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
-  }*/
+  } */
 
   /**
    * used by panels to get timeseries data
@@ -103,25 +102,29 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         showWarnings(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        console.error(error); // not sure it ever happens
+        throw new Error('Internal error: should not happen');
       }
     }
 
     return { data: responseData };
   }
 
-  async fetchTimeseriesForTargets(queryTargets: QueryTarget[], options: QueryOptions): Promise<Responses> {
-    const itemsForTargetsPromises = queryTargets.map(async target => {
+  async fetchTimeseriesForTargets(
+    queryTargets: QueryTarget[],
+    options: QueryOptions
+  ): Promise<Responses> {
+    const itemsForTargetsPromises = queryTargets.map(async (target) => {
+      let items: DataQueryRequestItem[];
       try {
-        const items = await this.getDataQueryRequestItems(target, options);
-        return { items, target };
+        items = await this.getDataQueryRequestItems(target, options);
       } catch (e) {
         handleError(e, target.refId);
       }
+      return { items, target };
     });
 
     const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
-      data => data?.items?.length
+      (data) => data?.items?.length
     );
 
     const queries = formQueriesForTargets(queryData, options);
@@ -129,8 +132,8 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
       queryData.map(async ({ target, items }) => {
         let labels = [];
         try {
-          labels = (await getLabelsForTarget(target, items, this.connector)).map(label =>
-            this.replaceVariable(label, options.scopedVars)
+          labels = (await getLabelsForTarget(target, items, this.connector)).map((label) =>
+            CogniteDatasource.replaceVariable(label, options.scopedVars)
           );
         } catch (err) {
           handleError(err, target.refId);
@@ -140,7 +143,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     );
 
     const proxy = async (data, { target }) => {
-      const isSynthetic = data.items.some(q => !!q.expression);
+      const isSynthetic = data.items.some((q) => !!q.expression);
       const chunkSize = isSynthetic ? 10 : 100;
 
       return this.connector.chunkAndFetch<CDFDataQueryRequest, DataQueryRequestResponse>(
@@ -152,7 +155,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         },
         chunkSize
       );
-    }
+    };
     return promiser(queries, metadata, proxy);
   }
 
@@ -162,6 +165,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
   ): Promise<DataQueryRequestItem[]> {
     const { tab, target: tsId, assetQuery, expr } = target;
     switch (tab) {
+      default:
       case undefined:
       case Tab.Timeseries: {
         return [{ id: tsId }];
@@ -171,15 +175,15 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         return timeseries.map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        const templatedExpr = this.replaceVariable(expr, options.scopedVars);
+        const templatedExpr = CogniteDatasource.replaceVariable(expr, options.scopedVars);
         const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
         return formQueriesForExpression(templatedExpr, target, this.connector, defaultInterval);
       }
     }
   }
 
-  replaceVariable(query: string, scopedVars?): string {
-    return ""; //this.templateSrv.replace(query.trim(), scopedVars);
+  static replaceVariable(query: string, scopedVars?): string {
+    return ''; // this.templateSrv.replace(query.trim(), scopedVars);
   }
 
   /**
@@ -264,7 +268,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     { refId, assetQuery }: QueryTarget,
     { scopedVars }: QueryOptions
   ): Promise<TimeSeriesResponseItem[]> {
-    const assetId = this.replaceVariable(assetQuery.target, scopedVars);
+    const assetId = CogniteDatasource.replaceVariable(assetQuery.target, scopedVars);
     const filter = assetQuery.includeSubtrees
       ? {
           assetSubtreeIds: [{ id: Number(assetId) }],
@@ -278,10 +282,10 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, this.connector);
     if (ts.length === limit) {
-      appEvents.emit(datapointsWarningEvent, {
-        refId,
-        warning: TIMESERIES_LIMIT_WARNING,
-      });
+      // appEvents.emit(datapointsWarningEvent, {
+      //  refId,
+      //  warning: TIMESERIES_LIMIT_WARNING,
+      // });
 
       ts.splice(-1);
     }
@@ -296,7 +300,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     let filters: ParsedFilter[];
 
     try {
-      ({ params, filters } = parse(query));
+      ({ params, filters } = parseQuery(query));
     } catch (e) {
       return [];
     }
@@ -340,11 +344,13 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         title: 'Error',
       };
     }
+
+    throw Error('Did not get 200 OK');
   }
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
-  return targets.filter(target => {
+  return targets.filter((target) => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
       switch (tab) {
@@ -354,9 +360,11 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
           return target.expr;
         case Tab.Timeseries:
         case undefined:
+        default:
           return target.target;
       }
     }
+    return target.target;
   }) as QueryTarget[];
 }
 
@@ -368,27 +376,27 @@ function handleFailedTargets(failed: FailResponse[]) {
 }
 
 export function getRange(range: TimeRange): Tuple<number> {
-  const timeFrom = Math.ceil(parseDate(range.from));
-  const timeTo = Math.ceil(parseDate(range.to));
+  const timeFrom = Math.ceil(range.from.unix());
+  const timeTo = Math.ceil(range.to.unix());
   return [timeFrom, timeTo];
 }
 
 function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
-  appEvents.emit(failedResponseEvent, { refId, error: errMessage });
+  // appEvents.emit(failedResponseEvent, { refId, error: errMessage });
 }
 
 function showWarnings(responses: SuccessResponse[]) {
   responses.forEach(({ result, metadata }) => {
-    const items = result.data.items;
-    const limit = result.config.data.limit;
-    const refId = metadata.target.refId;
+    const { items } = result.data;
+    const { limit } = result.config.data;
+    const { refId } = metadata.target;
     const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
       .filter(Boolean)
       .join('\n');
 
     if (warning) {
-      appEvents.emit(datapointsWarningEvent, { refId, warning });
+      // appEvents.emit(datapointsWarningEvent, { refId, warning });
     }
   });
 }

@@ -1,4 +1,7 @@
 /* tslint:disable */
+
+/* eslint-disable */
+
 /*
 import CogniteDatasource from '../datasource';
 import { CDFDataQueryRequest, QueryTarget } from '../types';
