@@ -19,6 +19,16 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
+  // TODO: Verify that this is correct.
+  onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      project: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
   // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
@@ -54,11 +64,11 @@ export class ConfigEditor extends PureComponent<Props, State> {
       <div className="gf-form-group">
         <div className="gf-form">
           <FormField
-            label="Path"
+            label="Project"
             labelWidth={6}
             inputWidth={20}
-            onChange={this.onPathChange}
-            value={jsonData.path || ''}
+            onChange={this.onProjectChange}
+            value={jsonData.project || ''}
             placeholder="json field returned to frontend"
           />
         </div>
@@ -76,6 +86,17 @@ export class ConfigEditor extends PureComponent<Props, State> {
               onChange={this.onAPIKeyChange}
             />
           </div>
+        </div>
+
+        <div className="gf-form">
+          <FormField
+            label="Path"
+            labelWidth={6}
+            inputWidth={20}
+            onChange={this.onPathChange}
+            value={jsonData.path || ''}
+            placeholder="json field returned to frontend"
+          />
         </div>
       </div>
     );
