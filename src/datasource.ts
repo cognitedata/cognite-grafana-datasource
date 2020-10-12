@@ -1,9 +1,10 @@
-import { BackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { BackendSrv, getTemplateSrv, SystemJS } from '@grafana/runtime';
 import {
   TimeRange,
   DataSourceApi,
   DataSourceInstanceSettings,
   DataQueryRequest,
+  AppEvents,
 } from '@grafana/data';
 import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
 import { parse as parseQuery } from './parser/events-assets';
@@ -53,6 +54,8 @@ import {
 import { Connector } from './connector';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+
+const { alertWarning } = AppEvents;
 
 export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   /**
@@ -282,6 +285,12 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, this.connector);
     if (ts.length === limit) {
+      SystemJS.load('app/core/app_events').then((appEvents: any) => {
+        appEvents.emit(datapointsWarningEvent, {
+          refId,
+          warning: TIMESERIES_LIMIT_WARNING,
+        });
+      });
       // appEvents.emit(datapointsWarningEvent, {
       //  refId,
       //  warning: TIMESERIES_LIMIT_WARNING,
@@ -383,7 +392,9 @@ export function getRange(range: TimeRange): Tuple<number> {
 
 function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
-  // appEvents.emit(failedResponseEvent, { refId, error: errMessage });
+  SystemJS.load('app/core/app_events').then((appEvents: any) => {
+    appEvents.emit(failedResponseEvent, { refId, error: errMessage });
+  });
 }
 
 function showWarnings(responses: SuccessResponse[]) {
@@ -396,7 +407,9 @@ function showWarnings(responses: SuccessResponse[]) {
       .join('\n');
 
     if (warning) {
-      // appEvents.emit(datapointsWarningEvent, { refId, warning });
+      SystemJS.load('app/core/app_events').then((appEvents: any) => {
+        appEvents.emit(datapointsWarningEvent, { refId, warning });
+      });
     }
   });
 }

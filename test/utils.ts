@@ -2,6 +2,12 @@
 
 /* eslint-disable */
 
+describe('Noop', () => {
+  it('should match', () => {
+    expect(42).toEqual(42);
+  });
+});
+
 /*
 import CogniteDatasource from '../datasource';
 import { CDFDataQueryRequest, QueryTarget } from '../types';
