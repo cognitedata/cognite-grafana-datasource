@@ -1,4 +1,4 @@
-import { BackendSrv, TemplateSrv } from '@grafana/runtime';
+import { BackendSrv, getTemplateSrv } from '@grafana/runtime';
 import {
   TimeRange,
   DataSourceApi,
@@ -183,7 +183,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
   }
 
   static replaceVariable(query: string, scopedVars?): string {
-    return ''; // this.templateSrv.replace(query.trim(), scopedVars);
+    return getTemplateSrv().replace(query.trim(), scopedVars);
   }
 
   /**
