@@ -61,7 +61,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
   /**
    * Parameters that are needed by grafana
    */
-  baseUrl: string;
+  url: string;
 
   /*
   id: number;
@@ -75,8 +75,9 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
-    this.baseUrl = url;
+    this.url = url;
     this.connector = new Connector(jsonData.cogniteProject, url, getBackendSrv());
+    this.project = jsonData.cogniteProject;
   }
 
   /** @ngInject
