@@ -1,4 +1,4 @@
-import { BackendSrv, getTemplateSrv, SystemJS } from '@grafana/runtime';
+import { getBackendSrv, getTemplateSrv, SystemJS } from '@grafana/runtime';
 import {
   TimeRange,
   DataSourceApi,
@@ -74,7 +74,9 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
   constructor(instanceSettings: DataSourceInstanceSettings<MyDataSourceOptions>) {
     super(instanceSettings);
 
-    this.baseUrl = instanceSettings.url!;
+    const { url, jsonData } = instanceSettings;
+    this.baseUrl = url;
+    this.connector = new Connector(jsonData.cogniteProject, url, getBackendSrv());
   }
 
   /** @ngInject
