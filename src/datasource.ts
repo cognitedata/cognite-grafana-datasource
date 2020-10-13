@@ -108,7 +108,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
         showWarnings(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        throw new Error('Internal error: should not happen');
+        throw new Error('Internal error: should not happen'); // FIXME: use app-events (or something)
       }
     }
 
@@ -294,10 +294,9 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
           warning: TIMESERIES_LIMIT_WARNING,
         });
       });
-      // appEvents.emit(datapointsWarningEvent, {
-      //  refId,
-      //  warning: TIMESERIES_LIMIT_WARNING,
-      // });
+      SystemJS.load('app/core/app_events').then((appEvents: any) => {
+        appEvents.emit(datapointsWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+      });
 
       ts.splice(-1);
     }
