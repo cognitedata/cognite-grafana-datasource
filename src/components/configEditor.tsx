@@ -1,11 +1,11 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { MyDataSourceOptions, MySecureJsonData } from '../types';
+import { CogniteDataSourceOptions, MySecureJsonData } from '../types';
 
 const { SecretFormField, FormField } = LegacyForms;
 
-type Props = DataSourcePluginOptionsEditorProps<MyDataSourceOptions>;
+type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions>;
 
 interface State {}  // eslint-disable-line
 
@@ -74,7 +74,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             labelWidth={6}
             inputWidth={20}
             onChange={this.onProjectChange}
-            value={jsonData.project || ''}
+            value={jsonData.cogniteProject || ''}
             placeholder="Cognite Data Fusion project"
           />
         </div>

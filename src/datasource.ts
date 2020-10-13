@@ -10,7 +10,6 @@ import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import {
-  CogniteDataSourceSettings,
   DataQueryRequestItem,
   DataQueryRequestResponse,
   MetricFindQueryResponse,
@@ -31,7 +30,7 @@ import {
   AnnotationResponse,
   AnnotationQueryOptions,
   MyQuery,
-  MyDataSourceOptions,
+  CogniteDataSourceOptions,
   defaultQuery,
 } from './types';
 import {
@@ -57,7 +56,7 @@ import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING }
 
 const { alertWarning } = AppEvents;
 
-export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
+export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDataSourceOptions> {
   /**
    * Parameters that are needed by grafana
    */
@@ -71,7 +70,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
   project: string;
   connector: Connector;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<MyDataSourceOptions>) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
@@ -79,20 +78,6 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, MyDataSour
     this.connector = new Connector(jsonData.cogniteProject, url, getBackendSrv());
     this.project = jsonData.cogniteProject;
   }
-
-  /** @ngInject
-  constructor(
-    instanceSettings: CogniteDataSourceSettings,
-    backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv
-  ) {
-    this.id = instanceSettings.id;
-    this.url = instanceSettings.url;
-    this.name = instanceSettings.name;
-    const { url, jsonData } = instanceSettings;
-    this.project = jsonData.cogniteProject;
-    this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
-  } */
 
   /**
    * used by panels to get timeseries data

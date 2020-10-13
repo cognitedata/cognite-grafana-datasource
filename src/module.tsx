@@ -2,13 +2,14 @@ import { DataSourcePlugin } from '@grafana/data';
 
 import CogniteDatasource from './datasource';
 
-import { CogniteQueryCtrl } from './queryCtrl';
 import { ConfigEditor } from './components/configEditor';
 import { CogniteAnnotationsQueryCtrl } from './annotationCtrl';
 import { CogniteVariableQueryCtrl } from './components/variableQueryCtrl';
-import { MyQuery, MyDataSourceOptions } from './types';
+import { MyQuery, CogniteDataSourceOptions } from './types';
 
-export const plugin = new DataSourcePlugin<CogniteDatasource, MyQuery, MyDataSourceOptions>(
+export const plugin = new DataSourcePlugin<CogniteDatasource, MyQuery, CogniteDataSourceOptions>(
   CogniteDatasource
-).setConfigEditor(ConfigEditor);
+)
+  .setConfigEditor(ConfigEditor)
+  .setVariableQueryEditor(CogniteVariableQueryCtrl);
 //  .setQueryEditor(CogniteQueryCtrl);

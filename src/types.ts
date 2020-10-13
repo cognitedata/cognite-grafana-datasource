@@ -32,9 +32,8 @@ export const defaultQuery: Partial<MyQuery> = {
  * These are options configured for each DataSource instance
  */
 
-export interface MyDataSourceOptions extends DataSourceJsonData {
+export interface CogniteDataSourceOptions extends DataSourceJsonData {
   path?: string;
-  project: string;
   authType: string;
   defaultRegion: string;
   cogniteProject: string;
@@ -43,8 +42,6 @@ export interface MyDataSourceOptions extends DataSourceJsonData {
 export interface MySecureJsonData {
   apiKey?: string;
 }
-
-export type CogniteDataSourceSettings = DataSourceSettings<MyDataSourceOptions, MySecureJsonData>;
 
 /**
  * Value that is used in the backend, but never sent over HTTP to the frontend
