@@ -53,7 +53,7 @@ const help = (
   </pre>
 );
 
-export class CogniteVariableQueryCtrl extends React.PureComponent<
+export class CogniteVariableQueryEditor extends React.PureComponent<
   VariableQueryProps,
   VariableQueryData
 > {
