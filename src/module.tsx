@@ -3,7 +3,7 @@ import { DataSourcePlugin } from '@grafana/data';
 import CogniteDatasource from './datasource';
 
 import { CogniteQueryCtrl } from './queryCtrl';
-import { ConfigEditor } from './components/configCtrl';
+import { ConfigEditor } from './components/configEditor';
 import { CogniteAnnotationsQueryCtrl } from './annotationCtrl';
 import { CogniteVariableQueryCtrl } from './components/variableQueryCtrl';
 import { MyQuery, MyDataSourceOptions } from './types';
