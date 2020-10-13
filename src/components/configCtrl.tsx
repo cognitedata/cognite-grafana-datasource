@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms } from '@grafana/ui';
+import { LegacyForms, Tooltip } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { MyDataSourceOptions, MySecureJsonData } from '../types';
 
@@ -59,6 +59,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const { options } = this.props;
     const { jsonData, secureJsonFields } = options;
     const secureJsonData = (options.secureJsonData || {}) as MySecureJsonData;
+    const tooltip = `This is the URL used to reach the API.
+      If the project is deployed on the default multi-tenant installation (most are),
+      then keep the default value and do not change the URL.
+      If the project is deployed on a separate custom cluster,
+      then change the URL to point at the API server for that cluster.
+      If unsure, leave the URL as default.`;
 
     return (
       <div className="gf-form-group">
@@ -69,7 +75,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             inputWidth={20}
             onChange={this.onProjectChange}
             value={jsonData.project || ''}
-            placeholder="json field returned to frontend"
+            placeholder="Cognite Data Fusion project"
           />
         </div>
 
@@ -79,7 +85,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
               isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
               value={secureJsonData.apiKey || ''}
               label="API Key"
-              placeholder="secure json field (backend only)"
+              placeholder="Cognite Data Fusion API key"
               labelWidth={6}
               inputWidth={20}
               onReset={this.onResetAPIKey}
@@ -95,7 +101,8 @@ export class ConfigEditor extends PureComponent<Props, State> {
             inputWidth={20}
             onChange={this.onPathChange}
             value={jsonData.path || ''}
-            placeholder="json field returned to frontend"
+            placeholder="api.cognitedata.com"
+            tooltip={tooltip}
           />
         </div>
       </div>
