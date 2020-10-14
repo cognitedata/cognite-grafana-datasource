@@ -1,6 +1,7 @@
 import defaults from 'lodash/defaults';
+import _ from 'lodash';
 
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useCallback, useMemo, useState, useEffect } from 'react';
 import { LegacyForms, Tab, TabsBar, TabContent, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
@@ -10,7 +11,7 @@ const { FormField } = LegacyForms;
 type Props = QueryEditorProps<CogniteDatasource, MyQuery, CogniteDataSourceOptions>;
 
 export function TimeseriesTab(props: Props) {
-  const { query } = props;
+  const { query, datasource } = props;
 
   const onGranularityChange = (granularity: string) => {
     props.onChange({ ...query, granularity });
@@ -44,11 +45,39 @@ export function TimeseriesTab(props: Props) {
     description: agg.name ? `This is a description of ${agg.name}` : undefined,
   }));
 
+  const getOptions = (query: string, type: string) => {
+    const [result, setResult] = React.useState([]);
+
+    useEffect(() => {
+      datasource
+        .getOptionsForDropdown(query || '', type)
+        .then((options) => {
+          return options;
+        })
+        .then((res) =>
+          res.map<SelectableValue<string>>((x) => ({
+            label: x.text,
+            description: x.text,
+            value: x.value.toString(),
+          }))
+        )
+        .then((res) => setResult(res));
+    }, [query]);
+
+    return result;
+  };
+
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <label className="gf-form-label query-keyword fix-query-keyword">Tag</label>
 
+        <Select
+          // onChange={(ev) => onAggregationChange(ev.value)}
+          options={getOptions(query.queryText, 'Timeseries')}
+          defaultValue={query.aggregation}
+          width={15}
+        />
         {/*  <gf-form-dropdown
           model="ctrl.target.target"
           placeholder="Start tagging here"
