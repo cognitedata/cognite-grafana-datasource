@@ -23,7 +23,15 @@ export interface MyQuery extends DataQuery {
   warning: string;
 }
 
-export const defaultQuery: Partial<MyQuery> = {};
+export enum Tab {
+  Timeseries = 'Timeseries',
+  Asset = 'Asset',
+  Custom = 'Custom',
+}
+
+export const defaultQuery: Partial<MyQuery> = {
+  tab: Tab.Timeseries,
+};
 
 /**
  * These are options configured for each DataSource instance
@@ -63,12 +71,6 @@ export interface MetricDescription {
 }
 
 export type MetricFindQueryResponse = MetricDescription[];
-
-export enum Tab {
-  Timeseries = 'Timeseries',
-  Asset = 'Asset',
-  Custom = 'Custom',
-}
 
 export enum ParseType {
   Timeseries = 'Timeseries',
