@@ -11,9 +11,8 @@ import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from './cd
 
 export interface MyQuery extends DataQuery {
   queryText?: string;
-  constant: number;
 
-  target: number | ''; // FIXME:
+  target: number | ''; // Timeseries internal Id:
   aggregation: string;
   granularity: string;
   error: string;
@@ -24,9 +23,7 @@ export interface MyQuery extends DataQuery {
   warning: string;
 }
 
-export const defaultQuery: Partial<MyQuery> = {
-  constant: 6.5,
-};
+export const defaultQuery: Partial<MyQuery> = {};
 
 /**
  * These are options configured for each DataSource instance
