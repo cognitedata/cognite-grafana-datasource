@@ -72,6 +72,53 @@ export function TimeseriesTab(props: Props) {
     return result;
   };
 
+  export function AssetTab(props: Props) {
+    return (
+      <div class="gf-form-inline">
+        <div class="gf-form">
+          <label class="gf-form-label query-keyword fix-query-keyword">Asset Tag</label>
+          <gf-form-dropdown model="ctrl.target.assetQuery.target"
+            class="gf-dropdown-wrapper"
+            placeholder="Start typing asset tag"
+            css-class="gf-size-auto"
+            allow-custom="false"
+            lookup-text="true"
+            get-options="ctrl.getOptions($query,'Asset')"
+            on-change="ctrl.refreshData()">
+          </gf-form-dropdown>
+        </div>
+        <div class="gf-form">
+          <gf-form-switch class="gf-form"
+            label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
+            checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.refreshData()">
+          </gf-form-switch>
+        </div>
+        <div class="gf-form">
+          <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
+          <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.refreshData()">
+          <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
+          </select>
+        </div>
+        <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
+          <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
+          <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.refreshData()" placeholder="default"/>
+          <info-popover mode="right-absolute">
+            The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
+          </info-popover>
+        </div>
+        <div class="gf-form gf-form--grow">
+            <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
+            <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.refreshData()" placeholder=""/>
+            <info-popover mode="right-absolute">
+              <span ng-non-bindable>
+                Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
+              </span>
+            </info-popover>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
@@ -84,17 +131,6 @@ export function TimeseriesTab(props: Props) {
           onInputChange={(text) => setTagQuery(text)}
           className="width-20"
         />
-
-        {/*  <gf-form-dropdown
-          model="ctrl.target.target"
-          placeholder="Start tagging here"
-          class="gf-dropdown-wrapper"
-          css-class="gf-size-auto"
-          allow-custom="false"
-          lookup-text="true"
-          get-options="ctrl.getOptions($query,'Timeseries')"
-          on-change="ctrl.refreshData()"
-        /> */}
       </div>
       <div className="gf-form">
         <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
@@ -138,26 +174,9 @@ export function QueryEditor(props: Props) {
   const { query } = props;
   const queryOrDefault = defaults(query, defaultQuery);
   const { queryText, tab } = queryOrDefault;
-
-  // const [activeTab, setActiveTab] = useState(tab);
   const activeTab = tab;
 
-  /*
-  const onQueryTextChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query } = this.props;
-    onChange({ ...query, queryText: event.target.value });
-  };
-
-  const onConstantChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
-    onChange({ ...query, constant: parseFloat(event.target.value) });
-    // executes the query
-    onRunQuery();
-  };
-  */
-
   const onSelectTab = (tab: Tabs) => {
-    // setActiveTab(tab);
     props.onChange({ ...query, tab });
   };
 
@@ -175,7 +194,7 @@ export function QueryEditor(props: Props) {
         ))}
       </TabsBar>
       <TabContent>
-        {activeTab === Tabs.Asset && <div>Asset tab content</div>}
+        {activeTab === Tabs.Asset && AssetTab(props)}
         {activeTab === Tabs.Timeseries && TimeseriesTab(props)}
         {activeTab === Tabs.Custom && <div>Custom tab content</div>}
       </TabContent>
