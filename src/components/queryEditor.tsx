@@ -52,35 +52,59 @@ const options = aggregation.map<SelectableValue<string>>((agg) => ({
   description: agg.name ? `This is a description of ${agg.name}` : undefined,
 }));
 
-const onLabelChange = (props: Props, label: string) => {
-  const { query } = props;
-  props.onChange({ ...query, label });
-};
-
 const onAggregationChange = (props: Props, aggregation: string) => {
   const { query } = props;
   props.onChange({ ...query, aggregation });
 };
 
+const onGranularityChange = (props: Props, granularity: string) => {
+  const { query } = props;
+  props.onChange({ ...query, granularity });
+};
+
+const onLabelChange = (props: Props, label: string) => {
+  const { query } = props;
+  props.onChange({ ...query, label });
+};
+
+const onTagChange = (props: Props, tag: number) => {
+  const { query } = props;
+  props.onChange({ ...query, target: tag });
+};
+
+const AggregationEditor = (props: Props) => {
+  const { query } = props;
+  if (query.aggregation && query.aggregation !== 'none') {
+    return (
+      <div
+        className="gf-form"
+        /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
+      >
+        <FormField
+          label="Granularity"
+          labelWidth={6}
+          inputWidth={10}
+          onChange={(ev) => onGranularityChange(props, ev.target.value)}
+          value={query.granularity}
+          placeholder="default"
+          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
+        />
+      </div>
+    );
+  }
+  return <div />;
+};
 
 export function AssetTab(props: Props) {
   const { query, datasource } = props;
   const [tagQuery, setTagQuery] = React.useState('');
-
-  const onGranularityChange = (granularity: string) => {
-    props.onChange({ ...query, granularity });
-  };
-
-  const onTagChange = (tag: number) => {
-    props.onChange({ ...query, target: tag });
-  };
 
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <InlineFormLabel width={6}>Asset Tag</InlineFormLabel>
         <Select
-          onChange={(ev) => onTagChange(+ev.value)}
+          onChange={(ev) => onTagChange(props, ev.value)}
           options={getOptions(props, tagQuery, 'Asset')}
           defaultValue={tagQuery}
           placeholder="Start typing asset tag"
@@ -111,43 +135,21 @@ export function AssetTab(props: Props) {
           className="width-10"
         />
       </div>
-      <div className="gf-form">
+      {AggregationEditor(props)}
+      {/* TODO: Label} */}
+      <div className="gf-form gf-form--grow">
         <FormField
-          label="Granularity"
+          label="Label"
           labelWidth={6}
           inputWidth={10}
-          onChange={(ev) => onGranularityChange(ev.target.value)}
-          value={query.granularity}
+          onChange={(ev) => onLabelChange(props, ev.target.value)}
+          value={query.label}
           placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
+          tooltip="Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
         />
       </div>
-      {/* TODO: Label
-      <div className="gf-form">
-        <FormField
-          label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onGranularityChange(ev.target.value)}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
-      */}
 
-      {/* <div class="gf-form">
-        <label class="gf-form-label query-keyword fix-query-keyword">Asset Tag</label>
-        <gf-form-dropdown model="ctrl.target.assetQuery.target"
-          class="gf-dropdown-wrapper"
-          placeholder="Start typing asset tag"
-          css-class="gf-size-auto"
-          allow-custom="false"
-          lookup-text="true"
-          get-options="ctrl.getOptions($query,'Asset')"
-          on-change="ctrl.refreshData()">
-        </gf-form-dropdown>
-      </div>
+      {/*
       <div class="gf-form">
         <gf-form-switch class="gf-form"
           label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
@@ -184,62 +186,13 @@ export function TimeseriesTab(props: Props) {
   const { query, datasource } = props;
   const [tagQuery, setTagQuery] = React.useState('');
 
-  const onGranularityChange = (granularity: string) => {
-    props.onChange({ ...query, granularity });
-  };
-
-  const onTagChange = (tag: number) => {
-    props.onChange({ ...query, target: tag });
-  };
-
-  const aggregation = [
-    { value: 'none', name: 'None' },
-    { value: 'average', name: 'Average' },
-    { value: 'max', name: 'Max' },
-    { value: 'min', name: 'Min' },
-    { value: 'count', name: 'Count' },
-    { value: 'sum', name: 'Sum' },
-    { value: 'interpolation', name: 'Interpolation' },
-    { value: 'stepInterpolation', name: 'Step Interpolation' },
-    { value: 'continuousVariance', name: 'Continuous Variance' },
-    { value: 'discreteVariance', name: 'Discrete Variance' },
-    { value: 'totalVariation', name: 'Total Variation' },
-  ];
-
-  const options = aggregation.map<SelectableValue<string>>((agg) => ({
-    value: agg.value,
-    label: agg.name,
-    description: agg.name ? `This is a description of ${agg.name}` : undefined,
-  }));
-
-  const AggregationEditor = () => {
-    if (query.aggregation) {
-      return (
-        <div
-          className="gf-form"
-          ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'"
-        >
-          <FormField
-            label="Granularity"
-            labelWidth={6}
-            inputWidth={10}
-            onChange={(ev) => onGranularityChange(ev.target.value)}
-            value={query.granularity}
-            placeholder="default"
-            tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-          />
-        </div>
-      );
-    }
-    return <div />;
-  };
 
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <InlineFormLabel width={6}>Tag</InlineFormLabel>
         <Select
-          onChange={(ev) => onTagChange(+ev.value)}
+          onChange={(ev) => onTagChange(props, +ev.value)}
           options={getOptions(props, tagQuery, 'Timeseries')}
           defaultValue={tagQuery}
           placeholder="Start typing tag id here"
@@ -256,7 +209,7 @@ export function TimeseriesTab(props: Props) {
           className="width-10"
         />
       </div>
-      AggregationEditor()
+      {AggregationEditor(props)}
       <div className="gf-form gf-form--grow">
         <FormField
           label="Label"
