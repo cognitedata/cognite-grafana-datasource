@@ -212,6 +212,28 @@ export function TimeseriesTab(props: Props) {
     description: agg.name ? `This is a description of ${agg.name}` : undefined,
   }));
 
+  const AggregationEditor = () => {
+    if (query.aggregation) {
+      return (
+        <div
+          className="gf-form"
+          ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'"
+        >
+          <FormField
+            label="Granularity"
+            labelWidth={6}
+            inputWidth={10}
+            onChange={(ev) => onGranularityChange(ev.target.value)}
+            value={query.granularity}
+            placeholder="default"
+            tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
+          />
+        </div>
+      );
+    }
+    return <div />;
+  };
+
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
@@ -234,21 +256,7 @@ export function TimeseriesTab(props: Props) {
           className="width-10"
         />
       </div>
-      { if (query.t)}
-      <div
-        className="gf-form"
-        ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'"
-      >
-        <FormField
-          label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onGranularityChange(ev.target.value)}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
+      AggregationEditor()
       <div className="gf-form gf-form--grow">
         <FormField
           label="Label"
