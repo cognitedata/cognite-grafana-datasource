@@ -2,7 +2,7 @@ import defaults from 'lodash/defaults';
 import _ from 'lodash';
 
 import React, { ChangeEvent, useCallback, useMemo, useState, useEffect } from 'react';
-import { LegacyForms, Tab, TabsBar, TabContent, Select } from '@grafana/ui';
+import { LegacyForms, Tab, TabsBar, TabContent, Select, Label, InlineFormLabel } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 import { defaultQuery, CogniteDataSourceOptions, MyQuery, Tab as Tabs } from '../types';
@@ -12,6 +12,7 @@ type Props = QueryEditorProps<CogniteDatasource, MyQuery, CogniteDataSourceOptio
 
 export function TimeseriesTab(props: Props) {
   const { query, datasource } = props;
+  const [tagQuery, setTagQuery] = React.useState('');
 
   const onGranularityChange = (granularity: string) => {
     props.onChange({ ...query, granularity });
@@ -23,6 +24,10 @@ export function TimeseriesTab(props: Props) {
 
   const onAggregationChange = (aggregation: string) => {
     props.onChange({ ...query, aggregation });
+  };
+
+  const onTagChange = (tag: number) => {
+    props.onChange({ ...query, target: tag });
   };
 
   const aggregation = [
@@ -70,14 +75,16 @@ export function TimeseriesTab(props: Props) {
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
-        <label className="gf-form-label query-keyword fix-query-keyword">Tag</label>
-
+        <InlineFormLabel width={6}>Tag</InlineFormLabel>
         <Select
-          // onChange={(ev) => onAggregationChange(ev.value)}
-          options={getOptions(query.queryText, 'Timeseries')}
-          defaultValue={query.aggregation}
-          width={15}
+          onChange={(ev) => onTagChange(+ev.value)}
+          options={getOptions(tagQuery, 'Timeseries')}
+          defaultValue={tagQuery}
+          placeholder="Start typing tag id here"
+          onInputChange={(text) => setTagQuery(text)}
+          className="width-20"
         />
+
         {/*  <gf-form-dropdown
           model="ctrl.target.target"
           placeholder="Start tagging here"
@@ -90,11 +97,12 @@ export function TimeseriesTab(props: Props) {
         /> */}
       </div>
       <div className="gf-form">
+        <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
         <Select
           onChange={(ev) => onAggregationChange(ev.value)}
           options={options}
           defaultValue={query.aggregation}
-          width={15}
+          className="width-10"
         />
       </div>
       <div
@@ -104,7 +112,7 @@ export function TimeseriesTab(props: Props) {
         <FormField
           label="Granularity"
           labelWidth={6}
-          inputWidth={20}
+          inputWidth={10}
           onChange={(ev) => onGranularityChange(ev.target.value)}
           value={query.granularity}
           placeholder="default"
@@ -115,7 +123,7 @@ export function TimeseriesTab(props: Props) {
         <FormField
           label="Label"
           labelWidth={6}
-          inputWidth={20}
+          inputWidth={10}
           onChange={(ev) => onLabelChange(ev.target.value)}
           value={query.label}
           placeholder="default"
