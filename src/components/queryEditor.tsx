@@ -91,7 +91,7 @@ const GranularityEditor = (props: Props) => {
     return (
       <div
         className="gf-form"
-        /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
+      /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
       >
         <FormField
           label="Granularity"
@@ -246,13 +246,7 @@ export function TimeseriesTab(props: Props) {
 
 export function CustomTab(props: Props) {
   const { query, datasource } = props;
-  const [help, setHelp] = useState(true);
-  const Help = () => {
-    if (help) {
-      return <ReactMarkdown source={helpMd.default} />;
-    }
-    return <div />;
-  };
+  const [help, setHelp] = useState(false);
 
   return (
     <>
@@ -294,9 +288,9 @@ export function CustomTab(props: Props) {
           placeholder="default"
           tooltip="Click help button for help."
         />
-        <Icon name="question-circle" onClick={(ev) => setHelp(!help)} />
+        <Icon name="question-circle" onClick={() => { setHelp(!help) }} />
       </div>
-      <Help />
+      {help && <pre><ReactMarkdown source={helpMd.default} /></pre>}
     </>
   );
 }
@@ -325,9 +319,9 @@ export function QueryEditor(props: Props) {
         ))}
       </TabsBar>
       <TabContent>
-        {activeTab === Tabs.Asset && AssetTab(props)}
-        {activeTab === Tabs.Timeseries && TimeseriesTab(props)}
-        {activeTab === Tabs.Custom && CustomTab(props)}
+        {activeTab === Tabs.Asset && <AssetTab {...props} />}
+        {activeTab === Tabs.Timeseries && <TimeseriesTab {...props} />}
+        {activeTab === Tabs.Custom && <CustomTab {...props} />}
       </TabContent>
     </div>
   );
