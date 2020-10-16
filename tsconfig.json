@@ -9,8 +9,8 @@
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
-    "jsx": "react"
-    // "allowSyntheticDefaultImports": true,
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
     // "esModuleInterop": true,
   }
 }
