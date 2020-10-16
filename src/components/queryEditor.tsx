@@ -288,7 +288,7 @@ export function CustomTab(props: Props) {
           placeholder="default"
           tooltip="Click help button for help."
         />
-        <Icon name="question-circle" onClick={() => { setHelp(!help) }} />
+        <Icon name="question-circle" onClick={() => setHelp(!help)} />
       </div>
       {help && <pre><ReactMarkdown source={helpMd.default} /></pre>}
     </>
