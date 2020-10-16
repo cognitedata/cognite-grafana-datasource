@@ -29,8 +29,26 @@ export enum Tab {
   Custom = 'Custom',
 }
 
+export const defaultAssetQuery: AssetQuery = {
+  includeSubtrees: false,
+  target: '',
+};
+
+// TODO: Investigate if "type" property is required, it is currently not defined in MyQuery
+// These defaults are extracted from the old queryCtrl.ts
 export const defaultQuery: Partial<MyQuery> = {
+  target: '',
+  // type: 'timeserie',
+  aggregation: 'average',
+  granularity: '',
+  label: '',
   tab: Tab.Timeseries,
+  expr: '',
+  assetQuery: {
+    target: '',
+    old: undefined,
+    includeSubtrees: false,
+  },
 };
 
 /**

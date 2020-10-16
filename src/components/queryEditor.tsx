@@ -1,7 +1,7 @@
 import defaults from 'lodash/defaults';
 import _ from 'lodash';
 
-import React, { ChangeEvent, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { ChangeEvent, useCallback, useMemo, useState, useEffect, FormEvent } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -11,6 +11,7 @@ import {
   InlineFormLabel,
   Popover,
   PopoverContent,
+  Checkbox,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
@@ -108,12 +109,31 @@ export function AssetTab(props: Props) {
   const { query, datasource } = props;
   const [tagQuery, setTagQuery] = React.useState('');
 
+  const IncludeSubAssetsCheckbox = () => {
+    const { includeSubtrees } = query.assetQuery;
+
+    const onIncludeSubassetsChange = (event: FormEvent<HTMLInputElement>) => {
+      const { checked } = event.currentTarget;
+      props.onChange({ ...query, assetQuery: { ...query.assetQuery, includeSubtrees: checked } });
+    };
+    // FIXME: Styling of checkbox component
+    return (
+      <div className="gf-form">
+        <Checkbox
+          label="Include Subassets"
+          value={includeSubtrees}
+          onChange={onIncludeSubassetsChange}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <InlineFormLabel width={6}>Asset Tag</InlineFormLabel>
         <Select
-          onChange={(ev) => onTagChange(props, ev.value)}
+          onChange={(ev) => onTagChange(props, +ev.value)}
           options={getOptions(props, tagQuery, 'Asset')}
           defaultValue={tagQuery}
           placeholder="Start typing asset tag"
@@ -121,19 +141,8 @@ export function AssetTab(props: Props) {
           className="width-20"
         />
       </div>
-      {/* TODO: Include Subassets box (needs different implementation)
-      <div className="gf-form">
-        <FormField
-          label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onGranularityChange(ev.target.value)}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
-      */}
+      {/* TODO: Include Subassets box */}
+      <IncludeSubAssetsCheckbox />
       {/* TODO: Aggregation */}
       <div className="gf-form">
         <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
