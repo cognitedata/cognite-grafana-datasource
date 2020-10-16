@@ -2,7 +2,16 @@ import defaults from 'lodash/defaults';
 import _ from 'lodash';
 
 import React, { ChangeEvent, useCallback, useMemo, useState, useEffect } from 'react';
-import { LegacyForms, Tab, TabsBar, TabContent, Select, Label, InlineFormLabel } from '@grafana/ui';
+import {
+  LegacyForms,
+  Tab,
+  TabsBar,
+  TabContent,
+  Select,
+  InlineFormLabel,
+  Popover,
+  PopoverContent,
+} from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 import { defaultQuery, CogniteDataSourceOptions, MyQuery, Tab as Tabs } from '../types';
@@ -49,7 +58,7 @@ const aggregation = [
 const options = aggregation.map<SelectableValue<string>>((agg) => ({
   value: agg.value,
   label: agg.name,
-  description: agg.name ? `This is a description of ${agg.name}` : undefined,
+  description: undefined,
 }));
 
 const onAggregationChange = (props: Props, aggregation: string) => {
@@ -72,7 +81,7 @@ const onTagChange = (props: Props, tag: number) => {
   props.onChange({ ...query, target: tag });
 };
 
-const AggregationEditor = (props: Props) => {
+const GranularityEditor = (props: Props) => {
   const { query } = props;
   if (query.aggregation && query.aggregation !== 'none') {
     return (
@@ -135,7 +144,7 @@ export function AssetTab(props: Props) {
           className="width-10"
         />
       </div>
-      {AggregationEditor(props)}
+      {GranularityEditor(props)}
       {/* TODO: Label} */}
       <div className="gf-form gf-form--grow">
         <FormField
@@ -186,7 +195,6 @@ export function TimeseriesTab(props: Props) {
   const { query, datasource } = props;
   const [tagQuery, setTagQuery] = React.useState('');
 
-
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
@@ -209,7 +217,7 @@ export function TimeseriesTab(props: Props) {
           className="width-10"
         />
       </div>
-      {AggregationEditor(props)}
+      {GranularityEditor(props)}
       <div className="gf-form gf-form--grow">
         <FormField
           label="Label"
@@ -227,6 +235,93 @@ export function TimeseriesTab(props: Props) {
 
 export function CustomTab(props: Props) {
   const { query, datasource } = props;
+  const help = (
+    <div>
+      Format: <code className="query-keyword">ts{'{options}'}</code><br />
+      Options are of the form: <code className="query-keyword">PROPERTY COMPARATOR VALUE</code>
+      <br />
+      Comparator can be either
+      <code className="query-keyword">=</code> (strict equality),
+      <code className="query-keyword">!=</code> (strict inequality),
+      <code className="query-keyword">=~</code> (regex equality),
+      <code className="query-keyword">!~</code> (regex inequality)
+      <br />
+      If you want to reference a specific timeseries, use{' '}
+      <code className="query-keyword">ts{'{id=ID}'}</code>, or{' '}
+      <code className="query-keyword">
+        ts{'{id=ID, aggregate=AGGREGATE, granularity=GRANULARITY}'}
+      </code>
+      Example:{' '}
+      <code className="query-keyword">
+        sum(ts{'{metadata{type="TEMP"}}'}) - ts{'{id=12345678}'}
+      </code>
+      Templated variables can also be used with <code className="query-keyword">$variable</code>.
+      Example:{' '}
+      <code className="query-keyword">
+        ts
+        {
+          "{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}"
+        }
+      </code>
+      In case of multi-value variable, return value can be formatted. To format variable value use
+      {"{' '}"}
+      <code className="query-keyword">${'{variable:[formatter]}'}</code>. Example:{' '}
+      <code className="query-keyword">
+        ts
+        {"{assetIds=[${asset:csv}], granularity='12h', aggregate='average'}"}
+      </code>{' '}
+      <br />
+      Check{' '}
+      <a
+        className="query-keyword"
+        href="https://grafana.com/docs/grafana/latest/reference/templating/#advanced-formatting-options"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Grafana documentation
+      </a>{' '}
+      to get list of available formatters. Synthetic timeseries functions can also be applied on one
+      or multiple timeseries. Example:{' '}
+      <code className="query-keyword">
+        (ts{"{name=~'.*temp.*', aggregate='average'}"} - 32) * 5/9
+      </code>
+      <code className="query-keyword">
+        ts{'{}'} + sin(ts{"{granularity='24h', aggregate='average'}"})
+      </code>
+      <br />
+      Variable length functions (sum, max, min, avg) can also be applied to all filtered timeseries.
+      Examples: <code className="query-keyword">sum(ts{'{metadata={type="TEMP"}}'})</code>↪ yields
+      one timeseries that is the sum of all temperature timeseries
+      <code className="query-keyword">
+        max(ts{"{aggregate='average'}) - min(ts{aggregate='average'}"})
+      </code>
+      ↪ yields the range of the timeseries aggregated by averages
+      <code className="query-keyword">
+        pow(ts{'{}'} - avg(ts{'{}'}), 2)
+      </code>
+      ↪ yields the squared deviation of each timeseries from the average <br />
+      There is a support for some advanced functions, like{' '}
+      <code className="query-keyword">round</code>, <code className="query-keyword">on_error</code>{' '}
+      and <code className="query-keyword">map</code>. The documentation on how to use them can be
+      found on{' '}
+      <a
+        className="query-keyword"
+        href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series"
+      >
+        docs.cognite.com/api
+      </a>
+      To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit
+      our{' '}
+      <a
+        className="query-keyword"
+        href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html"
+      >
+        documentation
+      </a>
+      .
+    </div>
+  );
+
   return (
     <>
       <div className="gf-form-inline">
@@ -253,48 +348,20 @@ export function CustomTab(props: Props) {
             defaultValue={query.aggregation}
             className="width-10"
           />
+          {GranularityEditor(props)}
         </div>
       </div>
 
-      {/* <div class="gf-form gf-form--grow" ng-init>
-        <label class="gf-form-label query-keyword fix-query-keyword width-8">Query</label>
-        <input type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.expr" ng-change="ctrl.onChangeQuery()" ng-blur="ctrl.refreshData()" placeholder=""/>
-        <info-popover mode="right-absolute" ng-click="showHelp = !showHelp">Click for help</info-popover>
-      </div> */}
-
-      <div className="gf-form--grow" ng-show="showHelp">
-         {/*  <pre>
-      Format: <code class="query-keyword">ts{options}</code><br>
-      Options are of the form: <code class="query-keyword">PROPERTY COMPARATOR VALUE</code><br>
-      Comparator can be either
-        <code class="query-keyword">=</code> (strict equality),
-        <code class="query-keyword">!=</code> (strict inequality),
-        <code class="query-keyword">=~</code> (regex equality),
-        <code class="query-keyword">!~</code> (regex inequality)<br>
-      If you want to reference a specific timeseries, use <code class="query-keyword">ts{id=ID}</code>, or <code class="query-keyword">ts{id=ID, aggregate=AGGREGATE, granularity=GRANULARITY}</code>.
-      Example:  <code class="query-keyword">sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}</code>
-
-      Templated variables can also be used with <code class="query-keyword">$variable</code>.
-      Example: <code class="query-keyword">ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average}</code>
-
-      In case of multi-value variable, return value can be formatted. To format variable value use <code class="query-keyword">${variable:[formatter]}</code>.
-      Example: <code class="query-keyword">ts{assetIds=[${asset:csv}], granularity='12h', aggregate='average}</code> <br>
-      Check <a class="query-keyword" href="https://grafana.com/docs/grafana/latest/reference/templating/#advanced-formatting-options" target="_blank">Grafana documentation</a> to get list of available formatters.
-
-      Synthetic timeseries functions can also be applied on one or multiple timeseries.
-      Example: <code class="query-keyword">(ts{name=~'.*temp.*', aggregate='average'} - 32) * 5/9</code>
-                <code class="query-keyword">ts{} + sin(ts{granularity='24h', aggregate='average'})</code><br>
-      Variable length functions (sum, max, min, avg) can also be applied to all filtered timeseries.
-      Examples: <code class="query-keyword">sum(ts{metadata={type="TEMP"}})</code>
-                  ↪ yields one timeseries that is the sum of all temperature timeseries
-                <code class="query-keyword">max(ts{aggregate='average'}) - min(ts{aggregate='average'})</code>
-                  ↪ yields the range of the timeseries aggregated by averages
-                <code class="query-keyword">pow(ts{} - avg(ts{}), 2)</code>
-                  ↪ yields the squared deviation of each timeseries from the average <br>
-      There is a support for some advanced functions, like <code class="query-keyword">round</code>, <code class="query-keyword">on_error</code> and <code class="query-keyword">map</code>.
-      The documentation on how to use them can be found on <a class="query-keyword" href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series">docs.cognite.com/api</a>
-      To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a class="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
-        </pre> */}
+      <div className="gf-form gf-form--grow">
+       <FormField
+          label="Query"
+          labelWidth={6}
+          inputWidth={20}
+          onChange={(ev) => onQueryChange(props, ev.target.value)}
+          value={query.expr}
+          placeholder="default"
+          tooltip={help}
+        />
       </div>
     </>
   );
