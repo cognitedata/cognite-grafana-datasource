@@ -10,8 +10,8 @@ import {
   TabContent,
   Select,
   InlineFormLabel,
-  Checkbox,
   Icon,
+  Switch,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import ReactMarkdown from 'react-markdown';
@@ -122,12 +122,10 @@ export function AssetTab(props: Props) {
     // FIXME: Styling of checkbox component
     return (
       <div className="gf-form">
-        <Checkbox
-          label="Include Subassets"
-          value={includeSubtrees}
-          onChange={onIncludeSubassetsChange}
-          css=""
-        />
+        <InlineFormLabel width={9}>Include Subassets</InlineFormLabel>
+        <div className="gf-form-switch">
+          <Switch css="" value={includeSubtrees} onChange={onIncludeSubassetsChange} />
+        </div>
       </div>
     );
   };
