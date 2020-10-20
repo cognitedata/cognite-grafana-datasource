@@ -3,30 +3,34 @@ import { LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, MySecureJsonData } from '../types';
 
-const { SecretFormField, FormField } = LegacyForms;
+const { SecretFormField, FormField, Switch } = LegacyForms;
 
 type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions>;
 
-interface State {}  // eslint-disable-line
+interface State { }  // eslint-disable-line
 
 export class ConfigEditor extends PureComponent<Props, State> {
   onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
-    const jsonData = {
-      ...options.jsonData,
-      path: event.target.value,
-    };
-    onOptionsChange({ ...options, jsonData });
+    onOptionsChange({
+      ...options,
+      jsonData: {
+        ...options.jsonData,
+        path: event.target.value,
+      },
+    });
   };
 
   // TODO: Verify that this is correct.
   onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
-    const jsonData = {
-      ...options.jsonData,
-      project: event.target.value,
-    };
-    onOptionsChange({ ...options, jsonData });
+    onOptionsChange({
+      ...options,
+      jsonData: {
+        ...options.jsonData,
+        cogniteProject: event.target.value,
+      },
+    });
   };
 
   // Secure field (only sent to the backend)
