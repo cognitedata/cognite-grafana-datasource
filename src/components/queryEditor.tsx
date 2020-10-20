@@ -18,10 +18,10 @@ import ReactMarkdown from 'react-markdown';
 import CogniteDatasource from '../datasource';
 import { defaultQuery, CogniteDataSourceOptions, MyQuery, Tab as Tabs } from '../types';
 
+import helpMd from './help.md';
+
 const { FormField } = LegacyForms;
 type Props = QueryEditorProps<CogniteDatasource, MyQuery, CogniteDataSourceOptions>;
-
-const helpMd = require('./help.md');
 
 const getOptions = (props: Props, query: string, type: string) => {
   const [result, setResult] = React.useState([]);
@@ -91,7 +91,7 @@ const GranularityEditor = (props: Props) => {
     return (
       <div
         className="gf-form"
-      /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
+        /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
       >
         <FormField
           label="Granularity"
@@ -290,7 +290,11 @@ export function CustomTab(props: Props) {
         />
         <Icon name="question-circle" onClick={() => setHelp(!help)} />
       </div>
-      {help && <pre><ReactMarkdown source={helpMd.default} /></pre>}
+      {help && (
+        <pre>
+          <ReactMarkdown source={helpMd} />
+        </pre>
+      )}
     </>
   );
 }

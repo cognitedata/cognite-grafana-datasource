@@ -10,7 +10,7 @@
     "Ivan Polomanyi <ivan.polomanyi@cognite.com>"
   ],
   "scripts": {
-    "build": "yarn build-parser && grafana-toolkit plugin:build",
+    "build": "grafana-toolkit plugin:build",
     "test": "grafana-toolkit plugin:test",
     "dev": "grafana-toolkit plugin:dev",
     "watch": "grafana-toolkit plugin:dev --watch",
