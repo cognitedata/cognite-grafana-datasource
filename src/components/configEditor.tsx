@@ -3,7 +3,7 @@ import { LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, MySecureJsonData } from '../types';
 
-const { SecretFormField, FormField, Switch } = LegacyForms;
+const { SecretFormField, FormField } = LegacyForms;
 
 type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions>;
 
