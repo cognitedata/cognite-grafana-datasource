@@ -16,7 +16,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
       ...options,
       jsonData: {
         ...options.jsonData,
-        path: event.target.value,
+        cogniteApiUrl: event.target.value,
       },
     });
   };
@@ -104,7 +104,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             labelWidth={6}
             inputWidth={20}
             onChange={this.onPathChange}
-            value={jsonData.path || ''}
+            value={jsonData.cogniteApiUrl || ''}
             placeholder="api.cognitedata.com"
             tooltip={tooltip}
           />

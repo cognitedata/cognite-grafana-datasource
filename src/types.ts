@@ -54,7 +54,7 @@ export const defaultQuery: Partial<MyQuery> = {
  */
 
 export interface CogniteDataSourceOptions extends DataSourceJsonData {
-  path?: string;
+  cogniteApiUrl?: string;
   authType: string;
   defaultRegion: string;
   cogniteProject: string;
