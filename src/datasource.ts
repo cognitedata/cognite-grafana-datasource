@@ -372,8 +372,8 @@ function handleFailedTargets(failed: FailResponse[]) {
 }
 
 export function getRange(range: TimeRange): Tuple<number> {
-  const timeFrom = Math.ceil(range.from.unix());
-  const timeTo = Math.ceil(range.to.unix());
+  const timeFrom = range.from.valueOf();
+  const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
 
