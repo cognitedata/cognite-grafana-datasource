@@ -306,7 +306,7 @@ export function CustomTab(props: Props) {
 export function QueryEditor(props: Props) {
   const { query } = props;
   const queryOrDefault = defaults(query, defaultQuery);
-  const { queryText, tab } = queryOrDefault;
+  const { tab } = queryOrDefault;
   const activeTab = tab;
 
   const onSelectTab = (tab: Tabs) => {
