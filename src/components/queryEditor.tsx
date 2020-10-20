@@ -66,23 +66,27 @@ const options = aggregation.map<SelectableValue<string>>((agg) => ({
 }));
 
 const onAggregationChange = (props: Props, aggregation: string) => {
-  const { query } = props;
+  const { query, onRunQuery } = props;
   props.onChange({ ...query, aggregation });
+  onRunQuery();
 };
 
 const onGranularityChange = (props: Props, granularity: string) => {
-  const { query } = props;
+  const { query, onRunQuery } = props;
   props.onChange({ ...query, granularity });
+  onRunQuery();
 };
 
 const onLabelChange = (props: Props, label: string) => {
-  const { query } = props;
+  const { query, onRunQuery } = props;
   props.onChange({ ...query, label });
+  onRunQuery();
 };
 
 const onTagChange = (props: Props, tag: number) => {
-  const { query } = props;
+  const { query, onRunQuery } = props;
   props.onChange({ ...query, target: tag });
+  onRunQuery();
 };
 
 const GranularityEditor = (props: Props) => {
@@ -109,7 +113,7 @@ const GranularityEditor = (props: Props) => {
 };
 
 export function AssetTab(props: Props) {
-  const { query, datasource } = props;
+  const { query, datasource, onRunQuery, onChange } = props;
   const [tagQuery, setTagQuery] = React.useState('');
 
   const IncludeSubAssetsCheckbox = () => {
@@ -119,6 +123,7 @@ export function AssetTab(props: Props) {
       const { checked } = event.currentTarget;
       props.onChange({ ...query, assetQuery: { ...query.assetQuery, includeSubtrees: checked } });
     };
+
     // FIXME: Styling of checkbox component
     return (
       <div className="gf-form">
@@ -139,7 +144,6 @@ export function AssetTab(props: Props) {
           options={getOptions(props, tagQuery, 'Asset')}
           defaultValue={tagQuery}
           placeholder="Start typing asset tag"
-          onInputChange={(text) => setTagQuery(text)}
           className="width-20"
         />
       </div>

@@ -10,8 +10,6 @@ import {
 import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export interface MyQuery extends DataQuery {
-  queryText?: string;
-
   target: number | ''; // Timeseries internal Id:
   aggregation: string;
   granularity: string;
