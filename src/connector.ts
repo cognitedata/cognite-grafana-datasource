@@ -11,13 +11,14 @@ import {
 } from './types';
 import { Items, Limit } from './cdf/types';
 import { getQueryString } from './utils';
-import { CacheTime } from './constants';
+import { API_V1, AuthType, CacheTime } from './constants';
 
 export class Connector {
   public constructor(
     private project: string,
     private apiUrl: string,
-    private backendSrv: BackendSrv
+    private backendSrv: BackendSrv,
+    private oauthPassThru: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -25,7 +26,7 @@ export class Connector {
   private fetchData<T>(request: RequestParams): Promise<T> {
     const { path, data, method, params, requestId, cacheTime } = request;
     const queryString = params ? `?${getQueryString(params)}` : '';
-    const url = `${this.apiUrl}/cogniteapi/${this.project}${path}${queryString}`;
+    const url = `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;
     const body: DataSourceRequestOptions = { url, data, method };
     if (requestId) {
       body.requestId = requestId;
@@ -101,8 +102,13 @@ export class Connector {
   public request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
     return this.backendSrv.datasourceRequest({
       method,
-      url: `${this.apiUrl}/${path}`,
+      url: `${this.apiUrlAuth}/${path}`,
     });
+  }
+
+  private get apiUrlAuth() {
+    const auth = this.oauthPassThru ? AuthType.OAuth : AuthType.ApiKey;
+    return `${this.apiUrl}/${auth}`;
   }
 
   public cachedRequest = async (

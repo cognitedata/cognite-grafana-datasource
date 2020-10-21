@@ -3,6 +3,7 @@
 import { Connector } from '../connector';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
+import { API_V1 } from '../constants';
 
 describe('connector', () => {
   const datasourceRequest = jest.fn();
@@ -22,11 +23,11 @@ describe('connector', () => {
     const data = { items };
     const method = HttpMethod.POST;
     const path = '/ø';
-    const url = `${protocol}/cogniteapi/${project}${path}`;
+    const url = `${protocol}/cdf-api-key/${API_V1}/${project}${path}`;
     const reqBase = { url, method };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any);
+      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
     });
 
     it('should not chunk under the limit', async () => {
@@ -82,7 +83,7 @@ describe('connector', () => {
     const response = async () => ({ data: { items: items1000, nextCursor: `${++cursor}` } });
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any);
+      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
     });
 
     it('returns all 10k elements', async () => {
@@ -122,7 +123,7 @@ describe('connector', () => {
     const response = async () => ({ data: { items: [1] } });
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any);
+      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
       jest.useFakeTimers();
     });
 
@@ -177,6 +178,23 @@ describe('connector', () => {
         await connector.cachedRequest(request);
       } catch {}
       expect(datasourceRequest).toBeCalledTimes(2);
+    });
+  });
+
+  describe('regular request with oauth2 token', () => {
+    const request = { path: '' };
+
+    beforeEach(() => {
+      connector = new Connector(project, protocol, { datasourceRequest } as any, true);
+    });
+
+    it('uses cdf-oauth route when oauthPassThru=true', async () => {
+      datasourceRequest.mockImplementation(async () => ({ data: {} }));
+      await connector.request(request);
+      expect(datasourceRequest).toHaveBeenCalledWith({ 
+        method: HttpMethod.GET,
+        url: 'protocol://cdf-oauth/'
+      });
     });
   });
 });
