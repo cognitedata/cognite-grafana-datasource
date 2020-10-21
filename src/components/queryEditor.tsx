@@ -89,6 +89,12 @@ const onTagChange = (props: Props, tag: number) => {
   onRunQuery();
 };
 
+const onQueryChange = (props: Props, expr: string) => {
+  const { query, onRunQuery } = props;
+  props.onChange({ ...query, expr });
+  onRunQuery();
+};
+
 const GranularityEditor = (props: Props) => {
   const { query } = props;
   if (query.aggregation && query.aggregation !== 'none') {
@@ -287,7 +293,7 @@ export function CustomTab(props: Props) {
           label="Query"
           labelWidth={6}
           inputWidth={20}
-          // onChange={(ev) => onQueryChange(props, ev.target.value)}
+          onChange={(ev) => onQueryChange(props, ev.target.value)}
           value={query.expr}
           placeholder="default"
           tooltip="Click help button for help."
