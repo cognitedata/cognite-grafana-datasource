@@ -13,4 +13,5 @@ export const plugin = new DataSourcePlugin<CogniteDatasource, MyQuery, CogniteDa
 )
   .setConfigEditor(ConfigEditor)
   .setVariableQueryEditor(CogniteVariableQueryEditor)
-  .setQueryEditor(QueryEditor);
+  .setQueryEditor(QueryEditor)
+  .setAnnotationQueryCtrl(CogniteAnnotationsQueryCtrl);
