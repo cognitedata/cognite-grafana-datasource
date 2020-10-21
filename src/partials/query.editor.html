@@ -194,6 +194,18 @@
   </div>
   <div class="gf-form-inline">
     <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain</label>
+      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domain" ng-blur="ctrl.refreshData()" placeholder="Domain..."/>
+      <info-popover mode="right-absolute">Name/External ID of the domain you would like to query</info-popover>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain version</label>
+      <input type="number" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domainVersion" ng-blur="ctrl.refreshData()" placeholder="Domain version..."/>
+      <info-popover mode="right-absolute">Domain version you would like to query instances from</info-popover>
+    </div>
+  </div>
+  <div class="gf-form-inline">
+    <div class="gf-form gf-form--grow">
       <label class="gf-form-label query-keyword fix-query-keyword width-8">Data path</label>
       <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.dataPath" ng-blur="ctrl.refreshData()" placeholder="Data path..."/>
       <info-popover mode="right-absolute">Dot-delimited path to data in response. Separate with commas to use multiple data paths</info-popover>

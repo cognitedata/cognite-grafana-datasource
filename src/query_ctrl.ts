@@ -61,6 +61,8 @@ export class CogniteQueryCtrl extends QueryCtrl {
       includeSubtrees: false,
     },
     templateQuery: {
+      domain: '',
+      domainVersion: 1,
       queryText: `query {
         wells { 
           pressure {

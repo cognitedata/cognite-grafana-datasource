@@ -419,6 +419,8 @@ export interface QueryDatapointsWarning {
 }
 
 export interface TemplateQuery extends DataQuery {
+  domain: string;
+  domainVersion: number;
   queryText: string;
   dataPath: string;
   dataPointsPath: string;
@@ -431,6 +433,8 @@ export interface TemplateQuery extends DataQuery {
 }
 
 export const defaultQuery: Partial<TemplateQuery> = {
+  domain: undefined,
+  domainVersion: undefined,
   queryText: `query {
       wells { 
         pressure {

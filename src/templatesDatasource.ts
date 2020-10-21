@@ -27,9 +27,8 @@ export class TemplatesConnector {
     private templateSrv: TemplateSrv
   ) {}
 
-  private request(data: string) {
-    const domain = 'Morticii';
-    const domainVersion = 10;
+  private request(query: Partial<TemplateQuery>, data: string) {
+    const { domain, domainVersion } = query;
 
     const options: any = {
       url: `${this.apiUrl}/cognitetemplatesapi/${this.project}/domains/${domain}/${domainVersion}/graphql`,
@@ -43,7 +42,7 @@ export class TemplatesConnector {
   }
 
   private postQuery(query: Partial<TemplateQuery>, payload: string) {
-    return this.request(payload)
+    return this.request(query, payload)
       .then((results: any) => {
         return { query, results };
       })

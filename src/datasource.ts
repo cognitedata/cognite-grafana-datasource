@@ -369,7 +369,12 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
         case Custom:
           return target.expr;
         case Template:
-          return templateQuery && templateQuery.queryText;
+          return (
+            templateQuery &&
+            templateQuery.domain &&
+            templateQuery.domainVersion &&
+            templateQuery.queryText
+          );
         case Timeseries:
         case undefined:
           return target.target;
