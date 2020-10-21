@@ -43,7 +43,7 @@ import {
   getLabelsForTarget,
 } from './cdfDatasource';
 import { Connector } from './connector';
-import { TimeRange } from '@grafana/ui';
+import { TimeRange } from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 

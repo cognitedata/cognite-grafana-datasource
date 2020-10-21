@@ -1,10 +1,8 @@
+import { DataQuery, TimeSeries, DataSourceSettings } from '@grafana/ui';
 import {
-  DataQueryOptions,
-  DataQuery,
-  TimeSeries,
+  DataQueryRequest as GrafanaDataQueryRequest,
   TimeRange as GrafanaTimeRange,
-  DataSourceSettings,
-} from '@grafana/ui';
+} from '@grafana/data';
 
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
@@ -85,7 +83,7 @@ export interface QueryTarget extends InputQueryTarget {
 
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<InputQueryTarget>;
+export type QueryOptions = GrafanaDataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
