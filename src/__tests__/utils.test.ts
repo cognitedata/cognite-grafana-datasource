@@ -1,4 +1,4 @@
-import { applyFilters } from '../utils';
+import { applyFilters, flatten, isRFC3339_ISO6801 } from '../utils';
 import { FilterType, ParsedFilter } from '../parser/types';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterType;
@@ -50,6 +50,72 @@ describe('Utils', () => {
     });
     it('should follow "and" logic for multiple filter', () => {
       expect(applyFilters(assets, filters).length).toEqual(2);
+    });
+  });
+
+  describe('Flatten', () => {
+    const obj = {
+      undefined,
+      null: null,
+      string: 'hello',
+      number: 123,
+      float: 123.4,
+      array: [1, 2, 3],
+      nested: {
+        undefined,
+        null: null,
+        string: 'hello',
+        number: 123,
+        float: 123.4,
+      },
+    };
+
+    const flattenObj = {
+      undefined,
+      null: null,
+      string: 'hello',
+      number: 123,
+      float: 123.4,
+      'array.0': 1,
+      'array.1': 2,
+      'array.2': 3,
+      'nested.string': 'hello',
+      'nested.number': 123,
+      'nested.float': 123.4,
+      'nested.null': null,
+      'nested.undefined': undefined,
+    };
+    it('should flatten nested objects to dot notation', () => {
+      expect(flatten(obj)).toEqual(flattenObj);
+    });
+  });
+
+  describe('RFC3339 and ISO8601 valid string test', () => {
+    it('should return false on bad string', () => {
+      expect(isRFC3339_ISO6801('I am not a date but a string')).toBe(false);
+    });
+    it('should return false on a short numeric string', () => {});
+    expect(isRFC3339_ISO6801('1234')).toBe(false);
+    it('should return false on short numebrs', () => {
+      expect(isRFC3339_ISO6801(8)).toBe(false);
+    });
+    it('should return false on null', () => {
+      expect(isRFC3339_ISO6801(null)).toBe(false);
+    });
+    it('should return true on valid formatted date string with ms', () => {
+      expect(isRFC3339_ISO6801('2020-06-01T00:00:00.000Z')).toBe(true);
+    });
+    it('should  return true on valid formatted date string without ms', () => {
+      expect(isRFC3339_ISO6801('2020-06-01T00:00:00Z')).toBe(true);
+    });
+    it('should return false on true', () => {
+      expect(isRFC3339_ISO6801(true)).toBe(false);
+    });
+    it('should return false on zero', () => {
+      expect(isRFC3339_ISO6801(0)).toBe(false);
+    });
+    it('should return false on decimal', () => {
+      expect(isRFC3339_ISO6801(0.111111)).toBe(false);
     });
   });
 });
