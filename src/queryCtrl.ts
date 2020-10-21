@@ -46,6 +46,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
       src: 'assettab.html',
     },
     { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
+    { value: Tab.Template, name: 'Template Query', src: 'templatetab.html' },
   ];
   currentTabIndex: number;
   defaults = {
@@ -54,12 +55,31 @@ export class CogniteQueryCtrl extends QueryCtrl {
     aggregation: 'average',
     granularity: '',
     label: '',
-    tab: Tab.Timeseries,
+    tab: Tab.Template,
     expr: '',
     assetQuery: {
       target: '',
       old: undefined,
       includeSubtrees: false,
+    },
+    templateQuery: {
+      domain: '',
+      domainVersion: 1,
+      queryText: `query {
+  wellList {
+    name,
+    pressure {
+      datapoints(start: $__from, end: $__to, limit: 50) {
+        timestamp,
+        value
+      }
+    }
+  }
+}`,
+      dataPath: 'wellList',
+      dataPointsPath: 'pressure.datapoints',
+      groupBy: 'name',
+      aliasBy: '',
     },
   };
 
@@ -94,6 +114,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
+  getDomains(query: string) {
+    return this.datasource.getDomainsForDropdown(query).then(options => {
+      _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
+      return options;
+    });
+  }
+
   refreshData() {
     this.onChangeQuery();
     this.refresh(); // Asks the panel to refresh data.
@@ -105,6 +132,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
     }
     if (this.target.warning) {
       this.target.warning = '';
+    }
+  }
+
+  onChangeDomain() {
+    if (this.target.templateQuery.domain) {
+      this.datasource
+        .getCurrentDomainVersion(this.target.templateQuery.domain)
+        .then(currentVersion => {
+          this.target.templateQuery.domainVersion = currentVersion;
+          this.refreshData();
+        });
     }
   }
 

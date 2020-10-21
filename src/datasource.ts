@@ -38,6 +38,7 @@ import {
   Result,
   Ok,
   Err,
+  TemplateQuery
 } from './types';
 import {
   TimeSeriesResponseItem,
@@ -60,13 +61,14 @@ import {
 import { Connector } from './connector';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+import { TemplatesConnector } from './templatesDatasource';
 
 const { alertWarning } = AppEvents;
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
   CogniteDataSourceOptions
-> {
+  > {
   /**
    * Parameters that are needed by grafana
    */
@@ -79,6 +81,7 @@ export default class CogniteDatasource extends DataSourceApi<
   */
   project: string;
   connector: Connector;
+  templatesConnector: TemplatesConnector;
 
   templateSrv: TemplateSrv;
 
@@ -96,14 +99,26 @@ export default class CogniteDatasource extends DataSourceApi<
     this.url = url;
     this.connector = new Connector(jsonData.cogniteProject, url, backendServer);
     this.project = jsonData.cogniteProject;
+    this.templatesConnector = new TemplatesConnector(
+      jsonData.cogniteProject,
+      url,
+      backendSrv,
+      templateSrv
+    );
   }
 
   /**
    * used by panels to get timeseries data
    */
   async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
-    const queryTargets = filterEmptyQueryTargets(options.targets);
+    const validQueryTargets = filterEmptyQueryTargets(options.targets);
+    const queryTargets = validQueryTargets.filter(target => target.tab !== Tab.Template);
+    const templateQueryTargets: TemplateQuery[] = validQueryTargets
+      .filter(target => target.tab === Tab.Template)
+      .map(target => target.templateQuery);
     let responseData = [];
+    let templateResponseData = [];
+
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
@@ -115,7 +130,19 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     }
 
-    return { data: responseData };
+    if (templateQueryTargets.length) {
+      try {
+        const { data } = await this.templatesConnector.query({
+          ...options,
+          targets: templateQueryTargets,
+        });
+        templateResponseData = data;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return { data: [...responseData, ...templateResponseData] };
   }
 
   async fetchTimeseriesForTargets(
@@ -262,8 +289,8 @@ export default class CogniteDatasource extends DataSourceApi<
     };
     const data: any = query
       ? {
-          search: { query },
-        }
+        search: { query },
+      }
       : {};
 
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
@@ -289,11 +316,11 @@ export default class CogniteDatasource extends DataSourceApi<
     const assetId = this.replaceVariable(assetQuery.target, scopedVars);
     const filter = assetQuery.includeSubtrees
       ? {
-          assetSubtreeIds: [{ id: Number(assetId) }],
-        }
+        assetSubtreeIds: [{ id: Number(assetId) }],
+      }
       : {
-          assetIds: [assetId],
-        };
+        assetIds: [assetId],
+      };
 
     // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
     //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
@@ -370,17 +397,45 @@ export default class CogniteDatasource extends DataSourceApi<
 
     throw Error('Did not get 200 OK');
   }
+
+  /**
+   * used by templates query editor to search for domains
+   */
+  async getDomainsForDropdown(query: string): Promise<MetricFindQueryResponse> {
+    const domains = await this.templatesConnector.listDomains();
+
+    return domains
+      .filter(d => d.externalId.match(new RegExp(query, 'gi')))
+      .map(({ externalId }) => {
+        return {
+          text: externalId,
+          value: externalId,
+        };
+      });
+  }
+  async getCurrentDomainVersion(domainExternalId: string): Promise<number | undefined> {
+    const domains = await this.templatesConnector.listDomains();
+    const domain = domains.find(d => d.externalId === domainExternalId);
+    return domain?.version;
+  }
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery } = target;
+      const { tab, assetQuery, templateQuery } = target;
       switch (tab) {
         case Tab.Asset:
           return assetQuery && assetQuery.target;
         case Tab.Custom:
           return target.expr;
+        case Tab.Template:
+          return (
+            templateQuery &&
+            templateQuery.domain &&
+            templateQuery.domainVersion &&
+            templateQuery.queryText
+          );
         case Tab.Timeseries:
         case undefined:
         default:

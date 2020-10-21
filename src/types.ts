@@ -24,6 +24,7 @@ export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Template = 'Template',
 }
 
 export const defaultAssetQuery: AssetQuery = {
@@ -111,6 +112,7 @@ export interface InputQueryTarget extends DataQueryUI {
   assetQuery: AssetQuery;
   expr: string;
   warning: string;
+  templateQuery: TemplateQuery;
 }
 
 export interface QueryTarget extends InputQueryTarget {
@@ -324,3 +326,41 @@ export interface QueryDatapointsWarning {
   refId: string;
   warning: string;
 }
+
+export interface TemplateQuery extends DataQuery {
+  domain: string;
+  domainVersion: number;
+  queryText: string;
+  dataPath: string;
+  dataPointsPath: string;
+  groupBy: string;
+  aliasBy: string;
+  annotationTitle: string;
+  annotationText: string;
+  annotationTags: string;
+  constant: number;
+}
+
+export const defaultTemplateQuery: Partial<TemplateQuery> = {
+  domain: undefined,
+  domainVersion: undefined,
+  queryText: `query {
+      wellList {
+        name,
+        pressure {
+          datapoints(start: $__from, end: $__to, limit: 50) {
+            timestamp,
+            value
+          }
+        }
+      }
+  }`,
+  dataPath: 'data',
+  dataPointsPath: '',
+  groupBy: '',
+  aliasBy: '',
+  annotationTitle: '',
+  annotationText: '',
+  annotationTags: '',
+  constant: 6.5,
+};

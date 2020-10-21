@@ -9,6 +9,7 @@
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
+    "downlevelIteration": true,
     "jsx": "react",
     "allowSyntheticDefaultImports": true,
     // "esModuleInterop": true,

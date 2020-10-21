@@ -1,5 +1,6 @@
-import { applyFilters } from '../utils';
+import { applyFilters, flatten } from '../utils';
 import { FilterTypeStr, ParsedFilter } from '../parser/types';
+import { isArray } from 'lodash';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterTypeStr;
 
@@ -50,6 +51,44 @@ describe('Utils', () => {
     });
     it('should follow "and" logic for multiple filter', () => {
       expect(applyFilters(assets, filters).length).toEqual(2);
+    });
+  });
+
+  describe('Flatten', () => {
+    const obj = {
+      undefined,
+      null: null,
+      string: 'hello',
+      number: 123,
+      float: 123.4,
+      array: [1, 2, 3],
+      nested: {
+        undefined,
+        null: null,
+        string: 'hello',
+        number: 123,
+        float: 123.4,
+      },
+    };
+
+    const flattenObj = {
+      undefined,
+      null: null,
+      string: 'hello',
+      number: 123,
+      float: 123.4,
+      array: [1, 2, 3],
+      'nested.string': 'hello',
+      'nested.number': 123,
+      'nested.float': 123.4,
+      'nested.null': null,
+      'nested.undefined': undefined,
+    };
+    it('should flatten nested objects to dot notation', () => {
+      expect(flatten(obj)).toEqual(flattenObj);
+    });
+    it('should not flatten arrays', () => {
+      expect(isArray(flatten(obj).array)).toBeTruthy();
     });
   });
 });

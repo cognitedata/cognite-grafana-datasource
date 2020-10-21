@@ -55,3 +55,7 @@ pre.gf-formatted-warning {
 pre.gf-formatted-warning {
   color: #f79520;
 }
+
+textarea.gf-form-input {
+  min-height: 130px;
+}
