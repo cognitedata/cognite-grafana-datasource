@@ -29,6 +29,7 @@ export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Template = 'Template',
 }
 
 export enum ParseType {
@@ -75,6 +76,7 @@ export interface InputQueryTarget extends DataQuery {
   assetQuery: AssetQuery;
   expr: string;
   warning: string;
+  templateQuery: TemplateQuery;
 }
 
 export interface QueryTarget extends InputQueryTarget {
@@ -415,3 +417,36 @@ export interface QueryDatapointsWarning {
   refId: string;
   warning: string;
 }
+
+export interface TemplateQuery extends DataQuery {
+  queryText: string;
+  dataPath: string;
+  dataPointsPath: string;
+  groupBy: string;
+  aliasBy: string;
+  annotationTitle: string;
+  annotationText: string;
+  annotationTags: string;
+  constant: number;
+}
+
+export const defaultQuery: Partial<TemplateQuery> = {
+  queryText: `query {
+      wells { 
+        pressure {
+          datapoints {
+            Time:Timestamp,
+            Value:value
+          }
+        }
+      }
+  }`,
+  dataPath: 'data',
+  dataPointsPath: '',
+  groupBy: '',
+  aliasBy: '',
+  annotationTitle: '',
+  annotationText: '',
+  annotationTags: '',
+  constant: 6.5,
+};

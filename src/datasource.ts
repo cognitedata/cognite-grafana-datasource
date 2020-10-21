@@ -30,6 +30,7 @@ import {
   FilterRequest,
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
+  TemplateQuery,
 } from './types';
 import {
   formQueriesForTargets,
@@ -46,8 +47,9 @@ import { Connector } from './connector';
 import { TimeRange } from '@grafana/data';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+import { TemplatesConnector } from './templatesDatasource';
 
-const { Asset, Custom, Timeseries } = Tab;
+const { Asset, Custom, Timeseries, Template } = Tab;
 const { POST } = HttpMethod;
 
 export default class CogniteDatasource {
@@ -60,6 +62,7 @@ export default class CogniteDatasource {
 
   project: string;
   connector: Connector;
+  templatesConnector: TemplatesConnector;
 
   /** @ngInject */
   constructor(
@@ -73,14 +76,25 @@ export default class CogniteDatasource {
     const { url, jsonData } = instanceSettings;
     this.project = jsonData.cogniteProject;
     this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
+    this.templatesConnector = new TemplatesConnector(
+      jsonData.cogniteProject,
+      url,
+      backendSrv,
+      templateSrv
+    );
   }
 
   /**
    * used by panels to get timeseries data
    */
   async query(options: QueryOptions): Promise<QueryResponse> {
-    const queryTargets = filterEmptyQueryTargets(options.targets);
+    const validQueryTargets = filterEmptyQueryTargets(options.targets);
+    const queryTargets = validQueryTargets.filter(target => target.tab !== Template);
+    const templateQueryTargets: TemplateQuery[] = validQueryTargets
+      .filter(target => target.tab === Template)
+      .map(target => target.templateQuery);
     let responseData = [];
+    let templateResponseData = [];
 
     if (queryTargets.length) {
       try {
@@ -93,7 +107,19 @@ export default class CogniteDatasource {
       }
     }
 
-    return { data: responseData };
+    if (templateQueryTargets.length) {
+      try {
+        const { data } = await this.templatesConnector.query({
+          ...options,
+          targets: templateQueryTargets,
+        });
+        templateResponseData = data;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return { data: [...responseData, ...templateResponseData] };
   }
 
   async fetchTimeseriesForTargets(
@@ -336,12 +362,14 @@ export default class CogniteDatasource {
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
   return targets.filter(target => {
     if (target && !target.hide) {
-      const { tab, assetQuery } = target;
+      const { tab, assetQuery, templateQuery } = target;
       switch (tab) {
         case Asset:
           return assetQuery && assetQuery.target;
         case Custom:
           return target.expr;
+        case Template:
+          return templateQuery && templateQuery.queryText;
         case Timeseries:
         case undefined:
           return target.target;

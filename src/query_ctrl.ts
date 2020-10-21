@@ -44,6 +44,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
       src: 'assettab.html',
     },
     { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
+    { value: Tab.Template, name: 'Template Query', src: 'templatetab.html' },
   ];
   currentTabIndex: number;
   defaults = {
@@ -52,12 +53,28 @@ export class CogniteQueryCtrl extends QueryCtrl {
     aggregation: 'average',
     granularity: '',
     label: '',
-    tab: Tab.Timeseries,
+    tab: Tab.Template,
     expr: '',
     assetQuery: {
       target: '',
       old: undefined,
       includeSubtrees: false,
+    },
+    templateQuery: {
+      queryText: `query {
+        wells { 
+          pressure {
+            datapoints {
+              Time:Timestamp,
+              Value:value
+            }
+          }
+        }
+    }`,
+      dataPath: 'wells',
+      dataPointsPath: 'wells.datapoints',
+      groupBy: 'name',
+      aliasBy: '$field_name',
     },
   };
 

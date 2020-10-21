@@ -182,3 +182,38 @@
     </pre>
   </div>
 </script>
+
+<!-- Template Query Tab -->
+<script type="text/ng-template" id="templatetab.html">
+  <div class="gf-form-inline gf-form--grow">
+    <div class="gf-form gf-form--grow" ng-init>
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Query</label>
+      <textarea type="text" class="gf-form-input custom-query width-auto" ng-model="ctrl.target.templateQuery.queryText" ng-change="ctrl.onChangeTemplateQuery()" ng-blur="ctrl.refreshData()" placeholder="{ query {}}"></textarea>
+      <info-popover mode="right-absolute">Graph ql</info-popover>
+    </div>
+  </div>
+  <div class="gf-form-inline">
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Data path</label>
+      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.dataPath" ng-blur="ctrl.refreshData()" placeholder="Data path..."/>
+      <info-popover mode="right-absolute">Dot-delimited path to data in response. Separate with commas to use multiple data paths</info-popover>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Data points path</label>
+      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.dataPointsPath" ng-blur="ctrl.refreshData()" placeholder="Data points path..."/>
+      <info-popover mode="right-absolute">Dot-delimited path to data points in response. Separate with commas to use multiple data paths</info-popover>
+    </div>
+  </div>
+  <div class="gf-form-inline">
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Group by</label>
+      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.groupBy" ng-blur="ctrl.refreshData()" placeholder="Group by..."/>
+      <info-popover mode="right-absolute">Dot-delimited path for the key to use. Separate with commas to use multiple fields to group by</info-popover>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Alias by</label>
+      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.aliasBy" ng-blur="ctrl.refreshData()" placeholder="Alias field..."/>
+      <info-popover mode="right-absolute">The formattable text to alias by. Use $field_<field name> to replace with the value of a field, or $fieldName to replace with the name of the field</info-popover>
+    </div>
+  </div>
+</script>
