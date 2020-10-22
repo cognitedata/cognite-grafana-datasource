@@ -1,10 +1,5 @@
 /* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
-/* import { getMockedDataSource } from './utils';
+import { getMockedDataSource } from './utils';
 
 const { ds, backendSrvMock } = getMockedDataSource();
 
@@ -57,4 +52,3 @@ describe('Login', () => {
     });
   });
 });
- */

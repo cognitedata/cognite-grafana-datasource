@@ -2,16 +2,16 @@
 
 /* eslint-disable */
 
+import CogniteDatasource from '../datasource';
+import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
+import ms from 'ms';
+import { DataSourceInstanceSettings } from '@grafana/data';
+
 describe('Noop', () => {
   it('should match', () => {
     expect(42).toEqual(42);
   });
 });
-
-/*
-import CogniteDatasource from '../datasource';
-import { CDFDataQueryRequest, QueryTarget } from '../types';
-import ms from 'ms';
 
 const variables = [
   { name: 'AssetVariable', current: { text: 'asset1', value: 123 } },
@@ -76,36 +76,35 @@ const getTemplateSrvMock = () =>
 
 const instanceSettings = {
   id: 1,
-  orgId: 1,
+  //orgId: 1,
   name: 'Cognite Test Data',
-  typeLogoUrl: '',
+  //typeLogoUrl: '',
   type: 'cognitedata-platform-datasource',
-  access: '',
+  //access: '',
   url: '/api/datasources/proxy/6',
   password: '',
-  user: '',
+  //user: '',
   database: '',
-  basicAuth: false,
-  basicAuthPassword: '',
-  basicAuthUser: '',
-  isDefault: true,
+  basicAuth: '',
+  //basicAuthPassword: '',
+  //basicAuthUser: '',
+  //isDefault: true,
   jsonData: {
     authType: '',
     defaultRegion: '',
     cogniteProject: 'TestProject',
   },
-  readOnly: false,
+  //readOnly: false,
   withCredentials: false,
-  secureJsonFields: {},
-};
+  //secureJsonFields: {},
+} as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>;
 
 export const getMockedDataSource = () => {
-  const templateSrvMock = getTemplateSrvMock();
+  // const templateSrvMock = getTemplateSrvMock();
   const backendSrvMock = getBackendSrvMock();
   return {
-    templateSrvMock,
     backendSrvMock,
-    ds: new CogniteDatasource(instanceSettings, backendSrvMock, templateSrvMock),
+    ds: new CogniteDatasource(instanceSettings, backendSrvMock), //, templateSrvMock),
   };
 };
 
@@ -118,4 +117,3 @@ export function getMeta(id, aggregation, labels) {
     } as QueryTarget,
   };
 }
-*/

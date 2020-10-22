@@ -42,7 +42,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: {
     target: '',
-    old: undefined,
     includeSubtrees: false,
   },
 };
