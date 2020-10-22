@@ -2,8 +2,6 @@ import {
   DataQueryRequest,
   DataQuery as DataQueryUI,
   TimeSeries,
-  TimeRange as GrafanaTimeRange,
-  DataSourceSettings,
   DataQuery,
   DataSourceJsonData,
 } from '@grafana/data';
@@ -232,36 +230,9 @@ export interface CDFDataQueryRequest {
   granularity?: string;
 }
 
-export interface Annotation {
-  datasource: string;
-  enable: boolean;
-  hide: boolean;
-  iconColor: string;
-  limit: number;
-  name: string;
-  query: string;
-  filter: string;
-  error: string;
-  type: string;
-  tags: string[];
-}
-
-export interface CogniteAnnotationQuery extends CogniteQuery {
-  range: GrafanaTimeRange;
-  rangeRaw: GrafanaTimeRange;
-  // annotation: Annotation;
-  dashboard: number;
-  query: string;
-}
-
-export interface AnnotationResponse {
-  // annotation: Annotation;
-  title: string;
-  time: number;
-  timeEnd?: number;
-  text: string;
-  tags?: string[];
-  isRegion?: boolean;
+export interface CogniteAnnotationQuery extends DataQuery {
+  query?: string;
+  error?: string;
 }
 
 export interface AnnotationSearchQuery {

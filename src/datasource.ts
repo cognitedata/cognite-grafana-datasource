@@ -6,6 +6,7 @@ import {
   DataQueryRequest,
   AppEvents,
   AnnotationQueryRequest,
+  AnnotationEvent,
 } from '@grafana/data';
 import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
 import { parse as parseQuery } from './parser/events-assets';
@@ -28,7 +29,6 @@ import {
   FailResponse,
   SuccessResponse,
   InputQueryTarget,
-  AnnotationResponse,
   CogniteAnnotationQuery,
   CogniteQuery,
   CogniteDataSourceOptions,
@@ -57,7 +57,10 @@ import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING }
 
 const { alertWarning } = AppEvents;
 
-export default class CogniteDatasource extends DataSourceApi<CogniteQuery, CogniteDataSourceOptions> {
+export default class CogniteDatasource extends DataSourceApi<
+  CogniteQuery,
+  CogniteDataSourceOptions
+> {
   /**
    * Parameters that are needed by grafana
    */
@@ -183,7 +186,7 @@ export default class CogniteDatasource extends DataSourceApi<CogniteQuery, Cogni
 
   async annotationQuery(
     options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationResponse[]> {
+  ): Promise<AnnotationEvent[]> {
     const { range, annotation } = options;
     const { query, error } = annotation;
     const [startTime, endTime] = getRange(range);
