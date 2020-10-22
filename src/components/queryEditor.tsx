@@ -16,12 +16,12 @@ import {
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import ReactMarkdown from 'react-markdown';
 import CogniteDatasource from '../datasource';
-import { defaultQuery, CogniteDataSourceOptions, MyQuery, Tab as Tabs } from '../types';
+import { defaultQuery, CogniteDataSourceOptions, CogniteQuery, Tab as Tabs } from '../types';
 
 import helpMd from './help.md';
 
 const { FormField } = LegacyForms;
-type Props = QueryEditorProps<CogniteDatasource, MyQuery, CogniteDataSourceOptions>;
+type Props = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
 
 const getOptions = (props: Props, query: string, type: string) => {
   const [result, setResult] = React.useState([]);

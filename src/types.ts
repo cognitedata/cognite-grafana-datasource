@@ -9,7 +9,7 @@ import {
 } from '@grafana/data';
 import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from './cdf/types';
 
-export interface MyQuery extends DataQuery {
+export interface CogniteQuery extends DataQuery {
   target: number | ''; // Timeseries internal Id:
   aggregation: string;
   granularity: string;
@@ -34,7 +34,7 @@ export const defaultAssetQuery: AssetQuery = {
 
 // TODO: Investigate if "type" property is required, it is currently not defined in MyQuery
 // These defaults are extracted from the old queryCtrl.ts
-export const defaultQuery: Partial<MyQuery> = {
+export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   // type: 'timeserie',
   aggregation: 'average',
@@ -246,15 +246,16 @@ export interface Annotation {
   tags: string[];
 }
 
-export interface AnnotationQueryOptions {
+export interface CogniteAnnotationQuery extends CogniteQuery {
   range: GrafanaTimeRange;
   rangeRaw: GrafanaTimeRange;
-  annotation: Annotation;
+  // annotation: Annotation;
   dashboard: number;
+  query: string;
 }
 
 export interface AnnotationResponse {
-  annotation: Annotation;
+  // annotation: Annotation;
   title: string;
   time: number;
   timeEnd?: number;

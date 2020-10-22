@@ -5,6 +5,7 @@ import {
   DataSourceInstanceSettings,
   DataQueryRequest,
   AppEvents,
+  AnnotationQueryRequest,
 } from '@grafana/data';
 import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
 import { parse as parseQuery } from './parser/events-assets';
@@ -28,8 +29,8 @@ import {
   SuccessResponse,
   InputQueryTarget,
   AnnotationResponse,
-  AnnotationQueryOptions,
-  MyQuery,
+  CogniteAnnotationQuery,
+  CogniteQuery,
   CogniteDataSourceOptions,
   defaultQuery,
 } from './types';
@@ -56,7 +57,7 @@ import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING }
 
 const { alertWarning } = AppEvents;
 
-export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDataSourceOptions> {
+export default class CogniteDatasource extends DataSourceApi<CogniteQuery, CogniteDataSourceOptions> {
   /**
    * Parameters that are needed by grafana
    */
@@ -82,10 +83,9 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDat
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<MyQuery>): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
-
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
@@ -180,21 +180,20 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDat
   /**
    * used by dashboards to get annotations (events)
    */
-  /*
-  async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
-    const {
-      range,
-      annotation,
-      annotation: { query, error },
-    } = options;
+
+  async annotationQuery(
+    options: AnnotationQueryRequest<CogniteAnnotationQuery>
+  ): Promise<AnnotationResponse[]> {
+    const { range, annotation } = options;
+    const { query, error } = annotation;
     const [startTime, endTime] = getRange(range);
 
     if (error || !query) {
       return [];
     }
 
-    const replacedVariablesQuery = this.replaceVariable(query);
-    const { filters, params } = parse(replacedVariablesQuery);
+    const replacedVariablesQuery = CogniteDatasource.replaceVariable(query);
+    const { filters, params } = parseQuery(replacedVariablesQuery);
     const timeFrame = {
       startTime: { max: endTime },
       endTime: { min: startTime },
@@ -207,7 +206,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDat
     const items = await this.connector.fetchItems<any>({
       data,
       path: `/events/list`,
-      method: POST,
+      method: HttpMethod.POST,
     });
     const response = applyFilters(items, filters);
 
@@ -220,7 +219,7 @@ export default class CogniteDatasource extends DataSourceApi<MyQuery, CogniteDat
       title: type,
     }));
   }
-  */
+
   /**
    * used by query editor to search for assets/timeseries
    */
