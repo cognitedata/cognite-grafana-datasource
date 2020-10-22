@@ -111,6 +111,13 @@ export class CogniteQueryCtrl extends QueryCtrl {
     });
   }
 
+  getDomains(query: string) {
+    return this.datasource.getDomainsForDropdown(query).then(options => {
+      _.defer(() => this.$scope.$digest()); // need to force the update on the dropdown
+      return options;
+    });
+  }
+
   refreshData() {
     this.onChangeQuery();
     this.refresh(); // Asks the panel to refresh data.
@@ -122,6 +129,17 @@ export class CogniteQueryCtrl extends QueryCtrl {
     }
     if (this.target.warning) {
       this.target.warning = '';
+    }
+  }
+
+  onChangeDomain() {
+    if (this.target.templateQuery.domain) {
+      this.datasource
+        .getCurrentDomainVersion(this.target.templateQuery.domain)
+        .then(currentVersion => {
+          this.target.templateQuery.domainVersion = currentVersion;
+          this.refreshData();
+        });
     }
   }
 

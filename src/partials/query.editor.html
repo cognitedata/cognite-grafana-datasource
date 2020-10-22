@@ -195,12 +195,19 @@
   <div class="gf-form-inline">
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain</label>
-      <input type="text" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domain" ng-blur="ctrl.refreshData()" placeholder="Domain..."/>
-      <info-popover mode="right-absolute">Name/External ID of the domain you would like to query</info-popover>
+      <gf-form-dropdown model="ctrl.target.templateQuery.domain"
+        placeholder="Start typing domain name here"
+        class="gf-dropdown-wrapper"
+        css-class="gf-size-auto"
+        allow-custom="false"
+        lookup-text="true"
+        get-options="ctrl.getDomains($query)"
+        on-change="ctrl.onChangeDomain()">
+      </gf-form-dropdown>
     </div>
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain version</label>
-      <input type="number" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domainVersion" ng-blur="ctrl.refreshData()" placeholder="Domain version..."/>
+      <input type="number" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domainVersion" ng-blur="ctrl.refreshData()" placeholder="Version..." min="1"/>
       <info-popover mode="right-absolute">Domain version you would like to query instances from</info-popover>
     </div>
   </div>

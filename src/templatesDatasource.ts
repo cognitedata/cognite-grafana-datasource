@@ -27,6 +27,24 @@ export class TemplatesConnector {
     private templateSrv: TemplateSrv
   ) {}
 
+  cachedDomains = [];
+
+  async listDomains() {
+    if (this.cachedDomains.length) {
+      return this.cachedDomains;
+    }
+
+    const options: any = {
+      url: `${this.apiUrl}/cognitetemplatesapi/${this.project}/domains`,
+      method: 'GET',
+    };
+
+    return this.backendSrv.datasourceRequest(options).then(res => {
+      this.cachedDomains = res.data.items;
+      return this.cachedDomains;
+    });
+  }
+
   private request(query: Partial<TemplateQuery>, data: string) {
     const { domain, domainVersion } = query;
 

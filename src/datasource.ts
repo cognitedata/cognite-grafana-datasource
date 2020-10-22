@@ -357,6 +357,27 @@ export default class CogniteDatasource {
       };
     }
   }
+
+  /**
+   * used by templates query editor to search for domains
+   */
+  async getDomainsForDropdown(query: string): Promise<MetricFindQueryResponse> {
+    const domains = await this.templatesConnector.listDomains();
+
+    return domains
+      .filter(d => d.externalId.match(new RegExp(query, 'gi')))
+      .map(({ externalId }) => {
+        return {
+          text: externalId,
+          value: externalId,
+        };
+      });
+  }
+  async getCurrentDomainVersion(domainExternalId: string): Promise<number | undefined> {
+    const domains = await this.templatesConnector.listDomains();
+    const domain = domains.find(d => d.externalId === domainExternalId);
+    return domain?.version;
+  }
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
