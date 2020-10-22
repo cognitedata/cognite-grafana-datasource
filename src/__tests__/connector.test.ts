@@ -1,10 +1,6 @@
 /* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
-/* import { Connector } from '../connector';
+
+import { Connector } from '../connector';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
 
@@ -184,4 +180,3 @@ describe('connector', () => {
     });
   });
 });
- */

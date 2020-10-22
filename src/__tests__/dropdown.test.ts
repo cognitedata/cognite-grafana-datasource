@@ -1,10 +1,5 @@
 /* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
-/* import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { Tab } from '../types';
 
@@ -172,4 +167,3 @@ describe('Dropdown Options Query', () => {
     });
   });
 });
- */

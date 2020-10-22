@@ -1,17 +1,12 @@
 /* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
 
-/*
+import { CDFDataQueryRequest, DataQueryRequestResponse, ResponseMetadata } from 'types';
 import {
   datapoints2Tuples,
   promiser,
   reduceTimeseries,
   labelContainsVariableProps,
-} from '../cdfDatasource';
+} from '../cdf/client';
 import { getDataqueryResponse, getMeta } from './utils';
 
 describe('CDF datasource', () => {
@@ -74,13 +69,15 @@ describe('CDF datasource', () => {
 
   describe('promiser', () => {
     it('should return failures and successes', async () => {
-      const queries = [0, 1, 2, 3];
-      const metadatas = ['a', 'b', 'c', 'd'];
+      const queries = [0, 1, 2, 3] as unknown as CDFDataQueryRequest[];
+      const metadatas = ['a', 'b', 'c', 'd'] as unknown as ResponseMetadata[];
       const results = await promiser(queries, metadatas, async (query, metadata) => {
-        if (query % 2) {
-          throw new Error(metadata);
+        const queryNumber = query as unknown as number;
+        const metadataStr = metadata as unknown as string;
+        if (queryNumber % 2) {
+          throw new Error(metadataStr);
         }
-        return query;
+        return query as unknown as DataQueryRequestResponse;
       });
       expect(results).toEqual({
         failed: [
@@ -121,4 +118,3 @@ describe('CDF datasource', () => {
     });
   });
 });
- */
