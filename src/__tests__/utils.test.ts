@@ -1,5 +1,6 @@
 import { applyFilters, flatten, isRFC3339_ISO6801 } from '../utils';
 import { FilterType, ParsedFilter } from '../parser/types';
+import { isArray } from 'lodash';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterType;
 
@@ -76,9 +77,7 @@ describe('Utils', () => {
       string: 'hello',
       number: 123,
       float: 123.4,
-      'array.0': 1,
-      'array.1': 2,
-      'array.2': 3,
+      array: [1, 2, 3],
       'nested.string': 'hello',
       'nested.number': 123,
       'nested.float': 123.4,
@@ -87,6 +86,9 @@ describe('Utils', () => {
     };
     it('should flatten nested objects to dot notation', () => {
       expect(flatten(obj)).toEqual(flattenObj);
+    });
+    it('should not flatten arrays', () => {
+      expect(isArray(flatten(obj).array)).toBeTruthy();
     });
   });
 
