@@ -20,11 +20,11 @@ import {
   STSQuery,
   enrichWithDefaultAggregates,
 } from './index';
-import { FilterType } from '../types';
+import { FilterTypeStr } from '../types';
 import { TimeSeriesResponseItem } from '../../cdf/types';
 import { cloneDeep } from 'lodash';
 
-const { NotEquals, Equals, RegexEquals } = FilterType;
+const { NotEquals, Equals, RegexEquals } = FilterTypeStr;
 const STS = STSReference;
 const Filter = STSFilter;
 

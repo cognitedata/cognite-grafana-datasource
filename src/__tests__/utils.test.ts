@@ -1,8 +1,8 @@
 /* eslint-disable */
 import { applyFilters } from '../utils';
-import { FilterType, ParsedFilter } from '../parser/types';
+import { FilterTypeStr, ParsedFilter } from '../parser/types';
 
-const { NotEquals, RegexNotEquals, RegexEquals } = FilterType;
+const { NotEquals, RegexNotEquals, RegexEquals } = FilterTypeStr;
 
 describe('Utils', () => {
   describe('Filtering', () => {

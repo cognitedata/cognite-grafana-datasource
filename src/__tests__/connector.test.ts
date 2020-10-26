@@ -150,7 +150,7 @@ describe('connector', () => {
       expect(datasourceRequest).toBeCalledTimes(2);
     });
 
-    const error = new Error('2');
+    const error = { error: { message: 1 } };
     it('throws error', async () => {
       datasourceRequest.mockImplementation(async () => error);
       expect.assertions(1);
@@ -159,7 +159,7 @@ describe('connector', () => {
 
     it('throws error 2', async () => {
       datasourceRequest.mockImplementation(async () => {
-        throw error;
+        throw error; // eslint-disable-line
       });
       expect.assertions(1);
       try {
@@ -173,6 +173,10 @@ describe('connector', () => {
       datasourceRequest.mockImplementation(async () => error);
       try {
         await connector.cachedRequest(request);
+      } catch (e) {
+        // silent
+      }
+      try {
         await connector.cachedRequest(request);
       } catch (e) {
         // silent

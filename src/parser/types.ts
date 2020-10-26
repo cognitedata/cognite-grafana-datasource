@@ -1,7 +1,6 @@
-/* eslint-disable */
 import { STSClientFilter } from './ts';
 
-export const FilterType = {
+export const FilterTypeStr = {
   RegexNotEquals: '!~' as FilterType,
   RegexEquals: '=~' as FilterType,
   NotEquals: '!=' as FilterType,

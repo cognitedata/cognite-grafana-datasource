@@ -6,7 +6,7 @@ import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdf/client';
 import { Connector } from '../../connector';
-import { FilterType } from '../types';
+import { FilterTypeStr, FilterType } from '../types';
 import { applyFilters } from '../../utils';
 import { parseWith } from '../events-assets/index';
 import getFilterDeep from 'deepdash/getFilterDeep';
@@ -406,7 +406,7 @@ const hasIdsFilter = (obj: STSReference) => {
 };
 
 const isEqualsFilter = (query: any): query is STSServerFilter => {
-  return isSTSFilter(query) && query.filter === FilterType.Equals;
+  return isSTSFilter(query) && query.filter === FilterTypeStr.Equals;
 };
 
 const isOneOf = (value: string, ...arr: string[]) => {
