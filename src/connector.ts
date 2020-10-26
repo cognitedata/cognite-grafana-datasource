@@ -121,7 +121,7 @@ export class Connector {
       try {
         const res = await this.backendSrv.datasourceRequest(query);
         if (isError(res)) {
-          throw new Error('FIXME');
+          throw res;
         }
         setTimeout(() => this.cachedRequests.delete(hash), timeout);
         return res;

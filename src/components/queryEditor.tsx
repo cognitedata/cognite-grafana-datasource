@@ -1,6 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import defaults from 'lodash/defaults';
-import _ from 'lodash';
 
 import React, { useState, useEffect, FormEvent } from 'react';
 import {

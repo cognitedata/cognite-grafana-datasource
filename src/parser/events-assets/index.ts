@@ -1,4 +1,3 @@
-/* eslint-disable */
 import _, { get, isUndefined } from 'lodash';
 import getFilterDeep from 'deepdash/getFilterDeep';
 import getPaths from 'deepdash/getPaths';
@@ -60,7 +59,7 @@ const formatQueryParse = ({ type, query }: QueryParserResponse): ParserResponse 
     : {};
 
   const emptyFilters = omitDeep(filtered, ['filter', 'value', 'key']);
-  const filters = paths(emptyFilters, { pathFormat: 'array' }).map(path => {
+  const filters = paths(emptyFilters, { pathFormat: 'array' }).map((path) => {
     const currentPath = path.join('.');
     const parentPath = path.slice(0, -1);
     const { filter, key, value } = get(filtered, currentPath);

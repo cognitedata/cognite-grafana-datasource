@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { applyFilters } from '../utils';
 import { FilterTypeStr, ParsedFilter } from '../parser/types';
 
