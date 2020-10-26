@@ -1,5 +1,5 @@
-import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms } from '@grafana/ui';
+import React, { ChangeEvent, PureComponent, useState } from 'react';
+import { Icon, LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
 
@@ -20,9 +20,14 @@ If unsure, leave the URL as default.`;
 const oAuthPassThruTooltip = `Forward the user's upstream OAuth identity to the data source
 (Their access token gets passed along).`;
 
-export class ConfigEditor extends PureComponent<ConfigEditorProps> {
-  onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
+export function ConfigEditor(props: ConfigEditorProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const { onOptionsChange, options } = props;
+  const { secureJsonData = {}, jsonData, secureJsonFields } = options;
+  const { apiKey = '' } = secureJsonData;
+  const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
+
+  const onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -32,8 +37,8 @@ export class ConfigEditor extends PureComponent<ConfigEditorProps> {
     });
   };
 
-  onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
+  // TODO: Verify that this is correct.
+  const onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -44,8 +49,7 @@ export class ConfigEditor extends PureComponent<ConfigEditorProps> {
   };
 
   // Secure field (only sent to the backend)
-  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
+  const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       secureJsonData: {
@@ -54,8 +58,7 @@ export class ConfigEditor extends PureComponent<ConfigEditorProps> {
     });
   };
 
-  onOAuthPassThruChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
+  const onOAuthPassThruChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -65,8 +68,7 @@ export class ConfigEditor extends PureComponent<ConfigEditorProps> {
     });
   };
 
-  onResetAPIKey = () => {
-    const { onOptionsChange, options } = this.props;
+  const onResetAPIKey = () => {
     onOptionsChange({
       ...options,
       secureJsonFields: {
@@ -80,71 +82,74 @@ export class ConfigEditor extends PureComponent<ConfigEditorProps> {
     });
   };
 
-  render() {
-    const { options } = this.props;
-    const { secureJsonData = {}, jsonData, secureJsonFields } = options;
-    const { apiKey = '' } = secureJsonData;
-    const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
-
-    return (
-      <>
-        <div className="gf-form-group">
-          <h3 className="page-heading">HTTP</h3>
-          <div className="gf-form-inline">
-            <FormField
-              label="Project"
-              labelWidth={6}
-              inputWidth={20}
-              onChange={this.onProjectChange}
-              value={cogniteProject}
-              placeholder="Cognite Data Fusion project"
-              tooltip="Cognite Data Fusion project name."
-            />
-          </div>
-
-          <div className="gf-form-inline">
-            <FormField
-              label="API URL"
-              labelWidth={6}
-              inputWidth={20}
-              onChange={this.onApiUrlChange}
-              value={cogniteApiUrl}
-              placeholder="api.cognitedata.com"
-              tooltip={apiUrlTooltip}
-            />
-          </div>
+  return (
+    <>
+      <div className="gf-form-group">
+        <h3 className="page-heading">HTTP</h3>
+        <div className="gf-form-inline">
+          <FormField
+            label="Project"
+            labelWidth={6}
+            inputWidth={20}
+            onChange={onProjectChange}
+            value={cogniteProject}
+            placeholder="Cognite Data Fusion project"
+            tooltip="Cognite Data Fusion project name."
+          />
         </div>
 
-        <div className="gf-form-group">
-          <h3 className="page-heading">Auth</h3>
+        <div className="gf-form-inline">
+          <FormField
+            label="API URL"
+            labelWidth={6}
+            inputWidth={20}
+            onChange={onApiUrlChange}
+            value={cogniteApiUrl}
+            placeholder="api.cognitedata.com"
+            tooltip={apiUrlTooltip}
+          />
+        </div>
+      </div>
+
+      <div className="gf-form-group">
+        <h3 className="page-heading">
+          Auth <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+        </h3>
+        {showHelp && (
+          <pre>
+            Find out more about authentication at{' '}
+            <a href="https://docs.cognite.com/cdf/dashboards/guides/grafana/admin.html#step-3-configure-the-cognite-data-source-for-grafana">
+              docs.cognite.com/cdf/dashboards/guides/grafana/admin.html
+            </a>
+          </pre>
+        )}
+        <div className="gf-form-inline">
+          <Switch
+            label="Forward OAuth Identity"
+            labelClass="width-13"
+            checked={oauthPassThru}
+            onChange={onOAuthPassThruChange}
+            tooltip={oAuthPassThruTooltip}
+          />
+        </div>
+        {!oauthPassThru && (
           <div className="gf-form-inline">
-            <Switch
-              label="Forward OAuth Identity"
-              labelClass="width-13"
-              checked={oauthPassThru}
-              onChange={this.onOAuthPassThruChange}
-              tooltip={oAuthPassThruTooltip}
-            />
-          </div>
-          {!oauthPassThru && (
-            <div className="gf-form-inline">
-              <div className="gf-form">
-                <SecretFormField
-                  isConfigured={secureJsonFields.apiKey}
-                  value={apiKey}
-                  label="API Key"
-                  placeholder="Cognite Data Fusion API key"
-                  tooltip="Cognite Data Fusion API key."
-                  labelWidth={6}
-                  inputWidth={20}
-                  onReset={this.onResetAPIKey}
-                  onChange={this.onAPIKeyChange}
-                />
-              </div>
+            <div className="gf-form">
+              <SecretFormField
+                isConfigured={secureJsonFields.apiKey}
+                value={apiKey}
+                label="API Key"
+                placeholder="Cognite Data Fusion API key"
+                tooltip="Cognite Data Fusion API key."
+                labelWidth={6}
+                inputWidth={20}
+                onReset={onResetAPIKey}
+                onChange={onAPIKeyChange}
+              />
             </div>
-          )}
-        </div>
-      </>
-    );
-  }
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
