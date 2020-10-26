@@ -2,7 +2,7 @@
 import defaults from 'lodash/defaults';
 import _ from 'lodash';
 
-import React, { ChangeEvent, useCallback, useMemo, useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -14,11 +14,9 @@ import {
   Switch,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import ReactMarkdown from 'react-markdown';
+import { customQueryHelp } from './queryHelp';
 import CogniteDatasource from '../datasource';
 import { defaultQuery, CogniteDataSourceOptions, CogniteQuery, Tab as Tabs } from '../types';
-
-import helpMd from './help.md';
 
 const { FormField } = LegacyForms;
 type Props = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -256,7 +254,7 @@ export function TimeseriesTab(props: Props) {
 
 export function CustomTab(props: Props) {
   const { query, datasource } = props;
-  const [help, setHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   return (
     <>
@@ -298,13 +296,9 @@ export function CustomTab(props: Props) {
           placeholder="default"
           tooltip="Click help button for help."
         />
-        <Icon name="question-circle" onClick={() => setHelp(!help)} />
+        <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
-      {help && (
-        <pre>
-          <ReactMarkdown source={helpMd} />
-        </pre>
-      )}
+      {showHelp && customQueryHelp}
     </>
   );
 }

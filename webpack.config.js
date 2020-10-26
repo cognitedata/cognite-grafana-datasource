@@ -17,16 +17,6 @@ module.exports.getWebpackConfig = (config, options) => ({
         ]
       }
     ])
-  ],
-  module: {
-    ...config.module,
-    rules: [
-      ...config.module.rules,
-      {
-        test: /\.md$/,
-        use: 'raw-loader'
-      }
-    ],
-  }
+  ]
 });
 
