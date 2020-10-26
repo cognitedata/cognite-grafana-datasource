@@ -1,10 +1,8 @@
+import { DataQuery, TimeSeries, DataSourceSettings } from '@grafana/ui';
 import {
-  DataQueryOptions,
-  DataQuery,
-  TimeSeries,
+  DataQueryRequest as GrafanaDataQueryRequest,
   TimeRange as GrafanaTimeRange,
-  DataSourceSettings,
-} from '@grafana/ui';
+} from '@grafana/data';
 
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
@@ -31,6 +29,7 @@ export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Template = 'Template',
 }
 
 export enum ParseType {
@@ -77,6 +76,7 @@ export interface InputQueryTarget extends DataQuery {
   assetQuery: AssetQuery;
   expr: string;
   warning: string;
+  templateQuery: TemplateQuery;
 }
 
 export interface QueryTarget extends InputQueryTarget {
@@ -85,7 +85,7 @@ export interface QueryTarget extends InputQueryTarget {
 
 export type QueryFormat = 'json';
 
-export type QueryOptions = DataQueryOptions<InputQueryTarget>;
+export type QueryOptions = GrafanaDataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 
@@ -417,3 +417,41 @@ export interface QueryDatapointsWarning {
   refId: string;
   warning: string;
 }
+
+export interface TemplateQuery extends DataQuery {
+  domain: string;
+  domainVersion: number;
+  queryText: string;
+  dataPath: string;
+  dataPointsPath: string;
+  groupBy: string;
+  aliasBy: string;
+  annotationTitle: string;
+  annotationText: string;
+  annotationTags: string;
+  constant: number;
+}
+
+export const defaultQuery: Partial<TemplateQuery> = {
+  domain: undefined,
+  domainVersion: undefined,
+  queryText: `query {
+      wellList { 
+        name,
+        pressure {
+          datapoints(start: $__from, end: $__to, limit: 50) {
+            timestamp,
+            value
+          }
+        }
+      }
+  }`,
+  dataPath: 'data',
+  dataPointsPath: '',
+  groupBy: '',
+  aliasBy: '',
+  annotationTitle: '',
+  annotationText: '',
+  annotationTags: '',
+  constant: 6.5,
+};
