@@ -64,19 +64,20 @@ export class CogniteQueryCtrl extends QueryCtrl {
       domain: '',
       domainVersion: 1,
       queryText: `query {
-        wells { 
-          pressure {
-            datapoints {
-              Time:Timestamp,
-              Value:value
-            }
-          }
-        }
-    }`,
-      dataPath: 'wells',
-      dataPointsPath: 'wells.datapoints',
+  wellList { 
+    name,
+    pressure {
+      datapoints(start: $__from, end: $__to, limit: 50) {
+        timestamp,
+        value
+      }
+    }
+  }
+}`,
+      dataPath: 'wellList',
+      dataPointsPath: 'pressure.datapoints',
       groupBy: 'name',
-      aliasBy: '$field_name',
+      aliasBy: '',
     },
   };
 

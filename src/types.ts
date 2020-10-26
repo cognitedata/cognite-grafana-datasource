@@ -436,11 +436,12 @@ export const defaultQuery: Partial<TemplateQuery> = {
   domain: undefined,
   domainVersion: undefined,
   queryText: `query {
-      wells { 
+      wellList { 
+        name,
         pressure {
-          datapoints {
-            Time:Timestamp,
-            Value:value
+          datapoints(start: $__from, end: $__to, limit: 50) {
+            timestamp,
+            value
           }
         }
       }
