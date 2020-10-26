@@ -16,7 +16,7 @@
     "watch": "grafana-toolkit plugin:dev --watch",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
-    "lint": "eslint -c .eslintrc.js --ext .ts ./src/*.ts",
+    "lint": "eslint './src/**/*.{js,ts,tsx}' -c .eslintrc.js",
     "lint:fix": "yarn lint --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
     "build-parser": "nearleyc ./src/parser/events-assets/grammar.ne -o ./src/parser/events-assets/grammar.ts && nearleyc ./src/parser/ts/grammar.ne -o ./src/parser/ts/grammar.ts"
