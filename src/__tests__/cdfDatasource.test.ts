@@ -1,6 +1,4 @@
-/* eslint-disable */
-
-import { CDFDataQueryRequest, DataQueryRequestResponse, ResponseMetadata } from 'types';
+import { CDFDataQueryRequest, DataQueryRequestResponse, ResponseMetadata } from '../types';
 import {
   datapoints2Tuples,
   promiser,
@@ -69,15 +67,15 @@ describe('CDF datasource', () => {
 
   describe('promiser', () => {
     it('should return failures and successes', async () => {
-      const queries = [0, 1, 2, 3] as unknown as CDFDataQueryRequest[];
-      const metadatas = ['a', 'b', 'c', 'd'] as unknown as ResponseMetadata[];
+      const queries = ([0, 1, 2, 3] as unknown) as CDFDataQueryRequest[];
+      const metadatas = (['a', 'b', 'c', 'd'] as unknown) as ResponseMetadata[];
       const results = await promiser(queries, metadatas, async (query, metadata) => {
-        const queryNumber = query as unknown as number;
-        const metadataStr = metadata as unknown as string;
+        const queryNumber = (query as unknown) as number;
+        const metadataStr = (metadata as unknown) as string;
         if (queryNumber % 2) {
           throw new Error(metadataStr);
         }
-        return query as unknown as DataQueryRequestResponse;
+        return (query as unknown) as DataQueryRequestResponse;
       });
       expect(results).toEqual({
         failed: [

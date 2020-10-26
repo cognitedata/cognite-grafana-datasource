@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
@@ -69,7 +68,7 @@ describe('Metrics Query', () => {
       query: `assets{id=${id}}`,
     };
     const response = cloneDeep(assetsResponse);
-    response.data.items = assetsResponse.data.items.filter(item => item.id === id);
+    response.data.items = assetsResponse.data.items.filter((item) => item.id === id);
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest

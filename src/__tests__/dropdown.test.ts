@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { Tab } from '../types';
@@ -79,7 +78,7 @@ describe('Dropdown Options Query', () => {
   describe('Given a request for asset options', () => {
     let result;
     const response = cloneDeep(assetsResponse);
-    response.data.items = assetsResponse.data.items.filter(item =>
+    response.data.items = assetsResponse.data.items.filter((item) =>
       item.externalId.startsWith('asset')
     );
     beforeAll(async () => {
@@ -103,7 +102,7 @@ describe('Dropdown Options Query', () => {
     let result;
     const response = cloneDeep(assetsResponse);
     response.data.items = assetsResponse.data.items.filter(
-      item => item.externalId.startsWith('asset') && item.metadata.key1 === 'value1'
+      (item) => item.externalId.startsWith('asset') && item.metadata.key1 === 'value1'
     );
     const optionsObj = {
       metadata: '{"key1":"value1"}',
@@ -148,7 +147,7 @@ describe('Dropdown Options Query', () => {
     let result;
     const response = cloneDeep(tsResponse);
     response.data.items = tsResponse.data.items.filter(
-      item => item.description && item.description.startsWith('test')
+      (item) => item.description && item.description.startsWith('test')
     );
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest

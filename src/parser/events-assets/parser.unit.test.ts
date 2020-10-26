@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { parseQuery, formatQueryParse, parse } from './index';
 import { QueryParserTypes } from '../types';
 

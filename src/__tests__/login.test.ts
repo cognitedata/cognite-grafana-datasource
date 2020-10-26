@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { getMockedDataSource } from './utils';
 
 const { ds, backendSrvMock } = getMockedDataSource();

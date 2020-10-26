@@ -1,7 +1,4 @@
-/* eslint-disable */
-
 import { Connector } from '../connector';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
 
 describe('connector', () => {
@@ -61,9 +58,10 @@ describe('connector', () => {
     });
 
     it('should reject if at least one chunk was rejected', async () => {
+      const error = new Error('1');
       datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
-      datasourceRequest.mockImplementationOnce(async () => Promise.reject(1));
-      await expect(connector.chunkAndFetch({ path, data, method }, 1)).rejects.toEqual(1);
+      datasourceRequest.mockImplementationOnce(async () => Promise.reject(error));
+      await expect(connector.chunkAndFetch({ path, data, method }, 1)).rejects.toEqual(error);
       expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
       expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
       expect(datasourceRequest).toHaveBeenCalledTimes(2);
@@ -79,7 +77,10 @@ describe('connector', () => {
       method: HttpMethod.POST,
     };
     const items1000 = Array.from({ length: 1000 }, (_, i) => i);
-    const response = async () => ({ data: { items: items1000, nextCursor: `${++cursor}` } });
+    const response = async () => {
+      cursor += 1;
+      return { data: { items: items1000, nextCursor: `${cursor}` } };
+    };
 
     beforeEach(() => {
       connector = new Connector(project, protocol, { datasourceRequest } as any);
@@ -149,7 +150,7 @@ describe('connector', () => {
       expect(datasourceRequest).toBeCalledTimes(2);
     });
 
-    const error = { error: { message: 1 } };
+    const error = new Error('2');
     it('throws error', async () => {
       datasourceRequest.mockImplementation(async () => error);
       expect.assertions(1);
@@ -172,10 +173,10 @@ describe('connector', () => {
       datasourceRequest.mockImplementation(async () => error);
       try {
         await connector.cachedRequest(request);
-      } catch {}
-      try {
         await connector.cachedRequest(request);
-      } catch {}
+      } catch (e) {
+        // silent
+      }
       expect(datasourceRequest).toBeCalledTimes(2);
     });
   });

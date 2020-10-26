@@ -37,7 +37,5 @@ jobs:
           ${{ runner.os }}-yarn- 
 
     - run: yarn
-    - run: yarn lint
-    - run: yarn build
-    - run: yarn test
+    - run: yarn build #also runs tests and linter
     - uses: codecov/codecov-action@v1
