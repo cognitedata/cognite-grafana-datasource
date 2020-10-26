@@ -150,6 +150,7 @@ export class TemplatesConnector {
       for (const res of results) {
         const dataPathArray: string[] = TemplatesConnector.getDataPathArray(res.query.dataPath);
         const { groupBy, aliasBy, dataPointsPath } = res.query;
+        const datapointsPaths = dataPointsPath.split(',');
         const split = groupBy.split(',');
         const groupByList: string[] = [];
         for (const element of split) {
@@ -163,65 +164,32 @@ export class TemplatesConnector {
 
           const dataFrameMap = new Map<string, MutableDataFrame>();
           for (const doc of docs) {
-            if (doc.Time) {
-              doc.Time = dateTime(doc.Time);
-            }
             const identifiers: string[] = [];
             for (const groupByElement of groupByList) {
               identifiers.push(doc[groupByElement]);
             }
             const identifiersString = identifiers.toString();
-            let dataFrame = dataFrameMap.get(identifiersString);
-            if (!dataFrame) {
-              // we haven't initialized the dataFrame for this specific identifier that we group by yet
-              dataFrame = new MutableDataFrame({ fields: [] });
-              const generalReplaceObject: any = {};
-              for (const fieldName in doc) {
-                generalReplaceObject[`field_ ${fieldName}`] = doc[fieldName];
+
+            for (const datapointsPath of datapointsPaths) {
+              const groupString =
+                datapointsPaths.length > 1
+                  ? `${identifiersString},${datapointsPath}`
+                  : identifiersString;
+              let dataFrame = dataFrameMap.get(groupString);
+              if (!dataFrame) {
+                dataFrame = this.createDatapointsDataFrame(groupString);
+                dataFrameMap.set(groupString, dataFrame);
               }
 
-              const lol = doc[dataPointsPath][0];
-              for (const fieldName in lol) {
-                let t: FieldType = FieldType.string;
-                if (fieldName === 'Time' || isRFC3339_ISO6801(lol[fieldName])) {
-                  t = FieldType.time;
-                } else if (_.isNumber(lol[fieldName])) {
-                  t = FieldType.number;
+              const hasDatapoints = doc[datapointsPath] != null && doc[datapointsPath].length > 0;
+              if (hasDatapoints) {
+                for (const datapoint of doc[datapointsPath]) {
+                  dataFrame.add(datapoint);
                 }
-                let title;
-                if (identifiers.length !== 0) {
-                  // if we have any identifiers
-                  title = `${identifiersString}_${fieldName}`;
-                } else {
-                  title = fieldName;
-                }
-                if (aliasBy) {
-                  title = aliasBy;
-                  const replaceObject = { ...generalReplaceObject };
-                  replaceObject['fieldName'] = fieldName;
-                  for (const replaceKey in replaceObject) {
-                    const replaceValue = replaceObject[replaceKey];
-                    const regex = new RegExp(`\\$${replaceKey}`, 'g');
-                    title = title.replace(regex, replaceValue);
-                  }
-                  title = this.templateSrv.replace(title, options.scopedVars);
-                }
-
-                dataFrame.addField({
-                  name: fieldName,
-                  type: t,
-                  config: { displayName: title },
-                }).parse = (v: any) => {
-                  return v || '';
-                };
               }
-              dataFrameMap.set(identifiersString, dataFrame);
-            }
-
-            for (const datapoint of doc[dataPointsPath]) {
-              dataFrame.add(datapoint);
             }
           }
+
           for (const dataFrame of dataFrameMap.values()) {
             dataFrameArray.push(dataFrame);
           }
@@ -231,6 +199,25 @@ export class TemplatesConnector {
       return { data: dataFrameArray };
     });
   }
+
+  createDatapointsDataFrame(name: string) {
+    return new MutableDataFrame({
+      fields: [
+        {
+          name: 'timestamp',
+          type: FieldType.time,
+        },
+        {
+          name: 'value',
+          type: FieldType.number,
+          config: {
+            displayName: name,
+          },
+        },
+      ],
+    });
+  }
+
   annotationQuery(options: AnnotationQueryRequest<TemplateQuery>): Promise<AnnotationEvent[]> {
     const query = defaults(options.annotation, defaultQuery);
     return Promise.all([this.createQuery(query, options.range)]).then((results: any) => {

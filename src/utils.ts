@@ -1,4 +1,4 @@
-import { isNil, omitBy, get } from 'lodash';
+import { isNil, omitBy, get, isArray } from 'lodash';
 import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
@@ -48,7 +48,7 @@ export function flatten<T extends Record<string, any>>(
   return Object.keys(object).reduce((acc: T, key: string): T => {
     const isObject = typeof object[key] === 'object' && object[key] != null;
     const newPath = [path, key].filter(Boolean).join(separator);
-    return isObject
+    return isObject && !isArray(object[key])
       ? { ...acc, ...flatten(object[key], newPath, separator) }
       : { ...acc, [newPath]: object[key] };
   }, {} as T);
