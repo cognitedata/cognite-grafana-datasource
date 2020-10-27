@@ -1,20 +1,13 @@
-/* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
-/* import { failedResponseEvent } from '../constants';
+import { cloneDeep } from 'lodash';
+import ms from 'ms';
+import { failedResponseEvent } from '../constants';
+
+import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
+import { Tab, InputQueryTarget, QueryTarget } from '../types';
+import { filterEmptyQueryTargets } from '../datasource';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('grafana/app/core/core');
-
-import { cloneDeep } from 'lodash';
-import { appEvents } from 'grafana/app/core/core';
-import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { Tab, InputQueryTarget, QueryTarget } from '../types';
-import ms from 'ms';
-import { filterEmptyQueryTargets } from '../datasource';
 import Mock = jest.Mock;
 
 type QueryTargetLike = Partial<InputQueryTarget>;
@@ -35,8 +28,8 @@ const externalIdPrefix = 'Timeseries';
 const options: any = {
   targets: [],
   range: {
-    from: '1549336675000',
-    to: '1549338475000',
+    from: 1549336675000,
+    to: 1549338475000,
   },
   interval: '30s',
   intervalMs: ms('30s'),
@@ -73,7 +66,7 @@ describe('Datasource Query', () => {
     it('should generate the correct query', async () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data)));
+        .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data)));
       results = await ds.fetchTimeseriesForTargets([oldTarget] as any, options);
 
       expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
@@ -90,7 +83,7 @@ describe('Datasource Query', () => {
     it('should give correct meta responses', async () => {
       expect(results.succeded[0].metadata).toEqual({
         target: oldTarget,
-        labels: [''],
+        labels: [],
       });
       expect(results.succeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
     });
@@ -133,7 +126,7 @@ describe('Datasource Query', () => {
       backendSrvMock.datasourceRequest = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponse))
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
+        .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
 
@@ -158,7 +151,7 @@ describe('Datasource Query', () => {
       expect(result.data[2].target).toEqual(`${description}-${targetC}`);
     });
   });
-
+  /*
   describe('Given "Select Timeseries" queries with errors', () => {
     let result;
     const tsTargetA: QueryTargetLike = {
@@ -637,5 +630,5 @@ describe('custom query granularity less then a second', () => {
       'granularity="1s"}'
     );
   });
+  */
 });
- */

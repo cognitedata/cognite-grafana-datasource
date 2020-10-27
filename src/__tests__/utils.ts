@@ -95,6 +95,7 @@ export const getMockedDataSource = () => {
   return {
     backendSrvMock,
     ds: new CogniteDatasource(instanceSettings, backendSrvMock, templateSrvMock),
+    templateSrvMock,
   };
 };
 
