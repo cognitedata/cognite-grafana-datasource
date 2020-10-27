@@ -1,4 +1,6 @@
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS } from '@grafana/runtime';
+import _ from 'lodash';
+import fp, { any } from 'lodash/fp';
 import {
   TimeRange,
   DataSourceApi,
@@ -8,6 +10,8 @@ import {
   AnnotationQueryRequest,
   AnnotationEvent,
 } from '@grafana/data';
+import { List } from '@grafana/ui';
+
 import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -33,23 +37,27 @@ import {
   CogniteQuery,
   CogniteDataSourceOptions,
   defaultQuery,
+  Result,
+  Ok,
+  Err,
 } from './types';
 import {
   TimeSeriesResponseItem,
   FilterRequest,
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
+  Metadata,
 } from './cdf/types';
 import {
   formQueriesForTargets,
   getTimeseries,
   reduceTimeseries,
-  promiser,
   getLimitsWarnings,
   getCalculationWarnings,
   datapointsPath,
   stringifyError,
   getLabelsForTarget,
+  concurrent,
 } from './cdf/client';
 import { Connector } from './connector';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -110,7 +118,7 @@ export default class CogniteDatasource extends DataSourceApi<
   async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions
-  ): Promise<Responses> {
+  ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       let items: DataQueryRequestItem[];
       try {
@@ -140,21 +148,31 @@ export default class CogniteDatasource extends DataSourceApi<
       })
     );
 
-    const proxy = async (data, { target }) => {
+    const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
+      const { target } = metadata;
       const isSynthetic = data.items.some((q) => !!q.expression);
       const chunkSize = isSynthetic ? 10 : 100;
 
-      return this.connector.chunkAndFetch<CDFDataQueryRequest, DataQueryRequestResponse>(
-        {
-          data,
-          path: datapointsPath(isSynthetic),
-          method: HttpMethod.POST,
-          requestId: getRequestId(options, target),
-        },
-        chunkSize
-      );
+      const request = {
+        data,
+        path: datapointsPath(isSynthetic),
+        method: HttpMethod.POST,
+        requestId: getRequestId(options, target),
+      };
+
+      try {
+        const result = await this.connector.chunkAndFetch<
+          CDFDataQueryRequest,
+          DataQueryRequestResponse
+        >(request, chunkSize);
+        return new Ok({ result, metadata });
+      } catch (error) {
+        return new Err({ error, metadata });
+      }
     };
-    return promiser(queries, metadata, proxy);
+
+    const requests = _.zip(queries, metadata);
+    return concurrent(requests, queryProxy);
   }
 
   private async getDataQueryRequestItems(

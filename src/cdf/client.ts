@@ -1,4 +1,5 @@
-import { get, cloneDeep } from 'lodash';
+import _, { get, cloneDeep } from 'lodash';
+import fp from 'lodash/fp';
 import { TimeSeries } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
@@ -24,6 +25,9 @@ import {
   QueriesData,
   SuccessResponse,
   Responses,
+  Result,
+  Ok,
+  Err,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -214,30 +218,17 @@ function datapoint2Tuple(
   return [value, dp.timestamp];
 }
 
-export async function promiser(
-  queries: CDFDataQueryRequest[],
-  metadatas: ResponseMetadata[],
-  toPromise: (
-    query: CDFDataQueryRequest,
-    metadata: ResponseMetadata
-  ) => Promise<DataQueryRequestResponse>
-): Promise<Responses> {
-  const succeded = [];
-  const failed = [];
-  const promises = queries.map(async (query, i) => {
-    const metadata = metadatas[i];
-    try {
-      const result = await toPromise(query, metadata);
-      succeded.push({ result, metadata });
-    } catch (error) {
-      failed.push({ error, metadata });
-    }
-  });
-  await Promise.all(promises);
-  return {
-    succeded,
-    failed,
-  };
+export async function concurrent<TQuery, TResult, TError>(
+  queries: TQuery[],
+  queryProxy: (query: TQuery) => Promise<Result<TResult, TError>>
+): Promise<Responses<TResult, TError>> {
+  const later = _.map(queries, (query) => queryProxy(query));
+  const results = await Promise.all(later);
+  const [oks, errs] = _.partition(results, (res) => res.isOk);
+  const succeded = _.map(oks, (x: Ok<TResult, TError>) => x.value);
+  const failed = _.map(errs, (x: Err<TResult, TError>) => x.error);
+
+  return { succeded, failed };
 }
 
 export function getLimitsWarnings(items: Datapoint[], limit: number) {

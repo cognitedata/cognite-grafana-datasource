@@ -1,9 +1,12 @@
-import { CDFDataQueryRequest, DataQueryRequestResponse, ResponseMetadata } from '../types';
+/* eslint-disable */
+
+import _ from 'lodash';
+import { CDFDataQueryRequest, DataQueryRequestResponse, Err, Ok, ResponseMetadata } from 'types';
 import {
   datapoints2Tuples,
-  promiser,
   reduceTimeseries,
   labelContainsVariableProps,
+  concurrent,
 } from '../cdf/client';
 import { getDataqueryResponse, getMeta } from './utils';
 
@@ -65,39 +68,18 @@ describe('CDF datasource', () => {
     });
   });
 
-  describe('promiser', () => {
+  describe('concurrent', () => {
     it('should return failures and successes', async () => {
-      const queries = ([0, 1, 2, 3] as unknown) as CDFDataQueryRequest[];
-      const metadatas = (['a', 'b', 'c', 'd'] as unknown) as ResponseMetadata[];
-      const results = await promiser(queries, metadatas, async (query, metadata) => {
-        const queryNumber = (query as unknown) as number;
-        const metadataStr = (metadata as unknown) as string;
-        if (queryNumber % 2) {
-          throw new Error(metadataStr);
+      const queries = [0, 1, 2, 3] ;
+      const results = await concurrent(queries, async (number) => {
+        if (number % 2) {
+          return new Err(number);
         }
-        return (query as unknown) as DataQueryRequestResponse;
+        return new Ok(number);
       });
       expect(results).toEqual({
-        failed: [
-          {
-            error: new Error('b'),
-            metadata: 'b',
-          },
-          {
-            error: new Error('d'),
-            metadata: 'd',
-          },
-        ],
-        succeded: [
-          {
-            result: 0,
-            metadata: 'a',
-          },
-          {
-            result: 2,
-            metadata: 'c',
-          },
-        ],
+        succeded: [0, 2],
+        failed: [1, 3],
       });
     });
   });

@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import {
   DataQueryRequest,
   DataQuery as DataQueryUI,
@@ -157,9 +158,35 @@ export type FailResponse = {
   error: any;
 };
 
-export type Responses = {
-  failed: FailResponse[];
-  succeded: SuccessResponse[];
+export abstract class Result<T, E> {
+  abstract isOk: boolean;
+  abstract isErr: boolean;
+}
+export class Ok<T, E> implements Result<T, E> {
+  value: T;
+
+  constructor(v: T) {
+    this.value = v;
+  }
+
+  isOk: boolean = true;
+  isErr: boolean = false;
+}
+
+export class Err<T, E> implements Result<T, E> {
+  error: E;
+
+  constructor(error: E) {
+    this.error = error;
+  }
+
+  isOk: boolean = false;
+  isErr: boolean = true;
+}
+
+export type Responses<T, U> = {
+  succeded: T[];
+  failed: U[];
 };
 
 export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
