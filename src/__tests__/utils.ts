@@ -100,11 +100,11 @@ const instanceSettings = {
 } as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>;
 
 export const getMockedDataSource = () => {
-  // const templateSrvMock = getTemplateSrvMock();
+  const templateSrvMock = getTemplateSrvMock();
   const backendSrvMock = getBackendSrvMock();
   return {
     backendSrvMock,
-    ds: new CogniteDatasource(instanceSettings, backendSrvMock), //, templateSrvMock),
+    ds: new CogniteDatasource(instanceSettings, backendSrvMock, templateSrvMock),
   };
 };
 

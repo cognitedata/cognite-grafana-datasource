@@ -12,7 +12,7 @@ export class CogniteAnnotationsQueryCtrl {
     this.annotation.error = '';
 
     try {
-      const withReplacedVariable = CogniteDatasource.replaceVariable(this.annotation.query);
+      const withReplacedVariable = this.datasource.replaceVariable(this.annotation.query);
       parse(withReplacedVariable);
     } catch ({ message }) {
       this.annotation.error = message;

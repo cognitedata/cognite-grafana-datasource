@@ -1,6 +1,4 @@
-import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS } from '@grafana/runtime';
-import _ from 'lodash';
-import fp, { any } from 'lodash/fp';
+import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
   TimeRange,
   DataSourceApi,
@@ -82,14 +80,19 @@ export default class CogniteDatasource extends DataSourceApi<
   project: string;
   connector: Connector;
 
+  templateSrv: TemplateSrv;
+
   constructor(
     instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>,
-    backendSrv?: BackendSrv
+    backendSrv?: BackendSrv,
+    templateSrv?: TemplateSrv
   ) {
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
     const backendServer = backendSrv == null ? getBackendSrv() : backendSrv;
+
+    this.templateSrv = templateSrv == null ? getTemplateSrv() : templateSrv;
     this.url = url;
     this.connector = new Connector(jsonData.cogniteProject, url, backendServer);
     this.project = jsonData.cogniteProject;
@@ -139,7 +142,7 @@ export default class CogniteDatasource extends DataSourceApi<
         let labels = [];
         try {
           labels = (await getLabelsForTarget(target, items, this.connector)).map((label) =>
-            CogniteDatasource.replaceVariable(label, options.scopedVars)
+            this.replaceVariable(label, options.scopedVars)
           );
         } catch (err) {
           handleError(err, target.refId);
@@ -171,7 +174,7 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     };
 
-    const requests = _.zip(queries, metadata);
+    const requests = queries.map((query, i) => [query, metadata[i]]); // zip
     return concurrent(requests, queryProxy);
   }
 
@@ -191,15 +194,15 @@ export default class CogniteDatasource extends DataSourceApi<
         return timeseries.map(({ id }) => ({ id }));
       }
       case Tab.Custom: {
-        const templatedExpr = CogniteDatasource.replaceVariable(expr, options.scopedVars);
+        const templatedExpr = this.replaceVariable(expr, options.scopedVars);
         const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
         return formQueriesForExpression(templatedExpr, target, this.connector, defaultInterval);
       }
     }
   }
 
-  static replaceVariable(query: string, scopedVars?): string {
-    return getTemplateSrv().replace(query.trim(), scopedVars);
+  replaceVariable(query: string, scopedVars?): string {
+    return this.templateSrv.replace(query.trim(), scopedVars);
   }
 
   /**
@@ -217,7 +220,7 @@ export default class CogniteDatasource extends DataSourceApi<
       return [];
     }
 
-    const replacedVariablesQuery = CogniteDatasource.replaceVariable(query);
+    const replacedVariablesQuery = this.replaceVariable(query);
     const { filters, params } = parseQuery(replacedVariablesQuery);
     const timeFrame = {
       startTime: { max: endTime },
@@ -283,7 +286,7 @@ export default class CogniteDatasource extends DataSourceApi<
     { refId, assetQuery }: QueryTarget,
     { scopedVars }: QueryOptions
   ): Promise<TimeSeriesResponseItem[]> {
-    const assetId = CogniteDatasource.replaceVariable(assetQuery.target, scopedVars);
+    const assetId = this.replaceVariable(assetQuery.target, scopedVars);
     const filter = assetQuery.includeSubtrees
       ? {
           assetSubtreeIds: [{ id: Number(assetId) }],
