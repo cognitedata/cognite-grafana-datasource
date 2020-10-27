@@ -1,5 +1,4 @@
 import _, { get, cloneDeep } from 'lodash';
-import fp from 'lodash/fp';
 import { TimeSeries } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
@@ -222,11 +221,10 @@ export async function concurrent<TQuery, TResult, TError>(
   queries: TQuery[],
   queryProxy: (query: TQuery) => Promise<Result<TResult, TError>>
 ): Promise<Responses<TResult, TError>> {
-  const later = _.map(queries, (query) => queryProxy(query));
+  const later = queries.map(queryProxy);
   const results = await Promise.all(later);
-  const [oks, errs] = _.partition(results, (res) => res.isOk);
-  const succeded = _.map(oks, (x: Ok<TResult, TError>) => x.value);
-  const failed = _.map(errs, (x: Err<TResult, TError>) => x.error);
+  const failed = results.filter((res) => res.isErr).map((err: Err<TResult, TError>) => err.error);
+  const succeded = results.filter((res) => res.isOk).map((ok: Ok<TResult, TError>) => ok.value);
 
   return { succeded, failed };
 }
