@@ -1,17 +1,7 @@
-/* tslint:disable */
-
-/* eslint-disable */
-
-import CogniteDatasource from '../datasource';
-import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
 import ms from 'ms';
 import { DataSourceInstanceSettings } from '@grafana/data';
-
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
+import CogniteDatasource from '../datasource';
+import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
 
 const variables = [
   { name: 'AssetVariable', current: { text: 'asset1', value: 123 } },
@@ -59,7 +49,7 @@ const getTemplateSrvMock = () =>
     variables,
     replace: jest.fn((q, options) => {
       let query = q;
-      for (const { name, current } of variables) {
+      variables.forEach(({ name, current }) => {
         const varSyntax1 = new RegExp(`\\[\\[${name}\\]\\]`, 'g');
         const varSyntax2 = new RegExp(`\\$${name}`, 'g');
         const varSyntax3 = new RegExp(
@@ -69,35 +59,35 @@ const getTemplateSrvMock = () =>
         query = query.replace(varSyntax1, current.value);
         query = query.replace(varSyntax2, current.value);
         query = query.replace(varSyntax3, current.value);
-      }
+      });
       return query;
     }),
   } as any);
 
-const instanceSettings = {
+const instanceSettings = ({
   id: 1,
-  //orgId: 1,
+  // orgId: 1,
   name: 'Cognite Test Data',
-  //typeLogoUrl: '',
+  // typeLogoUrl: '',
   type: 'cognitedata-platform-datasource',
-  //access: '',
+  // access: '',
   url: '/api/datasources/proxy/6',
   password: '',
-  //user: '',
+  // user: '',
   database: '',
   basicAuth: '',
-  //basicAuthPassword: '',
-  //basicAuthUser: '',
-  //isDefault: true,
+  // basicAuthPassword: '',
+  // basicAuthUser: '',
+  // isDefault: true,
   jsonData: {
     authType: '',
     defaultRegion: '',
     cogniteProject: 'TestProject',
   },
-  //readOnly: false,
+  // readOnly: false,
   withCredentials: false,
-  //secureJsonFields: {},
-} as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>;
+  // secureJsonFields: {},
+} as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>;
 
 export const getMockedDataSource = () => {
   const templateSrvMock = getTemplateSrvMock();

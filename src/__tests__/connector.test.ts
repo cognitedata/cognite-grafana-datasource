@@ -58,10 +58,9 @@ describe('connector', () => {
     });
 
     it('should reject if at least one chunk was rejected', async () => {
-      const error = new Error('1');
       datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
-      datasourceRequest.mockImplementationOnce(async () => Promise.reject(error));
-      await expect(connector.chunkAndFetch({ path, data, method }, 1)).rejects.toEqual(error);
+      datasourceRequest.mockImplementationOnce(async () => Promise.reject(1));
+      await expect(connector.chunkAndFetch({ path, data, method }, 1)).rejects.toEqual(1);
       expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
       expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
       expect(datasourceRequest).toHaveBeenCalledTimes(2);
