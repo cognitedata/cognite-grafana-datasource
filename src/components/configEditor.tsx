@@ -7,9 +7,7 @@ const { SecretFormField, FormField } = LegacyForms;
 
 type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions>;
 
-interface State { }  // eslint-disable-line
-
-export class ConfigEditor extends PureComponent<Props, State> {
+export class ConfigEditor extends PureComponent<Props> {
   onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
