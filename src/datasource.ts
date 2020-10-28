@@ -1,65 +1,60 @@
-import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
-  TimeRange,
+  AnnotationEvent,
+  AnnotationQueryRequest,
+  AppEvents,
+  DataQueryRequest,
   DataSourceApi,
   DataSourceInstanceSettings,
-  DataQueryRequest,
-  AppEvents,
-  AnnotationQueryRequest,
-  AnnotationEvent,
+  TimeRange,
 } from '@grafana/data';
-import { List } from '@grafana/ui';
-
-import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
+import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
+import {
+  concurrent,
+  datapointsPath,
+  formQueriesForTargets,
+  getCalculationWarnings,
+  getLabelsForTarget,
+  getLimitsWarnings,
+  getTimeseries,
+  reduceTimeseries,
+  stringifyError,
+} from './cdf/client';
+import {
+  AssetsFilterRequestParams,
+  EventsFilterRequestParams,
+  FilterRequest,
+  TimeSeriesResponseItem,
+} from './cdf/types';
+import { Connector } from './connector';
+import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
+import { ParsedFilter, QueryCondition } from './parser/types';
 import {
+  CDFDataQueryRequest,
+  CogniteAnnotationQuery,
+  CogniteDataSourceOptions,
+  CogniteQuery,
   DataQueryRequestItem,
   DataQueryRequestResponse,
+  Err,
+  FailResponse,
+  HttpMethod,
+  InputQueryTarget,
+  isError,
   MetricFindQueryResponse,
+  Ok,
   QueryOptions,
   QueryResponse,
   QueryTarget,
-  Tab,
-  VariableQueryData,
-  HttpMethod,
-  CDFDataQueryRequest,
   ResponseMetadata,
-  isError,
-  Tuple,
   Responses,
-  FailResponse,
   SuccessResponse,
-  InputQueryTarget,
-  CogniteAnnotationQuery,
-  CogniteQuery,
-  CogniteDataSourceOptions,
-  defaultQuery,
-  Result,
-  Ok,
-  Err,
+  Tab,
+  Tuple,
+  VariableQueryData,
 } from './types';
-import {
-  TimeSeriesResponseItem,
-  FilterRequest,
-  AssetsFilterRequestParams,
-  EventsFilterRequestParams,
-  Metadata,
-} from './cdf/types';
-import {
-  formQueriesForTargets,
-  getTimeseries,
-  reduceTimeseries,
-  getLimitsWarnings,
-  getCalculationWarnings,
-  datapointsPath,
-  stringifyError,
-  getLabelsForTarget,
-  concurrent,
-} from './cdf/client';
-import { Connector } from './connector';
-import { ParsedFilter, QueryCondition } from './parser/types';
-import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
 const { alertWarning } = AppEvents;
 
@@ -174,7 +169,7 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     };
 
-    const requests = queries.map((query, i) => [query, metadata[i]]); // zip
+    const requests = queries.map((query, i) => [query, metadata[i]]); // I.e queries.zip(metadata)
     return concurrent(requests, queryProxy);
   }
 

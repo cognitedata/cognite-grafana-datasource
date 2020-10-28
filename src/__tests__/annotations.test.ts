@@ -1,11 +1,3 @@
-/* eslint-disable */
-describe('Noop', () => {
-  it('should match', () => {
-    expect(42).toEqual(42);
-  });
-});
-
-/*
 import * as _ from 'lodash';
 import { getMockedDataSource } from './utils';
 
@@ -159,7 +151,7 @@ describe('Annotations Query', () => {
     };
     const response = _.cloneDeep(annotationResponse);
     response.data.items = annotationResponse.data.items.filter(
-      item => item.assetIds.some(id => id === 123) && item.type === 'type 1'
+      (item) => item.assetIds.some((id) => id === 123) && item.type === 'type 1'
     );
 
     beforeAll(async () => {
@@ -179,7 +171,7 @@ describe('Annotations Query', () => {
       const expectedEvents = ['event 1', 'time out of bounds'];
 
       expect(result.length).toEqual(2);
-      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
+      expect(expectedEvents.every((text) => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -195,7 +187,7 @@ describe('Annotations Query', () => {
       },
     };
     const response = _.cloneDeep(annotationResponse);
-    response.data.items = annotationResponse.data.items.filter(item => item.metadata);
+    response.data.items = annotationResponse.data.items.filter((item) => item.metadata);
 
     beforeAll(async () => {
       backendSrvMock.datasourceRequest = jest
@@ -277,7 +269,7 @@ describe('Annotations Query', () => {
       const expectedEvents = ['event 2', 'event 3', 'event 4'];
 
       expect(result.length).toEqual(3);
-      expect(expectedEvents.every(text => resultIds.includes(text))).toBeTruthy();
+      expect(expectedEvents.every((text) => resultIds.includes(text))).toBeTruthy();
     });
   });
 
@@ -358,4 +350,3 @@ describe('Annotations Query', () => {
     });
   });
 });
- */
