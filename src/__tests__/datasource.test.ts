@@ -44,7 +44,7 @@ describe('Datasource Query', () => {
 
   afterEach(() => {
     jest.runAllTimers();
-    options.panelId++;
+    options.panelId += 1;
   });
 
   describe('Given an older queryTarget format', () => {
