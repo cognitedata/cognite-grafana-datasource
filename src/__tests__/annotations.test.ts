@@ -287,6 +287,7 @@ describe('Annotations Query', () => {
     const annotationOption2: any = {
       ...annotationOption1,
       annotation: {
+        // eslint-disable-next-line no-template-curly-in-string
         query: 'events{assetIds=[${MultiValue:csv}]}',
       },
     };
