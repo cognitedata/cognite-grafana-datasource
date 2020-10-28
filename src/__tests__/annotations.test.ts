@@ -11,8 +11,8 @@ describe('Annotations Query', () => {
           id: 1,
           assetIds: [123, 456, 789],
           description: 'event 1',
-          startTime: '1549336675000',
-          endTime: '1549336775000',
+          startTime: 1549336675000,
+          endTime: 1549336775000,
           type: 'type 1',
           subtype: 'subtype 1',
         },
@@ -20,8 +20,8 @@ describe('Annotations Query', () => {
           id: 2,
           assetIds: [123],
           description: 'event 2',
-          startTime: '1549336775000',
-          endTime: '1549336875000',
+          startTime: 1549336775000,
+          endTime: 1549336875000,
           type: 'type 2',
           subtype: 'subtype 2',
         },
@@ -29,8 +29,8 @@ describe('Annotations Query', () => {
           id: 3,
           assetIds: [456],
           description: 'event 3',
-          startTime: '1549336875000',
-          endTime: '1549336975000',
+          startTime: 1549336875000,
+          endTime: 1549336975000,
           type: 'type 3',
           subtype: 'subtype 3',
         },
@@ -38,8 +38,8 @@ describe('Annotations Query', () => {
           id: 4,
           assetIds: [789],
           description: 'event 4',
-          startTime: '1549336975000',
-          endTime: '1549337075000',
+          startTime: 1549336975000,
+          endTime: 1549337075000,
           type: 'type 4',
           subtype: 'subtype 4',
         },
@@ -47,8 +47,8 @@ describe('Annotations Query', () => {
           id: 5,
           assetIds: [123, 456, 789],
           description: 'time out of bounds',
-          startTime: '1549336600000',
-          endTime: '1549338500000',
+          startTime: 1549336600000,
+          endTime: 1549338500000,
           type: 'type 1',
           subtype: 'subtype 2',
           metadata: { key1: 'value1', key2: 'value2' },
@@ -70,8 +70,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: '',
@@ -92,8 +92,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: 'events{}',
@@ -117,8 +117,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{type='type 5'}",
@@ -142,8 +142,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{assetIds=[123], type='type 1'}",
@@ -179,8 +179,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{metadata={key1='value1', key2='value2'}}",
@@ -213,8 +213,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{type='non-existant type'}",
@@ -244,8 +244,8 @@ describe('Annotations Query', () => {
     let result;
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{description=~'event.*', type!='type 1'}",
@@ -277,8 +277,8 @@ describe('Annotations Query', () => {
     let result1;
     const annotationOption1: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: "events{assetIds=[$AssetVariable], description!~'event.*'}",
@@ -319,8 +319,8 @@ describe('Annotations Query', () => {
   describe('Given an annotation query with an incomplete event expression', () => {
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: 'events{ ',
@@ -338,8 +338,8 @@ describe('Annotations Query', () => {
   describe('Given an annotation query with an incorrect event expression', () => {
     const annotationOption: any = {
       range: {
-        from: '1549336675000',
-        to: '1549338475000',
+        from: 1549336675000,
+        to: 1549338475000,
       },
       annotation: {
         query: 'events{ name=~event, foo}',
