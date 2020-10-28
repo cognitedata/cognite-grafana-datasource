@@ -83,16 +83,19 @@ export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;
 }
 
-export interface TimeSeriesResponseItem {
+export interface Resource {
   id: number;
   externalId?: string;
   name?: string;
+  description?: string;
+}
+
+export interface TimeSeriesResponseItem extends Resource {
   isString?: boolean;
   metadata?: Record<string, string>;
   unit?: string;
   assetId?: string;
   isStep: boolean;
-  description?: string;
   source?: string;
   sourceId?: string;
   createdTime: number;

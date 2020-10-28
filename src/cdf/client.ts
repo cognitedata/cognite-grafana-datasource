@@ -7,6 +7,7 @@ import {
   Datapoint,
   IdEither,
   TimeSeriesResponseItem,
+  Resource,
 } from './types';
 import {
   Tab,
@@ -150,7 +151,7 @@ export async function getTimeseries(
       data,
       method,
       path: `/timeseries/byids`,
-      cacheTime: CacheTime.TimeseriesByIds,
+      cacheTime: CacheTime.ResourceByIds,
     });
   } else {
     items = await connector.fetchAndPaginate({
@@ -162,6 +163,24 @@ export async function getTimeseries(
   }
 
   return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
+}
+
+export function fetchSingleTimeseries(id: number, connector: Connector) {
+  return connector.fetchItems<Resource>({
+    data: { items: [{ id }] },
+    path: `/timeseries/byids`,
+    method: HttpMethod.POST,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchSingleAsset(id: number, connector: Connector) {
+  return connector.fetchItems<Resource>({
+    data: { items: [{ id }] },
+    path: `/assets/byids`,
+    method: HttpMethod.POST,
+    cacheTime: CacheTime.ResourceByIds,
+  });
 }
 
 export function stringifyError(error: any) {

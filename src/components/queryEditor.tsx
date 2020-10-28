@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import defaults from 'lodash/defaults';
 
 import React, { useState, useEffect, FormEvent } from 'react';
@@ -11,95 +10,66 @@ import {
   InlineFormLabel,
   Icon,
   Switch,
+  AsyncSelect,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { customQueryHelp } from './queryHelp';
-import CogniteDatasource from '../datasource';
+import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import { defaultQuery, CogniteDataSourceOptions, CogniteQuery, Tab as Tabs } from '../types';
 
 const { FormField } = LegacyForms;
 type Props = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
 
-const getOptions = (props: Props, query: string, type: string) => {
-  const [result, setResult] = React.useState([]);
-  const { datasource } = props;
-  useEffect(() => {
-    datasource
-      .getOptionsForDropdown(query || '', type)
-      .then((options) => {
-        return options;
-      })
-      .then((res) =>
-        res.map<SelectableValue<string>>((x) => ({
-          label: x.text,
-          description: x.text,
-          value: x.value.toString(),
-        }))
-      )
-      .then((res) => setResult(res));
-  }, [query]);
-
-  return result;
-};
-
-const aggregation = [
-  { value: 'none', name: 'None' },
-  { value: 'average', name: 'Average' },
-  { value: 'max', name: 'Max' },
-  { value: 'min', name: 'Min' },
-  { value: 'count', name: 'Count' },
-  { value: 'sum', name: 'Sum' },
-  { value: 'interpolation', name: 'Interpolation' },
-  { value: 'stepInterpolation', name: 'Step Interpolation' },
-  { value: 'continuousVariance', name: 'Continuous Variance' },
-  { value: 'discreteVariance', name: 'Discrete Variance' },
-  { value: 'totalVariation', name: 'Total Variation' },
+const aggregateOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'average', label: 'Average' },
+  { value: 'max', label: 'Max' },
+  { value: 'min', label: 'Min' },
+  { value: 'count', label: 'Count' },
+  { value: 'sum', label: 'Sum' },
+  { value: 'interpolation', label: 'Interpolation' },
+  { value: 'stepInterpolation', label: 'Step Interpolation' },
+  { value: 'continuousVariance', label: 'Continuous Variance' },
+  { value: 'discreteVariance', label: 'Discrete Variance' },
+  { value: 'totalVariation', label: 'Total Variation' },
 ];
 
-const options = aggregation.map<SelectableValue<string>>((agg) => ({
-  value: agg.value,
-  label: agg.name,
-  description: undefined,
-}));
+const onQueryChange = (props: Props, patch: Partial<CogniteQuery>) => {
+  const { query, onRunQuery, onChange } = props;
+  onChange({ ...query, ...patch });
+  onRunQuery();
+};
 
 const onAggregationChange = (props: Props, aggregation: string) => {
-  const { query, onRunQuery } = props;
-  props.onChange({ ...query, aggregation });
-  onRunQuery();
+  onQueryChange(props, { aggregation });
 };
 
 const onGranularityChange = (props: Props, granularity: string) => {
-  const { query, onRunQuery } = props;
-  props.onChange({ ...query, granularity });
-  onRunQuery();
+  onQueryChange(props, { granularity });
 };
 
 const onLabelChange = (props: Props, label: string) => {
-  const { query, onRunQuery } = props;
-  props.onChange({ ...query, label });
-  onRunQuery();
+  onQueryChange(props, { label });
 };
 
-const onTagChange = (props: Props, tag: number) => {
-  const { query, onRunQuery } = props;
-  props.onChange({ ...query, target: tag });
-  onRunQuery();
+const onTagChange = (props: Props, target: number) => {
+  onQueryChange(props, { target });
 };
 
-const onQueryChange = (props: Props, expr: string) => {
-  const { query, onRunQuery } = props;
-  props.onChange({ ...query, expr });
-  onRunQuery();
+const onAssetQueryChange = (props: Props, assetQuery: CogniteQuery['assetQuery']) => {
+  onQueryChange(props, { assetQuery });
+};
+
+const onCustomQueryChange = (props: Props, expr: string) => {
+  onQueryChange(props, { expr });
 };
 
 const GranularityEditor = (props: Props) => {
   const { query } = props;
-  if (query.aggregation && query.aggregation !== 'none') {
-    return (
-      <div
-        className="gf-form"
-        /* ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'" */
-      >
+  return (
+    query.aggregation &&
+    query.aggregation !== 'none' && (
+      <div className="gf-form">
         <FormField
           label="Granularity"
           labelWidth={6}
@@ -110,192 +80,187 @@ const GranularityEditor = (props: Props) => {
           tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
         />
       </div>
-    );
-  }
-  return <div />;
+    )
+  );
 };
 
-export function AssetTab(props: Props) {
-  const { query, datasource, onRunQuery, onChange } = props;
-  const [tagQuery, setTagQuery] = React.useState('');
+const AggregationEditor = (props: Props) => {
+  const { query } = props;
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
+      <Select
+        onChange={({ value }) => onAggregationChange(props, value)}
+        options={aggregateOptions}
+        menuPosition="fixed"
+        value={query.aggregation}
+        className="width-10"
+      />
+    </div>
+  );
+};
 
-  const IncludeSubAssetsCheckbox = () => {
-    const { includeSubtrees } = query.assetQuery;
+const LabelEditor = (props: Props) => {
+  const { query } = props;
+  return (
+    <div className="gf-form gf-form--grow">
+      <FormField
+        label="Label"
+        labelWidth={6}
+        inputWidth={10}
+        onChange={({ target }) => onLabelChange(props, target.value)}
+        value={query.label}
+        placeholder="default"
+        tooltip="Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
+      />
+    </div>
+  );
+};
 
-    const onIncludeSubassetsChange = (event: FormEvent<HTMLInputElement>) => {
-      const { checked } = event.currentTarget;
-      props.onChange({ ...query, assetQuery: { ...query.assetQuery, includeSubtrees: checked } });
-    };
+const CommonEditors = (props: Props) => (
+  <>
+    {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+    <AggregationEditor {...props} />
+    {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+    <GranularityEditor {...props} />
+    {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+    <LabelEditor {...props} />
+  </>
+);
 
-    // FIXME: Styling of checkbox component
-    return (
-      <div className="gf-form">
-        <InlineFormLabel width={9}>Include Subassets</InlineFormLabel>
-        <div className="gf-form-switch">
-          <Switch css="" value={includeSubtrees} onChange={onIncludeSubassetsChange} />
-        </div>
-      </div>
-    );
+const IncludeSubAssetsCheckbox = (props: Props) => {
+  const { query } = props;
+  const { includeSubtrees } = query.assetQuery;
+
+  const onIncludeSubtreesChange = (checked: boolean) => {
+    onAssetQueryChange(props, {
+      ...query.assetQuery,
+      includeSubtrees: checked,
+    });
   };
+
+  // FIXME: Styling of checkbox component
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Include sub-assets</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={includeSubtrees}
+          onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
+        />
+      </div>
+    </div>
+  );
+};
+
+function AssetTab(props: Props) {
+  const { query, datasource } = props;
+
+  const [current, setCurrent] = useState<SelectableValue<string>>({
+    value: query.assetQuery.target,
+  });
+
+  const fetchAndSetDropdownLabel = async (assetId: number) => {
+    const [res] = await datasource.fetchSingleAsset(assetId);
+    setCurrent(resource2DropdownOption(res));
+  };
+
+  useEffect(() => {
+    onAssetQueryChange(props, {
+      ...query.assetQuery,
+      target: current.value,
+    });
+  }, [current.value]);
+
+  useEffect(() => {
+    if (current.value && !current.label) {
+      fetchAndSetDropdownLabel(+current.value);
+    }
+  }, [current.value]);
 
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <InlineFormLabel width={6}>Asset Tag</InlineFormLabel>
-        <Select
-          onChange={(ev) => onTagChange(props, +ev.value)}
-          options={getOptions(props, tagQuery, 'Asset')}
-          defaultValue={tagQuery}
-          placeholder="Start typing asset tag"
+        <AsyncSelect
+          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
+          value={current}
+          placeholder="Search asset by name/description"
           className="width-20"
+          onChange={setCurrent}
         />
       </div>
-      {/* TODO: Include Subassets box */}
-      <IncludeSubAssetsCheckbox />
-      {/* TODO: Aggregation */}
-      <div className="gf-form">
-        <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
-        <Select
-          onChange={(ev) => onAggregationChange(props, ev.value)}
-          options={options}
-          defaultValue={query.aggregation}
-          className="width-10"
-        />
-      </div>
-      <GranularityEditor {...props} />
-      {/* TODO: Label} */}
-      <div className="gf-form gf-form--grow">
-        <FormField
-          label="Label"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onLabelChange(props, ev.target.value)}
-          value={query.label}
-          placeholder="default"
-          tooltip="Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
-        />
-      </div>
-
-      {/*
-      <div class="gf-form">
-        <gf-form-switch class="gf-form"
-          label="Include Subassets" label-class="width-9 query-keyword fix-query-keyword"
-          checked="ctrl.target.assetQuery.includeSubtrees" on-change="ctrl.refreshData()">
-        </gf-form-switch>
-      </div>
-      <div class="gf-form">
-        <label class="gf-form-label query-keyword fix-query-keyword">Aggregation</label>
-        <select class="gf-form-input" ng-model="ctrl.target.aggregation" ng-change="ctrl.refreshData()">
-        <option ng-repeat="fn in ctrl.aggregation" value="{{fn.value}}">{{fn.name}}</option>
-        </select>
-      </div>
-      <div class="gf-form" ng-if="ctrl.target.aggregation && ctrl.target.aggregation !== 'none'">
-        <label class="gf-form-label query-keyword fix-query-keyword">Granularity</label>
-        <input type="text" class="gf-form-input width-8" ng-model="ctrl.target.granularity" ng-blur="ctrl.refreshData()" placeholder="default"/>
-        <info-popover mode="right-absolute">
-          The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.
-        </info-popover>
-      </div>
-      <div class="gf-form gf-form--grow">
-          <label class="gf-form-label query-keyword fix-query-keyword">Label</label>
-          <input type="text" class="gf-form-input" ng-model="ctrl.target.label" ng-blur="ctrl.refreshData()" placeholder=""/>
-          <info-popover mode="right-absolute">
-            <span ng-non-bindable>
-              Set the label for the timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}
-            </span>
-          </info-popover>
-      </div> */}
+      {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+      <IncludeSubAssetsCheckbox {...props} />
+      {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+      <CommonEditors {...props} />
     </div>
   );
 }
 
-export function TimeseriesTab(props: Props) {
+function TimeseriesTab(props: Props) {
   const { query, datasource } = props;
-  const [tagQuery, setTagQuery] = React.useState('');
+
+  const [current, setCurrent] = useState<SelectableValue<string>>({
+    value: query.target as string,
+  });
+
+  const fetchAndSetDropdownLabel = async (tsId: number) => {
+    const [res] = await datasource.fetchSingleTimeseries(tsId);
+    setCurrent(resource2DropdownOption(res));
+  };
+
+  useEffect(() => {
+    onTagChange(props, +current.value);
+  }, [current.value]);
+
+  useEffect(() => {
+    if (current.value && !current.label) {
+      fetchAndSetDropdownLabel(+current.value);
+    }
+  }, [current.value]);
 
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
         <InlineFormLabel width={6}>Tag</InlineFormLabel>
-        <Select
-          onChange={(ev) => onTagChange(props, +ev.value)}
-          options={getOptions(props, tagQuery, 'Timeseries')}
-          defaultValue={tagQuery}
-          placeholder="Start typing tag id here"
-          onInputChange={(text) => setTagQuery(text)}
+        <AsyncSelect
+          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Timeseries')}
+          value={current}
+          placeholder="Search time series by name/description"
           className="width-20"
+          onChange={setCurrent}
         />
       </div>
-      <div className="gf-form">
-        <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
-        <Select
-          onChange={(ev) => onAggregationChange(props, ev.value)}
-          options={options}
-          defaultValue={query.aggregation}
-          className="width-10"
-        />
-      </div>
-      {GranularityEditor(props)}
-      <div className="gf-form gf-form--grow">
-        <FormField
-          label="Label"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onLabelChange(props, ev.target.value)}
-          value={query.label}
-          placeholder="default"
-          tooltip="Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
-        />
-      </div>
+      {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+      <CommonEditors {...props} />
     </div>
   );
 }
 
-export function CustomTab(props: Props) {
-  const { query, datasource } = props;
+function CustomTab(props: Props) {
+  const { query, datasource, onRunQuery } = props;
   const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(onRunQuery, [query.expr]);
 
   return (
     <>
-      <div className="gf-form-inline">
-        <FormField
-          label="Label"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={(ev) => onLabelChange(props, ev.target.value)}
-          value={query.label}
-          placeholder="default"
-          tooltip="Set the label for each timeseries. Can also access timeseries properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
-        />
-
-        <div className="gf-form">
-          <InlineFormLabel
-            width={6}
-            tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-          >
-            Aggregation
-          </InlineFormLabel>
-          <Select
-            onChange={(ev) => onAggregationChange(props, ev.value)}
-            options={options}
-            defaultValue={query.aggregation}
-            className="width-10"
-          />
-          <GranularityEditor {...props} />
-        </div>
-      </div>
-
-      <div className="gf-form gf-form--grow">
+      <div className="gf-form">
         <FormField
           label="Query"
           labelWidth={6}
-          inputWidth={20}
-          onChange={(ev) => onQueryChange(props, ev.target.value)}
+          inputWidth={30}
+          onChange={(ev) => onCustomQueryChange(props, ev.target.value)}
           value={query.expr}
-          placeholder="default"
           tooltip="Click help button for help."
         />
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+      </div>
+      <div className="gf-form-inline">
+        {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+        <CommonEditors {...props} />
       </div>
       {showHelp && customQueryHelp}
     </>
@@ -304,11 +269,9 @@ export function CustomTab(props: Props) {
 
 export function QueryEditor(props: Props) {
   const { query } = props;
-  const queryOrDefault = defaults(query, defaultQuery);
-  const { tab } = queryOrDefault;
-  const activeTab = tab;
+  const { tab } = defaults(query, defaultQuery);
 
-  const onSelectTab = (tab: Tabs) => {
+  const onSelectTab = (tab: Tabs) => () => {
     props.onChange({ ...query, tab });
   };
 
@@ -316,19 +279,16 @@ export function QueryEditor(props: Props) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
-          <Tab
-            css=""
-            label={t}
-            key="first"
-            active={activeTab === t}
-            onChangeTab={() => onSelectTab(t)}
-          />
+          <Tab css="" label={t} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
         ))}
       </TabsBar>
       <TabContent>
-        {activeTab === Tabs.Asset && <AssetTab {...props} />}
-        {activeTab === Tabs.Timeseries && <TimeseriesTab {...props} />}
-        {activeTab === Tabs.Custom && <CustomTab {...props} />}
+        {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+        {tab === Tabs.Asset && <AssetTab {...props} />}
+        {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+        {tab === Tabs.Timeseries && <TimeseriesTab {...props} />}
+        {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
+        {tab === Tabs.Custom && <CustomTab {...props} />}
       </TabContent>
     </div>
   );

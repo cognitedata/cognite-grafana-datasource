@@ -6,6 +6,7 @@ import {
   DataSourceApi,
   DataSourceInstanceSettings,
   TimeRange,
+  SelectableValue,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
@@ -18,15 +19,23 @@ import {
   getTimeseries,
   reduceTimeseries,
   stringifyError,
+  fetchSingleAsset,
+  fetchSingleTimeseries,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
   FilterRequest,
   TimeSeriesResponseItem,
+  Resource,
 } from './cdf/types';
 import { Connector } from './connector';
-import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+import {
+  CacheTime,
+  datapointsWarningEvent,
+  failedResponseEvent,
+  TIMESERIES_LIMIT_WARNING,
+} from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -250,7 +259,7 @@ export default class CogniteDatasource extends DataSourceApi<
     query: string,
     type?: string,
     options?: any
-  ): Promise<MetricFindQueryResponse> {
+  ): Promise<SelectableValue<string>[]> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
@@ -266,15 +275,10 @@ export default class CogniteDatasource extends DataSourceApi<
       path: `/${resources[type]}/search`,
       method: HttpMethod.POST,
       params: options,
+      cacheTime: CacheTime.Dropdown,
     });
 
-    return items.map(({ name, externalId, id, description }) => {
-      const displayName = name || externalId;
-      return {
-        text: description ? `${displayName} (${description})` : displayName,
-        value: id.toString(),
-      };
-    });
+    return items.map(resource2DropdownOption);
   }
 
   async findAssetTimeseries(
@@ -328,7 +332,7 @@ export default class CogniteDatasource extends DataSourceApi<
       limit: 1000,
     };
 
-    const assets = await this.connector.fetchItems<any>({
+    const assets = await this.connector.fetchItems<Resource>({
       data,
       path: `/assets/list`,
       method: HttpMethod.POST,
@@ -340,6 +344,14 @@ export default class CogniteDatasource extends DataSourceApi<
       text: name,
       value: id,
     }));
+  }
+
+  public fetchSingleTimeseries(id: number) {
+    return fetchSingleTimeseries(id, this.connector);
+  }
+
+  public fetchSingleAsset(id: number) {
+    return fetchSingleAsset(id, this.connector);
   }
 
   /**
@@ -391,6 +403,17 @@ function handleFailedTargets(failed: FailResponse[]) {
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
     .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
+}
+
+export function resource2DropdownOption(resource: Resource): SelectableValue<string> {
+  const { name, externalId, id, description } = resource;
+  const value = id.toString();
+  const label = name || externalId || value;
+  return {
+    description,
+    label,
+    value,
+  };
 }
 
 export function getRange(range: TimeRange): Tuple<number> {

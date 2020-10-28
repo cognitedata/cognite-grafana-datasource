@@ -1,7 +1,4 @@
-/* eslint-disable */
-
-import _ from 'lodash';
-import { CDFDataQueryRequest, DataQueryRequestResponse, Err, Ok, ResponseMetadata } from 'types';
+import { Err, Ok } from '../types';
 import {
   datapoints2Tuples,
   reduceTimeseries,
@@ -70,7 +67,7 @@ describe('CDF datasource', () => {
 
   describe('concurrent', () => {
     it('should return failures and successes', async () => {
-      const queries = [0, 1, 2, 3] ;
+      const queries = [0, 1, 2, 3];
       const results = await concurrent(queries, async (number) => {
         if (number % 2) {
           return new Err(number);
