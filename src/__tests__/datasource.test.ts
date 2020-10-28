@@ -1,10 +1,6 @@
-import { cloneDeep } from 'lodash';
 import ms from 'ms';
-import { failedResponseEvent } from '../constants';
-
-import { getMockedDataSource, getDataqueryResponse, getItemsResponseObject } from './utils';
-import { Tab, InputQueryTarget, QueryTarget } from '../types';
-import { filterEmptyQueryTargets } from '../datasource';
+import { InputQueryTarget, Tab } from '../types';
+import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 
 jest.mock('grafana/app/core/utils/datemath');
 jest.mock('grafana/app/core/core');
@@ -151,7 +147,9 @@ describe('Datasource Query', () => {
       expect(result.data[2].target).toEqual(`${description}-${targetC}`);
     });
   });
-  /*
+});
+
+/*
   describe('Given "Select Timeseries" queries with errors', () => {
     let result;
     const tsTargetA: QueryTargetLike = {
@@ -590,11 +588,11 @@ describe('Datasource Query', () => {
     });
   });
 });
-
+*/
 describe('Given custom query with pure text label', () => {
   beforeAll(async () => {
     jest.clearAllMocks();
-    backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async x => {
+    backendSrvMock.datasourceRequest = jest.fn().mockImplementation(async (x) => {
       return getDataqueryResponse(x.data, externalIdPrefix, 0);
     });
   });
@@ -630,5 +628,4 @@ describe('custom query granularity less then a second', () => {
       'granularity="1s"}'
     );
   });
-  */
 });
