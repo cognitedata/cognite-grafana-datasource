@@ -85,20 +85,16 @@ export default class CogniteDatasource extends DataSourceApi<
   connector: Connector;
 
   templateSrv: TemplateSrv;
+  backendSrv: BackendSrv;
 
-  constructor(
-    instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>,
-    backendSrv?: BackendSrv,
-    templateSrv?: TemplateSrv
-  ) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
-    const backendServer = backendSrv == null ? getBackendSrv() : backendSrv;
-
-    this.templateSrv = templateSrv == null ? getTemplateSrv() : templateSrv;
+    this.backendSrv = getBackendSrv();
+    this.templateSrv = getTemplateSrv();
     this.url = url;
-    this.connector = new Connector(jsonData.cogniteProject, url, backendServer);
+    this.connector = new Connector(jsonData.cogniteProject, url, this.backendSrv);
     this.project = jsonData.cogniteProject;
   }
 

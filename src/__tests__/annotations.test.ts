@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
 import { getMockedDataSource } from './utils';
 
-const { ds, backendSrvMock } = getMockedDataSource();
+jest.mock('@grafana/runtime');
+type Mock = jest.Mock;
+const ds = getMockedDataSource();
+const { backendSrv } = ds;
 
 describe('Annotations Query', () => {
   const annotationResponse = {
@@ -83,7 +86,7 @@ describe('Annotations Query', () => {
     });
 
     it('should return nothing', () => {
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
       expect(result).toEqual([]);
     });
   });
@@ -101,14 +104,14 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(annotationResponse));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should return all events', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
       expect(result.length).toEqual(annotationResponse.data.items.length);
     });
   });
@@ -126,14 +129,14 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve({ data: { items: [] } }));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should return empty array', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
       expect(result).toEqual([]);
     });
   });
@@ -155,15 +158,13 @@ describe('Annotations Query', () => {
     );
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct events', () => {
@@ -190,15 +191,13 @@ describe('Annotations Query', () => {
     response.data.items = annotationResponse.data.items.filter((item) => item.metadata);
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct event', () => {
@@ -224,15 +223,13 @@ describe('Annotations Query', () => {
     response.data.items = [];
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct events', () => {
@@ -253,15 +250,15 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(annotationResponse));
       result = await ds.annotationQuery(annotationOption);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct events', () => {
@@ -293,7 +290,7 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(annotationResponse));
 
@@ -302,8 +299,8 @@ describe('Annotations Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(2);
-      backendSrvMock.datasourceRequest.mock.calls.forEach(([request]) => {
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(2);
+      (backendSrv.datasourceRequest as Mock).mock.calls.forEach(([request]) => {
         expect(request).toMatchSnapshot();
       });
     });
@@ -327,11 +324,11 @@ describe('Annotations Query', () => {
       },
     };
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest.mockReset();
+      (backendSrv.datasourceRequest as Mock).mockReset();
     });
     it('should throw a parse error', () => {
       expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
     });
   });
 
@@ -347,7 +344,7 @@ describe('Annotations Query', () => {
     };
     it('should throw a parse error', () => {
       expect(ds.annotationQuery(annotationOption)).rejects.toThrowErrorMatchingSnapshot();
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
     });
   });
 });

@@ -2,7 +2,10 @@ import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { Tab } from '../types';
 
-const { ds, backendSrvMock } = getMockedDataSource();
+jest.mock('@grafana/runtime');
+type Mock = jest.Mock;
+const ds = getMockedDataSource();
+const { backendSrv } = ds;
 
 function getTimeseriesResponse(items) {
   return {
@@ -59,15 +62,15 @@ describe('Dropdown Options Query', () => {
   describe('Given an empty request for asset options', () => {
     let result;
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.getOptionsForDropdown('', Tab.Asset);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return all assets', () => {
@@ -82,15 +85,13 @@ describe('Dropdown Options Query', () => {
       item.externalId.startsWith('asset')
     );
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.getOptionsForDropdown('asset', Tab.Asset);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the assets with asset in their name', () => {
@@ -108,15 +109,13 @@ describe('Dropdown Options Query', () => {
       metadata: '{"key1":"value1"}',
     };
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.getOptionsForDropdown('asset', Tab.Asset, optionsObj);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the assets with asset in their name and metadata.key1 = value1', () => {
@@ -127,15 +126,15 @@ describe('Dropdown Options Query', () => {
   describe('Given an empty request for timeseries options', () => {
     let result;
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(tsResponse));
       result = await ds.getOptionsForDropdown('', Tab.Timeseries);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return all timeseries', () => {
@@ -150,15 +149,13 @@ describe('Dropdown Options Query', () => {
       (item) => item.description && item.description.startsWith('test')
     );
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.getOptionsForDropdown('Timeseries', Tab.Timeseries);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return timeseries with Timeseries in their name', () => {

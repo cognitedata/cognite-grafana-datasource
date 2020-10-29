@@ -3,13 +3,6 @@ import { DataSourceInstanceSettings } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
 
-const variables = [
-  { name: 'AssetVariable', current: { text: 'asset1', value: 123 } },
-  { name: 'TimeseriesVariable', current: { text: 'timeseries1', value: 'Timeseries1' } },
-  { name: 'MultiValue', current: { text: 'asset2', value: [123, 456] } },
-  { name: 'Type', current: { text: 'type', value: '"type_or_subtype"' } },
-];
-
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,
   externalIdPrefix = 'externalId-',
@@ -39,31 +32,6 @@ export function getItemsResponseObject(items, aggregates?: string) {
   };
 }
 
-const getBackendSrvMock = () =>
-  ({
-    datasourceRequest: jest.fn(),
-  } as any);
-
-const getTemplateSrvMock = () =>
-  ({
-    variables,
-    replace: jest.fn((q, options) => {
-      let query = q;
-      variables.forEach(({ name, current }) => {
-        const varSyntax1 = new RegExp(`\\[\\[${name}\\]\\]`, 'g');
-        const varSyntax2 = new RegExp(`\\$${name}`, 'g');
-        const varSyntax3 = new RegExp(
-          `\\$\\{${name}:(json|csv|glob|regex|pipe|distributed|lucene|percentencode|singlequote|doublequote|sqlstring)}`,
-          'g'
-        );
-        query = query.replace(varSyntax1, current.value);
-        query = query.replace(varSyntax2, current.value);
-        query = query.replace(varSyntax3, current.value);
-      });
-      return query;
-    }),
-  } as any);
-
 const instanceSettings = ({
   id: 1,
   // orgId: 1,
@@ -89,15 +57,7 @@ const instanceSettings = ({
   // secureJsonFields: {},
 } as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>;
 
-export const getMockedDataSource = () => {
-  const templateSrvMock = getTemplateSrvMock();
-  const backendSrvMock = getBackendSrvMock();
-  return {
-    backendSrvMock,
-    ds: new CogniteDatasource(instanceSettings, backendSrvMock, templateSrvMock),
-    templateSrvMock,
-  };
-};
+export const getMockedDataSource = () => new CogniteDatasource(instanceSettings);
 
 export function getMeta(id, aggregation, labels) {
   return {
