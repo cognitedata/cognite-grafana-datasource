@@ -1,6 +1,10 @@
 import ms from 'ms';
-import { InputQueryTarget, Tab } from '../types';
+import { SystemJS } from '@grafana/runtime';
+import { cloneDeep } from 'lodash';
+import { filterEmptyQueryTargets } from '../datasource';
+import { InputQueryTarget, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
+import { failedResponseEvent } from '../constants';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
@@ -10,6 +14,11 @@ type QueryTargetLike = Partial<InputQueryTarget>;
 const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
+let appEvents;
+
+SystemJS.load('app/core/app_events').then((module) => {
+  appEvents = module;
+});
 
 const tsError = {
   status: 400,
@@ -79,7 +88,7 @@ describe('Datasource Query', () => {
     it('should give correct meta responses', async () => {
       expect(results.succeded[0].metadata).toEqual({
         target: oldTarget,
-        labels: [],
+        labels: [''],
       });
       expect(results.succeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
     });
@@ -147,9 +156,7 @@ describe('Datasource Query', () => {
       expect(result.data[2].target).toEqual(`${description}-${targetC}`);
     });
   });
-});
 
-/*
   describe('Given "Select Timeseries" queries with errors', () => {
     let result;
     const tsTargetA: QueryTargetLike = {
@@ -252,21 +259,21 @@ describe('Datasource Query', () => {
         .mockRejectedValueOnce({})
         .mockImplementationOnce(() => Promise.resolve(tsResponseC))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
-        .mockImplementation(x => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
+        .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
 
     it('should generate the correct queries', () => {
       expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(8);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; ++i) {
+      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
         expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
 
     it('should replace filter assetQuery [[variable]] with its value', () => {
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.filter.assetIds[0]).toEqual(
-        '123'
-      );
+      expect(
+        (backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.filter.assetIds[0]
+      ).toEqual('123');
     });
 
     it('should return correct datapoints and labels', () => {
@@ -338,7 +345,7 @@ describe('Datasource Query', () => {
       const listMock = async () => {
         return cloneDeep(tsResponse);
       };
-      const dataMock = async x => {
+      const dataMock = async (x) => {
         return getDataqueryResponse(x.data, externalIdPrefix, 0);
       };
       backendSrv.datasourceRequest = jest
@@ -351,12 +358,12 @@ describe('Datasource Query', () => {
       result = await ds.query(options);
     });
     afterAll(() => {
-      templateSrv.replace.mockClear();
+      (templateSrv.replace as Mock).mockClear();
     });
 
     it('should generate the correct filtered queries', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(5);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; ++i) {
+      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
         expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
@@ -428,7 +435,7 @@ describe('Datasource Query', () => {
 
     it('should generate the correct filtered queries', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(5);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; ++i) {
+      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
         expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
@@ -588,7 +595,6 @@ describe('Datasource Query', () => {
     });
   });
 });
-*/
 describe('Given custom query with pure text label', () => {
   beforeAll(async () => {
     jest.clearAllMocks();

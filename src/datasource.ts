@@ -111,7 +111,8 @@ export default class CogniteDatasource extends DataSourceApi<
         showWarnings(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        throw new Error('Internal error: should not happen'); // FIXME: use app-events (or something)
+        /* eslint-disable-next-line no-console  */
+        console.error(error); // TODO: use app-events or something
       }
     }
 
@@ -385,12 +386,11 @@ export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarge
         case Tab.Custom:
           return target.expr;
         case Tab.Timeseries:
-        case undefined:
         default:
           return target.target;
       }
     }
-    return target.target;
+    return false;
   }) as QueryTarget[];
 }
 

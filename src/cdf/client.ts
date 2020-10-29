@@ -88,6 +88,7 @@ export async function getLabelsForTarget(
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
+    default:
     case Timeseries: {
       return [await getTimeseriesLabel(labelSrc, target.target, connector)];
     }
@@ -107,8 +108,6 @@ export async function getLabelsForTarget(
       }
       return queryList.map(() => labelSrc);
     }
-    default:
-      throw new Error('Internal error: unexpected tab');
   }
 }
 
