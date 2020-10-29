@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable */ // TODO: remove this
 import { TimeSeriesResponseItem, IdEither } from '../../cdf/types';
 import { DataQueryRequestItem, QueryTarget } from '../../types';
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
@@ -6,7 +6,7 @@ import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
 import { getTimeseries, getLabelWithInjectedProps } from '../../cdf/client';
 import { Connector } from '../../connector';
-import { FilterTypeStr, FilterType } from '../types';
+import { FilterTypes, FilterType } from '../types';
 import { applyFilters } from '../../utils';
 import { parseWith } from '../events-assets/index';
 import getFilterDeep from 'deepdash/getFilterDeep';
@@ -408,7 +408,7 @@ const hasIdsFilter = (obj: STSReference) => {
 };
 
 const isEqualsFilter = (query: any): query is STSServerFilter => {
-  return isSTSFilter(query) && query.filter === FilterTypeStr.Equals;
+  return isSTSFilter(query) && query.filter === FilterTypes.Equals;
 };
 
 const isOneOf = (value: string, ...arr: string[]) => {

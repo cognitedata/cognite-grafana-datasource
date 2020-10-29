@@ -20,10 +20,10 @@ import {
   STSQuery,
   enrichWithDefaultAggregates,
 } from './index';
-import { FilterTypeStr } from '../types';
+import { FilterTypes } from '../types';
 import { TimeSeriesResponseItem } from '../../cdf/types';
 
-const { NotEquals, Equals, RegexEquals } = FilterTypeStr;
+const { NotEquals, Equals, RegexEquals } = FilterTypes;
 const STS = STSReference;
 const Filter = STSFilter;
 

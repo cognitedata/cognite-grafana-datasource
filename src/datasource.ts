@@ -50,7 +50,7 @@ import {
   HttpMethod,
   InputQueryTarget,
   isError,
-  MetricFindQueryResponse,
+  MetricDescription,
   Ok,
   QueryOptions,
   QueryResponse,
@@ -308,7 +308,7 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query }: VariableQueryData): Promise<MetricFindQueryResponse> {
+  async metricFindQuery({ query }: VariableQueryData): Promise<MetricDescription[]> {
     let params: QueryCondition;
     let filters: ParsedFilter[];
 

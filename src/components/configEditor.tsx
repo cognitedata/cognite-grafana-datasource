@@ -1,11 +1,11 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { CogniteDataSourceOptions, MySecureJsonData } from '../types';
+import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
 
 const { SecretFormField, FormField } = LegacyForms;
 
-type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions>;
+type Props = DataSourcePluginOptionsEditorProps<CogniteDataSourceOptions, CogniteSecureJsonData>;
 
 export class ConfigEditor extends PureComponent<Props> {
   onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +60,7 @@ export class ConfigEditor extends PureComponent<Props> {
   render() {
     const { options } = this.props;
     const { jsonData, secureJsonFields } = options;
-    const secureJsonData = (options.secureJsonData || {}) as MySecureJsonData;
+    const secureJsonData = options.secureJsonData || {};
     const tooltip = `This is the URL used to reach the API.
       If the project is deployed on the default multi-tenant installation (most are),
       then keep the default value and do not change the URL.

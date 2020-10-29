@@ -6,10 +6,10 @@ import {
   DataQuery,
   DataSourceJsonData,
 } from '@grafana/data';
-import { TimeSeriesResponseItem, Datapoints, Items, IdEither, Limit } from './cdf/types';
+import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export interface CogniteQuery extends DataQuery {
-  target: number | ''; // Timeseries internal Id:
+  target: number | ''; // time series internal Id
   aggregation: string;
   granularity: string;
   error: string;
@@ -26,25 +26,19 @@ export enum Tab {
   Custom = 'Custom',
 }
 
-export const defaultAssetQuery: AssetQuery = {
+const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
 };
 
-// TODO: Investigate if "type" property is required, it is currently not defined in MyQuery
-// These defaults are extracted from the old queryCtrl.ts
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
-  // type: 'timeserie',
   aggregation: 'average',
   granularity: '',
   label: '',
   tab: Tab.Timeseries,
   expr: '',
-  assetQuery: {
-    target: '',
-    includeSubtrees: false,
-  },
+  assetQuery: defaultAssetQuery,
 };
 
 /**
@@ -53,12 +47,10 @@ export const defaultQuery: Partial<CogniteQuery> = {
 
 export interface CogniteDataSourceOptions extends DataSourceJsonData {
   cogniteApiUrl?: string;
-  authType: string;
-  defaultRegion: string;
   cogniteProject: string;
 }
 
-export interface MySecureJsonData {
+export interface CogniteSecureJsonData {
   apiKey?: string;
 }
 
@@ -69,14 +61,6 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
-/**
- * Comes from grafana, could be imported in future releases hopefully
- * @param name – event name
- */
-export const eventFactory = <T = undefined>(name: string): AppEvent<T> => {
-  return { name };
-};
-
 export type QueryResponse = DataResponse<TimeSeries[]>;
 
 export interface MetricDescription {
@@ -84,21 +68,9 @@ export interface MetricDescription {
   readonly value: number | string;
 }
 
-export type MetricFindQueryResponse = MetricDescription[];
-
-export enum ParseType {
-  Timeseries = 'Timeseries',
-  Asset = 'Asset',
-  Event = 'Event',
-}
-
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
-  old?: AssetQuery;
-  timeseries?: TimeSeriesResponseItem[];
-  func?: string;
-  templatedTarget?: string;
 }
 
 export interface InputQueryTarget extends DataQueryUI {
@@ -116,8 +88,6 @@ export interface InputQueryTarget extends DataQueryUI {
 export interface QueryTarget extends InputQueryTarget {
   target: number;
 }
-
-export type QueryFormat = 'json';
 
 export type QueryOptions = DataQueryRequest<InputQueryTarget>;
 
@@ -227,13 +197,6 @@ export type QueriesData = {
 
 export type ResponseMetadata = { labels: string[]; target: QueryTarget };
 
-export interface DataQueryAlias {
-  alias: string;
-  id: number;
-  aggregate?: string;
-  granularity?: string;
-}
-
 export type DataQueryRequestItem = {
   expression?: string;
   start?: string | number;
@@ -259,28 +222,6 @@ export interface CDFDataQueryRequest {
 export interface CogniteAnnotationQuery extends DataQuery {
   query?: string;
   error?: string;
-}
-
-export interface AnnotationSearchQuery {
-  description: string;
-  type: string;
-  subtype: string;
-  minStartTime: number;
-  maxStartTime: number;
-  minEndTime: number;
-  maxEndTime: number;
-  minCreatedTime: number;
-  maxCreatedTime: number;
-  minLastUpdatedTime: number;
-  maxLastUpdatedTime: number;
-  // format is {"k1": "v1", "k2": "v2"}
-  metadata: string;
-  assetIds: number[];
-  assetSubtrees: number[];
-  sort: 'startTime' | 'endTime' | 'createdTime' | 'lastUpdatedTime';
-  dir: 'asc' | 'desc';
-  limit: number;
-  offset: 0;
 }
 
 export interface DataResponse<T> {
