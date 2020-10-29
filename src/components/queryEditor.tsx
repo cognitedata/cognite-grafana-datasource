@@ -13,12 +13,23 @@ import {
   AsyncSelect,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { SystemJS } from '@grafana/runtime';
 import { customQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
-import { defaultQuery, CogniteDataSourceOptions, CogniteQuery, Tab as Tabs } from '../types';
+import {
+  defaultQuery,
+  CogniteDataSourceOptions,
+  CogniteQuery,
+  Tab as Tabs,
+  QueryRequestError,
+  QueryDatapointsWarning,
+} from '../types';
+import { failedResponseEvent, datapointsWarningEvent } from '../constants';
+import '../css/query_editor.css';
 
 const { FormField } = LegacyForms;
 type Props = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
+const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
   { value: 'none', label: 'None' },
@@ -270,10 +281,46 @@ function CustomTab(props: Props) {
 export function QueryEditor(props: Props) {
   const { query } = props;
   const { tab } = defaults(query, defaultQuery);
+  const { refId: thisRefId } = query;
+  const [errorMessage, setErrorMessage] = useState('');
+  const [warningMessage, setWarningMessage] = useState('');
 
   const onSelectTab = (tab: Tabs) => () => {
     props.onChange({ ...query, tab });
   };
+
+  const handleError = ({ refId, error }: QueryRequestError) => {
+    if (thisRefId === refId) {
+      setErrorMessage(error);
+    }
+  };
+  const handleWarning = ({ refId, warning }: QueryDatapointsWarning) => {
+    if (thisRefId === refId) {
+      setWarningMessage(warning);
+    }
+  };
+
+  const eventsSubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.on(failedResponseEvent, handleError);
+    appEvents.on(datapointsWarningEvent, handleWarning);
+  };
+
+  const eventsUnsubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.off(failedResponseEvent, handleError);
+    appEvents.off(datapointsWarningEvent, handleWarning);
+  };
+
+  useEffect(() => {
+    setErrorMessage('');
+    setWarningMessage('');
+  }, [query]);
+
+  useEffect(() => {
+    eventsSubscribe();
+    return () => eventsUnsubscribe();
+  }, [tab]);
 
   return (
     <div>
@@ -290,6 +337,8 @@ export function QueryEditor(props: Props) {
         {/* eslint-disable-next-line react/jsx-props-no-spreading  */}
         {tab === Tabs.Custom && <CustomTab {...props} />}
       </TabContent>
+      {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
+      {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}
     </div>
   );
 }

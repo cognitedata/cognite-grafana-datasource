@@ -35,7 +35,7 @@ export const formQueriesForExpression = async (
     serverFilters.map(async filter => {
       const tsResult = await getTimeseries({ filter }, connector, false);
       if (!tsResult.length) {
-        throw NoTimeseriesFound(filter, expression);
+        throw NoTimeseriesFound(expression, filter);
       }
       return tsResult;
     })
@@ -48,13 +48,15 @@ export const formQueriesForExpression = async (
     multiaryFuncTsIndices
   );
   const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
+  if (!queryExpressions.length) {
+    throw NoTimeseriesFound(expression);
+  }
   return queryExpressions.map(expression => ({ expression }));
 };
 
-const NoTimeseriesFound = (filter: StringMap, expr: string) => {
-  return new Error(
-    `No timeseries found for filter ${JSON.stringify(filter)} in expression ${expr}`
-  );
+const NoTimeseriesFound = (expr: string, filter?: StringMap) => {
+  const where = filter ? ` ${JSON.stringify(filter)}` : 's'
+  return new Error(`No timeseries found for filter${where} in expression ${expr}`)
 };
 
 /**

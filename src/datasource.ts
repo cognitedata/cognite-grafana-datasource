@@ -1,7 +1,6 @@
 import {
   AnnotationEvent,
   AnnotationQueryRequest,
-  AppEvents,
   DataQueryRequest,
   DataSourceApi,
   DataSourceInstanceSettings,
@@ -65,7 +64,7 @@ import {
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
-const { alertWarning } = AppEvents;
+const appEventsLoader = SystemJS.load('app/core/app_events');
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
@@ -296,14 +295,9 @@ export default class CogniteDatasource extends DataSourceApi<
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, this.connector);
     if (ts.length === limit) {
-      SystemJS.load('app/core/app_events').then((appEvents: any) => {
-        appEvents.emit(datapointsWarningEvent, {
-          refId,
-          warning: TIMESERIES_LIMIT_WARNING,
-        });
-      });
-      SystemJS.load('app/core/app_events').then((appEvents: any) => {
-        appEvents.emit(datapointsWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+      (await appEventsLoader).emit(datapointsWarningEvent, {
+        refId,
+        warning: TIMESERIES_LIMIT_WARNING,
       });
 
       ts.splice(-1);
@@ -420,9 +414,7 @@ export function getRange(range: TimeRange): Tuple<number> {
 
 function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
-  SystemJS.load('app/core/app_events').then((appEvents: any) => {
-    appEvents.emit(failedResponseEvent, { refId, error: errMessage });
-  });
+  appEventsLoader.then((events) => events.emit(failedResponseEvent, { refId, error: errMessage }));
 }
 
 function showWarnings(responses: SuccessResponse[]) {
@@ -435,9 +427,7 @@ function showWarnings(responses: SuccessResponse[]) {
       .join('\n');
 
     if (warning) {
-      SystemJS.load('app/core/app_events').then((appEvents: any) => {
-        appEvents.emit(datapointsWarningEvent, { refId, warning });
-      });
+      appEventsLoader.then((events) => events.emit(datapointsWarningEvent, { refId, warning }));
     }
   });
 }
