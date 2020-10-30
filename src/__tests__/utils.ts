@@ -34,27 +34,18 @@ export function getItemsResponseObject(items, aggregates?: string) {
 
 const instanceSettings = ({
   id: 1,
-  // orgId: 1,
   name: 'Cognite Test Data',
-  // typeLogoUrl: '',
   type: 'cognitedata-platform-datasource',
-  // access: '',
   url: '/api/datasources/proxy/6',
   password: '',
-  // user: '',
   database: '',
   basicAuth: '',
-  // basicAuthPassword: '',
-  // basicAuthUser: '',
-  // isDefault: true,
   jsonData: {
     authType: '',
     defaultRegion: '',
     cogniteProject: 'TestProject',
   },
-  // readOnly: false,
   withCredentials: false,
-  // secureJsonFields: {},
 } as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>;
 
 export const getMockedDataSource = () => new CogniteDatasource(instanceSettings);

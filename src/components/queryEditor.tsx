@@ -121,7 +121,6 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
     });
   };
 
-  // FIXME: Styling of checkbox component
   return (
     <div className="gf-form">
       <InlineFormLabel width={9}>Include sub-assets</InlineFormLabel>

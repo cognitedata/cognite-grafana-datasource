@@ -55,8 +55,6 @@ module.exports = {
         "import/no-cycle": "off",
         // Disable "prefer default export" since we don't use default exports
         "import/prefer-default-export": "off",
-        // FIXME: Should we use this rule? It looks like "no-extraneous-dependencies" complains about deps that may be provided by grafana toolkit. (deps that aren't defined in package.json)
-        "import/no-extraneous-dependencies": "off",
         // FIXME: Should we enforce blank lines between class members? It makes code a tad bit more readable. If not, set this to "off"
         "@typescript-eslint/lines-between-class-members": "off",
         "@typescript-eslint/no-shadow": "off",
