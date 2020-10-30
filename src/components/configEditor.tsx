@@ -37,7 +37,7 @@ export class ConfigEditor extends PureComponent<Props> {
     onOptionsChange({
       ...options,
       secureJsonData: {
-        apiKey: event.target.value,
+        cogniteDataPlatformApiKey: event.target.value,
       },
     });
   };
@@ -48,11 +48,11 @@ export class ConfigEditor extends PureComponent<Props> {
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        apiKey: false,
+        cogniteDataPlatformApiKey: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        apiKey: '',
+        cogniteDataPlatformApiKey: '',
       },
     });
   };
@@ -85,7 +85,7 @@ export class ConfigEditor extends PureComponent<Props> {
           <div className="gf-form">
             <SecretFormField
               isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
-              value={secureJsonData.apiKey || ''}
+              value={secureJsonData.cogniteDataPlatformApiKey || ''}
               label="API Key"
               placeholder="Cognite Data Fusion API key"
               labelWidth={6}

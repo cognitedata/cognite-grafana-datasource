@@ -51,7 +51,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
 }
 
 export interface CogniteSecureJsonData {
-  apiKey?: string;
+  cogniteDataPlatformApiKey?: string;
 }
 
 /**
