@@ -1,6 +1,6 @@
 import defaults from 'lodash/defaults';
 
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -169,6 +169,7 @@ function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
           value={current}
+          defaultOptions
           placeholder="Search asset by name/description"
           className="width-20"
           onChange={setCurrent}
@@ -208,6 +209,7 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
         <InlineFormLabel width={6}>Tag</InlineFormLabel>
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Timeseries')}
+          defaultOptions
           value={current}
           placeholder="Search time series by name/description"
           className="width-20"
@@ -222,6 +224,7 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
 function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   const { query, onQueryChange, onRunQuery } = props;
   const [showHelp, setShowHelp] = useState(false);
+  const [value, setValue] = useState(query.expr);
 
   useEffect(onRunQuery, [query.expr]);
 
@@ -232,8 +235,9 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           label="Query"
           labelWidth={6}
           inputWidth={30}
-          onChange={({ target }) => onQueryChange({ expr: target.value })}
-          value={query.expr}
+          onChange={({ target }) => setValue(target.value)}
+          onBlur={() => onQueryChange({ expr: value })}
+          value={value}
           tooltip="Click help button for help."
         />
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />

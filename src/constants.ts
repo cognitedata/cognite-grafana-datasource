@@ -13,5 +13,5 @@ export const CacheTime = {
   TimeseriesList: '61s',
   ResourceByIds: '61m',
   Default: '11s',
-  Dropdown: '1m',
+  Dropdown: '3m',
 };
