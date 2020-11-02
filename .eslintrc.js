@@ -5,11 +5,7 @@ https://github.com/typescript-eslint/tslint-to-eslint-config
 It represents the closest reasonable ESLint configuration to this
 project's original TSLint configuration.
 
-We recommend eventually switching this configuration to extend from
-the recommended rulesets in typescript-eslint.
-https://github.com/typescript-eslint/tslint-to-eslint-config/blob/master/docs/FAQs.md
-
-Happy linting! 💖
+TODO: switch to eslint-recommended/grafana config.
 */
 module.exports = {
     "env": {
@@ -61,5 +57,4 @@ module.exports = {
         "@typescript-eslint/no-throw-literal": "off",
         "prefer-promise-reject-errors": "off"
     },
-    //"ignorePatterns":["*/**/grammar.ts", "src/__tests__/**", "node_modules/**", "/src/parser/**"]
 };

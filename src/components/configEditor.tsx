@@ -84,7 +84,7 @@ export class ConfigEditor extends PureComponent<Props> {
         <div className="gf-form-inline">
           <div className="gf-form">
             <SecretFormField
-              isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
+              isConfigured={secureJsonFields?.cogniteDataPlatformApiKey as boolean}
               value={secureJsonData.cogniteDataPlatformApiKey || ''}
               label="API Key"
               placeholder="Cognite Data Fusion API key"
