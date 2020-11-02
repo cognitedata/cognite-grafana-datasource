@@ -19,7 +19,6 @@ export class ConfigEditor extends PureComponent<Props> {
     });
   };
 
-  // TODO: Verify that this is correct.
   onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({

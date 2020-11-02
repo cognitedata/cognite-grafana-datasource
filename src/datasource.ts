@@ -75,11 +75,6 @@ export default class CogniteDatasource extends DataSourceApi<
    */
   url: string;
 
-  /*
-  id: number;
-  url: string;
-  name: string;
-  */
   project: string;
   connector: Connector;
 
