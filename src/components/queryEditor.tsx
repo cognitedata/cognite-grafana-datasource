@@ -247,9 +247,9 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
 }
 
 export function QueryEditor(props: EditorProps) {
-  const { query, onChange, onRunQuery, datasource } = props;
-  const { tab } = defaults(query, defaultQuery);
-  const { refId: thisRefId } = query;
+  const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
+  const query = defaults(queryWithoutDefaults, defaultQuery);
+  const { refId: thisRefId, tab } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
