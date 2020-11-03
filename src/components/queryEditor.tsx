@@ -222,11 +222,9 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
 }
 
 function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange, onRunQuery } = props;
+  const { query, onQueryChange } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.expr);
-
-  useEffect(onRunQuery, [query.expr]);
 
   return (
     <>
@@ -259,11 +257,13 @@ export function QueryEditor(props: EditorProps) {
 
   const onQueryChange = (patch: Partial<CogniteQuery>) => {
     onChange({ ...query, ...patch });
+    setErrorMessage('');
+    setWarningMessage('');
     onRunQuery();
   };
 
   const onSelectTab = (tab: Tabs) => () => {
-    props.onChange({ ...query, tab });
+    onQueryChange({ tab });
   };
 
   const handleError = ({ refId, error }: QueryRequestError) => {
@@ -288,11 +288,6 @@ export function QueryEditor(props: EditorProps) {
     appEvents.off(failedResponseEvent, handleError);
     appEvents.off(datapointsWarningEvent, handleWarning);
   };
-
-  useEffect(() => {
-    setErrorMessage('');
-    setWarningMessage('');
-  }, [query]);
 
   useEffect(() => {
     eventsSubscribe();
