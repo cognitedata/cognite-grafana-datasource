@@ -1,14 +1,22 @@
+import _, { get, cloneDeep } from 'lodash';
+import { TimeSeries } from '@grafana/data';
+import {
+  TimeSeriesDatapoint,
+  Timestamp,
+  Items,
+  Datapoint,
+  IdEither,
+  TimeSeriesResponseItem,
+  Resource,
+} from './types';
 import {
   Tab,
   QueryTarget,
-  DataQueryRequest,
+  CDFDataQueryRequest,
   DataQueryRequestItem,
   QueryOptions,
-  TimeSeriesResponseItem,
   HttpMethod,
   TimeseriesFilterQuery,
-  TimeSeriesDatapoint,
-  Timestamp,
   DataQueryRequestResponse,
   ResponseMetadata,
   Aggregates,
@@ -17,17 +25,15 @@ import {
   QueriesData,
   SuccessResponse,
   Responses,
-  IdEither,
-  Items,
-  Datapoint,
-} from './types';
-import { get, cloneDeep } from 'lodash';
-import { toGranularityWithLowerBound } from './utils';
-import { Connector } from './connector';
-import { getLabelsForExpression } from './parser/ts';
-import { getRange } from './datasource';
-import { TimeSeries } from '@grafana/ui';
-import { CacheTime, DATAPOINTS_LIMIT_WARNING } from './constants';
+  Result,
+  Ok,
+  Err,
+} from '../types';
+import { toGranularityWithLowerBound } from '../utils';
+import { Connector } from '../connector';
+import { getLabelsForExpression } from '../parser/ts';
+import { getRange } from '../datasource';
+import { CacheTime, DATAPOINTS_LIMIT_WARNING } from '../constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
@@ -36,7 +42,7 @@ export function formQueryForItems(
   items,
   { tab, aggregation, granularity },
   options
-): DataQueryRequest {
+): CDFDataQueryRequest {
   const [start, end] = getRange(options.range);
   if (tab === Custom) {
     const limit = calculateDPLimitPerQuery(items.length);
@@ -69,7 +75,7 @@ function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean 
 export function formQueriesForTargets(
   queriesData: QueriesData,
   options: QueryOptions
-): DataQueryRequest[] {
+): CDFDataQueryRequest[] {
   return queriesData.map(({ target, items }) => {
     return formQueryForItems(items, target, options);
   });
@@ -82,7 +88,7 @@ export async function getLabelsForTarget(
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
-    case undefined:
+    default:
     case Timeseries: {
       return [await getTimeseriesLabel(labelSrc, target.target, connector)];
     }
@@ -93,7 +99,7 @@ export async function getLabelsForTarget(
        * We should refactor labels logic someday
        */
       const timeseries = await getTimeseries({ items: tsIds }, connector, false);
-      return timeseries.map(ts => getLabelWithInjectedProps(labelSrc, ts));
+      return timeseries.map((ts) => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Custom: {
       if (!labelSrc || labelContainsVariableProps(labelSrc)) {
@@ -144,7 +150,7 @@ export async function getTimeseries(
       data,
       method,
       path: `/timeseries/byids`,
-      cacheTime: CacheTime.TimeseriesByIds,
+      cacheTime: CacheTime.ResourceByIds,
     });
   } else {
     items = await connector.fetchAndPaginate({
@@ -155,7 +161,25 @@ export async function getTimeseries(
     });
   }
 
-  return cloneDeep(filterIsString ? items.filter(ts => !ts.isString) : items);
+  return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
+}
+
+export function fetchSingleTimeseries(id: number, connector: Connector) {
+  return connector.fetchItems<Resource>({
+    data: { items: [{ id }] },
+    path: `/timeseries/byids`,
+    method: HttpMethod.POST,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchSingleAsset(id: number, connector: Connector) {
+  return connector.fetchItems<Resource>({
+    data: { items: [{ id }] },
+    path: `/assets/byids`,
+    method: HttpMethod.POST,
+    cacheTime: CacheTime.ResourceByIds,
+  });
 }
 
 export function stringifyError(error: any) {
@@ -166,7 +190,7 @@ export function stringifyError(error: any) {
 }
 
 export function reduceTimeseries(
-  metaResponses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[],
+  metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
 ): TimeSeries[] {
   const responseTimeseries: TimeSeries[] = [];
@@ -200,7 +224,7 @@ export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
   aggregate: string
 ): Tuple<number>[] {
-  return datapoints.map(d => datapoint2Tuple(d, aggregate));
+  return datapoints.map((d) => datapoint2Tuple(d, aggregate));
 }
 
 function datapoint2Tuple(
@@ -211,27 +235,16 @@ function datapoint2Tuple(
   return [value, dp.timestamp];
 }
 
-export async function promiser<Query, Metadata, Response>(
-  queries: Query[],
-  metadatas: Metadata[],
-  toPromise: (query: Query, metadata: Metadata) => Promise<Response>
-): Promise<Responses<Metadata, Response>> {
-  const succeded = [];
-  const failed = [];
-  const promises = queries.map(async (query, i) => {
-    const metadata = metadatas[i];
-    try {
-      const result = await toPromise(query, metadata);
-      succeded.push({ result, metadata });
-    } catch (error) {
-      failed.push({ error, metadata });
-    }
-  });
-  await Promise.all(promises);
-  return {
-    succeded,
-    failed,
-  };
+export async function concurrent<TQuery, TResult, TError>(
+  queries: TQuery[],
+  queryProxy: (query: TQuery) => Promise<Result<TResult, TError>>
+): Promise<Responses<TResult, TError>> {
+  const later = queries.map(queryProxy);
+  const results = await Promise.all(later);
+  const failed = results.filter((res) => res.isErr).map((err: Err<TResult, TError>) => err.error);
+  const succeded = results.filter((res) => res.isOk).map((ok: Ok<TResult, TError>) => ok.value);
+
+  return { succeded, failed };
 }
 
 export function getLimitsWarnings(items: Datapoint[], limit: number) {
@@ -246,7 +259,7 @@ export function getCalculationWarnings(items: Datapoint[]) {
     (datapoints as [])
       .map(({ error }) => error)
       .filter(Boolean)
-      .forEach(error => {
+      .forEach((error) => {
         datapointsErrors.add(error);
       });
   });

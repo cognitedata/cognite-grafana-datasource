@@ -1,6 +1,6 @@
 import { STSClientFilter } from './ts';
 
-export const FilterType = {
+export const FilterTypes = {
   RegexNotEquals: '!~' as FilterType,
   RegexEquals: '=~' as FilterType,
   NotEquals: '!=' as FilterType,

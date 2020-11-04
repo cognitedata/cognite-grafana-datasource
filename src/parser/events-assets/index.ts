@@ -59,7 +59,7 @@ const formatQueryParse = ({ type, query }: QueryParserResponse): ParserResponse 
     : {};
 
   const emptyFilters = omitDeep(filtered, ['filter', 'value', 'key']);
-  const filters = paths(emptyFilters, { pathFormat: 'array' }).map(path => {
+  const filters = paths(emptyFilters, { pathFormat: 'array' }).map((path) => {
     const currentPath = path.join('.');
     const parentPath = path.slice(0, -1);
     const { filter, key, value } = get(filtered, currentPath);

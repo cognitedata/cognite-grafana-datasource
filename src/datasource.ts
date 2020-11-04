@@ -1,87 +1,103 @@
-import { parse as parseDate } from 'grafana/app/core/utils/datemath';
-import { getRequestId, applyFilters, toGranularityWithLowerBound } from './utils';
-import { parse } from './parser/events-assets';
-import { formQueriesForExpression } from './parser/ts';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
-import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
-import { appEvents } from 'grafana/app/core/core';
 import {
-  CogniteDataSourceSettings,
+  AnnotationEvent,
+  AnnotationQueryRequest,
+  DataQueryRequest,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  TimeRange,
+  SelectableValue,
+} from '@grafana/data';
+import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
+import {
+  concurrent,
+  datapointsPath,
+  formQueriesForTargets,
+  getCalculationWarnings,
+  getLabelsForTarget,
+  getLimitsWarnings,
+  getTimeseries,
+  reduceTimeseries,
+  stringifyError,
+  fetchSingleAsset,
+  fetchSingleTimeseries,
+} from './cdf/client';
+import {
+  AssetsFilterRequestParams,
+  EventsFilterRequestParams,
+  FilterRequest,
+  TimeSeriesResponseItem,
+  Resource,
+} from './cdf/types';
+import { Connector } from './connector';
+import {
+  CacheTime,
+  datapointsWarningEvent,
+  failedResponseEvent,
+  TIMESERIES_LIMIT_WARNING,
+} from './constants';
+import { parse as parseQuery } from './parser/events-assets';
+import { formQueriesForExpression } from './parser/ts';
+import { ParsedFilter, QueryCondition } from './parser/types';
+import {
+  CDFDataQueryRequest,
+  CogniteAnnotationQuery,
+  CogniteDataSourceOptions,
+  CogniteQuery,
   DataQueryRequestItem,
   DataQueryRequestResponse,
-  MetricFindQueryResponse,
+  Err,
+  FailResponse,
+  HttpMethod,
+  InputQueryTarget,
+  isError,
+  MetricDescription,
+  Ok,
   QueryOptions,
   QueryResponse,
   QueryTarget,
-  Tab,
-  TimeSeriesResponseItem,
-  VariableQueryData,
-  HttpMethod,
-  DataQueryRequest,
   ResponseMetadata,
-  isError,
-  Tuple,
-  MetaResponses,
-  FailResponse,
+  Responses,
   SuccessResponse,
-  InputQueryTarget,
-  AnnotationResponse,
-  AnnotationQueryOptions,
-  FilterRequest,
-  AssetsFilterRequestParams,
-  EventsFilterRequestParams,
+  Tab,
+  Tuple,
+  VariableQueryData,
 } from './types';
-import {
-  formQueriesForTargets,
-  getTimeseries,
-  reduceTimeseries,
-  promiser,
-  getLimitsWarnings,
-  getCalculationWarnings,
-  datapointsPath,
-  stringifyError,
-  getLabelsForTarget,
-} from './cdfDatasource';
-import { Connector } from './connector';
-import { TimeRange } from '@grafana/ui';
-import { ParsedFilter, QueryCondition } from './parser/types';
-import { datapointsWarningEvent, failedResponseEvent, TIMESERIES_LIMIT_WARNING } from './constants';
+import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
-const { Asset, Custom, Timeseries } = Tab;
-const { POST } = HttpMethod;
+const appEventsLoader = SystemJS.load('app/core/app_events');
 
-export default class CogniteDatasource {
+export default class CogniteDatasource extends DataSourceApi<
+  CogniteQuery,
+  CogniteDataSourceOptions
+> {
   /**
    * Parameters that are needed by grafana
    */
-  id: number;
   url: string;
-  name: string;
 
   project: string;
   connector: Connector;
 
-  /** @ngInject */
-  constructor(
-    instanceSettings: CogniteDataSourceSettings,
-    backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv
-  ) {
-    this.id = instanceSettings.id;
-    this.url = instanceSettings.url;
-    this.name = instanceSettings.name;
+  templateSrv: TemplateSrv;
+  backendSrv: BackendSrv;
+
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
+    super(instanceSettings);
+
     const { url, jsonData } = instanceSettings;
+    this.backendSrv = getBackendSrv();
+    this.templateSrv = getTemplateSrv();
+    this.url = url;
+    this.connector = new Connector(jsonData.cogniteProject, url, this.backendSrv);
     this.project = jsonData.cogniteProject;
-    this.connector = new Connector(jsonData.cogniteProject, url, backendSrv);
   }
 
   /**
    * used by panels to get timeseries data
    */
-  async query(options: QueryOptions): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets);
     let responseData = [];
-
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
@@ -89,7 +105,8 @@ export default class CogniteDatasource {
         showWarnings(succeded);
         responseData = reduceTimeseries(succeded, getRange(options.range));
       } catch (error) {
-        console.error(error); // not sure it ever happens
+        /* eslint-disable-next-line no-console  */
+        console.error(error); // TODO: use app-events or something
       }
     }
 
@@ -99,17 +116,19 @@ export default class CogniteDatasource {
   async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions
-  ): Promise<MetaResponses> {
-    const itemsForTargetsPromises = queryTargets.map(async target => {
+  ): Promise<Responses<SuccessResponse, FailResponse>> {
+    const itemsForTargetsPromises = queryTargets.map(async (target) => {
+      let items: DataQueryRequestItem[];
       try {
-        const items = await this.getDataQueryRequestItems(target, options);
-        return { items, target };
+        items = await this.getDataQueryRequestItems(target, options);
       } catch (e) {
         handleError(e, target.refId);
       }
+      return { items, target };
     });
+
     const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
-      data => data?.items?.length
+      (data) => data?.items?.length
     );
 
     const queries = formQueriesForTargets(queryData, options);
@@ -117,7 +136,7 @@ export default class CogniteDatasource {
       queryData.map(async ({ target, items }) => {
         let labels = [];
         try {
-          labels = (await getLabelsForTarget(target, items, this.connector)).map(label =>
+          labels = (await getLabelsForTarget(target, items, this.connector)).map((label) =>
             this.replaceVariable(label, options.scopedVars)
           );
         } catch (err) {
@@ -127,24 +146,31 @@ export default class CogniteDatasource {
       })
     );
 
-    return promiser<DataQueryRequest, ResponseMetadata, DataQueryRequestResponse>(
-      queries,
-      metadata,
-      async (data, { target }) => {
-        const isSynthetic = data.items.some(q => !!q.expression);
-        const chunkSize = isSynthetic ? 10 : 100;
+    const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
+      const { target } = metadata;
+      const isSynthetic = data.items.some((q) => !!q.expression);
+      const chunkSize = isSynthetic ? 10 : 100;
 
-        return this.connector.chunkAndFetch<DataQueryRequest, DataQueryRequestResponse>(
-          {
-            data,
-            path: datapointsPath(isSynthetic),
-            method: POST,
-            requestId: getRequestId(options, target),
-          },
-          chunkSize
-        );
+      const request = {
+        data,
+        path: datapointsPath(isSynthetic),
+        method: HttpMethod.POST,
+        requestId: getRequestId(options, target),
+      };
+
+      try {
+        const result = await this.connector.chunkAndFetch<
+          CDFDataQueryRequest,
+          DataQueryRequestResponse
+        >(request, chunkSize);
+        return new Ok({ result, metadata });
+      } catch (error) {
+        return new Err({ error, metadata });
       }
-    );
+    };
+
+    const requests = queries.map((query, i) => [query, metadata[i]]); // I.e queries.zip(metadata)
+    return concurrent(requests, queryProxy);
   }
 
   private async getDataQueryRequestItems(
@@ -153,11 +179,12 @@ export default class CogniteDatasource {
   ): Promise<DataQueryRequestItem[]> {
     const { tab, target: tsId, assetQuery, expr } = target;
     switch (tab) {
+      default:
       case undefined:
-      case Timeseries: {
+      case Tab.Timeseries: {
         return [{ id: tsId }];
       }
-      case Asset: {
+      case Tab.Asset: {
         const timeseries = await this.findAssetTimeseries(target, options);
         return timeseries.map(({ id }) => ({ id }));
       }
@@ -176,12 +203,12 @@ export default class CogniteDatasource {
   /**
    * used by dashboards to get annotations (events)
    */
-  async annotationQuery(options: AnnotationQueryOptions): Promise<AnnotationResponse[]> {
-    const {
-      range,
-      annotation,
-      annotation: { query, error },
-    } = options;
+
+  async annotationQuery(
+    options: AnnotationQueryRequest<CogniteAnnotationQuery>
+  ): Promise<AnnotationEvent[]> {
+    const { range, annotation } = options;
+    const { query, error } = annotation;
     const [startTime, endTime] = getRange(range);
 
     if (error || !query) {
@@ -189,7 +216,7 @@ export default class CogniteDatasource {
     }
 
     const replacedVariablesQuery = this.replaceVariable(query);
-    const { filters, params } = parse(replacedVariablesQuery);
+    const { filters, params } = parseQuery(replacedVariablesQuery);
     const timeFrame = {
       startTime: { max: endTime },
       endTime: { min: startTime },
@@ -202,7 +229,7 @@ export default class CogniteDatasource {
     const items = await this.connector.fetchItems<any>({
       data,
       path: `/events/list`,
-      method: POST,
+      method: HttpMethod.POST,
     });
     const response = applyFilters(items, filters);
 
@@ -223,7 +250,7 @@ export default class CogniteDatasource {
     query: string,
     type?: string,
     options?: any
-  ): Promise<MetricFindQueryResponse> {
+  ): Promise<SelectableValue<string>[]> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
@@ -237,17 +264,12 @@ export default class CogniteDatasource {
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
       data,
       path: `/${resources[type]}/search`,
-      method: POST,
+      method: HttpMethod.POST,
       params: options,
+      cacheTime: CacheTime.Dropdown,
     });
 
-    return items.map(({ name, externalId, id, description }) => {
-      const displayName = name || externalId;
-      return {
-        text: description ? `${displayName} (${description})` : displayName,
-        value: id.toString(),
-      };
-    });
+    return items.map(resource2DropdownOption);
   }
 
   async findAssetTimeseries(
@@ -268,7 +290,7 @@ export default class CogniteDatasource {
     const limit = 101;
     const ts = await getTimeseries({ filter, limit }, this.connector);
     if (ts.length === limit) {
-      appEvents.emit(datapointsWarningEvent, {
+      (await appEventsLoader).emit(datapointsWarningEvent, {
         refId,
         warning: TIMESERIES_LIMIT_WARNING,
       });
@@ -281,12 +303,12 @@ export default class CogniteDatasource {
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query }: VariableQueryData): Promise<MetricFindQueryResponse> {
+  async metricFindQuery({ query }: VariableQueryData): Promise<MetricDescription[]> {
     let params: QueryCondition;
     let filters: ParsedFilter[];
 
     try {
-      ({ params, filters } = parse(query));
+      ({ params, filters } = parseQuery(query));
     } catch (e) {
       return [];
     }
@@ -296,10 +318,10 @@ export default class CogniteDatasource {
       limit: 1000,
     };
 
-    const assets = await this.connector.fetchItems<any>({
+    const assets = await this.connector.fetchItems<Resource>({
       data,
       path: `/assets/list`,
-      method: POST,
+      method: HttpMethod.POST,
     });
 
     const filteredAssets = applyFilters(assets, filters);
@@ -308,6 +330,14 @@ export default class CogniteDatasource {
       text: name,
       value: id,
     }));
+  }
+
+  public fetchSingleTimeseries(id: number) {
+    return fetchSingleTimeseries(id, this.connector);
+  }
+
+  public fetchSingleAsset(id: number) {
+    return fetchSingleAsset(id, this.connector);
   }
 
   /**
@@ -330,55 +360,69 @@ export default class CogniteDatasource {
         title: 'Error',
       };
     }
+
+    throw Error('Did not get 200 OK');
   }
 }
 
 export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
-  return targets.filter(target => {
+  return targets.filter((target) => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
       switch (tab) {
-        case Asset:
+        case Tab.Asset:
           return assetQuery && assetQuery.target;
-        case Custom:
+        case Tab.Custom:
           return target.expr;
-        case Timeseries:
-        case undefined:
+        case Tab.Timeseries:
+        default:
           return target.target;
       }
     }
+    return false;
   }) as QueryTarget[];
 }
 
-function handleFailedTargets(failed: FailResponse<ResponseMetadata>[]) {
+function handleFailedTargets(failed: FailResponse[]) {
   failed
     .filter(isError)
     .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
     .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
 }
 
+export function resource2DropdownOption(resource: Resource): SelectableValue<string> {
+  const { name, externalId, id, description } = resource;
+  const value = id.toString();
+  const label = name || externalId || value;
+  return {
+    description,
+    label,
+    value,
+  };
+}
+
 export function getRange(range: TimeRange): Tuple<number> {
-  const timeFrom = Math.ceil(parseDate(range.from));
-  const timeTo = Math.ceil(parseDate(range.to));
+  const timeFrom = range.from.valueOf();
+  const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
 
 function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
-  appEvents.emit(failedResponseEvent, { refId, error: errMessage });
+  appEventsLoader.then((events) => events.emit(failedResponseEvent, { refId, error: errMessage }));
 }
 
-function showWarnings(responses: SuccessResponse<ResponseMetadata, DataQueryRequestResponse>[]) {
+function showWarnings(responses: SuccessResponse[]) {
   responses.forEach(({ result, metadata }) => {
-    const items = result.data.items;
-    const limit = result.config.data.limit;
-    const refId = metadata.target.refId;
+    const { items } = result.data;
+    const { limit } = result.config.data;
+    const { refId } = metadata.target;
     const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
       .filter(Boolean)
       .join('\n');
 
     if (warning) {
-      appEvents.emit(datapointsWarningEvent, { refId, warning });
+      appEventsLoader.then((events) => events.emit(datapointsWarningEvent, { refId, warning }));
     }
   });
 }

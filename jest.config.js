@@ -1,13 +1,7 @@
-module.exports = {
-  roots: ["<rootDir>/src"],
-  transform: {
-    "^.+\\.tsx?$": "ts-jest"
-  },
-  testEnvironment: "node",
-  testRegex: "(/spec/.*|(\\.|/)(test|spec))\\.tsx?$",
-  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
-  moduleNameMapper: {
-    "grafana/app/core/core": "<rootDir>/src/__mocks__/grafana/app/core/core.ts"
-  },
-  collectCoverageFrom: ["src/**/{!(grammar),}.ts"]
-};
+const standard = require('@grafana/toolkit/src/config/jest.plugin.config');
+
+// This process will use the same config that `yarn test` is using
+const jestConfig = standard.jestConfig();
+jestConfig.testPathIgnorePatterns = ["<rootDir>/src/__tests__/utils.ts"]
+
+module.exports = jestConfig;

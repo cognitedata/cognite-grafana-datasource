@@ -1,13 +1,19 @@
-import CogniteDatasource from './datasource';
-import { CogniteQueryCtrl } from './query_ctrl';
-import { CogniteConfigCtrl } from './config_ctrl';
-import { CogniteAnnotationsQueryCtrl } from './annotation_ctrl';
-import { CogniteVariableQueryCtrl } from './variable_query_ctrl';
+import { DataSourcePlugin } from '@grafana/data';
 
-export {
-  CogniteDatasource as Datasource,
-  CogniteQueryCtrl as QueryCtrl,
-  CogniteConfigCtrl as ConfigCtrl,
-  CogniteAnnotationsQueryCtrl as AnnotationsQueryCtrl,
-  CogniteVariableQueryCtrl as VariableQueryEditor,
-};
+import CogniteDatasource from './datasource';
+
+import { ConfigEditor } from './components/configEditor';
+import { QueryEditor } from './components/queryEditor';
+import { CogniteAnnotationsQueryCtrl } from './annotationCtrl';
+import { CogniteVariableQueryEditor } from './components/variableQueryEditor';
+import { CogniteQuery, CogniteDataSourceOptions } from './types';
+
+export const plugin = new DataSourcePlugin<
+  CogniteDatasource,
+  CogniteQuery,
+  CogniteDataSourceOptions
+>(CogniteDatasource)
+  .setConfigEditor(ConfigEditor)
+  .setVariableQueryEditor(CogniteVariableQueryEditor)
+  .setQueryEditor(QueryEditor)
+  .setAnnotationQueryCtrl(CogniteAnnotationsQueryCtrl);

@@ -1,10 +1,12 @@
-import { DataQueryRequestItem, TimeSeriesResponseItem, QueryTarget, IdEither } from '../../types';
+/* eslint-disable */ // TODO: remove this
+import { TimeSeriesResponseItem, IdEither } from '../../cdf/types';
+import { DataQueryRequestItem, QueryTarget } from '../../types';
 import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
 import { Parser, Grammar } from 'nearley';
 import grammar from './grammar';
-import { getTimeseries, getLabelWithInjectedProps } from '../../cdfDatasource';
+import { getTimeseries, getLabelWithInjectedProps } from '../../cdf/client';
 import { Connector } from '../../connector';
-import { FilterType } from '../types';
+import { FilterTypes, FilterType } from '../types';
 import { applyFilters } from '../../utils';
 import { parseWith } from '../events-assets/index';
 import getFilterDeep from 'deepdash/getFilterDeep';
@@ -33,7 +35,7 @@ export const formQueriesForExpression = async (
     serverFilters.map(async filter => {
       const tsResult = await getTimeseries({ filter }, connector, false);
       if (!tsResult.length) {
-        throw NoTimeseriesFound(filter, expression);
+        throw NoTimeseriesFound(expression, filter);
       }
       return tsResult;
     })
@@ -46,13 +48,15 @@ export const formQueriesForExpression = async (
     multiaryFuncTsIndices
   );
   const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
+  if (!queryExpressions.length) {
+    throw NoTimeseriesFound(expression);
+  }
   return queryExpressions.map(expression => ({ expression }));
 };
 
-const NoTimeseriesFound = (filter: StringMap, expr: string) => {
-  return new Error(
-    `No timeseries found for filter ${JSON.stringify(filter)} in expression ${expr}`
-  );
+const NoTimeseriesFound = (expr: string, filter?: StringMap) => {
+  const where = filter ? ` ${JSON.stringify(filter)}` : 's'
+  return new Error(`No timeseries found for filter${where} in expression ${expr}`)
 };
 
 /**
@@ -345,11 +349,6 @@ const flattenSumFunctions = (expression: string): string => {
   });
 };
 
-const isSimpleSyntheticExpression = (expr: string): boolean => {
-  const parsed = parse(expr);
-  return !getServerFilters(parsed).length;
-};
-
 const unwrapId = (idEither: IdEither) => {
   if ('id' in idEither) {
     return idEither.id;
@@ -409,7 +408,7 @@ const hasIdsFilter = (obj: STSReference) => {
 };
 
 const isEqualsFilter = (query: any): query is STSServerFilter => {
-  return isSTSFilter(query) && query.filter === FilterType.Equals;
+  return isSTSFilter(query) && query.filter === FilterTypes.Equals;
 };
 
 const isOneOf = (value: string, ...arr: string[]) => {

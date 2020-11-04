@@ -2,7 +2,11 @@ import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from './utils';
 import { VariableQueryData } from '../types';
 
-const { ds, backendSrvMock } = getMockedDataSource();
+jest.mock('@grafana/runtime');
+type Mock = jest.Mock;
+const ds = getMockedDataSource();
+const { backendSrv } = ds;
+
 const assetsResponse = {
   data: {
     items: [
@@ -31,7 +35,7 @@ describe('Metrics Query', () => {
       const result = await ds.metricFindQuery(variableQuery);
 
       expect(result).toEqual([]);
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
     });
   });
 
@@ -41,7 +45,7 @@ describe('Metrics Query', () => {
       query: 'assets{}',
     };
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
@@ -52,8 +56,8 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return all assets', () => {
@@ -68,18 +72,16 @@ describe('Metrics Query', () => {
       query: `assets{id=${id}}`,
     };
     const response = cloneDeep(assetsResponse);
-    response.data.items = assetsResponse.data.items.filter(item => item.id === id);
+    response.data.items = assetsResponse.data.items.filter((item) => item.id === id);
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -97,15 +99,15 @@ describe('Metrics Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -123,15 +125,15 @@ describe('Metrics Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrvMock.datasourceRequest = jest
+      backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -146,7 +148,7 @@ describe('Metrics Query', () => {
     it('should return an empty array', async () => {
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
     });
   });
 
@@ -157,14 +159,14 @@ describe('Metrics Query', () => {
       };
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(backendSrvMock.datasourceRequest).not.toBeCalled();
+      expect(backendSrv.datasourceRequest).not.toBeCalled();
     });
     it('should throw an error if filter regexp is wrong', async () => {
       const variableQuery: VariableQueryData = {
         query: "assets{name=~'*.foo'}",
       };
       expect(ds.metricFindQuery(variableQuery)).rejects.toMatchSnapshot();
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
     });
   });
 });

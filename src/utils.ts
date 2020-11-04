@@ -1,8 +1,8 @@
 import { isNil, omitBy, get } from 'lodash';
-import { QueryOptions, QueryTarget } from './types';
 import { stringify } from 'query-string';
 import ms from 'ms';
-import { FilterType, ParsedFilter } from './parser/types';
+import { QueryOptions, QueryTarget } from './types';
+import { FilterTypes, ParsedFilter } from './parser/types';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
@@ -22,7 +22,7 @@ export const applyFilters = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
     return objs;
   }
 
-  return objs.filter(obj => filters.every(filter => checkFilter(obj, filter)));
+  return objs.filter((obj) => filters.every((filter) => checkFilter(obj, filter)));
 };
 
 export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): boolean => {
@@ -30,11 +30,13 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
   const regex = new RegExp(`^${value}$`);
 
   switch (filter) {
-    case FilterType.RegexEquals:
+    case FilterTypes.RegexEquals:
       return regex.test(valueToFilter);
-    case FilterType.RegexNotEquals:
+    case FilterTypes.RegexNotEquals:
       return !regex.test(valueToFilter);
-    case FilterType.NotEquals:
+    case FilterTypes.NotEquals:
       return value !== valueToFilter;
+    default:
+      return false;
   }
 };

@@ -1,7 +1,7 @@
 import { applyFilters } from '../utils';
-import { FilterType, ParsedFilter } from '../parser/types';
+import { FilterTypes, ParsedFilter } from '../parser/types';
 
-const { NotEquals, RegexNotEquals, RegexEquals } = FilterType;
+const { NotEquals, RegexNotEquals, RegexEquals } = FilterTypes;
 
 describe('Utils', () => {
   describe('Filtering', () => {
