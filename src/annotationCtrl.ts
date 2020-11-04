@@ -1,14 +1,12 @@
-import { Annotation } from './types';
+import { CogniteAnnotationQuery } from './types';
 import CogniteDatasource from './datasource';
 import { parse } from './parser/events-assets';
 
 export class CogniteAnnotationsQueryCtrl {
   public static templateUrl = 'partials/annotations.editor.html';
-  annotation: Annotation;
-  datasource: CogniteDatasource;
 
-  /** @ngInject */
-  constructor() {}
+  annotation: CogniteAnnotationQuery;
+  datasource: CogniteDatasource;
 
   onBlur() {
     this.annotation.error = '';

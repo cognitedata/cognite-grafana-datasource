@@ -1,4 +1,5 @@
-import { eventFactory, QueryDatapointsWarning, QueryRequestError } from './types';
+import { eventFactory } from '@grafana/data';
+import { QueryDatapointsWarning, QueryRequestError } from './types';
 
 export const DATAPOINTS_LIMIT_WARNING =
   'Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
@@ -10,6 +11,7 @@ export const datapointsWarningEvent = eventFactory<QueryDatapointsWarning>('data
 
 export const CacheTime = {
   TimeseriesList: '61s',
-  TimeseriesByIds: '61m',
+  ResourceByIds: '61m',
   Default: '11s',
+  Dropdown: '3m',
 };

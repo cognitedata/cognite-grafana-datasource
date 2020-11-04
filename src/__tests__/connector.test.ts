@@ -1,5 +1,4 @@
 import { Connector } from '../connector';
-import { BackendSrv } from 'grafana/app/core/services/backend_srv';
 import { HttpMethod } from '../types';
 
 describe('connector', () => {
@@ -77,7 +76,10 @@ describe('connector', () => {
       method: HttpMethod.POST,
     };
     const items1000 = Array.from({ length: 1000 }, (_, i) => i);
-    const response = async () => ({ data: { items: items1000, nextCursor: `${++cursor}` } });
+    const response = async () => {
+      cursor += 1;
+      return { data: { items: items1000, nextCursor: `${cursor}` } };
+    };
 
     beforeEach(() => {
       connector = new Connector(project, protocol, { datasourceRequest } as any);
@@ -156,7 +158,7 @@ describe('connector', () => {
 
     it('throws error 2', async () => {
       datasourceRequest.mockImplementation(async () => {
-        throw error;
+        throw error; // eslint-disable-line
       });
       expect.assertions(1);
       try {
@@ -170,10 +172,14 @@ describe('connector', () => {
       datasourceRequest.mockImplementation(async () => error);
       try {
         await connector.cachedRequest(request);
-      } catch {}
+      } catch (e) {
+        // silent
+      }
       try {
         await connector.cachedRequest(request);
-      } catch {}
+      } catch (e) {
+        // silent
+      }
       expect(datasourceRequest).toBeCalledTimes(2);
     });
   });

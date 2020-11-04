@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash';
 import {
   STSQueryItem,
   getReferencedTimeseries,
@@ -19,11 +20,10 @@ import {
   STSQuery,
   enrichWithDefaultAggregates,
 } from './index';
-import { FilterType } from '../types';
-import { TimeSeriesResponseItem } from '../../types';
-import { cloneDeep } from 'lodash';
+import { FilterTypes } from '../types';
+import { TimeSeriesResponseItem } from '../../cdf/types';
 
-const { NotEquals, Equals, RegexEquals } = FilterType;
+const { NotEquals, Equals, RegexEquals } = FilterTypes;
 const STS = STSReference;
 const Filter = STSFilter;
 
@@ -31,7 +31,7 @@ function Constant(constant: number | 'pi()'): WrappedConst {
   return { constant };
 }
 
-function STSFunction(func: STSFunction['func'], args: STSFunction['args']): STSFunction {
+function STSFunc(func: STSFunction['func'], args: STSFunction['args']): STSFunction {
   return {
     func,
     args,
@@ -162,7 +162,7 @@ describe('nearley parser', () => {
   it('function with arithmetics and filters', () => {
     const res = parse(`sin(ts{assetSubtreeIds=[{id=1}], aggregate="average"} / 10)`);
     expect(res).toEqual(
-      STSFunction('sin', [
+      STSFunc('sin', [
         STS([Filter('assetSubtreeIds', [[Filter('id', 1)]]), Filter('aggregate', 'average')]),
         Operator('/'),
         Constant(10),
@@ -176,8 +176,8 @@ describe('nearley parser', () => {
   });
 
   it('advanced template variable', () => {
-    const res = parse('ts{id=${asset:json}}');
-    expect(res).toEqual(STS([Filter('id', '${asset:json}')]));
+    const res = parse('ts{id=${asset:json}}'); // eslint-disable-line no-template-curly-in-string
+    expect(res).toEqual(STS([Filter('id', '${asset:json}')])); // eslint-disable-line no-template-curly-in-string
   });
 
   it('template variables for regexp filter', () => {
@@ -208,13 +208,13 @@ describe('nearley reverse', () => {
   });
 
   it('sin function with arithmetics', () => {
-    const func = STSFunction('sin', [STS([Filter('id', 1)]), Operator('/'), Constant(10)]);
+    const func = STSFunc('sin', [STS([Filter('id', 1)]), Operator('/'), Constant(10)]);
     const res = composeSTSQuery(func);
     expect(res).toEqual('sin(ts{id=1} / 10)');
   });
 
   it('average function', () => {
-    const func = STSFunction('avg', [STS([Filter('id', 1)]), STS([Filter('id', 2)])]);
+    const func = STSFunc('avg', [STS([Filter('id', 1)]), STS([Filter('id', 2)])]);
     const res = composeSTSQuery(func);
     expect(res).toEqual('avg(ts{id=1}, ts{id=2})');
   });
@@ -250,7 +250,7 @@ describe('parse & reverse', () => {
     'ts{assetSubtreeIds=[{id=1}, {id=2}]}',
     'ts{externalIds="escaped quote \\" here"}',
   ];
-  inputs.map(input =>
+  inputs.map((input) =>
     it(input, () => {
       expect(composeSTSQuery(parse(input))).toBe(input);
     })
@@ -285,7 +285,7 @@ describe('escape characters parsing', () => {
 
 describe('inject ids in queries', () => {
   it('function with arithmetics', () => {
-    const func = STSFunction('sin', [
+    const func = STSFunc('sin', [
       STS([Filter('assetSubtreeIds', [Filter('id', 1)])]),
       Operator('/'),
       Constant(10),
@@ -295,7 +295,7 @@ describe('inject ids in queries', () => {
   });
 
   it('multiary function', () => {
-    const func = STSFunction('avg', [STS([Filter('assetSubtreeIds', [Filter('id', 1)])])]);
+    const func = STSFunc('avg', [STS([Filter('assetSubtreeIds', [Filter('id', 1)])])]);
     const res = injectTSIdsInExpression(func, [
       [{ id: 1 }, { id: 2 }, { id: 3 }],
     ] as TimeSeriesResponseItem[][]);
@@ -303,7 +303,7 @@ describe('inject ids in queries', () => {
   });
 
   it('sum function with one filter', () => {
-    const func = STSFunction('sum', [STS([Filter('assetSubtreeIds', [Filter('id', 1)])])]);
+    const func = STSFunc('sum', [STS([Filter('assetSubtreeIds', [Filter('id', 1)])])]);
     const res = injectTSIdsInExpression(func, [
       [{ id: 1 }, { id: 2 }, { id: 3 }],
     ] as TimeSeriesResponseItem[][]);
@@ -312,8 +312,8 @@ describe('inject ids in queries', () => {
 });
 
 describe('find multiary function indices', () => {
-  const funcWithOneParam = STSFunction('avg', [STS()]);
-  const funcWithFewParams = STSFunction('avg', [STS(), STS()]);
+  const funcWithOneParam = STSFunc('avg', [STS()]);
+  const funcWithFewParams = STSFunc('avg', [STS(), STS()]);
   const funcComposition = [
     funcWithFewParams,
     Operator('+'),
@@ -322,9 +322,9 @@ describe('find multiary function indices', () => {
     funcWithOneParam,
   ];
   const nestedComposition = [
-    STSFunction('sin', funcComposition),
+    STSFunc('sin', funcComposition),
     Operator('+'),
-    STSFunction('avg', funcComposition),
+    STSFunc('avg', funcComposition),
   ];
   const indices = getIndicesOfMultiaryFunctionArgs;
 
@@ -344,7 +344,7 @@ describe('find multiary function indices', () => {
   });
 
   it('works with nested composition of functions', () => {
-    const res = indices(cloneDeep(STSFunction('sin', funcComposition)));
+    const res = indices(cloneDeep(STSFunc('sin', funcComposition)));
     expect(res).toEqual([2, 3]);
   });
 
@@ -354,7 +354,7 @@ describe('find multiary function indices', () => {
   });
 
   it("map() is a special case, doesn't work as multiary", () => {
-    const mapFunc = STSFunction('map', [STS(), ['1'], [1], 1]);
+    const mapFunc = STSFunc('map', [STS(), ['1'], [1], 1]);
     const res = indices(mapFunc);
     expect(res).toEqual([]);
   });
@@ -379,7 +379,16 @@ describe('permutations', () => {
   });
 
   it('1 lock', () => {
-    expect(gen([['a', 'b'], ['1', '2', '3'], ['å', 'æ']], [1])).toEqual([
+    expect(
+      gen(
+        [
+          ['a', 'b'],
+          ['1', '2', '3'],
+          ['å', 'æ'],
+        ],
+        [1]
+      )
+    ).toEqual([
       [['a'], ['1', '2', '3'], ['å']],
       [['a'], ['1', '2', '3'], ['æ']],
       [['b'], ['1', '2', '3'], ['å']],
@@ -469,7 +478,7 @@ describe('parse unary "-" operator', () => {
       [
         STS([Filter('name', 'test1')]),
         Operator('*'),
-        STSFunction('', [Operator('-'), STS([Filter('name', 'test2')])]),
+        STSFunc('', [Operator('-'), STS([Filter('name', 'test2')])]),
       ],
     ],
     [
@@ -477,12 +486,7 @@ describe('parse unary "-" operator', () => {
       [
         STS([Filter('name', 'test1')]),
         Operator('*'),
-        STSFunction('', [
-          Operator('-'),
-          STS([Filter('name', 'test2')]),
-          Operator('+'),
-          Constant(-5),
-        ]),
+        STSFunc('', [Operator('-'), STS([Filter('name', 'test2')]), Operator('+'), Constant(-5)]),
       ],
     ],
   ];

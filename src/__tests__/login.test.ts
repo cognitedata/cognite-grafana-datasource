@@ -1,6 +1,9 @@
 import { getMockedDataSource } from './utils';
 
-const { ds, backendSrvMock } = getMockedDataSource();
+jest.mock('@grafana/runtime');
+type Mock = jest.Mock;
+const ds = getMockedDataSource();
+const { backendSrv } = ds;
 
 function makeLoginResponse(loggedIn: boolean, project: string) {
   return Promise.resolve({
@@ -16,11 +19,11 @@ describe('Login', () => {
     const response = makeLoginResponse(true, 'TestProject');
 
     it('should log the user in', async () => {
-      backendSrvMock.datasourceRequest = jest.fn().mockReturnValue(response);
+      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
       const result = await ds.testDatasource();
 
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
       expect(result).toMatchSnapshot();
     });
   });
@@ -29,11 +32,11 @@ describe('Login', () => {
     const response = makeLoginResponse(true, 'WrongProject');
 
     it('should display an error message', async () => {
-      backendSrvMock.datasourceRequest = jest.fn().mockReturnValue(response);
+      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
       const result = await ds.testDatasource();
 
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
       expect(result).toMatchSnapshot();
     });
   });
@@ -42,11 +45,11 @@ describe('Login', () => {
     const response = makeLoginResponse(false, 'string');
 
     it('should display an error message', async () => {
-      backendSrvMock.datasourceRequest = jest.fn().mockReturnValue(response);
+      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
       const result = await ds.testDatasource();
 
-      expect(backendSrvMock.datasourceRequest).toBeCalledTimes(1);
-      expect(backendSrvMock.datasourceRequest.mock.calls[0][0]).toMatchSnapshot();
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
       expect(result).toMatchSnapshot();
     });
   });

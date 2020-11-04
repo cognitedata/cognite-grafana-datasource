@@ -1,6 +1,6 @@
 import React from 'react';
-import { VariableQueryData, VariableQueryProps } from './types';
-import { parse } from './parser/events-assets';
+import { VariableQueryData, VariableQueryProps } from '../types';
+import { parse } from '../parser/events-assets';
 
 const help = (
   <pre>
@@ -9,11 +9,12 @@ const help = (
       className="query-keyword"
       href="https://docs.cognite.com/api/v1/#operation/listAssets"
       target="_blank"
+      rel="noreferrer"
     >
       assets/list
     </a>{' '}
-    endpoint for data fetching. <code className="query-keyword">'='</code> sign is used to provide
-    parameters for the request.
+    endpoint for data fetching. <code className="query-keyword">&apos;=&apos;</code> sign is used to
+    provide parameters for the request.
     <br />
     Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
     <br />
@@ -21,20 +22,22 @@ const help = (
     <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]}`}</code>
     <br />
     <br />
-    Results filtering is also possible by adding <code className="query-keyword">'=~'</code>,{' '}
-    <code className="query-keyword">'!~'</code> and <code className="query-keyword">'!='</code>{' '}
-    signs to props. Applying few filters for query acts as logic AND
+    Results filtering is also possible by adding{' '}
+    <code className="query-keyword">&apos;=~&apos;</code>,{' '}
+    <code className="query-keyword">&apos;!~&apos;</code> and{' '}
+    <code className="query-keyword">&apos;!=&apos;</code> signs to props. Applying few filters for
+    query acts as logic AND
     <br />
     Format:
     <br />
-    <code className="query-keyword">'=~'</code> – regex equality, means that provided regexp is used
-    to match defined prop and matched value will be included
+    <code className="query-keyword">&apos;=~&apos;</code> – regex equality, means that provided
+    regexp is used to match defined prop and matched value will be included
     <br />
-    <code className="query-keyword">'!~'</code> – regex inequality, means that provided regexp is
-    used to match defined prop and matched value will be excluded
+    <code className="query-keyword">&apos;!~&apos;</code> – regex inequality, means that provided
+    regexp is used to match defined prop and matched value will be excluded
     <br />
-    <code className="query-keyword">'!='</code> – strict inequality, means that provided string is
-    used to strict prop comparing and matched value will be excluded
+    <code className="query-keyword">&apos;!=&apos;</code> – strict inequality, means that provided
+    string is used to strict prop comparing and matched value will be excluded
     <br />
     Example:{' '}
     <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'}, assetSubtreeIds=[{id=123}]}`}</code>
@@ -50,7 +53,7 @@ const help = (
   </pre>
 );
 
-export class CogniteVariableQueryCtrl extends React.PureComponent<
+export class CogniteVariableQueryEditor extends React.PureComponent<
   VariableQueryProps,
   VariableQueryData
 > {
@@ -61,26 +64,31 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
 
   constructor(props: VariableQueryProps) {
     super(props);
-    this.state = Object.assign(this.defaults, this.props.query);
+    const { query } = props;
+    this.state = Object.assign(this.defaults, query);
   }
 
-  handleQueryChange = event => {
+  handleQueryChange = (event) => {
     this.setState({ query: event.target.value, error: '' });
   };
 
   handleBlur = () => {
+    const { onChange } = this.props;
+    const { query } = this.state;
+
     try {
-      const { query } = this.state;
       parse(query);
 
-      this.props.onChange({ query }, query);
+      onChange({ query }, query);
     } catch ({ message }) {
       this.setState({ error: message });
-      this.props.onChange({ query: '' }, '');
+      onChange({ query: '' }, '');
     }
   };
 
   render() {
+    const { query, error } = this.state;
+
     return (
       <div>
         <div className="gf-form gf-form--grow">
@@ -88,14 +96,14 @@ export class CogniteVariableQueryCtrl extends React.PureComponent<
           <input
             type="text"
             className="gf-form-input"
-            value={this.state.query}
+            value={query}
             onChange={this.handleQueryChange}
             onBlur={this.handleBlur}
             placeholder="eg: assets{name='example', assetSubtreeIds=[{id=123456789, externalId='externalId'}]}"
           />
         </div>
         <div className="gf-form--grow">
-          {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
+          {error ? <pre className="gf-formatted-error">{error}</pre> : null}
           {help}
         </div>
       </div>

@@ -10,6 +10,8 @@ jobs:
   build-and-test:
 
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
 
     strategy:
       matrix:
@@ -35,7 +37,5 @@ jobs:
           ${{ runner.os }}-yarn- 
 
     - run: yarn
-    - run: yarn lint
-    - run: yarn build
-    - run: yarn test
+    - run: yarn build #also runs tests and linter
     - uses: codecov/codecov-action@v1
