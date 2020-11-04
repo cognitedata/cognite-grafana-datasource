@@ -136,7 +136,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
           <div className="gf-form-inline">
             <div className="gf-form">
               <SecretFormField
-                isConfigured={secureJsonFields.apiKey}
+                isConfigured={secureJsonFields.cogniteDataPlatformApiKey}
                 value={cogniteDataPlatformApiKey}
                 label="API Key"
                 placeholder="Cognite Data Fusion API key"
