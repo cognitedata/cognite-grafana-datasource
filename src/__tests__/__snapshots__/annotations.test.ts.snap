@@ -18,7 +18,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;
 
@@ -37,7 +37,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;
 
@@ -59,7 +59,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;
 
@@ -89,7 +89,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;
 
@@ -110,7 +110,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;
 
@@ -132,6 +132,6 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/events/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
 }
 `;

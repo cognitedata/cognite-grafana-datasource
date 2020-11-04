@@ -24,7 +24,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
   const { secureJsonData = {}, jsonData, secureJsonFields } = options;
-  const { apiKey = '' } = secureJsonData;
+  const { cogniteDataPlatformApiKey = '' } = secureJsonData;
   const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
 
   const onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +137,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <div className="gf-form">
               <SecretFormField
                 isConfigured={secureJsonFields.apiKey}
-                value={apiKey}
+                value={cogniteDataPlatformApiKey}
                 label="API Key"
                 placeholder="Cognite Data Fusion API key"
                 tooltip="Cognite Data Fusion API key."

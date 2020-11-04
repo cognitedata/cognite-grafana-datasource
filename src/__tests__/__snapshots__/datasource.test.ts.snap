@@ -11,7 +11,7 @@ Object {
     "limit": 101,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -26,7 +26,7 @@ Object {
     "limit": 101,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -41,7 +41,7 @@ Object {
     "limit": 101,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -56,7 +56,7 @@ Object {
     "limit": 101,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -76,7 +76,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -90,7 +90,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -118,7 +118,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_7_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -140,7 +140,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_7_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -245,7 +245,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -263,7 +263,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_3_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -285,7 +285,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_3_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -307,7 +307,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_3_C",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -322,7 +322,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -336,7 +336,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -350,7 +350,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -368,7 +368,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_11_B",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -386,7 +386,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_11_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -412,7 +412,7 @@ Object {
     "limit": 1000,
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -432,7 +432,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -455,7 +455,7 @@ Object {
     ],
   },
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -485,7 +485,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_A",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -515,7 +515,7 @@ Object {
   },
   "method": "POST",
   "requestId": "1_14_D",
-  "url": "/api/datasources/proxy/6/cogniteapi/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 

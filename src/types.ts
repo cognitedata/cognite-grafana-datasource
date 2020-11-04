@@ -30,6 +30,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
 export interface CogniteDataSourceOptions extends DataSourceJsonData {
   cogniteApiUrl?: string;
   cogniteProject: string;
+  oauthPassThru?: boolean;
 }
 
 export interface CogniteSecureJsonData {

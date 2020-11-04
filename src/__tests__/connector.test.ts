@@ -195,9 +195,9 @@ describe('connector', () => {
     it('uses cdf-oauth route when oauthPassThru=true', async () => {
       datasourceRequest.mockImplementation(async () => ({ data: {} }));
       await connector.request(request);
-      expect(datasourceRequest).toHaveBeenCalledWith({ 
+      expect(datasourceRequest).toHaveBeenCalledWith({
         method: HttpMethod.GET,
-        url: 'protocol://cdf-oauth/'
+        url: 'protocol://cdf-oauth/',
       });
     });
   });
