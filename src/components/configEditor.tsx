@@ -1,7 +1,9 @@
-import React, { ChangeEvent, PureComponent, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { Icon, LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
+import { FeatureFlagsWarning, KonamiTracker } from './devFeatures';
+import '../css/common.css';
 
 const { SecretFormField, FormField, Switch } = LegacyForms;
 
@@ -25,27 +27,28 @@ export function ConfigEditor(props: ConfigEditorProps) {
   const { onOptionsChange, options } = props;
   const { secureJsonData = {}, jsonData, secureJsonFields } = options;
   const { cogniteDataPlatformApiKey = '' } = secureJsonData;
-  const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
+  const { cogniteProject = '', cogniteApiUrl = '', featureFlags = {}, oauthPassThru } = jsonData;
 
-  const onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
     onOptionsChange({
       ...options,
       jsonData: {
-        ...options.jsonData,
-        cogniteApiUrl: event.target.value,
+        ...jsonData,
+        ...patch,
       },
     });
   };
 
-  // TODO: Verify that this is correct.
+  const onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onJsonDataChange({ cogniteApiUrl: event.target.value });
+  };
+
   const onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        cogniteProject: event.target.value,
-      },
-    });
+    onJsonDataChange({ cogniteProject: event.target.value });
+  };
+
+  const onOAuthPassThruChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onJsonDataChange({ oauthPassThru: event.currentTarget.checked });
   };
 
   // Secure field (only sent to the backend)
@@ -54,16 +57,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
       ...options,
       secureJsonData: {
         cogniteDataPlatformApiKey: event.target.value,
-      },
-    });
-  };
-
-  const onOAuthPassThruChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        oauthPassThru: event.currentTarget.checked,
       },
     });
   };
@@ -124,13 +117,15 @@ export function ConfigEditor(props: ConfigEditorProps) {
           </pre>
         )}
         <div className="gf-form-inline">
-          <Switch
-            label="Forward OAuth Identity"
-            labelClass="width-13"
-            checked={oauthPassThru}
-            onChange={onOAuthPassThruChange}
-            tooltip={oAuthPassThruTooltip}
-          />
+          {featureFlags.oauthPassThru && (
+            <Switch
+              label="Forward OAuth Identity"
+              labelClass="width-13"
+              checked={oauthPassThru}
+              onChange={onOAuthPassThruChange}
+              tooltip={oAuthPassThruTooltip}
+            />
+          )}
         </div>
         {!oauthPassThru && (
           <div className="gf-form-inline">
@@ -149,6 +144,14 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </div>
           </div>
         )}
+        <KonamiTracker
+          onCheat={() => {
+            onJsonDataChange({
+              featureFlags: { ...featureFlags, oauthPassThru: !featureFlags.oauthPassThru },
+            });
+          }}
+        />
+        <FeatureFlagsWarning featureFlags={featureFlags} />
       </div>
     </>
   );

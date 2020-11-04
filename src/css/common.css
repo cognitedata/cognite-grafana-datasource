@@ -1,0 +1,11 @@
+pre.gf-formatted-error,
+pre.gf-formatted-warning {
+  background: transparent;
+  border: none;
+  padding-bottom: 0;
+  color: #ff6060;
+}
+
+pre.gf-formatted-warning {
+  color: #f79520;
+}
