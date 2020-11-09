@@ -191,13 +191,13 @@ const optionalIdsToTargetObj = ({
 }: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
   return externalId
     ? {
-      target: externalId,
-      targetRefType: 'externalId' as const,
-    }
+        target: externalId,
+        targetRefType: 'externalId' as const,
+      }
     : {
-      target: id,
-      targetRefType: 'id' as const,
-    };
+        target: id,
+        targetRefType: 'id' as const,
+      };
 };
 
 function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
@@ -298,7 +298,7 @@ export function QueryEditor(props: EditorProps) {
   const [warningMessage, setWarningMessage] = useState('');
 
   const onQueryChange: OnQueryChange = (patch) => {
-    onChange({...query, ...patch } as CogniteQuery);
+    onChange({ ...query, ...patch } as CogniteQuery);
     setErrorMessage('');
     setWarningMessage('');
     onRunQuery();
