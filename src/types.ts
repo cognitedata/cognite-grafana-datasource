@@ -55,11 +55,9 @@ export interface AssetQuery {
   includeSubtrees: boolean;
 }
 
-export type CogniteQuery = CogniteQueryProps & CogniteTargetObj;
+export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 
-export interface CogniteQueryProps extends DataQuery {
-  target?: number | string;
-  targetRefType?: 'id' | 'externalId';
+export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
   error: string;

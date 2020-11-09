@@ -26,14 +26,14 @@ import {
   QueryRequestError,
   QueryDatapointsWarning,
   CogniteTargetObj,
-  CogniteQueryProps,
+  CogniteQueryBase,
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (patch: Partial<CogniteQuery>) => void;
+type OnQueryChange = (patch: Partial<CogniteQueryBase> | CogniteTargetObj) => void;
 type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -191,13 +191,13 @@ const optionalIdsToTargetObj = ({
 }: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
   return externalId
     ? {
-        target: externalId,
-        targetRefType: 'externalId' as const,
-      }
+      target: externalId,
+      targetRefType: 'externalId' as const,
+    }
     : {
-        target: id,
-        targetRefType: 'id' as const,
-      };
+      target: id,
+      targetRefType: 'id' as const,
+    };
 };
 
 function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
@@ -208,13 +208,13 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
 
   const onDropdown = (value: SelectableValue<string | number> & Partial<Resource>) => {
     setExternalIdField(value.externalId);
-    onQueryChange(optionalIdsToTargetObj(value));
     setCurrent(value);
+    onQueryChange(optionalIdsToTargetObj(value));
   };
 
   const onExternalIdField = (externalId: string) => {
-    onQueryChange(optionalIdsToTargetObj({ externalId }));
     fetchAndSetDropdownLabel({ externalId });
+    onQueryChange(optionalIdsToTargetObj({ externalId }));
   };
 
   const fetchAndSetDropdownLabel = async (id: IdEither) => {
@@ -230,9 +230,7 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
   useEffect(() => {
     const idEither = targetToIdEither(query);
     fetchAndSetDropdownLabel(idEither);
-    if (idEither.externalId) {
-      setExternalIdField(idEither.externalId);
-    }
+    setExternalIdField(idEither.externalId);
   }, []);
 
   return (
@@ -255,7 +253,7 @@ function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
           inputWidth={20}
           onBlur={({ target }) => onExternalIdField(target.value)}
           onChange={({ target }) => setExternalIdField(target.value)}
-          value={externalIdField}
+          value={externalIdField || ''}
           placeholder={current.value ? 'No external id present' : 'Insert external id'}
           tooltip="Time series external id"
         />
@@ -299,9 +297,8 @@ export function QueryEditor(props: EditorProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
-  const onQueryChange = (patch: Partial<CogniteQuery>) => {
-    const { target, targetRefType, ...restQuery } = query;
-    onChange({ ...restQuery, ...patch });
+  const onQueryChange: OnQueryChange = (patch) => {
+    onChange({...query, ...patch } as CogniteQuery);
     setErrorMessage('');
     setWarningMessage('');
     onRunQuery();

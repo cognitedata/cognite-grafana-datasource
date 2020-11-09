@@ -392,7 +392,7 @@ function handleFailedTargets(failed: FailResponse[]) {
 }
 
 export function resource2DropdownOption(resource: Resource): SelectableValue<string> {
-  const { name, externalId, id, description } = resource;
+  const { id, name, externalId, description } = resource;
   const value = id.toString();
   const label = name || externalId || value;
   return {
