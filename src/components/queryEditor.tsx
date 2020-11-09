@@ -14,6 +14,8 @@ import {
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
+import { targetToIdEither } from '../cdf/client';
+import { IdEither, Resource } from '../cdf/types';
 import { customQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -23,6 +25,8 @@ import {
   Tab as Tabs,
   QueryRequestError,
   QueryDatapointsWarning,
+  CogniteTargetObj,
+  CogniteQueryProps,
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
@@ -101,11 +105,11 @@ const LabelEditor = (props: SelectedProps) => {
 };
 
 const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
-  <>
+  <div className="gf-form-inline">
     <AggregationEditor {...{ onQueryChange, query }} />
     <GranularityEditor {...{ onQueryChange, query }} />
     <LabelEditor {...{ onQueryChange, query }} />
-  </>
+  </div>
 );
 
 const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
@@ -181,41 +185,82 @@ function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
   );
 }
 
+const optionalIdsToTargetObj = ({
+  id,
+  externalId,
+}: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
+  return externalId
+    ? {
+        target: externalId,
+        targetRefType: 'externalId' as const,
+      }
+    : {
+        target: id,
+        targetRefType: 'id' as const,
+      };
+};
+
 function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
   const { query, datasource, onQueryChange } = props;
 
-  const [current, setCurrent] = useState<SelectableValue<string>>({
-    value: query.target as string,
-  });
+  const [current, setCurrent] = useState<SelectableValue<string | number> & Partial<Resource>>({});
+  const [externalIdField, setExternalIdField] = useState<string>();
 
-  const fetchAndSetDropdownLabel = async (tsId: number) => {
-    const [res] = await datasource.fetchSingleTimeseries(tsId);
-    setCurrent(resource2DropdownOption(res));
+  const onDropdown = (value: SelectableValue<string | number> & Partial<Resource>) => {
+    setExternalIdField(value.externalId);
+    onQueryChange(optionalIdsToTargetObj(value));
+    setCurrent(value);
+  };
+
+  const onExternalIdField = (externalId: string) => {
+    onQueryChange(optionalIdsToTargetObj({ externalId }));
+    fetchAndSetDropdownLabel({ externalId });
+  };
+
+  const fetchAndSetDropdownLabel = async (id: IdEither) => {
+    try {
+      const [res] = await datasource.fetchSingleTimeseries(id);
+      setCurrent(resource2DropdownOption(res));
+      setExternalIdField(res.externalId);
+    } catch {
+      setCurrent({});
+    }
   };
 
   useEffect(() => {
-    onQueryChange({ target: +current.value });
-  }, [current.value]);
-
-  useEffect(() => {
-    if (current.value && !current.label) {
-      fetchAndSetDropdownLabel(+current.value);
+    const idEither = targetToIdEither(query);
+    fetchAndSetDropdownLabel(idEither);
+    if (idEither.externalId) {
+      setExternalIdField(idEither.externalId);
     }
-  }, [current.value]);
+  }, []);
 
   return (
-    <div className="gf-form-inline">
-      <div className="gf-form">
-        <InlineFormLabel width={6}>Tag</InlineFormLabel>
+    <div>
+      <div className="gf-form gf-form-inline">
+        <InlineFormLabel width={7} tooltip="Time series name">
+          {current.value ? 'Name' : 'Search'}
+        </InlineFormLabel>
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Timeseries')}
           defaultOptions
-          value={current}
+          value={current.value ? current : null}
           placeholder="Search time series by name/description"
           className="width-20"
-          onChange={setCurrent}
+          onChange={onDropdown}
+        />
+        <FormField
+          label="External Id"
+          labelWidth={7}
+          inputWidth={20}
+          onBlur={({ target }) => onExternalIdField(target.value)}
+          onChange={({ target }) => setExternalIdField(target.value)}
+          value={externalIdField}
+          placeholder={current.value ? 'No external id present' : 'Insert external id'}
+          tooltip="Time series external id"
         />
       </div>
+      {/* {current.description && <pre>{current.description}</pre>} */}
       <CommonEditors {...{ query, onQueryChange }} />
     </div>
   );
@@ -233,6 +278,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           label="Query"
           labelWidth={6}
           inputWidth={30}
+          className="custom-query"
           onChange={({ target }) => setValue(target.value)}
           onBlur={() => onQueryChange({ expr: value })}
           value={value}
@@ -240,9 +286,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
         />
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
-      <div className="gf-form-inline">
-        <CommonEditors {...{ onQueryChange, query }} />
-      </div>
+      <CommonEditors {...{ onQueryChange, query }} />
       {showHelp && customQueryHelp}
     </>
   );
@@ -256,7 +300,8 @@ export function QueryEditor(props: EditorProps) {
   const [warningMessage, setWarningMessage] = useState('');
 
   const onQueryChange = (patch: Partial<CogniteQuery>) => {
-    onChange({ ...query, ...patch });
+    const { target, targetRefType, ...restQuery } = query;
+    onChange({ ...restQuery, ...patch });
     setErrorMessage('');
     setWarningMessage('');
     onRunQuery();

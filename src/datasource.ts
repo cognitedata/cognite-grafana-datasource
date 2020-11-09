@@ -20,6 +20,7 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
+  targetToIdEither,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -27,6 +28,7 @@ import {
   FilterRequest,
   TimeSeriesResponseItem,
   Resource,
+  IdEither,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -42,13 +44,12 @@ import {
   CDFDataQueryRequest,
   CogniteAnnotationQuery,
   CogniteDataSourceOptions,
-  CogniteQuery,
   DataQueryRequestItem,
   DataQueryRequestResponse,
   Err,
   FailResponse,
   HttpMethod,
-  InputQueryTarget,
+  CogniteQuery,
   isError,
   MetricDescription,
   Ok,
@@ -182,7 +183,7 @@ export default class CogniteDatasource extends DataSourceApi<
       default:
       case undefined:
       case Tab.Timeseries: {
-        return [{ id: tsId }];
+        return [targetToIdEither(target)];
       }
       case Tab.Asset: {
         const timeseries = await this.findAssetTimeseries(target, options);
@@ -332,7 +333,7 @@ export default class CogniteDatasource extends DataSourceApi<
     }));
   }
 
-  public fetchSingleTimeseries(id: number) {
+  public fetchSingleTimeseries(id: IdEither) {
     return fetchSingleTimeseries(id, this.connector);
   }
 
@@ -365,7 +366,7 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 }
 
-export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
+export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
@@ -395,9 +396,11 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
   const value = id.toString();
   const label = name || externalId || value;
   return {
-    description,
     label,
     value,
+    description,
+    externalId,
+    id,
   };
 }
 
