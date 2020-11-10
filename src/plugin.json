@@ -1,10 +1,9 @@
 {
   "type": "datasource",
-  "name": "Cognite Data Fusion",
-  "id": "cognitedata-datasource",
-
+  "name": "Cognite Data Fusion Events",
+  "id": "cognitedata-datasource-events",
   "info": {
-    "description": "Cognite Data Fusion datasource",
+    "description": "Cognite Data Fusion Events Table",
     "author": {
       "name": "Cognite",
       "url": "https://cognite.com"
@@ -27,16 +26,14 @@
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
-
   "dependencies": {
     "grafanaVersion": "5.4.x",
     "plugins": []
   },
-
   "routes": [
     {
       "path": "cogniteapi",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/0.5/projects",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/v1/projects",
       "headers": [
         {
           "name": "api-key",
@@ -56,11 +53,9 @@
       ]
     }
   ],
-
   "queryOptions": {
     "maxDataPoints": true
   },
-
   "metrics": true,
   "annotations": true
 }

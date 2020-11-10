@@ -1,8 +1,8 @@
-import _ from 'lodash';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
+import _ from 'lodash';
 import './css/query_editor.css';
 import CogniteDatasource from './datasource';
-import { Tab, QueryTarget, TimeSeriesResponseItem } from './types';
+import { QueryTarget, Tab, TimeSeriesResponseItem } from './types';
 
 export class CogniteQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -26,17 +26,6 @@ export class CogniteQueryCtrl extends QueryCtrl {
   ];
   tabs = [
     {
-      value: Tab.Timeseries,
-      name: 'Select Timeseries',
-      src: 'timeseriestab.html',
-    },
-    {
-      value: Tab.Asset,
-      name: 'Select Timeseries from Asset',
-      src: 'assettab.html',
-    },
-    { value: Tab.Custom, name: 'Custom Query', src: 'customtab.html' },
-    {
       value: Tab.Event,
       name: 'Select Events for a Table',
       src: 'events.html',
@@ -49,7 +38,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
     aggregation: 'average',
     granularity: '',
     label: '',
-    tab: Tab.Timeseries,
+    tab: Tab.Event,
     expr: '',
     assetQuery: {
       target: '',
@@ -73,7 +62,7 @@ export class CogniteQueryCtrl extends QueryCtrl {
 
     _.defaultsDeep(this.target, this.defaults);
 
-    this.currentTabIndex = this.tabs.findIndex(x => x.value === this.target.tab) || 0;
+    this.currentTabIndex = 0;
     if (this.target.tab !== Tab.Asset) {
       this.target.assetQuery.timeseries = [];
       this.target.assetQuery.old = undefined;

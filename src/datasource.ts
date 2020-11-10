@@ -1,10 +1,9 @@
-import _ from 'lodash';
-import * as dateMath from 'grafana/app/core/utils/datemath';
-import Utils from './utils';
-import cache from './cache';
-import { parseExpression, parse } from './parser';
 import { BackendSrv } from 'grafana/app/core/services/backend_srv';
+import * as dateMath from 'grafana/app/core/utils/datemath';
 import { TemplateSrv } from 'grafana/app/features/templating/template_srv';
+import _ from 'lodash';
+import cache from './cache';
+import { parse, parseExpression } from './parser';
 import {
   AnnotationQueryOptions,
   AnnotationResponse,
@@ -13,19 +12,20 @@ import {
   DataQueryRequest,
   DataQueryRequestItem,
   DataQueryRequestResponse,
+  isError,
   MetricFindQueryResponse,
   ParseType,
   QueryOptions,
   QueryResponse,
   QueryTarget,
   Tab,
+  Table,
   TimeSeriesResponse,
   TimeSeriesResponseItem,
   TimeseriesSearchQuery,
   VariableQueryData,
-  isError,
-  Table,
 } from './types';
+import Utils from './utils';
 
 export default class CogniteDatasource {
   id: number;
@@ -385,14 +385,12 @@ export default class CogniteDatasource {
 
     const result = await cache.getQuery(
       {
-        url: `${this.url}/cogniteapi/${this.project}/events/search?${Utils.getQueryString(
-          queryParams
-        )}`,
+        url: `${this.url}/cogniteapi/${this.project}/events/?${Utils.getQueryString(queryParams)}`,
         method: 'GET',
       },
       this.backendSrv
     );
-    const events = result.data.data.items;
+    const events = result.data.items;
     if (!events || events.length === 0) return [];
 
     Utils.applyFilters(filterOptions.filters, events);
