@@ -251,7 +251,7 @@ export default class CogniteDatasource extends DataSourceApi<
     query: string,
     type?: string,
     options?: any
-  ): Promise<SelectableValue<string>[]> {
+  ): Promise<(SelectableValue<string> & Resource)[]> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
@@ -333,13 +333,13 @@ export default class CogniteDatasource extends DataSourceApi<
     }));
   }
 
-  public fetchSingleTimeseries(id: IdEither) {
+  fetchSingleTimeseries = (id: IdEither) => {
     return fetchSingleTimeseries(id, this.connector);
-  }
+  };
 
-  public fetchSingleAsset(id: number) {
+  fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
-  }
+  };
 
   /**
    * used by data source configuration page to make sure the connection is working
@@ -391,7 +391,7 @@ function handleFailedTargets(failed: FailResponse[]) {
     .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
 }
 
-export function resource2DropdownOption(resource: Resource): SelectableValue<string> {
+export function resource2DropdownOption(resource: Resource): SelectableValue<string> & Resource {
   const { id, name, externalId, description } = resource;
   const value = id.toString();
   const label = name || externalId || value;

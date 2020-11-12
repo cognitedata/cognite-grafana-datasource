@@ -14,8 +14,6 @@ import {
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
-import { targetToIdEither } from '../cdf/client';
-import { IdEither, Resource } from '../cdf/types';
 import { customQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -30,6 +28,7 @@ import {
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
+import { ResourceSelect } from './resourceSelect';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -139,15 +138,15 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
   );
 };
 
-function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
+function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
 
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
   });
 
-  const fetchAndSetDropdownLabel = async (assetId: number) => {
-    const [res] = await datasource.fetchSingleAsset(assetId);
+  const fetchAndSetDropdownLabel = async (id: number) => {
+    const [res] = await datasource.fetchSingleAsset({ id });
     setCurrent(resource2DropdownOption(res));
   };
 
@@ -185,79 +184,19 @@ function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
   );
 }
 
-const optionalIdsToTargetObj = ({
-  id,
-  externalId,
-}: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
-  return externalId
-    ? {
-        target: externalId,
-        targetRefType: 'externalId' as const,
-      }
-    : {
-        target: id,
-        targetRefType: 'id' as const,
-      };
-};
-
-function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
+function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
-
-  const [current, setCurrent] = useState<SelectableValue<string | number> & Partial<Resource>>({});
-  const [externalIdField, setExternalIdField] = useState<string>();
-
-  const onDropdown = (value: SelectableValue<string | number> & Partial<Resource>) => {
-    setExternalIdField(value.externalId);
-    setCurrent(value);
-    onQueryChange(optionalIdsToTargetObj(value));
-  };
-
-  const onExternalIdField = (externalId: string) => {
-    fetchAndSetDropdownLabel({ externalId });
-    onQueryChange(optionalIdsToTargetObj({ externalId }));
-  };
-
-  const fetchAndSetDropdownLabel = async (id: IdEither) => {
-    try {
-      const [res] = await datasource.fetchSingleTimeseries(id);
-      setCurrent(resource2DropdownOption(res));
-      setExternalIdField(res.externalId);
-    } catch {
-      setCurrent({});
-    }
-  };
-
-  useEffect(() => {
-    const idEither = targetToIdEither(query);
-    fetchAndSetDropdownLabel(idEither);
-    setExternalIdField(idEither.externalId);
-  }, []);
-
   return (
     <div>
-      <div className="gf-form gf-form-inline">
-        <InlineFormLabel width={7} tooltip="Time series name">
-          {current.value ? 'Name' : 'Search'}
-        </InlineFormLabel>
-        <AsyncSelect
-          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Timeseries')}
-          defaultOptions
-          value={current.value ? current : null}
-          placeholder="Search time series by name/description"
-          className="width-20"
-          onChange={onDropdown}
-        />
-        <FormField
-          label="External Id"
-          labelWidth={7}
-          inputWidth={20}
-          onBlur={({ target }) => onExternalIdField(target.value)}
-          onChange={({ target }) => setExternalIdField(target.value)}
-          value={externalIdField || ''}
-          placeholder={current.value ? 'No external id present' : 'Insert external id'}
-          tooltip="Time series external id"
-        />
-      </div>
+      <ResourceSelect
+        {...{
+          query,
+          onTargetQueryChange: onQueryChange,
+          resourceType: Tabs.Timeseries,
+          fetchSingleResource: datasource.fetchSingleTimeseries,
+          searchResource: (query) => datasource.getOptionsForDropdown(query, Tabs.Timeseries),
+        }}
+      />
       {/* {current.description && <pre>{current.description}</pre>} */}
       <CommonEditors {...{ query, onQueryChange }} />
     </div>

@@ -174,9 +174,9 @@ export function fetchSingleTimeseries(id: IdEither, connector: Connector) {
   });
 }
 
-export function fetchSingleAsset(id: number, connector: Connector) {
+export function fetchSingleAsset(id: IdEither, connector: Connector) {
   return connector.fetchItems<Resource>({
-    data: { items: [{ id }] },
+    data: { items: [id] },
     path: `/assets/byids`,
     method: HttpMethod.POST,
     cacheTime: CacheTime.ResourceByIds,
@@ -186,8 +186,10 @@ export function fetchSingleAsset(id: number, connector: Connector) {
 export function stringifyError(error: any) {
   const { data, status } = error;
   const errorMessage = data?.error?.message || error.message;
+  const missing = data?.error?.missing && data?.error?.missing.map(JSON.stringify);
+  const missingStr = missing ? `\nMissing: ${missing}` : '';
   const errorCode = status ? `${status} ` : '';
-  return errorMessage ? `[${errorCode}ERROR] ${errorMessage}` : `Unknown error`;
+  return errorMessage ? `[${errorCode}ERROR] ${errorMessage}${missingStr}` : `Unknown error`;
 }
 
 export function reduceTimeseries(
