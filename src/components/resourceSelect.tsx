@@ -26,7 +26,7 @@ const optionalIdsToTargetObj = ({
 export function ResourceSelect(props: {
   query: CogniteTargetObj;
   resourceType: Tab.Timeseries | Tab.Asset;
-  onTargetQueryChange: (patch: CogniteTargetObj) => void;
+  onTargetQueryChange: (patch: CogniteTargetObj, shouldRunQuery?: boolean) => void;
   fetchSingleResource: (id: IdEither) => Promise<Resource[]>;
   searchResource: (query: string) => Promise<Resource[]>;
 }) {
@@ -35,31 +35,43 @@ export function ResourceSelect(props: {
   const [current, setCurrent] = useState<SelectableValue<string | number> & Partial<Resource>>({});
   const [externalIdField, setExternalIdField] = useState<string>();
 
-  const onDropdown = (value: SelectableValue<string | number> & Partial<Resource>) => {
+  const onDropdown = (value: SelectableValue<string | number> & Resource) => {
     setExternalIdField(value.externalId);
     setCurrent(value);
     onTargetQueryChange(optionalIdsToTargetObj(value));
   };
 
-  const onExternalIdField = (externalId: string) => {
-    fetchAndSetDropdownLabel({ externalId });
+  const onExternalIdField = async (externalId: string) => {
+    const resource = await fetchDropdownResource({ externalId });
+    const currentOption = resource ? resource2DropdownOption(resource) : {};
+    setCurrent(currentOption);
     onTargetQueryChange(optionalIdsToTargetObj({ externalId }));
   };
 
-  const fetchAndSetDropdownLabel = async (id: IdEither) => {
+  const fetchDropdownResource = async (id: IdEither) => {
     try {
       const [res] = await fetchSingleResource(id);
-      setCurrent(resource2DropdownOption(res));
-      setExternalIdField(res.externalId);
+      return res;
     } catch {
-      setCurrent({});
+      return null;
+    }
+  };
+
+  const migrateToExternalIdRefIfNeeded = (resource: Resource) => {
+    if (resource.externalId && query.targetRefType !== 'externalId') {
+      onTargetQueryChange(optionalIdsToTargetObj(resource), false);
     }
   };
 
   useEffect(() => {
     const idEither = targetToIdEither(query);
-    fetchAndSetDropdownLabel(idEither);
-    setExternalIdField(idEither.externalId);
+    fetchDropdownResource(idEither).then(async (resource) => {
+      if (resource) {
+        setCurrent(resource2DropdownOption(resource));
+        migrateToExternalIdRefIfNeeded(resource);
+      }
+      setExternalIdField(idEither.externalId);
+    });
   }, []);
 
   return (

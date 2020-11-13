@@ -32,7 +32,10 @@ import { ResourceSelect } from './resourceSelect';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (patch: Partial<CogniteQueryBase> | CogniteTargetObj) => void;
+type OnQueryChange = (
+  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  shouldRunQuery?: boolean
+) => void;
 type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -236,11 +239,13 @@ export function QueryEditor(props: EditorProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
-  const onQueryChange: OnQueryChange = (patch) => {
+  const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
     onChange({ ...query, ...patch } as CogniteQuery);
-    setErrorMessage('');
-    setWarningMessage('');
-    onRunQuery();
+    if (shouldRunQuery) {
+      setErrorMessage('');
+      setWarningMessage('');
+      onRunQuery();
+    }
   };
 
   const onSelectTab = (tab: Tabs) => () => {
