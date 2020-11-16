@@ -25,7 +25,8 @@ export const customQueryHelp = (
       If you want to reference a specific time series, use:
       <br />
       <Code>{'ts{id=ID}'}</Code>, or{' '}
-      <Code>{`ts{id=ID, aggregate='AGGREGATE', granularity='GRANULARITY'}`}</Code>.<br />
+      <Code>{`ts{externalId='EXTERNAL_ID', aggregate='AGGREGATE', granularity='GRANULARITY', alignment=ALIGNMENT}`}</Code>
+      .<br />
       Example: <Code>{`sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}`}</Code>
       <br />
       <br />
@@ -80,7 +81,7 @@ export const customQueryHelp = (
         className="query-keyword"
         href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series"
       >
-        docs.cognite.com/api
+        docs.cognite.com/dev
       </a>
       .<br />
       <br />
