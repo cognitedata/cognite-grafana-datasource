@@ -65,12 +65,13 @@ export function ResourceSelect(props: {
 
   useEffect(() => {
     const idEither = targetToIdEither(query);
+    setExternalIdField(idEither.externalId);
     fetchDropdownResource(idEither).then(async (resource) => {
       if (resource) {
         setCurrent(resource2DropdownOption(resource));
         migrateToExternalIdRefIfNeeded(resource);
+        setExternalIdField(resource.externalId);
       }
-      setExternalIdField(idEither.externalId);
     });
   }, []);
 
