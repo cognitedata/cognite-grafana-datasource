@@ -9,7 +9,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 This allows you to switch between CDF projects that contain time series with matching `externalIds`.
 * Support for [synthetic time series alignment](https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries.html#alignment).
 * Rewrote data source GUI to React.
-* Updated CDF logo to match light/dark theme, [signed source code](https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/)
+* Updated CDF logo to match light/dark theme.
 
 ## 2.0.1 - August 25, 2020
 ### Bug fixes:
