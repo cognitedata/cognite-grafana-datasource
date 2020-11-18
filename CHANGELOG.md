@@ -5,7 +5,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 ## 2.1.0 - November 18, 2020
 
 * The data source requires Grafana version `7.0.6` or above.
-* Time series are now saved to dashboards by their  `externalId` where possible.
+* Time series are now saved to dashboards by their `externalId` where possible.
 This allows you to switch between CDF projects that contain time series with matching `externalIds`.
 * Support for [synthetic time series alignment](https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries.html#alignment).
 * Rewrote data source GUI to React.
