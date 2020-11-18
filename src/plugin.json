@@ -35,8 +35,18 @@
 
   "routes": [
     {
-      "path": "cogniteapi",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/v1/projects",
+      "path": "cdf-oauth",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "headers": [
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:%VERSION%"
+        }
+      ]
+    },
+    {
+      "path": "cdf-api-key",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
       "headers": [
         {
           "name": "api-key",
@@ -45,17 +55,6 @@
         {
           "name": "x-cdp-sdk",
           "content": "CogniteGrafanaDatasource:%VERSION%"
-        }
-      ]
-    },
-    {
-      "path": "cogniteloginstatus",
-      "method": "GET",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/login/status",
-      "headers": [
-        {
-          "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
         }
       ]
     }

@@ -86,11 +86,12 @@ export default class CogniteDatasource extends DataSourceApi<
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
+    const { cogniteProject, oauthPassThru } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
-    this.connector = new Connector(jsonData.cogniteProject, url, this.backendSrv);
-    this.project = jsonData.cogniteProject;
+    this.connector = new Connector(cogniteProject, url, this.backendSrv, oauthPassThru);
+    this.project = cogniteProject;
   }
 
   /**
@@ -345,10 +346,11 @@ export default class CogniteDatasource extends DataSourceApi<
    * used by data source configuration page to make sure the connection is working
    */
   async testDatasource() {
-    const { status, data } = await this.connector.request({ path: 'cogniteloginstatus' });
+    const { status, data } = await this.connector.request({ path: 'login/status' });
 
     if (status === 200) {
-      if (data.data.loggedIn && data.data.project === this.project) {
+      const { project, loggedIn } = data?.data || {};
+      if (loggedIn && (project === this.project || !project)) {
         return {
           status: 'success',
           message: 'Your Cognite credentials are valid',
