@@ -3,7 +3,7 @@
 exports[`Login When given invalid login info should display an error message 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
+  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
 }
 `;
 
@@ -18,7 +18,7 @@ Object {
 exports[`Login When given valid login info and correct project should log the user in 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
+  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
 }
 `;
 
@@ -33,7 +33,7 @@ Object {
 exports[`Login When given valid login info but incorrect project should display an error message 1`] = `
 Object {
   "method": "GET",
-  "url": "/api/datasources/proxy/6/cogniteloginstatus",
+  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
 }
 `;
 
