@@ -11,8 +11,8 @@
     },
     "keywords": ["cognite", "timeseries", "iot"],
     "logos": {
-      "small": "img/Cognite_logo.svg",
-      "large": "img/Cognite_logo.svg"
+      "small": "img/CDF_logo.svg",
+      "large": "img/CDF_logo.svg"
     },
     "links": [
       {
@@ -24,19 +24,29 @@
         "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
       }
     ],
-    "version": "2.0.1",
-    "updated": "2020-08-25"
+    "version": "2.1.0",
+    "updated": "2020-11-18"
   },
 
   "dependencies": {
-    "grafanaVersion": "5.4.x",
+    "grafanaVersion": "7.0.6",
     "plugins": []
   },
 
   "routes": [
     {
-      "path": "cogniteapi",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/api/v1/projects",
+      "path": "cdf-oauth",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "headers": [
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:2.1.0"
+        }
+      ]
+    },
+    {
+      "path": "cdf-api-key",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
       "headers": [
         {
           "name": "api-key",
@@ -44,18 +54,7 @@
         },
         {
           "name": "x-cdp-sdk",
-          "content": "CogniteGrafanaDatasource:2.0.1"
-        }
-      ]
-    },
-    {
-      "path": "cogniteloginstatus",
-      "method": "GET",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}/login/status",
-      "headers": [
-        {
-          "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+          "content": "CogniteGrafanaDatasource:2.1.0"
         }
       ]
     }
