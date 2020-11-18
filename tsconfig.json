@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "typeRoots": ["./node_modules/@types"],
-    "strict": false /* Enable all strict type-checking options. */,
+    "strict": false /* TODO: enable this asap */,
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
