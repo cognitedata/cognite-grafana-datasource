@@ -16,7 +16,6 @@ import {
   Operator,
   getClientFilters,
   WrappedConst,
-  hasAggregates,
   STSQuery,
   enrichWithDefaultAggregates,
 } from './index';
@@ -65,6 +64,17 @@ describe('get timeseries filters from parsed data', () => {
   describe('get flat server filters', () => {
     it('basic', () => {
       expect(getServerFilters(testSeries)).toStrictEqual([{}, { name: 'value' }]);
+    });
+
+    it("don't include aggregate filters", () => {
+      const aggregated = [
+        STS([
+          Filter('aggregate', 'average'),
+          Filter('granularity', '1m'),
+          Filter('alignment', 3600),
+        ]),
+      ];
+      expect(getServerFilters(aggregated)).toStrictEqual([{}]);
     });
 
     it('array filter', () => {
@@ -145,6 +155,15 @@ describe('get timeseries filters from parsed data', () => {
       ];
       expect(getClientFilters(nested)).toStrictEqual([[Filter('a.b', 'c', '!~')]]);
     });
+
+    it("don't include aggregate filters", () => {
+      const aggregated = STS([
+        Filter('aggregate', 'average'),
+        Filter('granularity', '1m'),
+        Filter('alignment', 3600),
+      ]);
+      expect(getClientFilters(aggregated)).toStrictEqual([[]]);
+    });
   });
 });
 
@@ -178,6 +197,13 @@ describe('nearley parser', () => {
   it('advanced template variable', () => {
     const res = parse('ts{id=${asset:json}}'); // eslint-disable-line no-template-curly-in-string
     expect(res).toEqual(STS([Filter('id', '${asset:json}')])); // eslint-disable-line no-template-curly-in-string
+  });
+
+  it('empty filter with aligned aggregate', () => {
+    const res = parse(`ts{alignment=3600, granularity='1m', aggregate='average'}`);
+    expect(res).toEqual(
+      STS([Filter('alignment', 3600), Filter('granularity', '1m'), Filter('aggregate', 'average')])
+    );
   });
 
   it('template variables for regexp filter', () => {
@@ -449,15 +475,6 @@ describe('convert expression to label', () => {
       '1': { id: 1 } as TimeSeriesResponseItem,
     });
     expect(res).toEqual(`map(1, ["one"], [1], 0)`);
-  });
-});
-
-describe('check if expression has aggregates', () => {
-  it('works with simple expressions', () => {
-    expect(hasAggregates('ts{}')).toBeFalsy();
-    expect(hasAggregates('ts{id=1}')).toBeFalsy();
-    expect(hasAggregates('ts{aggregate="something"}')).toBeTruthy();
-    expect(hasAggregates('ts{granularity="1s"}')).toBeTruthy();
   });
 });
 
