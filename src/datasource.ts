@@ -20,6 +20,7 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
+  targetToIdEither,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -27,6 +28,7 @@ import {
   FilterRequest,
   TimeSeriesResponseItem,
   Resource,
+  IdEither,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -42,13 +44,12 @@ import {
   CDFDataQueryRequest,
   CogniteAnnotationQuery,
   CogniteDataSourceOptions,
-  CogniteQuery,
   DataQueryRequestItem,
   DataQueryRequestResponse,
   Err,
   FailResponse,
   HttpMethod,
-  InputQueryTarget,
+  CogniteQuery,
   isError,
   MetricDescription,
   Ok,
@@ -182,7 +183,7 @@ export default class CogniteDatasource extends DataSourceApi<
       default:
       case undefined:
       case Tab.Timeseries: {
-        return [{ id: tsId }];
+        return [targetToIdEither(target)];
       }
       case Tab.Asset: {
         const timeseries = await this.findAssetTimeseries(target, options);
@@ -250,7 +251,7 @@ export default class CogniteDatasource extends DataSourceApi<
     query: string,
     type?: string,
     options?: any
-  ): Promise<SelectableValue<string>[]> {
+  ): Promise<(SelectableValue<string> & Resource)[]> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
@@ -332,13 +333,13 @@ export default class CogniteDatasource extends DataSourceApi<
     }));
   }
 
-  public fetchSingleTimeseries(id: number) {
+  fetchSingleTimeseries = (id: IdEither) => {
     return fetchSingleTimeseries(id, this.connector);
-  }
+  };
 
-  public fetchSingleAsset(id: number) {
+  fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
-  }
+  };
 
   /**
    * used by data source configuration page to make sure the connection is working
@@ -365,7 +366,7 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 }
 
-export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
+export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;
@@ -390,14 +391,16 @@ function handleFailedTargets(failed: FailResponse[]) {
     .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
 }
 
-export function resource2DropdownOption(resource: Resource): SelectableValue<string> {
-  const { name, externalId, id, description } = resource;
+export function resource2DropdownOption(resource: Resource): SelectableValue<string> & Resource {
+  const { id, name, externalId, description } = resource;
   const value = id.toString();
   const label = name || externalId || value;
   return {
-    description,
     label,
     value,
+    description,
+    externalId,
+    id,
   };
 }
 

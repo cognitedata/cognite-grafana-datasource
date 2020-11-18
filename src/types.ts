@@ -1,24 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
-import {
-  DataQueryRequest,
-  DataQuery as DataQueryUI,
-  TimeSeries,
-  DataQuery,
-  DataSourceJsonData,
-} from '@grafana/data';
+import { DataQueryRequest, TimeSeries, DataQuery, DataSourceJsonData } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
-
-export interface CogniteQuery extends DataQuery {
-  target: number | ''; // time series internal Id
-  aggregation: string;
-  granularity: string;
-  error: string;
-  label: string;
-  tab: Tab;
-  assetQuery: AssetQuery;
-  expr: string;
-  warning: string;
-}
 
 export enum Tab {
   Timeseries = 'Timeseries',
@@ -73,8 +55,9 @@ export interface AssetQuery {
   includeSubtrees: boolean;
 }
 
-export interface InputQueryTarget extends DataQueryUI {
-  target: number | '';
+export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
+
+export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
   error: string;
@@ -85,11 +68,19 @@ export interface InputQueryTarget extends DataQueryUI {
   warning: string;
 }
 
-export interface QueryTarget extends InputQueryTarget {
-  target: number;
-}
+export type CogniteTargetObj =
+  | {
+      target?: number;
+      targetRefType?: 'id';
+    }
+  | {
+      target?: string;
+      targetRefType?: 'externalId';
+    };
 
-export type QueryOptions = DataQueryRequest<InputQueryTarget>;
+export type QueryTarget = CogniteQuery;
+
+export type QueryOptions = DataQueryRequest<CogniteQuery>;
 
 export type Tuple<T> = [T, T];
 
@@ -205,6 +196,7 @@ export type DataQueryRequestItem = {
   granularity?: string;
   aggregates?: string[];
   id?: number;
+  externalId?: string;
 };
 
 export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;

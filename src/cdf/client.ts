@@ -28,6 +28,7 @@ import {
   Result,
   Ok,
   Err,
+  CogniteTargetObj,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -90,7 +91,7 @@ export async function getLabelsForTarget(
   switch (target.tab) {
     default:
     case Timeseries: {
-      return [await getTimeseriesLabel(labelSrc, target.target, connector)];
+      return [await getTimeseriesLabel(labelSrc, targetToIdEither(target), connector)];
     }
     case Asset: {
       const tsIds = queryList.map(({ id }) => ({ id }));
@@ -113,12 +114,12 @@ export async function getLabelsForTarget(
 
 async function getTimeseriesLabel(
   label: string,
-  id: number,
+  id: IdEither,
   connector: Connector
 ): Promise<string> {
   let resLabel = label;
   if (label && labelContainsVariableProps(label)) {
-    const [ts] = await getTimeseries({ items: [{ id }] }, connector);
+    const [ts] = await getTimeseries({ items: [id] }, connector);
     resLabel = getLabelWithInjectedProps(label, ts);
   }
   return resLabel;
@@ -164,18 +165,18 @@ export async function getTimeseries(
   return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
 }
 
-export function fetchSingleTimeseries(id: number, connector: Connector) {
+export function fetchSingleTimeseries(id: IdEither, connector: Connector) {
   return connector.fetchItems<Resource>({
-    data: { items: [{ id }] },
+    data: { items: [id] },
     path: `/timeseries/byids`,
     method: HttpMethod.POST,
     cacheTime: CacheTime.ResourceByIds,
   });
 }
 
-export function fetchSingleAsset(id: number, connector: Connector) {
+export function fetchSingleAsset(id: IdEither, connector: Connector) {
   return connector.fetchItems<Resource>({
-    data: { items: [{ id }] },
+    data: { items: [id] },
     path: `/assets/byids`,
     method: HttpMethod.POST,
     cacheTime: CacheTime.ResourceByIds,
@@ -185,8 +186,10 @@ export function fetchSingleAsset(id: number, connector: Connector) {
 export function stringifyError(error: any) {
   const { data, status } = error;
   const errorMessage = data?.error?.message || error.message;
+  const missing = data?.error?.missing && data?.error?.missing.map(JSON.stringify);
+  const missingStr = missing ? `\nMissing: ${missing}` : '';
   const errorCode = status ? `${status} ` : '';
-  return errorMessage ? `[${errorCode}ERROR] ${errorMessage}` : `Unknown error`;
+  return errorMessage ? `[${errorCode}ERROR] ${errorMessage}${missingStr}` : `Unknown error`;
 }
 
 export function reduceTimeseries(
@@ -270,3 +273,13 @@ export function getCalculationWarnings(items: Datapoint[]) {
 export function datapointsPath(isSynthetic: boolean) {
   return `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`;
 }
+
+export const targetToIdEither = (obj: CogniteTargetObj) => {
+  return obj.targetRefType === 'externalId'
+    ? {
+        externalId: obj.target,
+      }
+    : {
+        id: obj.target,
+      };
+};

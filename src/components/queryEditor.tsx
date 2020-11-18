@@ -23,13 +23,19 @@ import {
   Tab as Tabs,
   QueryRequestError,
   QueryDatapointsWarning,
+  CogniteTargetObj,
+  CogniteQueryBase,
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
+import { ResourceSelect } from './resourceSelect';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (patch: Partial<CogniteQuery>) => void;
+type OnQueryChange = (
+  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  shouldRunQuery?: boolean
+) => void;
 type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -101,11 +107,11 @@ const LabelEditor = (props: SelectedProps) => {
 };
 
 const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
-  <>
+  <div className="gf-form-inline">
     <AggregationEditor {...{ onQueryChange, query }} />
     <GranularityEditor {...{ onQueryChange, query }} />
     <LabelEditor {...{ onQueryChange, query }} />
-  </>
+  </div>
 );
 
 const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
@@ -135,15 +141,15 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
   );
 };
 
-function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
+function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
 
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
   });
 
-  const fetchAndSetDropdownLabel = async (assetId: number) => {
-    const [res] = await datasource.fetchSingleAsset(assetId);
+  const fetchAndSetDropdownLabel = async (id: number) => {
+    const [res] = await datasource.fetchSingleAsset({ id });
     setCurrent(resource2DropdownOption(res));
   };
 
@@ -181,41 +187,20 @@ function AssetTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
   );
 }
 
-function TimeseriesTab(props: SelectedProps & Pick<EditorProps, 'datasource'>) {
+function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
-
-  const [current, setCurrent] = useState<SelectableValue<string>>({
-    value: query.target as string,
-  });
-
-  const fetchAndSetDropdownLabel = async (tsId: number) => {
-    const [res] = await datasource.fetchSingleTimeseries(tsId);
-    setCurrent(resource2DropdownOption(res));
-  };
-
-  useEffect(() => {
-    onQueryChange({ target: +current.value });
-  }, [current.value]);
-
-  useEffect(() => {
-    if (current.value && !current.label) {
-      fetchAndSetDropdownLabel(+current.value);
-    }
-  }, [current.value]);
-
   return (
-    <div className="gf-form-inline">
-      <div className="gf-form">
-        <InlineFormLabel width={6}>Tag</InlineFormLabel>
-        <AsyncSelect
-          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Timeseries')}
-          defaultOptions
-          value={current}
-          placeholder="Search time series by name/description"
-          className="width-20"
-          onChange={setCurrent}
-        />
-      </div>
+    <div>
+      <ResourceSelect
+        {...{
+          query,
+          onTargetQueryChange: onQueryChange,
+          resourceType: Tabs.Timeseries,
+          fetchSingleResource: datasource.fetchSingleTimeseries,
+          searchResource: (query) => datasource.getOptionsForDropdown(query, Tabs.Timeseries),
+        }}
+      />
+      {/* {current.description && <pre>{current.description}</pre>} */}
       <CommonEditors {...{ query, onQueryChange }} />
     </div>
   );
@@ -233,6 +218,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           label="Query"
           labelWidth={6}
           inputWidth={30}
+          className="custom-query"
           onChange={({ target }) => setValue(target.value)}
           onBlur={() => onQueryChange({ expr: value })}
           value={value}
@@ -240,9 +226,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
         />
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
-      <div className="gf-form-inline">
-        <CommonEditors {...{ onQueryChange, query }} />
-      </div>
+      <CommonEditors {...{ onQueryChange, query }} />
       {showHelp && customQueryHelp}
     </>
   );
@@ -255,11 +239,13 @@ export function QueryEditor(props: EditorProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
-  const onQueryChange = (patch: Partial<CogniteQuery>) => {
-    onChange({ ...query, ...patch });
-    setErrorMessage('');
-    setWarningMessage('');
-    onRunQuery();
+  const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
+    onChange({ ...query, ...patch } as CogniteQuery);
+    if (shouldRunQuery) {
+      setErrorMessage('');
+      setWarningMessage('');
+      onRunQuery();
+    }
   };
 
   const onSelectTab = (tab: Tabs) => () => {
