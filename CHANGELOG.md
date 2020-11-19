@@ -2,7 +2,7 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
-## 2.1.0 - November 18, 2020
+## 2.1.0 - November 19, 2020
 
 * The data source requires Grafana version `7.0.6` or above.
 * Time series are now saved to dashboards by their `externalId` where possible.
