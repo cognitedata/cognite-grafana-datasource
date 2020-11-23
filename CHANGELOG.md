@@ -2,6 +2,14 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+
+## 2.1.1 - November 23, 2020
+
+### Bug fixes:
+- Support variables in `time series by asset` query.
+In version 2.1.0 `$variable` used as an `Asset tag` worked for earlier created dashboards, but it was impossible to create a new panel with the same capability.
+
+
 ## 2.1.0 - November 19, 2020
 
 * The data source requires Grafana version `7.0.6` or above.
