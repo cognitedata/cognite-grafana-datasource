@@ -149,9 +149,14 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     value: query.assetQuery.target,
   });
 
-  const fetchAndSetDropdownLabel = async (id: number) => {
-    const [res] = await datasource.fetchSingleAsset({ id });
-    setCurrent(resource2DropdownOption(res));
+  const fetchAndSetDropdownLabel = async (idInput: string) => {
+    const id = Number(idInput);
+    if (Number.isNaN(id)) {
+      setCurrent({ label: idInput, value: idInput });
+    } else {
+      const [res] = await datasource.fetchSingleAsset({ id });
+      setCurrent(resource2DropdownOption(res));
+    }
   };
 
   useEffect(() => {
@@ -165,7 +170,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
 
   useEffect(() => {
     if (current.value && !current.label) {
-      fetchAndSetDropdownLabel(+current.value);
+      fetchAndSetDropdownLabel(current.value);
     }
   }, [current.value]);
 
@@ -179,6 +184,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           defaultOptions
           placeholder="Search asset by name/description"
           className="width-20"
+          allowCustomValue
           onChange={setCurrent}
         />
       </div>
