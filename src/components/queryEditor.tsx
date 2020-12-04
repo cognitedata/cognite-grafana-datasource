@@ -107,6 +107,22 @@ const LabelEditor = (props: SelectedProps) => {
   );
 };
 
+const LatestValueCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Latest value</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={query.latestValue}
+          onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+        />
+      </div>
+    </div>
+  );
+};
+
 const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
   <div className="gf-form-inline">
     <AggregationEditor {...{ onQueryChange, query }} />
@@ -207,8 +223,8 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
           searchResource: (query) => datasource.getOptionsForDropdown(query, Tabs.Timeseries),
         }}
       />
-      {/* {current.description && <pre>{current.description}</pre>} */}
-      <CommonEditors {...{ query, onQueryChange }} />
+      <LatestValueCheckbox {...{ query, onQueryChange }} />
+      {!query.latestValue && <CommonEditors {...{ query, onQueryChange }} />}
     </div>
   );
 }

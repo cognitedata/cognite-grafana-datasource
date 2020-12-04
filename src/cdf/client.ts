@@ -270,8 +270,13 @@ export function getCalculationWarnings(items: Datapoint[]) {
   return Array.from(datapointsErrors).join('\n');
 }
 
-export function datapointsPath(isSynthetic: boolean) {
-  return `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`;
+export function datapointsPath(type: 'data' | 'latest' | 'synthetic') {
+  const paths = {
+    synthetic: 'synthetic/query',
+    latest: 'data/latest',
+    data: 'data/list',
+  };
+  return `/timeseries/${paths[type]}`;
 }
 
 export const targetToIdEither = (obj: CogniteTargetObj) => {

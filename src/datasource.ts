@@ -148,14 +148,31 @@ export default class CogniteDatasource extends DataSourceApi<
       })
     );
 
+    const getDataQueryRequestItemType = (items: DataQueryRequestItem[]) => {
+      const isSynthetic = items.some((q) => !!q.expression);
+      const isLatestValue = items.some((q) => !!q.before);
+      if (isLatestValue) {
+        return 'latest';
+      }
+      if (isSynthetic) {
+        return 'synthetic';
+      }
+      return 'data';
+    };
+
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
       const { target } = metadata;
-      const isSynthetic = data.items.some((q) => !!q.expression);
-      const chunkSize = isSynthetic ? 10 : 100;
+      const type = getDataQueryRequestItemType(data.items);
+      const chunkSize = type === 'synthetic' ? 10 : 100;
 
       const request = {
-        data,
-        path: datapointsPath(isSynthetic),
+        data:
+          type === 'latest'
+            ? {
+                items: data.items,
+              }
+            : data,
+        path: datapointsPath(type),
         method: HttpMethod.POST,
         requestId: getRequestId(options, target),
       };
@@ -179,12 +196,15 @@ export default class CogniteDatasource extends DataSourceApi<
     target: QueryTarget,
     options: QueryOptions
   ): Promise<DataQueryRequestItem[]> {
-    const { tab, target: tsId, assetQuery, expr } = target;
+    const { tab, target: tsId, assetQuery, expr, latestValue } = target;
     switch (tab) {
       default:
       case undefined:
       case Tab.Timeseries: {
-        return [targetToIdEither(target)];
+        if (!latestValue) {
+          return [targetToIdEither(target)];
+        }
+        return [{ ...targetToIdEither(target), before: options.range.to.valueOf() }];
       }
       case Tab.Asset: {
         const timeseries = await this.findAssetTimeseries(target, options);

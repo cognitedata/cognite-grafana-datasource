@@ -62,6 +62,7 @@ export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
+  latestValue: boolean;
   error: string;
   label: string;
   tab: Tab;
@@ -194,6 +195,7 @@ export type DataQueryRequestItem = {
   expression?: string;
   start?: string | number;
   end?: string | number;
+  before?: string | number;
   limit?: number;
   granularity?: string;
   aggregates?: string[];
