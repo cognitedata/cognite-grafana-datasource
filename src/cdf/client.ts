@@ -29,6 +29,7 @@ import {
   Ok,
   Err,
   CogniteTargetObj,
+  QueriesDataItem,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -40,16 +41,19 @@ const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
-  items,
-  { tab, aggregation, granularity },
+  { items, type, target }: QueriesDataItem,
   options
 ): CDFDataQueryRequest {
+  const { aggregation, granularity } = target;
   const [start, end] = getRange(options.range);
-  if (tab === Custom) {
+  if (type === 'synthetic') {
     const limit = calculateDPLimitPerQuery(items.length);
     return {
       items: items.map(({ expression }) => ({ expression, start, end, limit })),
     };
+  }
+  if (type === 'latest') {
+    return { items };
   }
   let aggregations: Aggregates & Granularity = null;
   const isAggregated = aggregation && aggregation !== 'none';
@@ -74,12 +78,10 @@ function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean 
 }
 
 export function formQueriesForTargets(
-  queriesData: QueriesData,
+  queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  return queriesData.map(({ target, items }) => {
-    return formQueryForItems(items, target, options);
-  });
+  return queriesData.map((itemsData) => formQueryForItems(itemsData, options));
 }
 
 export async function getLabelsForTarget(

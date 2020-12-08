@@ -184,12 +184,19 @@ export type DataQueryError = {
   };
 };
 
-export type QueriesData = {
+export type QueriesDataItem = {
+  type: 'data' | 'latest' | 'synthetic';
   items: DataQueryRequestItem[];
   target: QueryTarget;
-}[];
+};
 
-export type ResponseMetadata = { labels: string[]; target: QueryTarget };
+export type QueriesData = QueriesDataItem[];
+
+export type ResponseMetadata = {
+  labels: string[];
+  target: QueryTarget;
+  type: 'data' | 'latest' | 'synthetic';
+};
 
 export type DataQueryRequestItem = {
   expression?: string;

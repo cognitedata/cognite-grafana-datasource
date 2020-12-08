@@ -89,6 +89,7 @@ describe('Datasource Query', () => {
       expect(results.succeded[0].metadata).toEqual({
         target: oldTarget,
         labels: [''],
+        type: 'data',
       });
       expect(results.succeded[0].result).toEqual(getDataqueryResponse({ items, aggregates }));
     });

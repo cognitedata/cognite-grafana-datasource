@@ -62,6 +62,8 @@ import {
   Tab,
   Tuple,
   VariableQueryData,
+  QueriesData,
+  QueriesDataItem,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -120,13 +122,12 @@ export default class CogniteDatasource extends DataSourceApi<
     options: QueryOptions
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
-      let items: DataQueryRequestItem[];
       try {
-        items = await this.getDataQueryRequestItems(target, options);
+        return await this.getDataQueryRequestItems(target, options);
       } catch (e) {
         handleError(e, target.refId);
       }
-      return { items, target };
+      return null;
     });
 
     const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
@@ -135,7 +136,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
     const queries = formQueriesForTargets(queryData, options);
     const metadata = await Promise.all(
-      queryData.map(async ({ target, items }) => {
+      queryData.map(async ({ target, items, type }) => {
         let labels = [];
         try {
           labels = (await getLabelsForTarget(target, items, this.connector)).map((label) =>
@@ -144,34 +145,16 @@ export default class CogniteDatasource extends DataSourceApi<
         } catch (err) {
           handleError(err, target.refId);
         }
-        return { target, labels };
+        return { target, labels, type };
       })
     );
 
-    const getDataQueryRequestItemType = (items: DataQueryRequestItem[]) => {
-      const isSynthetic = items.some((q) => !!q.expression);
-      const isLatestValue = items.some((q) => !!q.before);
-      if (isLatestValue) {
-        return 'latest';
-      }
-      if (isSynthetic) {
-        return 'synthetic';
-      }
-      return 'data';
-    };
-
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
-      const { target } = metadata;
-      const type = getDataQueryRequestItemType(data.items);
+      const { target, type } = metadata;
       const chunkSize = type === 'synthetic' ? 10 : 100;
 
       const request = {
-        data:
-          type === 'latest'
-            ? {
-                items: data.items,
-              }
-            : data,
+        data,
         path: datapointsPath(type),
         method: HttpMethod.POST,
         requestId: getRequestId(options, target),
@@ -195,27 +178,43 @@ export default class CogniteDatasource extends DataSourceApi<
   private async getDataQueryRequestItems(
     target: QueryTarget,
     options: QueryOptions
-  ): Promise<DataQueryRequestItem[]> {
+  ): Promise<QueriesDataItem> {
     const { tab, target: tsId, assetQuery, expr, latestValue } = target;
+    let items: DataQueryRequestItem[];
+    let type: 'data' | 'latest' | 'synthetic';
     switch (tab) {
       default:
       case undefined:
       case Tab.Timeseries: {
         if (!latestValue) {
-          return [targetToIdEither(target)];
+          type = 'data';
+          items = [targetToIdEither(target)];
+        } else {
+          type = 'latest';
+          items = [{ ...targetToIdEither(target), before: options.range.to.valueOf() }];
         }
-        return [{ ...targetToIdEither(target), before: options.range.to.valueOf() }];
+        break;
       }
       case Tab.Asset: {
+        type = 'data';
         const timeseries = await this.findAssetTimeseries(target, options);
-        return timeseries.map(({ id }) => ({ id }));
+        items = timeseries.map(({ id }) => ({ id }));
+        break;
       }
       case Tab.Custom: {
+        type = 'synthetic';
         const templatedExpr = this.replaceVariable(expr, options.scopedVars);
         const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
-        return formQueriesForExpression(templatedExpr, target, this.connector, defaultInterval);
+        items = await formQueriesForExpression(
+          templatedExpr,
+          target,
+          this.connector,
+          defaultInterval
+        );
+        break;
       }
     }
+    return { type, items, target };
   }
 
   replaceVariable(query: string, scopedVars?): string {
