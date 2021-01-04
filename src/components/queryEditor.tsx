@@ -110,7 +110,7 @@ const LabelEditor = (props: SelectedProps) => {
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form">
+    <div className="gf-form-inline">
       <InlineFormLabel width={9}>Latest value</InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
@@ -119,6 +119,17 @@ const LatestValueCheckbox = (props: SelectedProps) => {
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
         />
       </div>
+      {query.latestValue && (
+        <FormField
+          label="Before"
+          labelWidth={6}
+          inputWidth={10}
+          onChange={({ target }) => onQueryChange({ before: target.value })}
+          value={query.before}
+          placeholder="now"
+          tooltip="Get data points before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of selected time range."
+        />
+      )}
     </div>
   );
 };

@@ -64,6 +64,7 @@ import {
   VariableQueryData,
   QueriesData,
   QueriesDataItem,
+  DataQueryRequestType,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -179,9 +180,9 @@ export default class CogniteDatasource extends DataSourceApi<
     target: QueryTarget,
     options: QueryOptions
   ): Promise<QueriesDataItem> {
-    const { tab, target: tsId, assetQuery, expr, latestValue } = target;
+    const { tab, expr, latestValue, before } = target;
     let items: DataQueryRequestItem[];
-    let type: 'data' | 'latest' | 'synthetic';
+    let type: DataQueryRequestType;
     switch (tab) {
       default:
       case undefined:
@@ -191,7 +192,13 @@ export default class CogniteDatasource extends DataSourceApi<
           items = [targetToIdEither(target)];
         } else {
           type = 'latest';
-          items = [{ ...targetToIdEither(target), before: options.range.to.valueOf() }];
+          const beforeStr = before ? this.replaceVariable(before, options.scopedVars) : 'now';
+          items = [
+            {
+              ...targetToIdEither(target),
+              before: beforeStr,
+            },
+          ];
         }
         break;
       }

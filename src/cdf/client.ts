@@ -30,6 +30,7 @@ import {
   Err,
   CogniteTargetObj,
   QueriesDataItem,
+  DataQueryRequestType,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -46,31 +47,36 @@ export function formQueryForItems(
 ): CDFDataQueryRequest {
   const { aggregation, granularity } = target;
   const [start, end] = getRange(options.range);
-  if (type === 'synthetic') {
-    const limit = calculateDPLimitPerQuery(items.length);
-    return {
-      items: items.map(({ expression }) => ({ expression, start, end, limit })),
-    };
+
+  switch (type) {
+    case 'synthetic': {
+      const limit = calculateDPLimitPerQuery(items.length);
+      return {
+        items: items.map(({ expression }) => ({ expression, start, end, limit })),
+      };
+    }
+    case 'latest':
+      return { items };
+
+    default: {
+      let aggregations: Aggregates & Granularity = null;
+      const isAggregated = aggregation && aggregation !== 'none';
+      if (isAggregated) {
+        aggregations = {
+          aggregates: [aggregation],
+          granularity: granularity || toGranularityWithLowerBound(options.intervalMs),
+        };
+      }
+      const limit = calculateDPLimitPerQuery(items.length, isAggregated);
+      return {
+        ...aggregations,
+        end,
+        start,
+        items,
+        limit,
+      };
+    }
   }
-  if (type === 'latest') {
-    return { items };
-  }
-  let aggregations: Aggregates & Granularity = null;
-  const isAggregated = aggregation && aggregation !== 'none';
-  if (isAggregated) {
-    aggregations = {
-      aggregates: [aggregation],
-      granularity: granularity || toGranularityWithLowerBound(options.intervalMs),
-    };
-  }
-  const limit = calculateDPLimitPerQuery(items.length, isAggregated);
-  return {
-    ...aggregations,
-    end,
-    start,
-    items,
-    limit,
-  };
 }
 
 function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean = true) {
@@ -272,7 +278,7 @@ export function getCalculationWarnings(items: Datapoint[]) {
   return Array.from(datapointsErrors).join('\n');
 }
 
-export function datapointsPath(type: 'data' | 'latest' | 'synthetic') {
+export function datapointsPath(type: DataQueryRequestType) {
   const paths = {
     synthetic: 'synthetic/query',
     latest: 'data/latest',

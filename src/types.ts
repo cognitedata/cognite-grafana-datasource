@@ -63,6 +63,7 @@ export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
   latestValue: boolean;
+  before?: string;
   error: string;
   label: string;
   tab: Tab;
@@ -184,8 +185,10 @@ export type DataQueryError = {
   };
 };
 
+export type DataQueryRequestType = 'data' | 'latest' | 'synthetic';
+
 export type QueriesDataItem = {
-  type: 'data' | 'latest' | 'synthetic';
+  type: DataQueryRequestType;
   items: DataQueryRequestItem[];
   target: QueryTarget;
 };
@@ -195,7 +198,7 @@ export type QueriesData = QueriesDataItem[];
 export type ResponseMetadata = {
   labels: string[];
   target: QueryTarget;
-  type: 'data' | 'latest' | 'synthetic';
+  type: DataQueryRequestType;
 };
 
 export type DataQueryRequestItem = {
