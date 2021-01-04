@@ -127,7 +127,7 @@ const LatestValueCheckbox = (props: SelectedProps) => {
           onChange={({ target }) => onQueryChange({ before: target.value })}
           value={query.before}
           placeholder="now"
-          tooltip="Get data points before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of selected time range."
+          tooltip="Get data points before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of a selected time range."
         />
       )}
     </div>

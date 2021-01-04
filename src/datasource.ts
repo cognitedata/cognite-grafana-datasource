@@ -176,40 +176,40 @@ export default class CogniteDatasource extends DataSourceApi<
     return concurrent(requests, queryProxy);
   }
 
+  private getSingleTSQueryRequestItem(
+    target: QueryTarget,
+    type: DataQueryRequestType,
+    options: QueryOptions
+  ) {
+    const idEither = targetToIdEither(target);
+    const beforeStr = target.before || 'now';
+    if (type === 'data') {
+      return idEither;
+    }
+    const before = this.replaceVariable(beforeStr, options.scopedVars);
+    return { ...idEither, before };
+  }
+
   private async getDataQueryRequestItems(
     target: QueryTarget,
     options: QueryOptions
   ): Promise<QueriesDataItem> {
-    const { tab, expr, latestValue, before } = target;
+    const { tab, expr } = target;
+    const type = getDataQueryRequestType(target);
     let items: DataQueryRequestItem[];
-    let type: DataQueryRequestType;
     switch (tab) {
       default:
       case undefined:
       case Tab.Timeseries: {
-        if (!latestValue) {
-          type = 'data';
-          items = [targetToIdEither(target)];
-        } else {
-          type = 'latest';
-          const beforeStr = before ? this.replaceVariable(before, options.scopedVars) : 'now';
-          items = [
-            {
-              ...targetToIdEither(target),
-              before: beforeStr,
-            },
-          ];
-        }
+        items = [this.getSingleTSQueryRequestItem(target, type, options)];
         break;
       }
       case Tab.Asset: {
-        type = 'data';
         const timeseries = await this.findAssetTimeseries(target, options);
         items = timeseries.map(({ id }) => ({ id }));
         break;
       }
       case Tab.Custom: {
-        type = 'synthetic';
         const templatedExpr = this.replaceVariable(expr, options.scopedVars);
         const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
         items = await formQueriesForExpression(
@@ -456,4 +456,20 @@ function showWarnings(responses: SuccessResponse[]) {
       appEventsLoader.then((events) => events.emit(datapointsWarningEvent, { refId, warning }));
     }
   });
+}
+
+function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
+  switch (tab) {
+    default:
+    case undefined:
+    case Tab.Timeseries: {
+      return latestValue ? 'latest' : 'data';
+    }
+    case Tab.Asset: {
+      return 'data';
+    }
+    case Tab.Custom: {
+      return 'synthetic';
+    }
+  }
 }
