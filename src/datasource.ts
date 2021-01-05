@@ -179,14 +179,13 @@ export default class CogniteDatasource extends DataSourceApi<
   private getSingleTSQueryRequestItem(
     target: QueryTarget,
     type: DataQueryRequestType,
-    options: QueryOptions
+    { scopedVars }: QueryOptions
   ) {
     const idEither = targetToIdEither(target);
-    const beforeStr = target.before || 'now';
     if (type === 'data') {
       return idEither;
     }
-    const before = this.replaceVariable(beforeStr, options.scopedVars);
+    const before = target.before ? this.replaceVariable(target.before, scopedVars) : Date.now();
     return { ...idEither, before };
   }
 
