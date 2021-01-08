@@ -6,6 +6,7 @@ import {
   DataSourceInstanceSettings,
   TimeRange,
   SelectableValue,
+  ScopedVars,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
@@ -20,7 +21,7 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
-  targetToIdEither,
+  getSingleTSQueryRequestItem,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -62,7 +63,6 @@ import {
   Tab,
   Tuple,
   VariableQueryData,
-  QueriesData,
   QueriesDataItem,
   DataQueryRequestType,
 } from './types';
@@ -101,7 +101,10 @@ export default class CogniteDatasource extends DataSourceApi<
    * used by panels to get timeseries data
    */
   async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
-    const queryTargets = filterEmptyQueryTargets(options.targets);
+    const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
+      this.replaceVariablesInTarget(t, options.scopedVars)
+    );
+
     let responseData = [];
     if (queryTargets.length) {
       try {
@@ -124,7 +127,7 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
-        return await this.getDataQueryRequestItems(target, options);
+        return await getDataQueryRequestItems(target, this.connector, options.intervalMs);
       } catch (e) {
         handleError(e, target.refId);
       }
@@ -140,9 +143,7 @@ export default class CogniteDatasource extends DataSourceApi<
       queryData.map(async ({ target, items, type }) => {
         let labels = [];
         try {
-          labels = (await getLabelsForTarget(target, items, this.connector)).map((label) =>
-            this.replaceVariable(label, options.scopedVars)
-          );
+          labels = await getLabelsForTarget(target, items, this.connector);
         } catch (err) {
           handleError(err, target.refId);
         }
@@ -176,55 +177,38 @@ export default class CogniteDatasource extends DataSourceApi<
     return concurrent(requests, queryProxy);
   }
 
-  private getSingleTSQueryRequestItem(
-    target: QueryTarget,
-    type: DataQueryRequestType,
-    { scopedVars }: QueryOptions
-  ) {
-    const idEither = targetToIdEither(target);
-    if (type === 'data') {
-      return idEither;
-    }
-    const before = target.before ? this.replaceVariable(target.before, scopedVars) : Date.now();
-    return { ...idEither, before };
-  }
+  private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
+    const { expr, assetQuery, before, label } = target;
 
-  private async getDataQueryRequestItems(
-    target: QueryTarget,
-    options: QueryOptions
-  ): Promise<QueriesDataItem> {
-    const { tab, expr } = target;
-    const type = getDataQueryRequestType(target);
-    let items: DataQueryRequestItem[];
-    switch (tab) {
-      default:
-      case undefined:
-      case Tab.Timeseries: {
-        items = [this.getSingleTSQueryRequestItem(target, type, options)];
-        break;
-      }
-      case Tab.Asset: {
-        const timeseries = await this.findAssetTimeseries(target, options);
-        items = timeseries.map(({ id }) => ({ id }));
-        break;
-      }
-      case Tab.Custom: {
-        const templatedExpr = this.replaceVariable(expr, options.scopedVars);
-        const defaultInterval = toGranularityWithLowerBound(options.intervalMs);
-        items = await formQueriesForExpression(
-          templatedExpr,
-          target,
-          this.connector,
-          defaultInterval
-        );
-        break;
-      }
-    }
-    return { type, items, target };
+    const [
+      beforeTemplated,
+      exprTemplated,
+      labelTemplated,
+      assetTargetTemplated,
+    ] = this.replaceVariablesArr([before, expr, label, assetQuery?.target], scopedVars);
+
+    const templatedAssetQuery = assetQuery && {
+      assetQuery: {
+        ...assetQuery,
+        target: assetTargetTemplated,
+      },
+    };
+
+    return {
+      ...target,
+      ...templatedAssetQuery,
+      expr: exprTemplated,
+      label: labelTemplated,
+      before: beforeTemplated,
+    };
   }
 
   replaceVariable(query: string, scopedVars?): string {
     return this.templateSrv.replace(query.trim(), scopedVars);
+  }
+
+  replaceVariablesArr(arr: (string | undefined)[], scopedVars: ScopedVars) {
+    return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
 
   /**
@@ -297,34 +281,6 @@ export default class CogniteDatasource extends DataSourceApi<
     });
 
     return items.map(resource2DropdownOption);
-  }
-
-  async findAssetTimeseries(
-    { refId, assetQuery }: QueryTarget,
-    { scopedVars }: QueryOptions
-  ): Promise<TimeSeriesResponseItem[]> {
-    const assetId = this.replaceVariable(assetQuery.target, scopedVars);
-    const filter = assetQuery.includeSubtrees
-      ? {
-          assetSubtreeIds: [{ id: Number(assetId) }],
-        }
-      : {
-          assetIds: [assetId],
-        };
-
-    // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
-    //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
-    const limit = 101;
-    const ts = await getTimeseries({ filter, limit }, this.connector);
-    if (ts.length === limit) {
-      (await appEventsLoader).emit(datapointsWarningEvent, {
-        refId,
-        warning: TIMESERIES_LIMIT_WARNING,
-      });
-
-      ts.splice(-1);
-    }
-    return ts;
   }
 
   /**
@@ -471,4 +427,61 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
       return 'synthetic';
     }
   }
+}
+
+async function findAssetTimeseries(
+  { refId, assetQuery }: QueryTarget,
+  connector: Connector
+): Promise<TimeSeriesResponseItem[]> {
+  const assetId = assetQuery.target;
+  const filter = assetQuery.includeSubtrees
+    ? {
+        assetSubtreeIds: [{ id: Number(assetId) }],
+      }
+    : {
+        assetIds: [assetId],
+      };
+
+  // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
+  //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
+  const limit = 101;
+  const ts = await getTimeseries({ filter, limit }, connector);
+  if (ts.length === limit) {
+    (await appEventsLoader).emit(datapointsWarningEvent, {
+      refId,
+      warning: TIMESERIES_LIMIT_WARNING,
+    });
+
+    ts.splice(-1);
+  }
+  return ts;
+}
+
+export async function getDataQueryRequestItems(
+  target: QueryTarget,
+  connector: Connector,
+  intervalMs: number
+): Promise<QueriesDataItem> {
+  const { tab, expr } = target;
+  const type = getDataQueryRequestType(target);
+  let items: DataQueryRequestItem[];
+  switch (tab) {
+    default:
+    case undefined:
+    case Tab.Timeseries: {
+      items = [getSingleTSQueryRequestItem(target, type)];
+      break;
+    }
+    case Tab.Asset: {
+      const timeseries = await findAssetTimeseries(target, connector);
+      items = timeseries.map(({ id }) => ({ id }));
+      break;
+    }
+    case Tab.Custom: {
+      const defaultInterval = toGranularityWithLowerBound(intervalMs);
+      items = await formQueriesForExpression(expr, target, connector, defaultInterval);
+      break;
+    }
+  }
+  return { type, items, target };
 }

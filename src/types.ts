@@ -15,6 +15,7 @@ const defaultAssetQuery: AssetQuery = {
 
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
+  latestValue: false,
   aggregation: 'average',
   granularity: '',
   label: '',
@@ -192,8 +193,6 @@ export type QueriesDataItem = {
   items: DataQueryRequestItem[];
   target: QueryTarget;
 };
-
-export type QueriesData = QueriesDataItem[];
 
 export type ResponseMetadata = {
   labels: string[];

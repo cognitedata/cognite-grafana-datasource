@@ -111,7 +111,9 @@ const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <div className="gf-form-inline">
-      <InlineFormLabel width={9}>Latest value</InlineFormLabel>
+      <InlineFormLabel tooltip="Fetch the latest data point only" width={9}>
+        Latest value
+      </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
           css=""
@@ -127,7 +129,7 @@ const LatestValueCheckbox = (props: SelectedProps) => {
           onChange={({ target }) => onQueryChange({ before: target.value })}
           value={query.before}
           placeholder="now"
-          tooltip="Get data points before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of a selected time range."
+          tooltip="Get data point before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of a selected time range."
         />
       )}
     </div>

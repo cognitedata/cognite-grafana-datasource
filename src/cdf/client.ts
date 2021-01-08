@@ -22,7 +22,6 @@ import {
   Aggregates,
   Granularity,
   Tuple,
-  QueriesData,
   SuccessResponse,
   Responses,
   Result,
@@ -296,3 +295,12 @@ export const targetToIdEither = (obj: CogniteTargetObj) => {
         id: obj.target,
       };
 };
+
+export function getSingleTSQueryRequestItem(target: QueryTarget, type: DataQueryRequestType) {
+  const idEither = targetToIdEither(target);
+  if (type === 'data') {
+    return idEither;
+  }
+  const before = target.before || Date.now();
+  return { ...idEither, before };
+}
