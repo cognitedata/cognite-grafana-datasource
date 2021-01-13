@@ -176,6 +176,10 @@ export default class CogniteDatasource extends DataSourceApi<
     return concurrent(requests, queryProxy);
   }
 
+  /**
+   * Resolves Grafana variables in QueryTarget object (props: label, expr, assetQuery.target)
+   * E.g. {..., label: 'date: ${__from:date:YYYY-MM}'} -> {..., label: 'date: 2020-07'}
+   */
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label } = target;
 
