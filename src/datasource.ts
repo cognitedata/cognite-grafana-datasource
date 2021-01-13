@@ -21,7 +21,7 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
-  getSingleTSQueryRequestItem,
+  targetToIdEither,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -64,7 +64,6 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  DataQueryRequestType,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -178,14 +177,12 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, assetQuery, before, label } = target;
+    const { expr, assetQuery, label } = target;
 
-    const [
-      beforeTemplated,
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-    ] = this.replaceVariablesArr([before, expr, label, assetQuery?.target], scopedVars);
+    const [exprTemplated, labelTemplated, assetTargetTemplated] = this.replaceVariablesArr(
+      [expr, label, assetQuery?.target],
+      scopedVars
+    );
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -199,7 +196,6 @@ export default class CogniteDatasource extends DataSourceApi<
       ...templatedAssetQuery,
       expr: exprTemplated,
       label: labelTemplated,
-      before: beforeTemplated,
     };
   }
 
@@ -469,7 +465,7 @@ export async function getDataQueryRequestItems(
     default:
     case undefined:
     case Tab.Timeseries: {
-      items = [getSingleTSQueryRequestItem(target, type)];
+      items = [targetToIdEither(target)];
       break;
     }
     case Tab.Asset: {

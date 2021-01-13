@@ -84,7 +84,7 @@ const AggregationEditor = (props: SelectedProps) => {
         options={aggregateOptions}
         menuPosition="fixed"
         value={query.aggregation}
-        className="width-10"
+        className="cognite-dropdown width-10"
       />
     </div>
   );
@@ -110,8 +110,8 @@ const LabelEditor = (props: SelectedProps) => {
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form-inline">
-      <InlineFormLabel tooltip="Fetch the latest data point only" width={9}>
+    <div className="gf-form gf-form-inline">
+      <InlineFormLabel tooltip="Fetch the latest data point in the provided time range" width={9}>
         Latest value
       </InlineFormLabel>
       <div className="gf-form-switch">
@@ -121,17 +121,6 @@ const LatestValueCheckbox = (props: SelectedProps) => {
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
         />
       </div>
-      {query.latestValue && (
-        <FormField
-          label="Before"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={({ target }) => onQueryChange({ before: target.value })}
-          value={query.before}
-          placeholder="now"
-          tooltip="Get data point before this time. The format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' gets data that is up to 2 days old. You can also specify time in milliseconds since epoch. Use $__to to fetch the latest data point before the end of a selected time range."
-        />
-      )}
     </div>
   );
 };
@@ -212,7 +201,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           value={current}
           defaultOptions
           placeholder="Search asset by name/description"
-          className="width-20"
+          className="cognite-dropdown width-20"
           allowCustomValue
           onChange={setCurrent}
         />
@@ -237,7 +226,11 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
         }}
       />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {!query.latestValue && <CommonEditors {...{ query, onQueryChange }} />}
+      {query.latestValue ? (
+        <LabelEditor {...{ onQueryChange, query }} />
+      ) : (
+        <CommonEditors {...{ query, onQueryChange }} />
+      )}
     </div>
   );
 }

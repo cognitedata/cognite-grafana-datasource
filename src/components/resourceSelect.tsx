@@ -85,7 +85,7 @@ export function ResourceSelect(props: {
         defaultOptions
         value={current.value ? current : null}
         placeholder={`Search ${resourceType.toLowerCase()} by name/description`}
-        className="width-20"
+        className="cognite-dropdown width-20"
         onChange={onDropdown}
       />
       <FormField

@@ -42,10 +42,10 @@ const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
-  options
+  { range, intervalMs }: QueryOptions
 ): CDFDataQueryRequest {
   const { aggregation, granularity } = target;
-  const [start, end] = getRange(options.range);
+  const [start, end] = getRange(range);
 
   switch (type) {
     case 'synthetic': {
@@ -54,16 +54,18 @@ export function formQueryForItems(
         items: items.map(({ expression }) => ({ expression, start, end, limit })),
       };
     }
-    case 'latest':
-      return { items };
-
+    case 'latest': {
+      return {
+        items: items.map((item) => ({ ...item, before: end })),
+      };
+    }
     default: {
       let aggregations: Aggregates & Granularity = null;
       const isAggregated = aggregation && aggregation !== 'none';
       if (isAggregated) {
         aggregations = {
           aggregates: [aggregation],
-          granularity: granularity || toGranularityWithLowerBound(options.intervalMs),
+          granularity: granularity || toGranularityWithLowerBound(intervalMs),
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
@@ -295,12 +297,3 @@ export const targetToIdEither = (obj: CogniteTargetObj) => {
         id: obj.target,
       };
 };
-
-export function getSingleTSQueryRequestItem(target: QueryTarget, type: DataQueryRequestType) {
-  const idEither = targetToIdEither(target);
-  if (type === 'data') {
-    return idEither;
-  }
-  const before = target.before || Date.now();
-  return { ...idEither, before };
-}

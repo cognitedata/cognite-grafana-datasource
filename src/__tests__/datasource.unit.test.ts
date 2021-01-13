@@ -1,6 +1,10 @@
+import { dateTime } from '@grafana/data';
+import { formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
-import { defaultQuery, CogniteQuery } from '../types';
+import { defaultQuery, CogniteQuery, QueryOptions } from '../types';
 import { getDataQueryRequestItems } from '../datasource';
+
+const defaultCogniteQuery = defaultQuery as CogniteQuery;
 
 describe('getDataQueryRequestItems: generate cdf data points request items', () => {
   const connector: Connector = ({
@@ -16,7 +20,7 @@ describe('getDataQueryRequestItems: generate cdf data points request items', () 
   it('simple data points query', async () => {
     const res = await getDataQueryRequestItems(
       {
-        ...(defaultQuery as CogniteQuery),
+        ...defaultCogniteQuery,
         targetRefType: 'externalId',
         target: 'ext',
       },
@@ -34,9 +38,8 @@ describe('getDataQueryRequestItems: generate cdf data points request items', () 
   it('latest data point query', async () => {
     const res = await getDataQueryRequestItems(
       {
-        ...(defaultQuery as CogniteQuery),
+        ...defaultCogniteQuery,
         latestValue: true,
-        before: 'now',
         targetRefType: 'id',
         target: 1,
       },
@@ -46,26 +49,59 @@ describe('getDataQueryRequestItems: generate cdf data points request items', () 
 
     expect(res.items).toEqual([
       {
-        before: 'now',
         id: 1,
       },
     ]);
   });
+});
 
-  it('latest data point query with default "before"', async () => {
-    const { items } = await getDataQueryRequestItems(
+describe('formQueryForItems: enrich items with additional props for request', () => {
+  const queryOptions = {
+    range: { from: dateTime(0), to: dateTime(3000) },
+    intervalMs: 2000,
+  } as QueryOptions;
+
+  it('for timeseries/data request', () => {
+    const queryItems = formQueryForItems(
       {
-        ...(defaultQuery as CogniteQuery),
-        latestValue: true,
-        targetRefType: 'externalId',
-        target: 'ext',
+        items: [{ externalId: 'ext' }],
+        type: 'data',
+        target: defaultCogniteQuery,
       },
-      connector,
-      1000
+      queryOptions
     );
 
-    expect(items.length).toEqual(1);
-    expect(items[0].externalId).toEqual('ext');
-    expect(items[0].before).toBeLessThanOrEqual(Date.now());
+    expect(queryItems).toEqual({
+      aggregates: ['average'],
+      end: 3000,
+      granularity: '2s',
+      items: [
+        {
+          externalId: 'ext',
+        },
+      ],
+      limit: 10000,
+      start: 0,
+    });
+  });
+
+  it('for timeseries/data/latest request', () => {
+    const queryItems = formQueryForItems(
+      {
+        items: [{ externalId: 'ext' }],
+        type: 'latest',
+        target: defaultCogniteQuery,
+      },
+      queryOptions
+    );
+
+    expect(queryItems).toEqual({
+      items: [
+        {
+          externalId: 'ext',
+          before: 3000,
+        },
+      ],
+    });
   });
 });

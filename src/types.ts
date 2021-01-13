@@ -64,7 +64,6 @@ export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
   latestValue: boolean;
-  before?: string;
   error: string;
   label: string;
   tab: Tab;
