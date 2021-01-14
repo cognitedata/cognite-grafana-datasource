@@ -22,13 +22,14 @@ import {
   Aggregates,
   Granularity,
   Tuple,
-  QueriesData,
   SuccessResponse,
   Responses,
   Result,
   Ok,
   Err,
   CogniteTargetObj,
+  QueriesDataItem,
+  DataQueryRequestType,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -40,33 +41,43 @@ const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
-  items,
-  { tab, aggregation, granularity },
-  options
+  { items, type, target }: QueriesDataItem,
+  { range, intervalMs }: QueryOptions
 ): CDFDataQueryRequest {
-  const [start, end] = getRange(options.range);
-  if (tab === Custom) {
-    const limit = calculateDPLimitPerQuery(items.length);
-    return {
-      items: items.map(({ expression }) => ({ expression, start, end, limit })),
-    };
+  const { aggregation, granularity } = target;
+  const [start, end] = getRange(range);
+
+  switch (type) {
+    case 'synthetic': {
+      const limit = calculateDPLimitPerQuery(items.length);
+      return {
+        items: items.map(({ expression }) => ({ expression, start, end, limit })),
+      };
+    }
+    case 'latest': {
+      return {
+        items: items.map((item) => ({ ...item, before: end })),
+      };
+    }
+    default: {
+      let aggregations: Aggregates & Granularity = null;
+      const isAggregated = aggregation && aggregation !== 'none';
+      if (isAggregated) {
+        aggregations = {
+          aggregates: [aggregation],
+          granularity: granularity || toGranularityWithLowerBound(intervalMs),
+        };
+      }
+      const limit = calculateDPLimitPerQuery(items.length, isAggregated);
+      return {
+        ...aggregations,
+        end,
+        start,
+        items,
+        limit,
+      };
+    }
   }
-  let aggregations: Aggregates & Granularity = null;
-  const isAggregated = aggregation && aggregation !== 'none';
-  if (isAggregated) {
-    aggregations = {
-      aggregates: [aggregation],
-      granularity: granularity || toGranularityWithLowerBound(options.intervalMs),
-    };
-  }
-  const limit = calculateDPLimitPerQuery(items.length, isAggregated);
-  return {
-    ...aggregations,
-    end,
-    start,
-    items,
-    limit,
-  };
 }
 
 function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean = true) {
@@ -74,12 +85,10 @@ function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean 
 }
 
 export function formQueriesForTargets(
-  queriesData: QueriesData,
+  queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  return queriesData.map(({ target, items }) => {
-    return formQueryForItems(items, target, options);
-  });
+  return queriesData.map((itemsData) => formQueryForItems(itemsData, options));
 }
 
 export async function getLabelsForTarget(
@@ -270,8 +279,13 @@ export function getCalculationWarnings(items: Datapoint[]) {
   return Array.from(datapointsErrors).join('\n');
 }
 
-export function datapointsPath(isSynthetic: boolean) {
-  return `/timeseries/${isSynthetic ? 'synthetic/query' : 'data/list'}`;
+export function datapointsPath(type: DataQueryRequestType) {
+  const paths = {
+    synthetic: 'synthetic/query',
+    latest: 'data/latest',
+    data: 'data/list',
+  };
+  return `/timeseries/${paths[type]}`;
 }
 
 export const targetToIdEither = (obj: CogniteTargetObj) => {

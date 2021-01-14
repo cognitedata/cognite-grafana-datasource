@@ -84,7 +84,7 @@ const AggregationEditor = (props: SelectedProps) => {
         options={aggregateOptions}
         menuPosition="fixed"
         value={query.aggregation}
-        className="width-10"
+        className="cognite-dropdown width-10"
       />
     </div>
   );
@@ -103,6 +103,24 @@ const LabelEditor = (props: SelectedProps) => {
         placeholder="default"
         tooltip="Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
       />
+    </div>
+  );
+};
+
+const LatestValueCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  return (
+    <div className="gf-form gf-form-inline">
+      <InlineFormLabel tooltip="Fetch the latest data point in the provided time range" width={9}>
+        Latest value
+      </InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={query.latestValue}
+          onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+        />
+      </div>
     </div>
   );
 };
@@ -183,7 +201,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           value={current}
           defaultOptions
           placeholder="Search asset by name/description"
-          className="width-20"
+          className="cognite-dropdown width-20"
           allowCustomValue
           onChange={setCurrent}
         />
@@ -207,8 +225,12 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
           searchResource: (query) => datasource.getOptionsForDropdown(query, Tabs.Timeseries),
         }}
       />
-      {/* {current.description && <pre>{current.description}</pre>} */}
-      <CommonEditors {...{ query, onQueryChange }} />
+      <LatestValueCheckbox {...{ query, onQueryChange }} />
+      {query.latestValue ? (
+        <LabelEditor {...{ onQueryChange, query }} />
+      ) : (
+        <CommonEditors {...{ query, onQueryChange }} />
+      )}
     </div>
   );
 }

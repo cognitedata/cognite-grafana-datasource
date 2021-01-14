@@ -15,6 +15,7 @@ const defaultAssetQuery: AssetQuery = {
 
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
+  latestValue: false,
   aggregation: 'average',
   granularity: '',
   label: '',
@@ -62,6 +63,7 @@ export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
+  latestValue: boolean;
   error: string;
   label: string;
   tab: Tab;
@@ -183,17 +185,25 @@ export type DataQueryError = {
   };
 };
 
-export type QueriesData = {
+export type DataQueryRequestType = 'data' | 'latest' | 'synthetic';
+
+export type QueriesDataItem = {
+  type: DataQueryRequestType;
   items: DataQueryRequestItem[];
   target: QueryTarget;
-}[];
+};
 
-export type ResponseMetadata = { labels: string[]; target: QueryTarget };
+export type ResponseMetadata = {
+  labels: string[];
+  target: QueryTarget;
+  type: DataQueryRequestType;
+};
 
 export type DataQueryRequestItem = {
   expression?: string;
   start?: string | number;
   end?: string | number;
+  before?: string | number;
   limit?: number;
   granularity?: string;
   aggregates?: string[];

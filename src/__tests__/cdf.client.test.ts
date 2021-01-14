@@ -7,7 +7,7 @@ import {
 } from '../cdf/client';
 import { getDataqueryResponse, getMeta } from './utils';
 
-describe('CDF datasource', () => {
+describe('CDF client', () => {
   describe('datapoints to tuples', () => {
     it('converts non aggregated values', () => {
       expect(
