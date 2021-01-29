@@ -63,6 +63,26 @@ describe('CDF client', () => {
       ]);
       expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
     });
+
+    it('should return latest data point even if outside the time range with a correct label', () => {
+      const id = 1;
+      const metaResponses: any[] = [
+        {
+          result: getDataqueryResponse(
+            {
+              items: [{ id }],
+              aggregates: ['average'],
+            },
+            '',
+            1
+          ),
+          metadata: getMeta(id, 'average', [''], 'latest'),
+        },
+      ];
+      const [reduced] = reduceTimeseries(metaResponses, [1549337270000, 1549337275000]);
+      expect(reduced.datapoints).toEqual([[0, 1549336675000]]);
+      expect(reduced.target).toEqual(`${id}`);
+    });
   });
 
   describe('concurrent', () => {

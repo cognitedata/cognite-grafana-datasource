@@ -50,12 +50,13 @@ const instanceSettings = ({
 
 export const getMockedDataSource = () => new CogniteDatasource(instanceSettings);
 
-export function getMeta(id, aggregation, labels) {
+export function getMeta(id, aggregation, labels, type = 'data') {
   return {
     labels,
     target: {
       aggregation,
       target: id,
     } as QueryTarget,
+    type,
   };
 }
