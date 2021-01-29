@@ -29,16 +29,21 @@ export interface TimeSeriesAggregateDatapoint {
   totalVariation?: number;
 }
 
-export interface Event {
+export interface CogniteEvent {
   id: number;
-  startTime: number;
-  endTime: number;
-  description: string;
-  type: string;
-  subtype: string;
-  assetIds: number[];
-  source: string;
-  sourceId: string;
+  lastUpdatedTime: string;
+  createdTime: string;
+  externalId?: string;
+  startTime?: number;
+  endTime?: number;
+  dataSetId?: number;
+  description?: string;
+  type?: string;
+  subtype?: string;
+  assetIds?: number[];
+  source?: string;
+  sourceId?: string;
+  metadata?: { [s: string]: string }
 }
 
 export interface FilterRequestParams {

@@ -11,6 +11,8 @@ import {
   Icon,
   Switch,
   AsyncSelect,
+  Segment,
+  IconButton
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
@@ -25,6 +27,7 @@ import {
   QueryDatapointsWarning,
   CogniteTargetObj,
   CogniteQueryBase,
+  EventQuery,
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
@@ -261,6 +264,116 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 
+function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
+  const { query, onQueryChange } = props;
+  const [showHelp, setShowHelp] = useState(false);
+  const [value, setValue] = useState(query.eventQuery.expr);
+
+  return (
+    <>
+      <div className="gf-form">
+        <FormField
+          label="Query"
+          labelWidth={6}
+          inputWidth={30}
+          className="custom-query"
+          onChange={({ target }) => setValue(target.value)}
+          onBlur={() => onQueryChange({
+            eventQuery: {
+              ...query.eventQuery,
+              expr: value
+            }
+          })}
+          value={value}
+          tooltip="Click help button for help."
+        />
+        <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+      </div>
+      <ColumnsPicker {...props}/>
+      <LabelEditor {...props}/>
+      {/* <CommonEditors {...{ onQueryChange, query }} /> */}
+      {/* {showHelp && customQueryHelp} */}
+    </>
+  );
+}
+const AddButton = ({ onClick }: { onClick: () => void }) => (
+  <a onClick={onClick} className="gf-form-label query-part">
+    <Icon name="plus-circle" />
+  </a>
+);
+
+const RemoveButton = ({ onClick }: { onClick: () => void }) => (
+  <a onClick={onClick} className="gf-form-label query-part">
+    <Icon name="times" />
+  </a>
+);
+
+const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
+  const options = [
+    'id',
+    'externalId',
+    'type',
+    'subtype',
+    'startTime',
+    'endTime',
+    'dataSetId',
+    'assetIds',
+    'source',
+    'sourceId',
+    'metadata',
+    'metadata.propertyName',
+    'createdTime',    
+    'lastUpdatedTime',
+  ].map((x)=> ({ label:x, value:x }))
+  
+  const { columns } = query.eventQuery
+
+  const onEventQueryChange = (e: Partial<EventQuery>) => {
+    onQueryChange({
+      eventQuery: {
+        ...query.eventQuery,
+        ...e
+      }
+    })
+  }
+
+  return (
+    <div className="gf-form">
+      <InlineFormLabel tooltip="Pick columns" width={9}>
+        Columns
+      </InlineFormLabel>
+      {
+        columns.map((val, key) => (
+          <>
+          <Segment
+            value={val}
+            options={options}
+            onChange={({ value }) => {
+              onEventQueryChange({
+                columns: columns.map((old, i) => i === key ? value : old)
+              })
+            }}
+            allowCustomValue={true}
+          />
+          <RemoveButton onClick={() => {
+            onEventQueryChange({
+              columns: columns.filter((_, i) => i !== key)
+            })
+          }}/>
+          </>
+        ))
+      } 
+      <AddButton onClick={() => {
+        onEventQueryChange({
+          columns: [ ...columns, `columnName${columns.length}` ]
+        })
+      }} />
+    </div>
+  );
+}
+
+
+
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
@@ -320,6 +433,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
       {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}

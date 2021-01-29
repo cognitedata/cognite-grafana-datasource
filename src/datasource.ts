@@ -7,6 +7,8 @@ import {
   TimeRange,
   SelectableValue,
   ScopedVars,
+  TableData,
+  TimeSeries,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
@@ -30,6 +32,7 @@ import {
   TimeSeriesResponseItem,
   Resource,
   IdEither,
+  CogniteEvent,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -65,6 +68,7 @@ import {
   VariableQueryData,
   QueriesDataItem,
 } from './types';
+import { partition, get } from 'lodash'
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
@@ -96,6 +100,46 @@ export default class CogniteDatasource extends DataSourceApi<
     this.project = cogniteProject;
   }
 
+
+  group = (targets: CogniteQuery[]) => {
+    const [eventTargets, tsTargets] = partition(targets, ({ tab }: CogniteQuery) => tab === Tab.Event);
+    return { eventTargets, tsTargets }
+  }
+
+  async fetchEventTargets(targets: CogniteQuery[], options: DataQueryRequest<CogniteQuery>) {
+    const { range } = options;
+    const tables = await Promise.all(targets.map(async ({ eventQuery, label })=> {
+      const { columns, expr } = eventQuery;
+      const events = await this.fetchEvents(expr, range);
+      
+      const rows = events.map(event =>
+        columns.map(field => {
+          const res = get(event, field)
+          const dateTypes = [
+            'lastUpdatedTime',
+            'createdTime',
+            'startTime',
+            'endTime',
+          ]
+          return dateTypes.includes(field) ? new Date(res) : res;
+        })
+      )
+  
+      const table: TableData = {
+        rows,
+        type: 'table',
+        name: label,
+        columns: columns.map(text => {
+          return { text, unit: text === 'startTime' || text === 'endTime' ? 'Date' : '' }
+          
+        }),
+      };
+
+      return table
+    }))
+    return tables;
+  }
+
   /**
    * used by panels to get timeseries data
    */
@@ -104,13 +148,22 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    let responseData = [];
+    const {
+      eventTargets,
+      tsTargets
+    } = this.group(options.targets);
+
+    let responseData: (TimeSeries | TableData)[] = [];
     if (queryTargets.length) {
       try {
-        const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
+        const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
+        const eventResults = await this.fetchEventTargets(eventTargets, options);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = reduceTimeseries(succeded, getRange(options.range));
+        responseData = [
+          ...reduceTimeseries(succeded, getRange(options.range)),
+          ...eventResults,
+        ];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -211,23 +264,9 @@ export default class CogniteDatasource extends DataSourceApi<
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
 
-  /**
-   * used by dashboards to get annotations (events)
-   */
-
-  async annotationQuery(
-    options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationEvent[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
+  async fetchEvents(expr: string, range: TimeRange) {
     const [startTime, endTime] = getRange(range);
-
-    if (error || !query) {
-      return [];
-    }
-
-    const replacedVariablesQuery = this.replaceVariable(query);
-    const { filters, params } = parseQuery(replacedVariablesQuery);
+    const { filters, params } = parseQuery(expr);
     const timeFrame = {
       startTime: { max: endTime },
       endTime: { min: startTime },
@@ -237,13 +276,34 @@ export default class CogniteDatasource extends DataSourceApi<
       limit: 1000,
     };
 
-    const items = await this.connector.fetchItems<any>({
+    const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/list`,
       method: HttpMethod.POST,
     });
-    const response = applyFilters(items, filters);
 
+    return applyFilters(items, filters);
+  }
+
+
+
+  /**
+   * used by dashboards to get annotations (events)
+   */
+
+  async annotationQuery(
+    options: AnnotationQueryRequest<CogniteAnnotationQuery>
+  ): Promise<AnnotationEvent[]> {
+    const { range, annotation } = options;
+    const { query, error } = annotation;
+
+    if (error || !query) {
+      return [];
+    }
+
+    const evaluatedQuery = this.replaceVariable(query);
+    const response = await this.fetchEvents(evaluatedQuery, range);
+    
     return response.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,
@@ -352,8 +412,10 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery } = target;
+      const { tab, assetQuery, eventQuery } = target;
       switch (tab) {
+        case Tab.Event:
+          return eventQuery.expr;
         case Tab.Asset:
           return assetQuery && assetQuery.target;
         case Tab.Custom:

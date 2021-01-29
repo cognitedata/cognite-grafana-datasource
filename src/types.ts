@@ -1,16 +1,30 @@
 // eslint-disable-next-line max-classes-per-file
-import { DataQueryRequest, TimeSeries, DataQuery, DataSourceJsonData } from '@grafana/data';
+import { DataQueryRequest, TimeSeries, DataQuery, DataSourceJsonData, TableData } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
+  Event = 'Event'
 }
 
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
+};
+
+const defaultEventQuery: EventQuery = {
+  expr: '',
+  columns: [
+    'externalId',
+    'type',
+    'subtype',
+    'description',
+    'startTime',
+    'endTime',
+    'metadata',
+  ]
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
@@ -22,6 +36,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   tab: Tab.Timeseries,
   expr: '',
   assetQuery: defaultAssetQuery,
+  eventQuery: defaultEventQuery,
 };
 
 /**
@@ -46,7 +61,7 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<TimeSeries[]>;
+export type QueryResponse = DataResponse<(TimeSeries | TableData)[]>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -56,6 +71,11 @@ export interface MetricDescription {
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
+}
+
+export interface EventQuery {
+  expr: string;
+  columns: string[];
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
@@ -68,6 +88,7 @@ export interface CogniteQueryBase extends DataQuery {
   label: string;
   tab: Tab;
   assetQuery: AssetQuery;
+  eventQuery: EventQuery;
   expr: string;
   warning: string;
 }
