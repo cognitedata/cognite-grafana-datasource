@@ -11,6 +11,7 @@ import {
   TimeSeries,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
+import { partition, get } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -68,7 +69,6 @@ import {
   VariableQueryData,
   QueriesDataItem,
 } from './types';
-import { partition, get } from 'lodash'
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
@@ -100,43 +100,41 @@ export default class CogniteDatasource extends DataSourceApi<
     this.project = cogniteProject;
   }
 
-
   group = (targets: CogniteQuery[]) => {
-    const [eventTargets, tsTargets] = partition(targets, ({ tab }: CogniteQuery) => tab === Tab.Event);
-    return { eventTargets, tsTargets }
-  }
+    const [eventTargets, tsTargets] = partition(
+      targets,
+      ({ tab }: CogniteQuery) => tab === Tab.Event
+    );
+    return { eventTargets, tsTargets };
+  };
 
   async fetchEventTargets(targets: CogniteQuery[], options: DataQueryRequest<CogniteQuery>) {
     const { range } = options;
-    const tables = await Promise.all(targets.map(async ({ eventQuery, label })=> {
-      const { columns, expr } = eventQuery;
-      const events = await this.fetchEvents(expr, range);
-      
-      const rows = events.map(event =>
-        columns.map(field => {
-          const res = get(event, field)
-          const dateTypes = [
-            'lastUpdatedTime',
-            'createdTime',
-            'startTime',
-            'endTime',
-          ]
-          return dateTypes.includes(field) ? new Date(res) : res;
-        })
-      )
-  
-      const table: TableData = {
-        rows,
-        type: 'table',
-        name: label,
-        columns: columns.map(text => {
-          return { text, unit: text === 'startTime' || text === 'endTime' ? 'Date' : '' }
-          
-        }),
-      };
+    const tables = await Promise.all(
+      targets.map(async ({ eventQuery, label }) => {
+        const { columns, expr } = eventQuery;
+        const events = await this.fetchEvents(expr, range);
 
-      return table
-    }))
+        const rows = events.map((event) =>
+          columns.map((field) => {
+            const res = get(event, field);
+            const dateTypes = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
+            return dateTypes.includes(field) ? new Date(res) : res;
+          })
+        );
+
+        const table: TableData = {
+          rows,
+          type: 'table',
+          name: label,
+          columns: columns.map((text) => {
+            return { text, unit: text === 'startTime' || text === 'endTime' ? 'Date' : '' };
+          }),
+        };
+
+        return table;
+      })
+    );
     return tables;
   }
 
@@ -148,10 +146,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const {
-      eventTargets,
-      tsTargets
-    } = this.group(options.targets);
+    const { eventTargets, tsTargets } = this.group(options.targets);
 
     let responseData: (TimeSeries | TableData)[] = [];
     if (queryTargets.length) {
@@ -160,10 +155,7 @@ export default class CogniteDatasource extends DataSourceApi<
         const eventResults = await this.fetchEventTargets(eventTargets, options);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [
-          ...reduceTimeseries(succeded, getRange(options.range)),
-          ...eventResults,
-        ];
+        responseData = [...reduceTimeseries(succeded, getRange(options.range)), ...eventResults];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -285,8 +277,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return applyFilters(items, filters);
   }
 
-
-
   /**
    * used by dashboards to get annotations (events)
    */
@@ -303,7 +293,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
     const evaluatedQuery = this.replaceVariable(query);
     const response = await this.fetchEvents(evaluatedQuery, range);
-    
+
     return response.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,

@@ -43,7 +43,7 @@ export interface CogniteEvent {
   assetIds?: number[];
   source?: string;
   sourceId?: string;
-  metadata?: { [s: string]: string }
+  metadata?: { [s: string]: string };
 }
 
 export interface FilterRequestParams {

@@ -1,12 +1,18 @@
 // eslint-disable-next-line max-classes-per-file
-import { DataQueryRequest, TimeSeries, DataQuery, DataSourceJsonData, TableData } from '@grafana/data';
+import {
+  DataQueryRequest,
+  TimeSeries,
+  DataQuery,
+  DataSourceJsonData,
+  TableData,
+} from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export enum Tab {
   Timeseries = 'Timeseries',
   Asset = 'Asset',
   Custom = 'Custom',
-  Event = 'Event'
+  Event = 'Event',
 }
 
 const defaultAssetQuery: AssetQuery = {
@@ -16,15 +22,7 @@ const defaultAssetQuery: AssetQuery = {
 
 const defaultEventQuery: EventQuery = {
   expr: '',
-  columns: [
-    'externalId',
-    'type',
-    'subtype',
-    'description',
-    'startTime',
-    'endTime',
-    'metadata',
-  ]
+  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime', 'metadata'],
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {

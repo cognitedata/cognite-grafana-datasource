@@ -12,7 +12,7 @@ import {
   Switch,
   AsyncSelect,
   Segment,
-  IconButton
+  IconButton,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
@@ -278,35 +278,26 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           inputWidth={30}
           className="custom-query"
           onChange={({ target }) => setValue(target.value)}
-          onBlur={() => onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              expr: value
-            }
-          })}
+          onBlur={() =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                expr: value,
+              },
+            })
+          }
           value={value}
           tooltip="Click help button for help."
         />
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
-      <ColumnsPicker {...props}/>
-      <LabelEditor {...props}/>
+      <ColumnsPicker {...{ query, onQueryChange }} />
+      <LabelEditor {...{ query, onQueryChange }} />
       {/* <CommonEditors {...{ onQueryChange, query }} /> */}
       {/* {showHelp && customQueryHelp} */}
     </>
   );
 }
-const AddButton = ({ onClick }: { onClick: () => void }) => (
-  <a onClick={onClick} className="gf-form-label query-part">
-    <Icon name="plus-circle" />
-  </a>
-);
-
-const RemoveButton = ({ onClick }: { onClick: () => void }) => (
-  <a onClick={onClick} className="gf-form-label query-part">
-    <Icon name="times" />
-  </a>
-);
 
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = [
@@ -322,57 +313,61 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     'sourceId',
     'metadata',
     'metadata.propertyName',
-    'createdTime',    
+    'createdTime',
     'lastUpdatedTime',
-  ].map((x)=> ({ label:x, value:x }))
-  
-  const { columns } = query.eventQuery
+  ].map((x) => ({ label: x, value: x }));
+
+  const { columns } = query.eventQuery;
 
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
         ...query.eventQuery,
-        ...e
-      }
-    })
-  }
+        ...e,
+      },
+    });
+  };
 
   return (
     <div className="gf-form">
       <InlineFormLabel tooltip="Pick columns" width={9}>
         Columns
       </InlineFormLabel>
-      {
-        columns.map((val, key) => (
-          <>
+      {columns.map((val, key) => (
+        <>
           <Segment
             value={val}
             options={options}
             onChange={({ value }) => {
               onEventQueryChange({
-                columns: columns.map((old, i) => i === key ? value : old)
-              })
+                columns: columns.map((old, i) => (i === key ? value : old)),
+              });
             }}
-            allowCustomValue={true}
+            allowCustomValue
           />
-          <RemoveButton onClick={() => {
-            onEventQueryChange({
-              columns: columns.filter((_, i) => i !== key)
-            })
-          }}/>
-          </>
-        ))
-      } 
-      <AddButton onClick={() => {
-        onEventQueryChange({
-          columns: [ ...columns, `columnName${columns.length}` ]
-        })
-      }} />
+          <Icon
+            name="times"
+            className="gf-form-label query-part"
+            onClick={() => {
+              onEventQueryChange({
+                columns: columns.filter((_, i) => i !== key),
+              });
+            }}
+          />
+        </>
+      ))}
+      <Icon
+        name="plus-circle"
+        className="gf-form-label query-part"
+        onClick={() => {
+          onEventQueryChange({
+            columns: [...columns, `columnName${columns.length}`],
+          });
+        }}
+      />
     </div>
   );
-}
-
-
+};
 
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
