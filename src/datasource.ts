@@ -9,6 +9,7 @@ import {
   ScopedVars,
   TableData,
   TimeSeries,
+  ArrayDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import { partition, get } from 'lodash';
@@ -25,6 +26,7 @@ import {
   fetchSingleAsset,
   fetchSingleTimeseries,
   targetToIdEither,
+  convertItemsToTable,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -41,6 +43,7 @@ import {
   datapointsWarningEvent,
   failedResponseEvent,
   TIMESERIES_LIMIT_WARNING,
+  DateFields
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -108,34 +111,21 @@ export default class CogniteDatasource extends DataSourceApi<
     return { eventTargets, tsTargets };
   };
 
-  async fetchEventTargets(targets: CogniteQuery[], options: DataQueryRequest<CogniteQuery>) {
-    const { range } = options;
-    const tables = await Promise.all(
-      targets.map(async ({ eventQuery, label }) => {
-        const { columns, expr } = eventQuery;
-        const events = await this.fetchEvents(expr, range);
+  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, range: TimeRange) {
+    let events: CogniteEvent[] = [];
+    try {
+      events = await this.fetchEvents(eventQuery.expr, range);
+    } catch (e) {
+      handleError(e, refId);
+    }
+    return events;
+  }
 
-        const rows = events.map((event) =>
-          columns.map((field) => {
-            const res = get(event, field);
-            const dateTypes = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
-            return dateTypes.includes(field) ? new Date(res) : res;
-          })
-        );
-
-        const table: TableData = {
-          rows,
-          type: 'table',
-          name: label,
-          columns: columns.map((text) => {
-            return { text, unit: text === 'startTime' || text === 'endTime' ? 'Date' : '' };
-          }),
-        };
-
-        return table;
-      })
-    );
-    return tables;
+  async fetchEventTargets(targets: CogniteQuery[], { range }: DataQueryRequest<CogniteQuery>) {
+    return Promise.all(targets.map(async (target) => {
+      const events = await this.fetchEventsForTarget(target, range);
+      return convertItemsToTable(events, target.eventQuery.columns);
+    }));
   }
 
   /**

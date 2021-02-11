@@ -1,5 +1,5 @@
-import _, { get, cloneDeep } from 'lodash';
-import { TimeSeries } from '@grafana/data';
+import { get, cloneDeep } from 'lodash';
+import { TableData, TimeSeries } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -35,7 +35,7 @@ import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
 import { getRange } from '../datasource';
-import { CacheTime, DATAPOINTS_LIMIT_WARNING } from '../constants';
+import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
@@ -297,3 +297,19 @@ export const targetToIdEither = (obj: CogniteTargetObj) => {
         id: obj.target,
       };
 };
+
+
+export const convertItemsToTable = (items: Resource[], columns: string[]): TableData  => {
+  const rows = items.map((item) =>
+    columns.map((field) => {
+      const res = get(item, field);
+      return DateFields.includes(field) ? new Date(res) : res;
+    })
+  );
+
+  return {
+    rows,
+    type: 'table',
+    columns: columns.map((text) => ({ text })),
+  };
+}

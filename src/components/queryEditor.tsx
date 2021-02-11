@@ -13,6 +13,7 @@ import {
   AsyncSelect,
   Segment,
   IconButton,
+  Button,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
@@ -292,12 +293,25 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <ColumnsPicker {...{ query, onQueryChange }} />
-      <LabelEditor {...{ query, onQueryChange }} />
       {/* <CommonEditors {...{ onQueryChange, query }} /> */}
       {/* {showHelp && customQueryHelp} */}
     </>
   );
 }
+
+const InlineButton = ({ onClick, iconName }) => {
+  return (
+    <div
+      role="button"
+      className="gf-form-label query-part"
+      onClick={onClick}
+      onKeyPress={onClick}
+      tabIndex={0}
+    >
+      <Icon name={iconName} />
+    </div>
+  );
+};
 
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = [
@@ -312,10 +326,9 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     'source',
     'sourceId',
     'metadata',
-    'metadata.propertyName',
     'createdTime',
     'lastUpdatedTime',
-  ].map((x) => ({ label: x, value: x }));
+  ].map((value) => ({ value, label: value }));
 
   const { columns } = query.eventQuery;
 
@@ -330,7 +343,10 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
 
   return (
     <div className="gf-form">
-      <InlineFormLabel tooltip="Pick columns" width={9}>
+      <InlineFormLabel
+        tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
+        width={6}
+      >
         Columns
       </InlineFormLabel>
       {columns.map((val, key) => (
@@ -345,25 +361,23 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
             }}
             allowCustomValue
           />
-          <Icon
-            name="times"
-            className="gf-form-label query-part"
+          <InlineButton
             onClick={() => {
               onEventQueryChange({
                 columns: columns.filter((_, i) => i !== key),
               });
             }}
+            iconName="times"
           />
         </>
       ))}
-      <Icon
-        name="plus-circle"
-        className="gf-form-label query-part"
+      <InlineButton
         onClick={() => {
           onEventQueryChange({
-            columns: [...columns, `columnName${columns.length}`],
+            columns: [...columns, `column${columns.length}`],
           });
         }}
+        iconName="plus-circle"
       />
     </div>
   );

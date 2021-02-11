@@ -22,3 +22,5 @@ export const AuthType = {
   OAuth: 'cdf-oauth',
   ApiKey: 'cdf-api-key',
 };
+
+export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
