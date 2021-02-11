@@ -43,7 +43,7 @@ import {
   datapointsWarningEvent,
   failedResponseEvent,
   TIMESERIES_LIMIT_WARNING,
-  DateFields
+  DateFields,
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -110,23 +110,6 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     return { eventTargets, tsTargets };
   };
-
-  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, range: TimeRange) {
-    let events: CogniteEvent[] = [];
-    try {
-      events = await this.fetchEvents(eventQuery.expr, range);
-    } catch (e) {
-      handleError(e, refId);
-    }
-    return events;
-  }
-
-  async fetchEventTargets(targets: CogniteQuery[], { range }: DataQueryRequest<CogniteQuery>) {
-    return Promise.all(targets.map(async (target) => {
-      const events = await this.fetchEventsForTarget(target, range);
-      return convertItemsToTable(events, target.eventQuery.columns);
-    }));
-  }
 
   /**
    * used by panels to get timeseries data
@@ -244,6 +227,25 @@ export default class CogniteDatasource extends DataSourceApi<
 
   replaceVariablesArr(arr: (string | undefined)[], scopedVars: ScopedVars) {
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
+  }
+
+  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, range: TimeRange) {
+    let events: CogniteEvent[] = [];
+    try {
+      events = await this.fetchEvents(eventQuery.expr, range);
+    } catch (e) {
+      handleError(e, refId);
+    }
+    return events;
+  }
+
+  async fetchEventTargets(targets: CogniteQuery[], { range }: DataQueryRequest<CogniteQuery>) {
+    return Promise.all(
+      targets.map(async (target) => {
+        const events = await this.fetchEventsForTarget(target, range);
+        return convertItemsToTable(events, target.eventQuery.columns);
+      })
+    );
   }
 
   async fetchEvents(expr: string, range: TimeRange) {

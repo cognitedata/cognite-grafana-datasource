@@ -298,8 +298,7 @@ export const targetToIdEither = (obj: CogniteTargetObj) => {
       };
 };
 
-
-export const convertItemsToTable = (items: Resource[], columns: string[]): TableData  => {
+export const convertItemsToTable = (items: Resource[], columns: string[]): TableData => {
   const rows = items.map((item) =>
     columns.map((field) => {
       const res = get(item, field);
@@ -312,4 +311,4 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     type: 'table',
     columns: columns.map((text) => ({ text })),
   };
-}
+};

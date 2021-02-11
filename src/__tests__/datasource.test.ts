@@ -1,6 +1,7 @@
 import ms from 'ms';
 import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
+import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
@@ -614,7 +615,7 @@ describe('Given custom query with pure text label', () => {
       ...options,
       targets: [targetA],
     });
-    expect(result.data[0].target).toEqual('Pure text');
+    expect((result.data[0] as TimeSeries).target).toEqual('Pure text');
   });
 });
 
