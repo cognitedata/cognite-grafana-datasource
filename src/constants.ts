@@ -24,3 +24,19 @@ export const AuthType = {
 };
 
 export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
+
+export const EventFields = [
+  'id',
+  'externalId',
+  'type',
+  'subtype',
+  'startTime',
+  'endTime',
+  'dataSetId',
+  'assetIds',
+  'source',
+  'sourceId',
+  'metadata',
+  'createdTime',
+  'lastUpdatedTime',
+];

@@ -30,7 +30,7 @@ import {
   CogniteQueryBase,
   EventQuery,
 } from '../types';
-import { failedResponseEvent, datapointsWarningEvent } from '../constants';
+import { failedResponseEvent, datapointsWarningEvent, EventFields } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
@@ -293,7 +293,6 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
         <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <ColumnsPicker {...{ query, onQueryChange }} />
-      {/* <CommonEditors {...{ onQueryChange, query }} /> */}
       {/* {showHelp && customQueryHelp} */}
     </>
   );
@@ -314,22 +313,7 @@ const InlineButton = ({ onClick, iconName }) => {
 };
 
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
-  const options = [
-    'id',
-    'externalId',
-    'type',
-    'subtype',
-    'startTime',
-    'endTime',
-    'dataSetId',
-    'assetIds',
-    'source',
-    'sourceId',
-    'metadata',
-    'createdTime',
-    'lastUpdatedTime',
-  ].map((value) => ({ value, label: value }));
-
+  const options = EventFields.map((value) => ({ value, label: value }));
   const { columns } = query.eventQuery;
 
   const onEventQueryChange = (e: Partial<EventQuery>) => {

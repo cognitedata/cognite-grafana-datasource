@@ -119,7 +119,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets } = this.group(options.targets);
+    const { eventTargets, tsTargets } = this.group(queryTargets);
 
     let responseData: (TimeSeries | TableData)[] = [];
     if (queryTargets.length) {
