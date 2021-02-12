@@ -374,9 +374,8 @@ export default class CogniteDatasource {
       });
   }
   async getCurrentDomainVersion(domainExternalId: string): Promise<number | undefined> {
-    const domains = await this.templatesConnector.listDomains();
-    const domain = domains.find(d => d.externalId === domainExternalId);
-    return domain?.version;
+    const latestVersion = await this.templatesConnector.fetchLatestDomainVersion(domainExternalId);
+    return latestVersion;
   }
 }
 

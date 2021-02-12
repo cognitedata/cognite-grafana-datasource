@@ -35,8 +35,9 @@ export class TemplatesConnector {
     }
 
     const options: any = {
-      url: `${this.apiUrl}/cognitetemplatesapi/${this.project}/domains`,
-      method: 'GET',
+      url: `${this.apiUrl}/cogniteapi/${this.project}/templategroups/list`,
+      method: 'POST',
+      data: {},
     };
 
     return this.backendSrv.datasourceRequest(options).then(res => {
@@ -45,11 +46,31 @@ export class TemplatesConnector {
     });
   }
 
+  async fetchLatestDomainVersion(domainExternalId: string) {
+    const domain = this.cachedDomains.find(d => d.externalId === domainExternalId);
+    if (domain?.version) return domain.version;
+
+    const options: any = {
+      url: `${this.apiUrl}/cogniteapi/${this.project}/templategroups/${domainExternalId}/versions/list`,
+      method: 'POST',
+      data: { limit: 1 },
+    };
+
+    return this.backendSrv.datasourceRequest(options).then(res => {
+      const [version] = res.data.items.map(domainVersion => domainVersion.version);
+      const domainIndex = this.cachedDomains.findIndex(d => d.externalId === domainExternalId);
+      if (domainIndex && version) {
+        this.cachedDomains[domainIndex].version = version;
+      }
+      return version;
+    });
+  }
+
   private request(query: Partial<TemplateQuery>, data: string) {
     const { domain, domainVersion } = query;
 
     const options: any = {
-      url: `${this.apiUrl}/cognitetemplatesapi/${this.project}/domains/${domain}/${domainVersion}/graphql`,
+      url: `${this.apiUrl}/cogniteapi/${this.project}/templategroups/${domain}/versions/${domainVersion}/graphql`,
       method: 'POST',
       data: {
         query: data,

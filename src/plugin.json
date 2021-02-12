@@ -58,20 +58,6 @@
           "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
         }
       ]
-    },
-    {
-      "path": "cognitetemplatesapi",
-      "url": "https://templates.cognite.ai/api/v1/projects",
-      "headers": [
-        {
-          "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
-        },
-        {
-          "name": "x-cdp-sdk",
-          "content": "CogniteGrafanaDatasource:%VERSION%"
-        }
-      ]
     }
   ],
 
