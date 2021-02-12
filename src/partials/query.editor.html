@@ -194,9 +194,9 @@
   </div>
   <div class="gf-form-inline">
     <div class="gf-form gf-form--grow">
-      <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain</label>
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Template group</label>
       <gf-form-dropdown model="ctrl.target.templateQuery.domain"
-        placeholder="Start typing domain name here"
+        placeholder="Start typing template group name here"
         class="gf-dropdown-wrapper"
         css-class="gf-size-auto"
         allow-custom="false"
@@ -206,9 +206,9 @@
       </gf-form-dropdown>
     </div>
     <div class="gf-form gf-form--grow">
-      <label class="gf-form-label query-keyword fix-query-keyword width-8">Domain version</label>
+      <label class="gf-form-label query-keyword fix-query-keyword width-8">Version</label>
       <input type="number" class="gf-form-input query-keyword width-auto" ng-model="ctrl.target.templateQuery.domainVersion" ng-blur="ctrl.refreshData()" placeholder="Version..." min="1"/>
-      <info-popover mode="right-absolute">Domain version you would like to query instances from</info-popover>
+      <info-popover mode="right-absolute">The version of the template group you would like to query instances from</info-popover>
     </div>
   </div>
   <div class="gf-form-inline">
