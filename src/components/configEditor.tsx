@@ -121,7 +121,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <Switch
               label="Forward OAuth Identity"
               labelClass="width-13"
-              checked={oauthPassThru}
+              checked={!!oauthPassThru}
               onChange={onOAuthPassThruChange}
               tooltip={oAuthPassThruTooltip}
             />

@@ -2,14 +2,14 @@ import ms from 'ms';
 import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
 import { filterEmptyQueryTargets } from '../datasource';
-import { CogniteQuery, QueryTarget, Tab } from '../types';
+import { QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
 
-type QueryTargetLike = Partial<CogniteQuery>;
+type QueryTargetLike = Partial<QueryTarget>;
 
 const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
@@ -505,14 +505,10 @@ describe('Datasource Query', () => {
       {
         target: 123,
       },
-    ] as CogniteQuery[];
+    ] as QueryTarget[];
 
     it('should return empty if empty', () => {
       expect(filterEmptyQueryTargets([])).toEqual([]);
-    });
-
-    it('should filter if target is empty', () => {
-      expect(filterEmptyQueryTargets([null])).toEqual([]);
     });
 
     it('should filter if hide == true', () => {
@@ -533,7 +529,7 @@ describe('Datasource Query', () => {
           },
         },
         ...normalTargets,
-      ] as CogniteQuery[];
+      ] as QueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargets);
     });
 
@@ -547,7 +543,7 @@ describe('Datasource Query', () => {
           target: '',
         },
         ...normalTargets,
-      ] as CogniteQuery[];
+      ] as QueryTarget[];
       expect(filterEmptyQueryTargets(targets)).toEqual(normalTargets);
     });
 
@@ -556,7 +552,7 @@ describe('Datasource Query', () => {
     });
 
     it('should filter out all empty (different types)', async () => {
-      const emptyTimeseries: Partial<CogniteQuery> = {
+      const emptyTimeseries: Partial<QueryTarget> = {
         target: '',
         tab: Timeseries,
         assetQuery: {
@@ -564,12 +560,12 @@ describe('Datasource Query', () => {
           includeSubtrees: false,
         },
       };
-      const emptyAsset: Partial<CogniteQuery> = {
+      const emptyAsset: Partial<QueryTarget> = {
         ...emptyTimeseries,
         target: '',
         tab: Asset,
       };
-      const emptyCustom: Partial<CogniteQuery> = {
+      const emptyCustom: Partial<QueryTarget> = {
         ...emptyTimeseries,
         tab: Custom,
         target: undefined,
@@ -578,7 +574,7 @@ describe('Datasource Query', () => {
         emptyTimeseries,
         emptyAsset,
         emptyCustom,
-      ] as CogniteQuery[]);
+      ] as QueryTarget[]);
       expect(result).toEqual([]);
     });
   });

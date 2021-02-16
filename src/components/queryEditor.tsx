@@ -19,12 +19,15 @@ import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
   defaultQuery,
   CogniteDataSourceOptions,
-  CogniteQuery,
   Tab as Tabs,
   QueryRequestError,
   QueryDatapointsWarning,
   CogniteTargetObj,
-  CogniteQueryBase,
+  QueryTarget,
+  QueryTargetBase,
+  InputQueryTarget,
+  InputQueryTargetBase,
+  InputCogniteTargetObj,
 } from '../types';
 import { failedResponseEvent, datapointsWarningEvent } from '../constants';
 import '../css/query_editor.css';
@@ -32,9 +35,9 @@ import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
 
 const { FormField } = LegacyForms;
-type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
+type EditorProps = QueryEditorProps<CogniteDatasource, InputQueryTarget, CogniteDataSourceOptions>;
 type OnQueryChange = (
-  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  patch: Partial<InputQueryTargetBase> | InputCogniteTargetObj,
   shouldRunQuery?: boolean
 ) => void;
 type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
@@ -56,22 +59,19 @@ const aggregateOptions = [
 
 const GranularityEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
-  return (
-    query.aggregation &&
-    query.aggregation !== 'none' && (
-      <div className="gf-form">
-        <FormField
-          label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={({ target }) => onQueryChange({ granularity: target.value })}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
-    )
-  );
+  return query.aggregation && query.aggregation !== 'none' ? (
+    <div className="gf-form">
+      <FormField
+        label="Granularity"
+        labelWidth={6}
+        inputWidth={10}
+        onChange={({ target }) => onQueryChange({ granularity: target.value })}
+        value={query.granularity}
+        placeholder="default"
+        tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
+      />
+    </div>
+  ) : null;
 };
 
 const AggregationEditor = (props: SelectedProps) => {
@@ -269,7 +269,7 @@ export function QueryEditor(props: EditorProps) {
   const [warningMessage, setWarningMessage] = useState('');
 
   const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
-    onChange({ ...query, ...patch } as CogniteQuery);
+    onChange({ ...query, ...patch } as QueryTarget);
     if (shouldRunQuery) {
       setErrorMessage('');
       setWarningMessage('');
@@ -306,7 +306,9 @@ export function QueryEditor(props: EditorProps) {
 
   useEffect(() => {
     eventsSubscribe();
-    return () => eventsUnsubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
   }, [tab]);
 
   return (

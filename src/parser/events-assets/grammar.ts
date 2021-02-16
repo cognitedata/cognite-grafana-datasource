@@ -1,7 +1,7 @@
 // Generated automatically by nearley, version 2.19.7
 // http://github.com/Hardmath123/nearley
 // Bypasses TS6133. Allow declared but unused functions.
-// @ts-ignore
+// @ts-nocheck
 
 /* eslint-disable */
 function id(d: any[]): any { return d[0]; }

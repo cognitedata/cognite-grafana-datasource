@@ -7,6 +7,7 @@ import {
   TimeRange,
   SelectableValue,
   ScopedVars,
+  TimeSeries,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
@@ -50,7 +51,7 @@ import {
   Err,
   FailResponse,
   HttpMethod,
-  CogniteQuery,
+  InputQueryTarget,
   isError,
   MetricDescription,
   Ok,
@@ -70,7 +71,7 @@ import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 export default class CogniteDatasource extends DataSourceApi<
-  CogniteQuery,
+  InputQueryTarget,
   CogniteDataSourceOptions
 > {
   /**
@@ -91,20 +92,20 @@ export default class CogniteDatasource extends DataSourceApi<
     const { cogniteProject, oauthPassThru } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
-    this.url = url;
-    this.connector = new Connector(cogniteProject, url, this.backendSrv, oauthPassThru);
+    this.url = url!;
+    this.connector = new Connector(cogniteProject, url!, this.backendSrv, oauthPassThru);
     this.project = cogniteProject;
   }
 
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<InputQueryTarget>): Promise<QueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    let responseData = [];
+    let responseData: TimeSeries[] = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(queryTargets, options);
@@ -135,12 +136,12 @@ export default class CogniteDatasource extends DataSourceApi<
 
     const queryData = (await Promise.all(itemsForTargetsPromises)).filter(
       (data) => data?.items?.length
-    );
+    ) as QueriesDataItem[];
 
     const queries = formQueriesForTargets(queryData, options);
     const metadata = await Promise.all(
       queryData.map(async ({ target, items, type }) => {
-        let labels = [];
+        let labels: string[] = [];
         try {
           labels = await getLabelsForTarget(target, items, this.connector);
         } catch (err) {
@@ -191,15 +192,15 @@ export default class CogniteDatasource extends DataSourceApi<
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
         ...assetQuery,
-        target: assetTargetTemplated,
+        target: assetTargetTemplated!,
       },
     };
 
     return {
       ...target,
       ...templatedAssetQuery,
-      expr: exprTemplated,
-      label: labelTemplated,
+      expr: exprTemplated!,
+      label: labelTemplated!,
     };
   }
 
@@ -259,7 +260,7 @@ export default class CogniteDatasource extends DataSourceApi<
    */
   async getOptionsForDropdown(
     query: string,
-    type?: string,
+    type: string,
     options?: any
   ): Promise<(SelectableValue<string> & Resource)[]> {
     const resources = {
@@ -309,8 +310,8 @@ export default class CogniteDatasource extends DataSourceApi<
 
     const filteredAssets = applyFilters(assets, filters);
 
-    return filteredAssets.map(({ name, id }) => ({
-      text: name,
+    return filteredAssets.map(({ name, id, externalId }) => ({
+      text: name || externalId || `${id}`,
       value: id,
     }));
   }
@@ -349,7 +350,7 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 }
 
-export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
+export function filterEmptyQueryTargets(targets: InputQueryTarget[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
       const { tab, assetQuery } = target;

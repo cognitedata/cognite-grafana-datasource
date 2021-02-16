@@ -30,6 +30,7 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
+  InputCogniteTargetObj,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -60,14 +61,13 @@ export function formQueryForItems(
       };
     }
     default: {
-      let aggregations: Aggregates & Granularity = null;
-      const isAggregated = aggregation && aggregation !== 'none';
-      if (isAggregated) {
-        aggregations = {
-          aggregates: [aggregation],
-          granularity: granularity || toGranularityWithLowerBound(intervalMs),
-        };
-      }
+      const isAggregated = !!aggregation && aggregation !== 'none';
+      const aggregations = isAggregated
+        ? {
+            aggregates: [aggregation],
+            granularity: granularity || toGranularityWithLowerBound(intervalMs),
+          }
+        : {};
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
       return {
         ...aggregations,
@@ -103,7 +103,7 @@ export async function getLabelsForTarget(
       return [await getTimeseriesLabel(labelSrc, targetToIdEither(target), connector)];
     }
     case Asset: {
-      const tsIds = queryList.map(({ id }) => ({ id }));
+      const tsIds = queryList.map(({ id }) => ({ id: id! }));
       /**
        * TODO: While this is ok perfomence-wise as we have caching, it is not very nice code here.
        * We should refactor labels logic someday
@@ -113,7 +113,7 @@ export async function getLabelsForTarget(
     }
     case Custom: {
       if (!labelSrc || labelContainsVariableProps(labelSrc)) {
-        const expressions = queryList.map(({ expression }) => expression);
+        const expressions = queryList.map(({ expression }) => expression!);
         return getLabelsForExpression(expressions, labelSrc, connector);
       }
       return queryList.map(() => labelSrc);
@@ -144,7 +144,7 @@ export function getLabelWithInjectedProps(
 }
 
 export function labelContainsVariableProps(label: string): boolean {
-  return label && !!label.match(variableLabelRegex);
+  return !!(label && label.match(variableLabelRegex));
 }
 
 export async function getTimeseries(
@@ -288,12 +288,12 @@ export function datapointsPath(type: DataQueryRequestType) {
   return `/timeseries/${paths[type]}`;
 }
 
-export const targetToIdEither = (obj: CogniteTargetObj) => {
+export const targetToIdEither = (obj: InputCogniteTargetObj) => {
   return obj.targetRefType === 'externalId'
     ? {
-        externalId: obj.target,
+        externalId: obj.target!,
       }
     : {
-        id: obj.target,
+        id: obj.target!,
       };
 };
