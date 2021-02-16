@@ -12,7 +12,7 @@ import {
   AppEvent,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition, get } from 'lodash';
+import { partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -105,14 +105,6 @@ export default class CogniteDatasource extends DataSourceApi<
     this.project = cogniteProject;
   }
 
-  group = (targets: CogniteQuery[]) => {
-    const [eventTargets, tsTargets] = partition(
-      targets,
-      ({ tab }: CogniteQuery) => tab === Tab.Event
-    );
-    return { eventTargets, tsTargets };
-  };
-
   /**
    * used by panels to get timeseries data
    */
@@ -121,7 +113,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets } = this.group(queryTargets);
+    const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
@@ -424,9 +416,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       const { tab, assetQuery, eventQuery } = target;
       switch (tab) {
         case Tab.Event:
-          return eventQuery.expr;
+          return eventQuery?.expr;
         case Tab.Asset:
-          return assetQuery && assetQuery.target;
+          return assetQuery?.target;
         case Tab.Custom:
           return target.expr;
         case Tab.Timeseries:
@@ -557,4 +549,9 @@ export async function getDataQueryRequestItems(
     }
   }
   return { type, items, target };
+}
+
+function groupTargets(targets: CogniteQuery[]) {
+  const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
+  return { eventTargets, tsTargets };
 }
