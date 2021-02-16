@@ -12,12 +12,11 @@ import {
   Switch,
   AsyncSelect,
   Segment,
-  IconButton,
   Button,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
-import { customQueryHelp } from './queryHelp';
+import { customQueryHelp, eventQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
   defaultQuery,
@@ -25,12 +24,12 @@ import {
   CogniteQuery,
   Tab as Tabs,
   QueryRequestError,
-  QueryDatapointsWarning,
+  QueryWarning,
   CogniteTargetObj,
   CogniteQueryBase,
   EventQuery,
 } from '../types';
-import { failedResponseEvent, datapointsWarningEvent, EventFields } from '../constants';
+import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
@@ -115,7 +114,7 @@ const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <div className="gf-form gf-form-inline">
-      <InlineFormLabel tooltip="Fetch the latest data point in the provided time range" width={9}>
+      <InlineFormLabel tooltip="Fetch the latest data point in the provided time range" width={7}>
         Latest value
       </InlineFormLabel>
       <div className="gf-form-switch">
@@ -123,6 +122,29 @@ const LatestValueCheckbox = (props: SelectedProps) => {
           css=""
           value={query.latestValue}
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+        />
+      </div>
+    </div>
+  );
+};
+
+const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  return (
+    <div className="gf-form gf-form-inline">
+      <InlineFormLabel tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} " width={7}>
+        Active only
+      </InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={query.eventQuery.activeAtTimeRange}
+          onChange={({ currentTarget }) => onQueryChange({
+            eventQuery: {
+              ...query.eventQuery,
+              activeAtTimeRange: currentTarget.checked,
+            }
+          })}
         />
       </div>
     </div>
@@ -252,12 +274,13 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           labelWidth={6}
           inputWidth={30}
           className="custom-query"
+          placeholder="ts{externalId='PT_123'}"
           onChange={({ target }) => setValue(target.value)}
           onBlur={() => onQueryChange({ expr: value })}
           value={value}
           tooltip="Click help button for help."
         />
-        <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+        <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <CommonEditors {...{ onQueryChange, query }} />
       {showHelp && customQueryHelp}
@@ -275,10 +298,11 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
       <div className="gf-form">
         <FormField
           label="Query"
-          labelWidth={6}
+          labelWidth={7}
           inputWidth={30}
           className="custom-query"
           onChange={({ target }) => setValue(target.value)}
+          placeholder="events{}"
           onBlur={() =>
             onQueryChange({
               eventQuery: {
@@ -290,10 +314,11 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           value={value}
           tooltip="Click help button for help."
         />
-        <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+        <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
+      <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
-      {/* {showHelp && customQueryHelp} */}
+      {showHelp && eventQueryHelp}
     </>
   );
 }
@@ -329,10 +354,11 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     <div className="gf-form">
       <InlineFormLabel
         tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
-        width={6}
+        width={7}
       >
         Columns
       </InlineFormLabel>
+      <div className="gf-form" style={{ flexWrap: 'wrap'}}>
       {columns.map((val, key) => (
         <>
           <Segment
@@ -363,6 +389,7 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
         }}
         iconName="plus-circle"
       />
+      </div>
     </div>
   );
 };
@@ -392,7 +419,7 @@ export function QueryEditor(props: EditorProps) {
       setErrorMessage(error);
     }
   };
-  const handleWarning = ({ refId, warning }: QueryDatapointsWarning) => {
+  const handleWarning = ({ refId, warning }: QueryWarning) => {
     if (thisRefId === refId) {
       setWarningMessage(warning);
     }
@@ -401,13 +428,13 @@ export function QueryEditor(props: EditorProps) {
   const eventsSubscribe = async () => {
     const appEvents = await appEventsLoader;
     appEvents.on(failedResponseEvent, handleError);
-    appEvents.on(datapointsWarningEvent, handleWarning);
+    appEvents.on(responseWarningEvent, handleWarning);
   };
 
   const eventsUnsubscribe = async () => {
     const appEvents = await appEventsLoader;
     appEvents.off(failedResponseEvent, handleError);
-    appEvents.off(datapointsWarningEvent, handleWarning);
+    appEvents.on(responseWarningEvent, handleWarning);
   };
 
   useEffect(() => {
@@ -420,7 +447,7 @@ export function QueryEditor(props: EditorProps) {
       <TabsBar>
         {Object.values(Tabs).map((t) => (
           <Tab css="" label={t} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
-        ))}
+          ))}
       </TabsBar>
       <TabContent>
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}

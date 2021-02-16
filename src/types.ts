@@ -22,7 +22,8 @@ const defaultAssetQuery: AssetQuery = {
 
 const defaultEventQuery: EventQuery = {
   expr: '',
-  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime', 'metadata'],
+  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+  activeAtTimeRange: true,
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
@@ -73,6 +74,7 @@ export interface AssetQuery {
 
 export interface EventQuery {
   expr: string;
+  activeAtTimeRange: boolean;
   columns: string[];
 }
 
@@ -284,7 +286,7 @@ export interface QueryRequestError {
   error: string;
 }
 
-export interface QueryDatapointsWarning {
+export interface QueryWarning {
   refId: string;
   warning: string;
 }

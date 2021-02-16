@@ -76,6 +76,7 @@ export interface TimeseriesFilterRequestParams extends FilterRequestParams {
 export interface EventsFilterRequestParams extends FilterRequestParams {
   startTime?: TimeRange;
   endTime?: TimeRange;
+  activeAtTime?: TimeRange;
   assetIds?: CogniteInternalId[];
   assetExternalIds?: CogniteExternallId[];
   rootAssetIds?: IdEither[];
@@ -83,6 +84,8 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
   type?: string;
   subtype?: string;
 }
+
+export type EventsFilterTimeParams = Pick<EventsFilterRequestParams, 'activeAtTime'> | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;

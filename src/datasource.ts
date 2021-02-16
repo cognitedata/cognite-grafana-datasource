@@ -9,7 +9,7 @@ import {
   ScopedVars,
   TableData,
   TimeSeries,
-  ArrayDataFrame,
+  AppEvent,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import { partition, get } from 'lodash';
@@ -36,14 +36,16 @@ import {
   Resource,
   IdEither,
   CogniteEvent,
+  EventsFilterTimeParams,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
   CacheTime,
-  datapointsWarningEvent,
   failedResponseEvent,
   TIMESERIES_LIMIT_WARNING,
-  DateFields,
+  EVENTS_PAGE_LIMIT,
+  responseWarningEvent,
+  EVENTS_LIMIT_WARNING,
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -120,15 +122,16 @@ export default class CogniteDatasource extends DataSourceApi<
     );
 
     const { eventTargets, tsTargets } = this.group(queryTargets);
+    const timeRange = getRange(options.range)
 
     let responseData: (TimeSeries | TableData)[] = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
-        const eventResults = await this.fetchEventTargets(eventTargets, options);
+        const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, getRange(options.range)), ...eventResults];
+        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -199,10 +202,10 @@ export default class CogniteDatasource extends DataSourceApi<
    * E.g. {..., label: 'date: ${__from:date:YYYY-MM}'} -> {..., label: 'date: 2020-07'}
    */
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, assetQuery, label } = target;
+    const { expr, assetQuery, label, eventQuery } = target;
 
-    const [exprTemplated, labelTemplated, assetTargetTemplated] = this.replaceVariablesArr(
-      [expr, label, assetQuery?.target],
+    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] = this.replaceVariablesArr(
+      [expr, label, assetQuery?.target, eventQuery?.expr],
       scopedVars
     );
 
@@ -213,9 +216,17 @@ export default class CogniteDatasource extends DataSourceApi<
       },
     };
 
+    const templatedEventQuery = eventQuery && {
+      eventQuery: {
+        ...eventQuery,
+        expr: eventExprTemplated,
+      },
+    };
+
     return {
       ...target,
       ...templatedAssetQuery,
+      ...templatedEventQuery,
       expr: exprTemplated,
       label: labelTemplated,
     };
@@ -229,35 +240,37 @@ export default class CogniteDatasource extends DataSourceApi<
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
 
-  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, range: TimeRange) {
-    let events: CogniteEvent[] = [];
+  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, timeFrame: EventsFilterTimeParams) {
+    let timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
     try {
-      events = await this.fetchEvents(eventQuery.expr, range);
+      const { items, hasMore } = await this.fetchEvents(eventQuery.expr, timeRange);
+      if (hasMore) {
+        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING })
+      }
+      return items;
     } catch (e) {
       handleError(e, refId);
     }
-    return events;
+    return [];
   }
 
-  async fetchEventTargets(targets: CogniteQuery[], { range }: DataQueryRequest<CogniteQuery>) {
+  async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
+    const timeFrame = {
+      activeAtTime: { min: start, max: end },
+    };
     return Promise.all(
       targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, range);
+        const events = await this.fetchEventsForTarget(target, timeFrame);
         return convertItemsToTable(events, target.eventQuery.columns);
       })
     );
   }
 
-  async fetchEvents(expr: string, range: TimeRange) {
-    const [startTime, endTime] = getRange(range);
+  async fetchEvents(expr: string, timeFrame: EventsFilterTimeParams) {
     const { filters, params } = parseQuery(expr);
-    const timeFrame = {
-      startTime: { max: endTime },
-      endTime: { min: startTime },
-    };
     const data: FilterRequest<EventsFilterRequestParams> = {
       filter: { ...params, ...timeFrame },
-      limit: 1000,
+      limit: EVENTS_PAGE_LIMIT,
     };
 
     const items = await this.connector.fetchItems<CogniteEvent>({
@@ -266,7 +279,10 @@ export default class CogniteDatasource extends DataSourceApi<
       method: HttpMethod.POST,
     });
 
-    return applyFilters(items, filters);
+    return {
+      items: applyFilters(items, filters),
+      hasMore: items.length === EVENTS_PAGE_LIMIT
+    };
   }
 
   /**
@@ -283,10 +299,16 @@ export default class CogniteDatasource extends DataSourceApi<
       return [];
     }
 
-    const evaluatedQuery = this.replaceVariable(query);
-    const response = await this.fetchEvents(evaluatedQuery, range);
+    const [startTime, endTime] = getRange(range);
+    const timeFrame = {
+      startTime: { max: endTime },
+      endTime: { min: startTime },
+    };
 
-    return response.map(({ description, startTime, endTime, type }) => ({
+    const evaluatedQuery = this.replaceVariable(query);
+    const { items } = await this.fetchEvents(evaluatedQuery, timeFrame);
+
+    return items.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,
       text: description,
@@ -437,9 +459,14 @@ export function getRange(range: TimeRange): Tuple<number> {
   return [timeFrom, timeTo];
 }
 
+async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
+  const appEvents = await appEventsLoader;
+  return appEvents.emit(event, payload);
+}
+
 function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
-  appEventsLoader.then((events) => events.emit(failedResponseEvent, { refId, error: errMessage }));
+  emitEvent(failedResponseEvent, { refId, error: errMessage });
 }
 
 function showWarnings(responses: SuccessResponse[]) {
@@ -452,7 +479,7 @@ function showWarnings(responses: SuccessResponse[]) {
       .join('\n');
 
     if (warning) {
-      appEventsLoader.then((events) => events.emit(datapointsWarningEvent, { refId, warning }));
+      emitEvent(responseWarningEvent, { refId, warning });
     }
   });
 }
@@ -491,10 +518,7 @@ async function findAssetTimeseries(
   const limit = 101;
   const ts = await getTimeseries({ filter, limit }, connector);
   if (ts.length === limit) {
-    (await appEventsLoader).emit(datapointsWarningEvent, {
-      refId,
-      warning: TIMESERIES_LIMIT_WARNING,
-    });
+    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
 
     ts.splice(-1);
   }

@@ -97,3 +97,44 @@ export const customQueryHelp = (
     </pre>
   </div>
 );
+
+export const eventQueryHelp = (
+  <div className="gf-form--grow">
+    <pre>
+      Event query uses the <a className="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank">events/list</a> endpoint for data retrieval.
+      <br />
+      Format: <Code>{'events{someFilter=number, otherFilter="string"}'}</Code>
+      <br />
+      Example: <Code>{`events{externalIdPrefix='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='ext_id'}]}`}</Code>
+      <br />
+      Allowed properties to filter on:
+      <br />
+      <Code>externalIdPrefix</Code>, <Code>metadata</Code>, <Code>assetIds</Code>, <Code>assetExternalIds</Code>, <Code>rootAssetIds</Code>, <Code>assetSubtreeIds</Code>, <Code>dataSetIds</Code>, <Code>source</Code>, <Code>type</Code>, <Code>subtype</Code>.
+      <br />
+      Query returns active at time range events by default. Although this may be customized with additional time filters <Code>startTime</Code>, <Code>endTime</Code>, <Code>activeAtTime</Code>, <Code>createdTime</Code>, <Code>lastUpdatedTime</Code>.
+      <br />
+      Example how to get all active events that started in the current time range and finished at some point in time:
+      <br />
+      <Code>{`events{startTime={min=$__from}, endTime={isNull=false}}`}</Code>
+      <br />
+      Additional client-side filtering is available by using <Code>=~</Code>, <Code>!~</Code> and <Code>!=</Code> operators. Comma between multiple filters acts as logic <Code>AND</Code>.
+      <br />
+      Format:
+        <br />
+        <Code>=~</Code> – regex equality, returns results satisfying the regular expression
+        <br />
+        <Code>!~</Code> – regex inequality, excludes results satisfying the regular expression
+        <br />
+        <Code>!=</Code> – strict inequality, returns items where property doesn't equal a given value
+      <br />
+      <br />
+      Example: <Code>{`events{type='WORKORDER', subtype=~'SUB.*'}`}</Code>
+      <br />
+      Variables templating is also available via <Code>$variable</Code>
+      <br />
+      Example: <Code>{`{'events{type='WORKORDER', subtype=$variable}`}</Code>
+      <br />
+      To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a className="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
+    </pre>
+  </div>
+);
