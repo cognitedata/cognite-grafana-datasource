@@ -4,7 +4,7 @@ import { AsyncSelect, InlineFormLabel, LegacyForms } from '@grafana/ui';
 import { targetToIdEither } from '../cdf/client';
 import { IdEither, Resource } from '../cdf/types';
 import { resource2DropdownOption } from '../datasource';
-import { CogniteTargetObj, Tab } from '../types';
+import { CogniteTargetObj, InputCogniteTargetObj, Tab } from '../types';
 
 const { FormField } = LegacyForms;
 
@@ -18,15 +18,15 @@ const optionalIdsToTargetObj = ({
         targetRefType: 'externalId' as const,
       }
     : {
-        target: id,
+        target: id!,
         targetRefType: 'id' as const,
       };
 };
 
 export function ResourceSelect(props: {
-  query: CogniteTargetObj;
+  query: InputCogniteTargetObj;
   resourceType: Tab.Timeseries | Tab.Asset;
-  onTargetQueryChange: (patch: CogniteTargetObj, shouldRunQuery?: boolean) => void;
+  onTargetQueryChange: (patch: InputCogniteTargetObj, shouldRunQuery?: boolean) => void;
   fetchSingleResource: (id: IdEither) => Promise<Resource[]>;
   searchResource: (query: string) => Promise<Resource[]>;
 }) {
@@ -50,11 +50,14 @@ export function ResourceSelect(props: {
 
   const fetchDropdownResource = async (id: IdEither) => {
     try {
-      const [res] = await fetchSingleResource(id);
-      return res;
+      if (id) {
+        const [res] = await fetchSingleResource(id);
+        return res;
+      }
     } catch {
       return null;
     }
+    return null;
   };
 
   const migrateToExternalIdRefIfNeeded = (resource: Resource) => {
@@ -83,7 +86,7 @@ export function ResourceSelect(props: {
       <AsyncSelect
         loadOptions={searchResource}
         defaultOptions
-        value={current.value ? current : null}
+        value={current.value ? current : undefined}
         placeholder={`Search ${resourceType.toLowerCase()} by name/description`}
         className="cognite-dropdown width-20"
         onChange={onDropdown}

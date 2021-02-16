@@ -1,10 +1,10 @@
 import { dateTime } from '@grafana/data';
 import { formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
-import { defaultQuery, CogniteQuery, QueryOptions } from '../types';
+import { defaultQuery, QueryTarget, QueryOptions } from '../types';
 import { getDataQueryRequestItems } from '../datasource';
 
-const defaultCogniteQuery = defaultQuery as CogniteQuery;
+const defaultCogniteQuery = defaultQuery as QueryTarget;
 
 describe('getDataQueryRequestItems: generate cdf data points request items', () => {
   const connector: Connector = ({

@@ -125,7 +125,7 @@ export const generateAllPossiblePermutations = <T>(
     const array = [...arrayOfArrays[i]];
     if (res.length) {
       const temp = [...res];
-      const temptemp = [];
+      const temptemp: T[][][] = [];
       for (const t of temp) {
         if (locked) {
           temptemp.push([...t, array]);
@@ -218,8 +218,8 @@ export const walk = (route: STSQuery, iterator: (item: STSQueryItem | STSFunctio
 };
 
 export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
-  const responseArr = [];
-  const argsIndices = [];
+  const responseArr: number[] = [];
+  const argsIndices: MultiaryFunction['args'] = [];
   let index = 0;
   walk(route, obj => {
     if (isMultiaryFunction(obj) && obj.args.length === 1) {
@@ -254,7 +254,7 @@ export const getServerFilters = (route: STSQuery): StringMap[] => {
   ) as StringMap[];
 };
 
-export const flattenClientQueryFilters = (filters: unknown[], path = []): STSClientFilter[] => {
+export const flattenClientQueryFilters = (filters: unknown[], path: string[] = []): STSClientFilter[] => {
   const res: STSClientFilter[] = [];
   filters.filter(isSTSFilter).forEach(filter => {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
@@ -297,7 +297,7 @@ const stringifyValue = (val: STSValue, wrap: boolean = true) => {
 
 export const composeSTSQuery = (
   target: STSQuery,
-  custom?: (item: STSQuery) => string,
+  custom?: (item: STSQuery) => string | undefined,
   separateWith: string = ''
 ): string => {
   if (custom) {
@@ -334,7 +334,7 @@ export const composeSTSQuery = (
 const flattenSumFunctions = (expression: string): string => {
   return composeSTSQuery(parse(expression), item => {
     if (isSumFunction(item)) {
-      return `(${composeSTSQuery(item.args, null, ' + ')})`;
+      return `(${composeSTSQuery(item.args, undefined, ' + ')})`;
     }
   });
 };
@@ -430,7 +430,7 @@ const isSTSFilter = (item: any): item is STSFilter => {
 };
 
 const isSTSFilterArr = (query: any): query is STSFilter[] => {
-  return isArray(query) && query.length && query.every(isSTSFilter);
+  return isArray(query) && !!query.length && query.every(isSTSFilter);
 };
 
 const isSTSFilterArr2d = (query: any): query is STSFilter[][] => {
@@ -477,7 +477,7 @@ type StringMap = { [key: string]: string };
 
 type STSValue = STSPrimitiveValue | STSPrimitiveValue[] | STSFilter[] | STSFilter[][];
 
-type STSPrimitiveValue = string | number | boolean;
+type STSPrimitiveValue = string | number | boolean | null;
 
 export type STSQuery = (STSQueryItem[] | STSQueryItem)[] | STSQueryItem;
 

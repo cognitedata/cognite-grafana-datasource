@@ -6,11 +6,11 @@ import { ConfigEditor } from './components/configEditor';
 import { QueryEditor } from './components/queryEditor';
 import { CogniteAnnotationsQueryCtrl } from './annotationCtrl';
 import { CogniteVariableQueryEditor } from './components/variableQueryEditor';
-import { CogniteQuery, CogniteDataSourceOptions } from './types';
+import { InputQueryTarget, CogniteDataSourceOptions } from './types';
 
 export const plugin = new DataSourcePlugin<
   CogniteDatasource,
-  CogniteQuery,
+  InputQueryTarget,
   CogniteDataSourceOptions
 >(CogniteDatasource)
   .setConfigEditor(ConfigEditor)

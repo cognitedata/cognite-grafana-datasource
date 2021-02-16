@@ -13,7 +13,7 @@ const defaultAssetQuery: AssetQuery = {
   target: '',
 };
 
-export const defaultQuery: Partial<CogniteQuery> = {
+export const defaultQuery: Partial<QueryTarget> = {
   target: '',
   latestValue: false,
   aggregation: 'average',
@@ -58,33 +58,39 @@ export interface AssetQuery {
   includeSubtrees: boolean;
 }
 
-export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
+export type InputQueryTarget = InputQueryTargetBase & InputCogniteTargetObj;
 
-export interface CogniteQueryBase extends DataQuery {
+export type QueryTarget = QueryTargetBase & CogniteTargetObj;
+
+export interface InputQueryTargetBase extends DataQuery {
   aggregation: string;
   granularity: string;
   latestValue: boolean;
   error: string;
   label: string;
   tab: Tab;
-  assetQuery: AssetQuery;
+  assetQuery: Partial<AssetQuery>;
   expr: string;
   warning: string;
 }
 
+export interface QueryTargetBase extends InputQueryTargetBase {
+  assetQuery: AssetQuery;
+}
+
+export type InputCogniteTargetObj = Partial<CogniteTargetObj>;
+
 export type CogniteTargetObj =
   | {
-      target?: number;
+      target: number;
       targetRefType?: 'id';
     }
   | {
-      target?: string;
-      targetRefType?: 'externalId';
+      target: string;
+      targetRefType: 'externalId';
     };
 
-export type QueryTarget = CogniteQuery;
-
-export type QueryOptions = DataQueryRequest<CogniteQuery>;
+export type QueryOptions = DataQueryRequest<InputQueryTarget>;
 
 export type Tuple<T> = [T, T];
 

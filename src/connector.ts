@@ -18,7 +18,7 @@ export class Connector {
     private project: string,
     private apiUrl: string,
     private backendSrv: BackendSrv,
-    private oauthPassThru: boolean
+    private oauthPassThru?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -42,7 +42,7 @@ export class Connector {
     const chunkedItems = chunk(data.items, chunkSize);
     const chunkedRequests = chunkedItems.map((items, i) => ({
       ...request,
-      ...chunkedReqId(requestId, i),
+      ...chunkedReqId(i, requestId),
       data: {
         ...data,
         items,
@@ -142,7 +142,7 @@ export class Connector {
   };
 }
 
-const chunkedReqId = (requestId: string, chunk: number) => {
+const chunkedReqId = (chunk: number, requestId?: string) => {
   return requestId
     ? {
         requestId: chunk ? `${requestId}${chunk}` : requestId,
