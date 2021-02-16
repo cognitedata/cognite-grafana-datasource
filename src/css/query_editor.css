@@ -24,10 +24,6 @@
   background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);
 }
 
-input[type='checkbox'] {
-  margin: 4px;
-}
-
 .custom-query input {
   font-family: monospace;
 }
@@ -36,7 +32,7 @@ pre code {
   line-height: 2;
 }
 
-.cognite-dropdown {
+.cognite-dropdown, .gf-form-switch {
   margin-right: 4px;
 }
 

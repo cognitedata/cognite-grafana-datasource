@@ -207,7 +207,12 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         />
       </div>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
-      <CommonEditors {...{ onQueryChange, query }} />
+      <LatestValueCheckbox {...{ query, onQueryChange }} />
+      {query.latestValue ? (
+        <LabelEditor {...{ onQueryChange, query }} />
+      ) : (
+        <CommonEditors {...{ query, onQueryChange }} />
+      )}
     </div>
   );
 }

@@ -415,16 +415,11 @@ function showWarnings(responses: SuccessResponse[]) {
 
 function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
   switch (tab) {
-    default:
-    case undefined:
-    case Tab.Timeseries: {
-      return latestValue ? 'latest' : 'data';
-    }
-    case Tab.Asset: {
-      return 'data';
-    }
     case Tab.Custom: {
       return 'synthetic';
+    }
+    default: {
+      return latestValue ? 'latest' : 'data';
     }
   }
 }
