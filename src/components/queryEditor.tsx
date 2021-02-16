@@ -16,7 +16,7 @@ import {
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
-import { customQueryHelp, eventQueryHelp } from './queryHelp';
+import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
   defaultQuery,
@@ -283,12 +283,12 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           onChange={({ target }) => setValue(target.value)}
           onBlur={() => onQueryChange({ expr: value })}
           value={value}
-          tooltip="Click help button for help."
+          tooltip="Click [?] button for help."
         />
         <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <CommonEditors {...{ onQueryChange, query }} />
-      {showHelp && customQueryHelp}
+      {showHelp && <CustomQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
 }
@@ -317,13 +317,13 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
             })
           }
           value={value}
-          tooltip="Click help button for help."
+          tooltip="Click [?] button for help."
         />
         <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
-      {showHelp && eventQueryHelp}
+      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
 }

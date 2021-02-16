@@ -32,7 +32,7 @@ input[type='checkbox'] {
   font-family: monospace;
 }
 
-pre code {
+pre code, .help-panel {
   line-height: 2;
 }
 

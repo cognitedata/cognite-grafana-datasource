@@ -481,7 +481,7 @@ function showWarnings(responses: SuccessResponse[]) {
     const { refId } = metadata.target;
     const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
       .filter(Boolean)
-      .join('\n');
+      .join('\n\n');
 
     if (warning) {
       emitEvent(responseWarningEvent, { refId, warning });

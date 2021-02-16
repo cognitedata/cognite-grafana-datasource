@@ -4,11 +4,11 @@ import { QueryWarning, QueryRequestError } from './types';
 export const API_V1 = 'api/v1/projects';
 
 export const DATAPOINTS_LIMIT_WARNING =
-  'Datapoints limit was reached, so not all datapoints may be shown. Try increasing the granularity, or choose a smaller time range.';
+  'Datapoints limit was reached, so not all datapoints may be shown.\nTry increasing the granularity, or choose a smaller time range.';
 export const TIMESERIES_LIMIT_WARNING =
-  "Only showing first 100 timeseries. To get better results, either change the selected asset or use 'Custom Query'.";
+  "Only showing first 100 timeseries.\nTo get better results, either change the selected asset or use 'Custom Query'.";
 export const EVENTS_LIMIT_WARNING =
-  "Only showing first 1000 events. To get better results, leverage more of push-down filters, e.g. events{externalIdPrefix='fail'} instead of events{externalId~='fail.*'}";
+  "Only showing first 1000 events.\nTo get better results, leverage more of push-down filters, e.g. events{externalIdPrefix='fail'} instead of events{externalId~='fail.*'}";
 
 export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
 export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');
@@ -44,3 +44,6 @@ export const EventFields = [
 ];
 
 export const EVENTS_PAGE_LIMIT = 1000;
+
+export const DOCS_URL =
+  'https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html';
