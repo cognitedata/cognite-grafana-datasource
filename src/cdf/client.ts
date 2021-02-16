@@ -302,7 +302,7 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
   const rows = items.map((item) =>
     columns.map((field) => {
       const res = get(item, field);
-      const isDate = res !== undefined && res !== null && DateFields.includes(field)
+      const isDate = res !== undefined && res !== null && DateFields.includes(field);
       return isDate ? new Date(res) : res;
     })
   );

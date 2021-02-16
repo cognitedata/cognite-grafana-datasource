@@ -85,7 +85,9 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
   subtype?: string;
 }
 
-export type EventsFilterTimeParams = Pick<EventsFilterRequestParams, 'activeAtTime'> | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>
+export type EventsFilterTimeParams =
+  | Pick<EventsFilterRequestParams, 'activeAtTime'>
+  | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;

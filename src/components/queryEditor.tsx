@@ -132,19 +132,24 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <div className="gf-form gf-form-inline">
-      <InlineFormLabel tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} " width={7}>
+      <InlineFormLabel
+        tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
+        width={7}
+      >
         Active only
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
           css=""
           value={query.eventQuery.activeAtTimeRange}
-          onChange={({ currentTarget }) => onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              activeAtTimeRange: currentTarget.checked,
-            }
-          })}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                activeAtTimeRange: currentTarget.checked,
+              },
+            })
+          }
         />
       </div>
     </div>
@@ -358,37 +363,37 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
       >
         Columns
       </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap'}}>
-      {columns.map((val, key) => (
-        <>
-          <Segment
-            value={val}
-            options={options}
-            onChange={({ value }) => {
-              onEventQueryChange({
-                columns: columns.map((old, i) => (i === key ? value : old)),
-              });
-            }}
-            allowCustomValue
-          />
-          <InlineButton
-            onClick={() => {
-              onEventQueryChange({
-                columns: columns.filter((_, i) => i !== key),
-              });
-            }}
-            iconName="times"
-          />
-        </>
-      ))}
-      <InlineButton
-        onClick={() => {
-          onEventQueryChange({
-            columns: [...columns, `column${columns.length}`],
-          });
-        }}
-        iconName="plus-circle"
-      />
+      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+        {columns.map((val, key) => (
+          <>
+            <Segment
+              value={val}
+              options={options}
+              onChange={({ value }) => {
+                onEventQueryChange({
+                  columns: columns.map((old, i) => (i === key ? value : old)),
+                });
+              }}
+              allowCustomValue
+            />
+            <InlineButton
+              onClick={() => {
+                onEventQueryChange({
+                  columns: columns.filter((_, i) => i !== key),
+                });
+              }}
+              iconName="times"
+            />
+          </>
+        ))}
+        <InlineButton
+          onClick={() => {
+            onEventQueryChange({
+              columns: [...columns, `column${columns.length}`],
+            });
+          }}
+          iconName="plus-circle"
+        />
       </div>
     </div>
   );
@@ -447,7 +452,7 @@ export function QueryEditor(props: EditorProps) {
       <TabsBar>
         {Object.values(Tabs).map((t) => (
           <Tab css="" label={t} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
-          ))}
+        ))}
       </TabsBar>
       <TabContent>
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}

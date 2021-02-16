@@ -122,7 +122,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
 
     const { eventTargets, tsTargets } = this.group(queryTargets);
-    const timeRange = getRange(options.range)
+    const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
     if (queryTargets.length) {
@@ -204,10 +204,12 @@ export default class CogniteDatasource extends DataSourceApi<
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label, eventQuery } = target;
 
-    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] = this.replaceVariablesArr(
-      [expr, label, assetQuery?.target, eventQuery?.expr],
-      scopedVars
-    );
+    const [
+      exprTemplated,
+      labelTemplated,
+      assetTargetTemplated,
+      eventExprTemplated,
+    ] = this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -240,12 +242,15 @@ export default class CogniteDatasource extends DataSourceApi<
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
 
-  async fetchEventsForTarget({ eventQuery, refId }: CogniteQuery, timeFrame: EventsFilterTimeParams) {
-    let timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
+  async fetchEventsForTarget(
+    { eventQuery, refId }: CogniteQuery,
+    timeFrame: EventsFilterTimeParams
+  ) {
+    const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
     try {
       const { items, hasMore } = await this.fetchEvents(eventQuery.expr, timeRange);
       if (hasMore) {
-        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING })
+        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
       return items;
     } catch (e) {
@@ -281,7 +286,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
     return {
       items: applyFilters(items, filters),
-      hasMore: items.length === EVENTS_PAGE_LIMIT
+      hasMore: items.length === EVENTS_PAGE_LIMIT,
     };
   }
 
