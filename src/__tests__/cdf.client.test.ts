@@ -4,6 +4,7 @@ import {
   reduceTimeseries,
   labelContainsVariableProps,
   concurrent,
+  convertItemsToTable,
 } from '../cdf/client';
 import { getDataqueryResponse, getMeta } from './utils';
 
@@ -92,6 +93,35 @@ describe('CDF client', () => {
 
     test('no props', () => {
       expect(labelContainsVariableProps('pure text')).toEqual(false);
+    });
+  });
+
+  describe('convert items to table', () => {
+    test('date and null values', () => {
+      const items = [
+        { id: 1, name: 'name1', metadata: { prop: 1 }, startTime: 100 },
+        { id: 2, name: 'name2' },
+      ];
+      const columns = ['name', 'metadata.prop', 'startTime'];
+      const table = convertItemsToTable(items, columns);
+      expect(table).toEqual({
+        rows: [
+          ['name1', 1, new Date(100)],
+          ['name2', undefined, undefined],
+        ],
+        type: 'table',
+        columns: [
+          {
+            text: 'name',
+          },
+          {
+            text: 'metadata.prop',
+          },
+          {
+            text: 'startTime',
+          },
+        ],
+      });
     });
   });
 });
