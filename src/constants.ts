@@ -4,7 +4,7 @@ import { QueryWarning, QueryRequestError } from './types';
 export const API_V1 = 'api/v1/projects';
 
 export const DATAPOINTS_LIMIT_WARNING =
-  `Data points limit was reached, so not all datap oints may be shown.\n` +
+  `Data points limit was reached, so not all data points may be shown.\n` +
   `Try increasing the granularity, or choose a smaller time range.`;
 export const TIMESERIES_LIMIT_WARNING =
   `Only showing first 100 time series.\n` +
