@@ -12,7 +12,7 @@ export const TIMESERIES_LIMIT_WARNING =
 export const EVENTS_LIMIT_WARNING =
   `Some results might have been omitted.\n` +
   `This usually happens when CDF returns maximal number of items (1000) and/or client-side filters are used.\n` +
-  `To get better results, leverage more of push-down filters, e.g. events{externalIdPrefix='fail'} instead of events{externalId~='fail.*'} or choose a shorter time range.`;
+  `To get better results, leverage more of push-down filters, e.g. events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
 
 export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
 export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');
@@ -41,7 +41,7 @@ export const EventFields = [
   'source',
   'sourceId',
   'metadata',
-  ...DateFields
+  ...DateFields,
 ];
 
 export const EVENTS_PAGE_LIMIT = 1000;
