@@ -78,7 +78,7 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     <br />
     <Code>{`sum(ts{metadata={type="TEMP"}})`}</Code>
     <br />
-    ↪ yields one timeseries that is thesum of all temperature timeseries
+    ↪ yields one timeseries that is the sum of all temperature timeseries
     <br />
     <Code>{"max(ts{aggregate='average'}) - min(ts{aggregate='average'})"}</Code>
     <br />
