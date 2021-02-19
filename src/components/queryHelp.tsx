@@ -103,7 +103,7 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
 
 export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
   <HelpPanel title="Event query syntax help" onDismiss={onDismiss}>
-    Event query uses the{' '}
+    Event queries use the{' '}
     <a
       className="query-keyword"
       href="https://docs.cognite.com/api/v1/#operation/advancedListEvents"
@@ -112,20 +112,20 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     >
       events/list
     </a>{' '}
-    endpoint for data retrieval.
+    endpoint to retrieve data.
     <br />
     Format: <Code>{'events{someFilter=number, otherFilter="string"}'}</Code>
     <br />
     Example:{' '}
     <Code>{`events{externalIdPrefix='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='ext_id'}]}`}</Code>
     <br />
-    Allowed properties to filter on:
+    You can filter on these properties:
     <br />
     <Code>externalIdPrefix</Code>, <Code>metadata</Code>, <Code>assetIds</Code>,{' '}
     <Code>assetExternalIds</Code>, <Code>rootAssetIds</Code>, <Code>assetSubtreeIds</Code>,{' '}
     <Code>dataSetIds</Code>, <Code>source</Code>, <Code>type</Code>, <Code>subtype</Code>.
     <br />
-    Query returns active at time range events by default. Although this may be customized with
+    By default, the query returns events that are active in the time range. You can customize this with the 
     additional time filters <Code>startTime</Code>, <Code>endTime</Code>, <Code>activeAtTime</Code>,{' '}
     <Code>createdTime</Code>, <Code>lastUpdatedTime</Code>.
     <br />
@@ -134,29 +134,29 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     <br />
     <Code>{`events{startTime={min=$__from}, endTime={isNull=false}}`}</Code>
     <br />
-    Additional client-side filtering is available by using <Code>=~</Code>, <Code>!~</Code> and{' '}
+    You can specify additional client-side filtering with the <Code>=~</Code>, <Code>!~</Code> and{' '}
     <Code>!=</Code> operators. Comma between multiple filters acts as logic <Code>AND</Code>.
     <br />
     Format:
     <br />
-    <Code>=~</Code> – regex equality, returns results satisfying the regular expression
+    <Code>=~</Code> – regex equality, returns results satisfying the regular expression.
     <br />
-    <Code>!~</Code> – regex inequality, excludes results satisfying the regular expression
+    <Code>!~</Code> – regex inequality, excludes results satisfying the regular expression.
     <br />
-    <Code>!=</Code> – strict inequality, returns items where property doesn&apos;t equal a given
-    value
+    <Code>!=</Code> – strict inequality, returns items where a property doesn&apos;t equal a given
+    value.
     <br />
     <br />
     Example: <Code>{`events{type='WORKORDER', subtype=~'SUB.*'}`}</Code>
     <br />
     <span className="gf-formatted-warning">
-      Note: client-side filters should not be used as a primary filtering method.
+      Note: Do not use client-side filters as the primary filtering method.
       <br />
-      Those filters are applied after items has been returned from CDF, therefore there is a risk of
-      not seeing all data if CDF returned the maximum number of items (1000).
+      The filters are applied after items have been returned from CDF, and there is a risk that
+      you will not see all data if CDF returned the maximum number of items (1000).
     </span>
     <br />
-    Templating is also available by using <Code>$variable_name</Code> syntax.
+    Templating is available by using the <Code>$variable_name</Code> syntax.
     <br />
     Example: <Code>{`{events{type='WORKORDER', subtype=$variable}`}</Code>
   </HelpPanel>
