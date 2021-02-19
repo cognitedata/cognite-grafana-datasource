@@ -44,7 +44,8 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     Example: <Code>{`sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}`}</Code>
     <br />
     <br />
-    Templated variables can also be used with <Code>$variable</Code>.<br />
+    Templating is available by using the <Code>$variable_name</Code> syntax.
+    <br />
     Example:{' '}
     <Code>{`ts{assetIds=[$asset], metadata={key1=~'.*test.*'}, isStep=1, granularity='12h', aggregate='average'}`}</Code>
     <br />
@@ -66,27 +67,27 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     to get list of available formatters.
     <br />
     <br />
-    Synthetic timeseries functions can also be applied on one or multiple timeseries.
+    Synthetic time series functions can also be applied on one or multiple time series.
     <br />
     Example: <Code>{`(ts{name=~'.*temp.*', aggregate='average'} - 32) * 5/9`}</Code>
     <br />
     <Code>{`ts{} + sin(ts{granularity='24h', aggregate='average'})`}</Code>
     <br />
     <br />
-    Variable length functions (sum, max, min, avg) can also be applied to all filtered timeseries.
+    Variable length functions (sum, max, min, avg) can also be applied to all filtered time series.
     Examples:
     <br />
     <Code>{`sum(ts{metadata={type="TEMP"}})`}</Code>
     <br />
-    ↪ yields one timeseries that is the sum of all temperature timeseries
+    ↪ yields one time series that is the sum of all temperature time series
     <br />
     <Code>{"max(ts{aggregate='average'}) - min(ts{aggregate='average'})"}</Code>
     <br />
-    ↪ yields the range of the timeseries aggregated by averages
+    ↪ yields the range of the time series aggregated by averages
     <br />
     <Code>{'pow(ts{} - avg(ts{}), 2)'}</Code>
     <br />
-    ↪ yields the squared deviation of each timeseries from the average <br />
+    ↪ yields the squared deviation of each time series from the average <br />
     <br />
     There is a support for some advanced functions, like <Code>round</Code>, <Code>on_error</Code>{' '}
     and <Code>map</Code>.<br />
@@ -125,12 +126,11 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     <Code>assetExternalIds</Code>, <Code>rootAssetIds</Code>, <Code>assetSubtreeIds</Code>,{' '}
     <Code>dataSetIds</Code>, <Code>source</Code>, <Code>type</Code>, <Code>subtype</Code>.
     <br />
-    By default, the query returns events that are active in the time range. You can customize this with the 
-    additional time filters <Code>startTime</Code>, <Code>endTime</Code>, <Code>activeAtTime</Code>,{' '}
-    <Code>createdTime</Code>, <Code>lastUpdatedTime</Code>.
+    By default, the query returns events that are active in the time range. You can customize this
+    with the additional time filters <Code>startTime</Code>, <Code>endTime</Code>,{' '}
+    <Code>activeAtTime</Code>, <Code>createdTime</Code>, <Code>lastUpdatedTime</Code>.
     <br />
-    Example how to get all active events that started in the current time range and finished at some
-    point in time:
+    This example shows how to get all finished events that started in the current time range:
     <br />
     <Code>{`events{startTime={min=$__from}, endTime={isNull=false}}`}</Code>
     <br />
@@ -152,8 +152,8 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     <span className="gf-formatted-warning">
       Note: Do not use client-side filters as the primary filtering method.
       <br />
-      The filters are applied after items have been returned from CDF, and there is a risk that
-      you will not see all data if CDF returned the maximum number of items (1000).
+      The filters are applied after items have been returned from CDF, and there is a risk that you
+      will not see all data if CDF returned the maximum number of items (1000).
     </span>
     <br />
     Templating is available by using the <Code>$variable_name</Code> syntax.

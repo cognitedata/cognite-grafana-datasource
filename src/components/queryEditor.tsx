@@ -279,7 +279,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           labelWidth={6}
           inputWidth={30}
           className="custom-query"
-          placeholder="ts{externalId='PT_123'}"
+          placeholder="ts{externalIdPrefix='PT_123'}"
           onChange={({ target }) => setValue(target.value)}
           onBlur={() => onQueryChange({ expr: value })}
           value={value}

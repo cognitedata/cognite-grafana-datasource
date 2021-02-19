@@ -13,7 +13,7 @@ const help = (
     >
       assets/list
     </a>{' '}
-    endpoint for data fetching. <code className="query-keyword">&apos;=&apos;</code> sign is used to
+    endpoint to fetch data. Use <code className="query-keyword">&apos;=&apos;</code> operator to
     provide parameters for the request.
     <br />
     Format: <code className="query-keyword">{`assets{param=value,...}`}</code>
@@ -22,22 +22,22 @@ const help = (
     <code className="query-keyword">{`assets{assetSubtreeIds=[{id=123}, {externalId='external'}]}`}</code>
     <br />
     <br />
-    Results filtering is also possible by adding{' '}
+    You can specify additional client-side filtering with the{' '}
     <code className="query-keyword">&apos;=~&apos;</code>,{' '}
     <code className="query-keyword">&apos;!~&apos;</code> and{' '}
-    <code className="query-keyword">&apos;!=&apos;</code> signs to props. Applying few filters for
-    query acts as logic AND
+    <code className="query-keyword">&apos;!=&apos;</code> operators. Comma between multiple filters
+    acts as logic <code className="query-keyword">AND</code>
     <br />
     Format:
     <br />
-    <code className="query-keyword">&apos;=~&apos;</code> – regex equality, means that provided
-    regexp is used to match defined prop and matched value will be included
+    <code className="query-keyword">&apos;=~&apos;</code> – regex equality, returns results
+    satisfying the regular expression.
     <br />
-    <code className="query-keyword">&apos;!~&apos;</code> – regex inequality, means that provided
-    regexp is used to match defined prop and matched value will be excluded
+    <code className="query-keyword">&apos;!~&apos;</code> – regex inequality, excludes results
+    satisfying the regular expression.
     <br />
-    <code className="query-keyword">&apos;!=&apos;</code> – strict inequality, means that provided
-    string is used to strict prop comparing and matched value will be excluded
+    <code className="query-keyword">&apos;!=&apos;</code> – strict inequality, returns items where a
+    property doesn&apos;t equal a given value.
     <br />
     Example:{' '}
     <code className="query-keyword">{`assets{metadata={KEY='value', KEY_2=~'value.*'}, assetSubtreeIds=[{id=123}]}`}</code>
