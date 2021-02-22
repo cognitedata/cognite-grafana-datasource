@@ -201,6 +201,21 @@ export function stringifyError(error: any) {
   return errorMessage ? `[${errorCode}ERROR] ${errorMessage}${missingStr}` : `Unknown error`;
 }
 
+function filterDpsOutOfRange(datapoints: Timestamp[], start: number, end: number) {
+  return datapoints.filter(({ timestamp }) => timestamp >= start && timestamp <= end);
+}
+
+function generateTargetTsLabel(
+  id: number,
+  aggregates: string,
+  type: DataQueryRequestType,
+  externalId?: string
+) {
+  const idEither = `${externalId || id}`;
+  const aggregateStr = aggregates ? `${aggregates} ` : '';
+  return type === 'latest' ? idEither : `${aggregateStr}${idEither}`;
+}
+
 export function reduceTimeseries(
   metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
@@ -208,18 +223,16 @@ export function reduceTimeseries(
   const responseTimeseries: TimeSeries[] = [];
 
   metaResponses.forEach(({ result, metadata }) => {
-    const { labels } = metadata;
+    const { labels, type } = metadata;
     const { aggregates } = result.config.data;
     const { items } = result.data;
-    const aggregateStr = aggregates ? `${aggregates} ` : '';
 
     const series = items.map(({ datapoints, externalId, id }, i) => {
       const label = labels && labels[i];
-      const resTarget = label || `${aggregateStr}${externalId || id}`;
-      const filteredDatapoints = (datapoints as Timestamp[]).filter(
-        ({ timestamp }) => timestamp >= start && timestamp <= end
-      );
-      const rawDatapoints = datapoints2Tuples(filteredDatapoints, aggregates);
+      const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
+      const dpsInRange =
+        type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end);
+      const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
       return {
         target: resTarget,
         datapoints: rawDatapoints,
