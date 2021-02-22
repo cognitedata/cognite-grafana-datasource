@@ -29,16 +29,21 @@ export interface TimeSeriesAggregateDatapoint {
   totalVariation?: number;
 }
 
-export interface Event {
+export interface CogniteEvent {
   id: number;
-  startTime: number;
-  endTime: number;
-  description: string;
-  type: string;
-  subtype: string;
-  assetIds: number[];
-  source: string;
-  sourceId: string;
+  lastUpdatedTime: string;
+  createdTime: string;
+  externalId?: string;
+  startTime?: number;
+  endTime?: number;
+  dataSetId?: number;
+  description?: string;
+  type?: string;
+  subtype?: string;
+  assetIds?: number[];
+  source?: string;
+  sourceId?: string;
+  metadata?: { [s: string]: string };
 }
 
 export interface FilterRequestParams {
@@ -71,6 +76,7 @@ export interface TimeseriesFilterRequestParams extends FilterRequestParams {
 export interface EventsFilterRequestParams extends FilterRequestParams {
   startTime?: TimeRange;
   endTime?: TimeRange;
+  activeAtTime?: TimeRange;
   assetIds?: CogniteInternalId[];
   assetExternalIds?: CogniteExternallId[];
   rootAssetIds?: IdEither[];
@@ -78,6 +84,10 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
   type?: string;
   subtype?: string;
 }
+
+export type EventsFilterTimeParams =
+  | Pick<EventsFilterRequestParams, 'activeAtTime'>
+  | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;

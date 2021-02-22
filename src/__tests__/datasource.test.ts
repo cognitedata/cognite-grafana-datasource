@@ -1,8 +1,9 @@
 import ms from 'ms';
 import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
+import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
-import { CogniteQuery, QueryTarget, Tab } from '../types';
+import { CogniteQuery, defaultQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
 
@@ -505,6 +506,15 @@ describe('Datasource Query', () => {
       {
         target: 123,
       },
+      {
+        ...defaultQuery,
+        tab: Tab.Event,
+        eventQuery: {
+          expr: 'events{}',
+          columns: [],
+          activeAtTimeRange: false,
+        },
+      },
     ] as CogniteQuery[];
 
     it('should return empty if empty', () => {
@@ -574,10 +584,20 @@ describe('Datasource Query', () => {
         tab: Custom,
         target: undefined,
       };
+      const emptyEvent: Partial<CogniteQuery> = {
+        ...emptyTimeseries,
+        tab: Tab.Event,
+        eventQuery: {
+          expr: '',
+          activeAtTimeRange: false,
+          columns: [''],
+        },
+      };
       const result = await filterEmptyQueryTargets([
         emptyTimeseries,
         emptyAsset,
         emptyCustom,
+        emptyEvent,
       ] as CogniteQuery[]);
       expect(result).toEqual([]);
     });
@@ -614,7 +634,7 @@ describe('Given custom query with pure text label', () => {
       ...options,
       targets: [targetA],
     });
-    expect(result.data[0].target).toEqual('Pure text');
+    expect((result.data[0] as TimeSeries).target).toEqual('Pure text');
   });
 });
 
