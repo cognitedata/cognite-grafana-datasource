@@ -17,7 +17,7 @@
 
 ## Installation
 
-The easiest way to install this plugin is to go to [https://grafana.com/plugins/cognitedata-datasource/installation](https://grafana.com/plugins/cognitedata-datasource/installation), and follow the installation instructions there.
+The easiest way to install this plugin is to follow the installation instructions on [this page](https://grafana.com/grafana/plugins/cognitedata-datasource/?tab=installation).
  
 ## Documentation
 
