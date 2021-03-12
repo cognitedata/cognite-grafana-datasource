@@ -28,6 +28,7 @@ import {
   CogniteTargetObj,
   CogniteQueryBase,
   EventQuery,
+  TabTitles,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
@@ -456,7 +457,13 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
-          <Tab css="" label={t} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
+          <Tab
+            css=""
+            label={TabTitles[t]}
+            key={t}
+            active={tab === t}
+            onChangeTab={onSelectTab(t)}
+          />
         ))}
       </TabsBar>
       <TabContent>
