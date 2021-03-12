@@ -15,6 +15,13 @@ export enum Tab {
   Event = 'Event',
 }
 
+export const TabTitles = {
+  [Tab.Timeseries]: 'Time series search',
+  [Tab.Asset]: 'Time series by asset',
+  [Tab.Custom]: 'Time series custom query',
+  [Tab.Event]: 'Events',
+};
+
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
