@@ -281,6 +281,7 @@ export default class CogniteDatasource extends DataSourceApi<
       hasMore: items.length === EVENTS_PAGE_LIMIT,
     };
   }
+
   /**
    * used by dashboards to get annotations (events)
    */
