@@ -1,7 +1,7 @@
 <div class="gf-form-group">
   <div>
     <div class="gf-form gf-form--grow">
-      <label class="gf-form-label query-keyword fix-query-keyword width-8"
+      <label class="gf-form-label width-8"
         >Query</label
       >
       <input
@@ -22,10 +22,16 @@
     </div>
     <div class="gf-form--grow" ng-show="showHelpQuery">
       <pre>
-Annotation query uses the <a class="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank">events/list</a> endpoint to fetch data. Use <code class="query-keyword">'='</code> operator to provide parameters for the request.
+  Annotation query uses the <a class="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank">events/list</a> endpoint to fetch data. Use <code class="query-keyword">'='</code> operator to provide parameters for the request.
   Format: <code class="query-keyword">events{param=number, ...}</code>
   Example: <code class="query-keyword">events{externalIdPrefix='PT', type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}</code>
-  You can specify additional client-side filtering with the <code class="query-keyword">'=~'</code>, <code class="query-keyword">'!~'</code> and <code class="query-keyword">'!='</code> operators. Comma between multiple filters acts as logic <code class="query-keyword">AND</code>
+  
+  By default, the query displays all events that are active in the time range.
+  You can customize this with the additional time filters <code class="query-keyword">startTime</code>, <code class="query-keyword">endTime</code>.
+  This example shows how to display all finished events that started in the current time range:
+  <code class="query-keyword">events{startTime={min=$__from}, endTime={isNull=false}}</code>
+
+  You can specify additional client-side filtering with the <code class="query-keyword">'=~'</code>, <code class="query-keyword">'!~'</code> and <code class="query-keyword">'!='</code> operators. Comma between multiple filters acts as logic <code class="query-keyword">AND</code>.
   Format:
     <code class="query-keyword">'=~'</code> – regex equality, returns results satisfying the regular expression.
     <code class="query-keyword">'!~'</code> – regex inequality, excludes results satisfying the regular expression.
