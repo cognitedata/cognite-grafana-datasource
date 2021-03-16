@@ -111,6 +111,10 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
+  public isUsingOAuth() {
+    return this.oauthPassThru;
+  }
+
   public cachedRequest = async (
     query: DataSourceRequestOptions,
     cacheTime: string = CacheTime.Default

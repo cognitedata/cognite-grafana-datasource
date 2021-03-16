@@ -388,11 +388,30 @@ export default class CogniteDatasource extends DataSourceApi<
    * used by data source configuration page to make sure the connection is working
    */
   async testDatasource() {
-    const { status, data } = await this.connector.request({ path: 'login/status' });
+    let hasAccess = false;
+    let success = false;
 
-    if (status === 200) {
-      const { project, loggedIn } = data?.data || {};
-      if (loggedIn && (project === this.project || !project)) {
+    if (this.connector.isUsingOAuth()) {
+      const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
+
+      if (status === 200) {
+        const { projects } = data?.data || {};
+        // hasAccess = (projects || []).includes(this.project);
+        hasAccess = true; // FIXME
+        success = true;
+      }
+    } else {
+      const { status, data } = await this.connector.request({ path: 'login/status' });
+
+      if (status === 200) {
+        const { project, loggedIn } = data?.data || {};
+        hasAccess = loggedIn && project === this.project;
+        success = true;
+      }
+    }
+
+    if (success) {
+      if (hasAccess) {
         return {
           status: 'success',
           message: 'Your Cognite credentials are valid',
@@ -406,7 +425,7 @@ export default class CogniteDatasource extends DataSourceApi<
       };
     }
 
-    throw Error('Did not get 200 OK');
+    throw Error('Authentication request failed');
   }
 }
 
