@@ -57,6 +57,28 @@ Object {
 }
 `;
 
+exports[`Annotations Query Given an annotation query with additional time filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "activeAtTime": Object {
+        "max": 1549338475000,
+        "min": 1549336675000,
+      },
+      "endTime": Object {
+        "isNull": false,
+      },
+      "startTime": Object {
+        "min": 123,
+      },
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
+}
+`;
+
 exports[`Annotations Query Given an annotation query with an incomplete event expression should throw a parse error 1`] = `
 "Parser: Unexpected end of input:
 events{
