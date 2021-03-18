@@ -5,6 +5,10 @@ jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
 const ds = getMockedDataSource();
 const { backendSrv } = ds;
+const testRange = {
+  from: 1549336675000,
+  to: 1549338475000,
+};
 
 describe('Annotations Query', () => {
   const annotationResponse = {
@@ -72,10 +76,7 @@ describe('Annotations Query', () => {
   describe('Given an empty annotation query', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: '',
       },
@@ -94,10 +95,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query without any filters', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: 'events{}',
       },
@@ -119,10 +117,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query where no events are returned', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{type='type 5'}",
       },
@@ -144,10 +139,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{assetIds=[123], type='type 1'}",
       },
@@ -179,10 +171,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query with a metadata request', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{metadata={key1='value1', key2='value2'}}",
       },
@@ -211,10 +200,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query where nothing is returned', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{type='non-existant type'}",
       },
@@ -240,10 +226,7 @@ describe('Annotations Query', () => {
   describe('Given an annotation query with filters', () => {
     let result;
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{description=~'event.*', type!='type 1'}",
       },
@@ -270,13 +253,31 @@ describe('Annotations Query', () => {
     });
   });
 
+  describe('Given an annotation query with additional time filters', () => {
+    const annotationOption: any = {
+      range: testRange,
+      annotation: {
+        query: 'events{startTime={min=123}, endTime={isNull=false}}',
+      },
+    };
+
+    beforeAll(async () => {
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(annotationResponse));
+      await ds.annotationQuery(annotationOption);
+    });
+
+    it('should generate the correct request', () => {
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+    });
+  });
+
   describe('Given an annotation query with variables', () => {
     let result1;
     const annotationOption1: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: "events{assetIds=[$AssetVariable], description!~'event.*'}",
       },
@@ -315,10 +316,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with an incomplete event expression', () => {
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: 'events{ ',
       },
@@ -334,10 +332,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with an incorrect event expression', () => {
     const annotationOption: any = {
-      range: {
-        from: 1549336675000,
-        to: 1549338475000,
-      },
+      range: testRange,
       annotation: {
         query: 'events{ name=~event, foo}',
       },

@@ -4,15 +4,13 @@ exports[`Annotations Query Given an annotation query should generate the correct
 Object {
   "data": Object {
     "filter": Object {
+      "activeAtTime": Object {
+        "max": 1549338475000,
+        "min": 1549336675000,
+      },
       "assetIds": Array [
         123,
       ],
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
       "type": "type 1",
     },
     "limit": 1000,
@@ -26,11 +24,9 @@ exports[`Annotations Query Given an annotation query where nothing is returned s
 Object {
   "data": Object {
     "filter": Object {
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
+      "activeAtTime": Object {
         "max": 1549338475000,
+        "min": 1549336675000,
       },
       "type": "non-existant type",
     },
@@ -45,15 +41,35 @@ exports[`Annotations Query Given an annotation query with a metadata request sho
 Object {
   "data": Object {
     "filter": Object {
-      "endTime": Object {
+      "activeAtTime": Object {
+        "max": 1549338475000,
         "min": 1549336675000,
       },
       "metadata": Object {
         "key1": "value1",
         "key2": "value2",
       },
-      "startTime": Object {
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/events/list",
+}
+`;
+
+exports[`Annotations Query Given an annotation query with additional time filters should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "activeAtTime": Object {
         "max": 1549338475000,
+        "min": 1549336675000,
+      },
+      "endTime": Object {
+        "isNull": false,
+      },
+      "startTime": Object {
+        "min": 123,
       },
     },
     "limit": 1000,
@@ -79,11 +95,9 @@ exports[`Annotations Query Given an annotation query with filters should generat
 Object {
   "data": Object {
     "filter": Object {
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
+      "activeAtTime": Object {
         "max": 1549338475000,
+        "min": 1549336675000,
       },
     },
     "limit": 1000,
@@ -97,15 +111,13 @@ exports[`Annotations Query Given an annotation query with variables should gener
 Object {
   "data": Object {
     "filter": Object {
+      "activeAtTime": Object {
+        "max": 1549338475000,
+        "min": 1549336675000,
+      },
       "assetIds": Array [
         123,
       ],
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
     },
     "limit": 1000,
   },
@@ -118,16 +130,14 @@ exports[`Annotations Query Given an annotation query with variables should gener
 Object {
   "data": Object {
     "filter": Object {
+      "activeAtTime": Object {
+        "max": 1549338475000,
+        "min": 1549336675000,
+      },
       "assetIds": Array [
         123,
         456,
       ],
-      "endTime": Object {
-        "min": 1549336675000,
-      },
-      "startTime": Object {
-        "max": 1549338475000,
-      },
     },
     "limit": 1000,
   },

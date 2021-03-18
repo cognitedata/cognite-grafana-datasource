@@ -263,10 +263,10 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
-  async fetchEvents(expr: string, timeFrame: EventsFilterTimeParams) {
+  async fetchEvents(expr: string, timeRange: EventsFilterTimeParams) {
     const { filters, params } = parseQuery(expr);
     const data: FilterRequest<EventsFilterRequestParams> = {
-      filter: { ...params, ...timeFrame },
+      filter: { ...timeRange, ...params },
       limit: EVENTS_PAGE_LIMIT,
     };
 
@@ -285,7 +285,6 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by dashboards to get annotations (events)
    */
-
   async annotationQuery(
     options: AnnotationQueryRequest<CogniteAnnotationQuery>
   ): Promise<AnnotationEvent[]> {
@@ -296,25 +295,22 @@ export default class CogniteDatasource extends DataSourceApi<
       return [];
     }
 
-    const [startTime, endTime] = getRange(range);
-    const timeFrame = {
-      startTime: { max: endTime },
-      endTime: { min: startTime },
+    const [rangeStart, rangeEnd] = getRange(range);
+    const timeRange = {
+      activeAtTime: { min: rangeStart, max: rangeEnd },
     };
-
     const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchEvents(evaluatedQuery, timeFrame);
+    const { items } = await this.fetchEvents(evaluatedQuery, timeRange);
 
     return items.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,
       text: description,
       time: startTime,
-      timeEnd: endTime,
+      timeEnd: endTime || rangeEnd,
       title: type,
     }));
   }
-
   /**
    * used by query editor to search for assets/timeseries
    */
