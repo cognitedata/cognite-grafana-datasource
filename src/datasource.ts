@@ -384,34 +384,50 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
+  async checkLoginStatusApiKey() {
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
+    const { status, data } = await this.connector.request({ path: 'login/status' });
+
+    if (status === 200) {
+      const { project, loggedIn } = data?.data || {};
+      hasAccessToProject = project === this.project;
+      isLoggedIn = loggedIn;
+    }
+
+    return [hasAccessToProject, isLoggedIn];
+  }
+
+  async checkLoginStatusOAuth() {
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
+    const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
+
+    if (status === 200) {
+      const { projects = [] } = data || {};
+      const projectNames = projects.map(({ projectUrlName }) => projectUrlName);
+      hasAccessToProject = projectNames.includes(this.project);
+      isLoggedIn = true;
+    }
+
+    return [hasAccessToProject, isLoggedIn];
+  }
+
   /**
    * used by data source configuration page to make sure the connection is working
    */
   async testDatasource() {
-    let hasAccess = false;
-    let success = false;
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
 
     if (this.connector.isUsingOAuth()) {
-      const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
-
-      if (status === 200) {
-        const { projects } = data?.data || {};
-        // hasAccess = (projects || []).includes(this.project);
-        hasAccess = true; // FIXME
-        success = true;
-      }
+      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
     } else {
-      const { status, data } = await this.connector.request({ path: 'login/status' });
-
-      if (status === 200) {
-        const { project, loggedIn } = data?.data || {};
-        hasAccess = loggedIn && project === this.project;
-        success = true;
-      }
+      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusApiKey();
     }
 
-    if (success) {
-      if (hasAccess) {
+    if (isLoggedIn) {
+      if (hasAccessToProject) {
         return {
           status: 'success',
           message: 'Your Cognite credentials are valid',
@@ -419,13 +435,17 @@ export default class CogniteDatasource extends DataSourceApi<
         };
       }
       return {
-        status: 'error',
-        message: 'Your Cognite credentials are invalid',
-        title: 'Error',
+        status: 'warning',
+        message: `Cannot access '${this.project}' project`,
+        title: 'Warning',
       };
     }
 
-    throw Error('Authentication request failed');
+    return {
+      status: 'error',
+      message: 'Your Cognite credentials are invalid',
+      title: 'Error',
+    };
   }
 }
 
