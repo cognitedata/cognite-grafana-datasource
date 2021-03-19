@@ -426,26 +426,26 @@ export default class CogniteDatasource extends DataSourceApi<
       [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusApiKey();
     }
 
-    if (isLoggedIn) {
-      if (hasAccessToProject) {
+    switch (true) {
+      case isLoggedIn && hasAccessToProject:
         return {
           status: 'success',
           message: 'Your Cognite credentials are valid',
           title: 'Success',
         };
-      }
-      return {
-        status: 'warning',
-        message: `Cannot access '${this.project}' project`,
-        title: 'Warning',
-      };
+      case isLoggedIn:
+        return {
+          status: 'warning',
+          message: `Cannot access '${this.project}' project`,
+          title: 'Warning',
+        };
+      default:
+        return {
+          status: 'error',
+          message: 'Your Cognite credentials are invalid',
+          title: 'Error',
+        };
     }
-
-    return {
-      status: 'error',
-      message: 'Your Cognite credentials are invalid',
-      title: 'Error',
-    };
   }
 }
 
