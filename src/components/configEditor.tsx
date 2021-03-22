@@ -117,15 +117,13 @@ export function ConfigEditor(props: ConfigEditorProps) {
           </pre>
         )}
         <div className="gf-form-inline">
-          {featureFlags.oauthPassThru && (
-            <Switch
-              label="Forward OAuth Identity"
-              labelClass="width-13"
-              checked={oauthPassThru}
-              onChange={onOAuthPassThruChange}
-              tooltip={oAuthPassThruTooltip}
-            />
-          )}
+          <Switch
+            label="Forward OAuth Identity"
+            labelClass="width-13"
+            checked={oauthPassThru}
+            onChange={onOAuthPassThruChange}
+            tooltip={oAuthPassThruTooltip}
+          />
         </div>
         {!oauthPassThru && (
           <div className="gf-form-inline">
@@ -144,14 +142,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </div>
           </div>
         )}
-        <KonamiTracker
-          onCheat={() => {
-            onJsonDataChange({
-              featureFlags: { ...featureFlags, oauthPassThru: !featureFlags.oauthPassThru },
-            });
-          }}
-        />
-        <FeatureFlagsWarning featureFlags={featureFlags} />
       </div>
     </>
   );

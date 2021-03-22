@@ -1,5 +1,9 @@
 import React, { useEffect } from 'react';
 
+/**
+ * Calls onCheat() when secret key combination is entered
+ * This is used to hide/show experimental features
+ */
 export const KonamiTracker = ({ onCheat }: { onCheat: () => void }) => {
   const keySequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
   let pointer = 0;
