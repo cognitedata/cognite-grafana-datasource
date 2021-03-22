@@ -71,10 +71,20 @@ describe('Login with OAuth2', () => {
 
   describe('When given valid login info and correct project', () => {
     const response = makeLoginResponse(true, 'TestProject');
+    let result;
+
+    beforeAll(async () => {
+      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
+      result = await ds.testDatasource();
+    });
+
+    it('should send a correct request', async () => {
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+    });
 
     it('should log the user in', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
-      expect(await ds.testDatasource()).toMatchSnapshot();
+      expect(result).toMatchSnapshot();
     });
   });
 

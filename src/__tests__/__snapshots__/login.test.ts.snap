@@ -61,6 +61,13 @@ Object {
 }
 `;
 
+exports[`Login with OAuth2 When given valid login info and correct project should send a correct request 1`] = `
+Object {
+  "method": "GET",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/token/inspect",
+}
+`;
+
 exports[`Login with OAuth2 When given valid login info but incorrect project should display an error message 1`] = `
 Object {
   "message": "Cannot access 'TestProject' project",
