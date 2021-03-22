@@ -27,7 +27,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
   const { onOptionsChange, options } = props;
   const { secureJsonData = {}, jsonData, secureJsonFields } = options;
   const { cogniteDataPlatformApiKey = '' } = secureJsonData;
-  const { cogniteProject = '', cogniteApiUrl = '', featureFlags = {}, oauthPassThru } = jsonData;
+  const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
     onOptionsChange({
