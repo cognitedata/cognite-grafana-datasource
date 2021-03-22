@@ -79,11 +79,11 @@ export function ConfigEditor(props: ConfigEditorProps) {
     <>
       <div className="gf-form-group">
         <h3 className="page-heading">HTTP</h3>
-        <div className="gf-form-inline">
+        <div className="gf-form gf-form-inline">
           <FormField
             label="Project"
-            labelWidth={6}
-            inputWidth={20}
+            labelWidth={10}
+            inputWidth={21}
             onChange={onProjectChange}
             value={cogniteProject}
             placeholder="Cognite Data Fusion project"
@@ -91,11 +91,11 @@ export function ConfigEditor(props: ConfigEditorProps) {
           />
         </div>
 
-        <div className="gf-form-inline">
+        <div className="gf-form gf-form-inline">
           <FormField
             label="API URL"
-            labelWidth={6}
-            inputWidth={20}
+            labelWidth={10}
+            inputWidth={21}
             onChange={onApiUrlChange}
             value={cogniteApiUrl}
             placeholder="api.cognitedata.com"
@@ -119,7 +119,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Forward OAuth Identity"
-            labelClass="width-13"
+            labelClass="width-11"
             checked={oauthPassThru}
             onChange={onOAuthPassThruChange}
             tooltip={oAuthPassThruTooltip}
@@ -134,7 +134,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                 label="API Key"
                 placeholder="Cognite Data Fusion API key"
                 tooltip="Cognite Data Fusion API key."
-                labelWidth={6}
+                labelWidth={11}
                 inputWidth={20}
                 onReset={onResetAPIKey}
                 onChange={onAPIKeyChange}
