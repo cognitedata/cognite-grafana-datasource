@@ -32,23 +32,26 @@ export function getItemsResponseObject(items, aggregates?: string) {
   };
 }
 
-const instanceSettings = ({
-  id: 1,
-  name: 'Cognite Test Data',
-  type: 'cognitedata-platform-datasource',
-  url: '/api/datasources/proxy/6',
-  password: '',
-  database: '',
-  basicAuth: '',
-  jsonData: {
-    authType: '',
-    defaultRegion: '',
-    cogniteProject: 'TestProject',
-  },
-  withCredentials: false,
-} as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>;
+const instanceSettings = ({ oauthPassThru }) =>
+  (({
+    id: 1,
+    name: 'Cognite Test Data',
+    type: 'cognitedata-platform-datasource',
+    url: '/api/datasources/proxy/6',
+    password: '',
+    database: '',
+    basicAuth: '',
+    jsonData: {
+      authType: '',
+      defaultRegion: '',
+      cogniteProject: 'TestProject',
+      oauthPassThru,
+    },
+    withCredentials: false,
+  } as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>);
 
-export const getMockedDataSource = () => new CogniteDatasource(instanceSettings);
+export const getMockedDataSource = (options = { oauthPassThru: false }) =>
+  new CogniteDatasource(instanceSettings(options));
 
 export function getMeta(id, aggregation, labels, type = 'data') {
   return {

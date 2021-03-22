@@ -380,29 +380,68 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  /**
-   * used by data source configuration page to make sure the connection is working
-   */
-  async testDatasource() {
+  async checkLoginStatusApiKey() {
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
     const { status, data } = await this.connector.request({ path: 'login/status' });
 
     if (status === 200) {
       const { project, loggedIn } = data?.data || {};
-      if (loggedIn && (project === this.project || !project)) {
+      hasAccessToProject = project === this.project;
+      isLoggedIn = loggedIn;
+    }
+
+    return [hasAccessToProject, isLoggedIn];
+  }
+
+  async checkLoginStatusOAuth() {
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
+    const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
+
+    if (status === 200) {
+      const { projects = [] } = data || {};
+      const projectNames = projects.map(({ projectUrlName }) => projectUrlName);
+      hasAccessToProject = projectNames.includes(this.project);
+      isLoggedIn = true;
+    }
+
+    return [hasAccessToProject, isLoggedIn];
+  }
+
+  /**
+   * used by data source configuration page to make sure the connection is working
+   */
+  async testDatasource() {
+    let hasAccessToProject = false;
+    let isLoggedIn = false;
+
+    if (this.connector.isUsingOAuth()) {
+      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
+    } else {
+      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusApiKey();
+    }
+
+    switch (true) {
+      case isLoggedIn && hasAccessToProject:
         return {
           status: 'success',
           message: 'Your Cognite credentials are valid',
           title: 'Success',
         };
-      }
-      return {
-        status: 'error',
-        message: 'Your Cognite credentials are invalid',
-        title: 'Error',
-      };
+      case isLoggedIn:
+        return {
+          status: 'warning',
+          message: `Cannot access '${this.project}' project`,
+          title: 'Warning',
+        };
+      default:
+        return {
+          status: 'error',
+          message: 'Your Cognite credentials are invalid',
+          title: 'Error',
+        };
     }
-
-    throw Error('Did not get 200 OK');
   }
 }
 

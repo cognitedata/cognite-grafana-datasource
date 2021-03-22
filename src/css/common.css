@@ -9,3 +9,7 @@ pre.gf-formatted-warning {
 pre.gf-formatted-warning, span.gf-formatted-warning {
   color: #f79520;
 }
+
+.alert-warning {
+  background-image: linear-gradient(90deg, rgb(235, 123, 24), rgb(235, 123, 24));
+}
