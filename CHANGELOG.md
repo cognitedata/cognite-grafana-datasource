@@ -6,11 +6,10 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ### Features
 
-- Tabular representation of event data.
-- Changed defaults for event annotations.<br />
-  Previously, only fulfilled events were visible by default. From now on unfinished events are displayed as well.
+- Tabular representation of events data.
+- Event annotation query shows unfinished events by default.
 - Support for OAuth authentication with CDF.
-- Fetch latest data point for time series.
+- Option to fetch only the latest data point for the time series.
 
 ## 2.1.1 - November 23, 2020
 
