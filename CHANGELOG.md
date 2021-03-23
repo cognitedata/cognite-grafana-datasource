@@ -2,6 +2,14 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 2.2.0 - April 6, 2021
+
+### Features
+
+- Tabular representation of events data.
+- Event annotation query shows unfinished events by default.
+- Support for OAuth authentication with CDF.
+- Option to fetch only the latest data point for the time series.
 
 ## 2.1.1 - November 23, 2020
 
