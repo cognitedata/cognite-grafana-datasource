@@ -77,7 +77,8 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
     const { query } = this.state;
 
     try {
-      // parse(query); FIXME
+      const evaluatedQuery = this.props.datasource.replaceVariable(query);
+      parse(evaluatedQuery);
 
       onChange({ query }, query);
     } catch ({ message }) {
