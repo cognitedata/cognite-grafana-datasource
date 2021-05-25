@@ -6,7 +6,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ### Features
 
-- Ability to link variables so that value of one variable can be used as an input to another.
+- Ability to link variables so that the value of one variable can be used as an input to another.
 
 
 ## 2.2.0 - April 6, 2021
