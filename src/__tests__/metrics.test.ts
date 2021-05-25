@@ -172,7 +172,7 @@ describe('Metrics Query', () => {
 
   describe('Given a nested variable query', () => {
     const variableQuery: VariableQueryData = {
-      query: "assets{parentIds=[$AssetVariable]}",
+      query: 'assets{parentIds=[$AssetVariable]}',
     };
 
     beforeAll(async () => {
