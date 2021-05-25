@@ -169,4 +169,22 @@ describe('Metrics Query', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
     });
   });
+
+  describe('Given a nested variable query', () => {
+    const variableQuery: VariableQueryData = {
+      query: "assets{parentIds=[$AssetVariable]}",
+    };
+
+    beforeAll(async () => {
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(assetsResponse));
+      await ds.metricFindQuery(variableQuery);
+    });
+
+    it('should generate the correct request', () => {
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+    });
+  });
 });

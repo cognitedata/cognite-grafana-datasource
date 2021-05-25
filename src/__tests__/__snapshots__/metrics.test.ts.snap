@@ -33,6 +33,21 @@ Object {
 }
 `;
 
+exports[`Metrics Query Given a nested variable query should generate the correct request 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "parentIds": Array [
+        123,
+      ],
+    },
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+}
+`;
+
 exports[`Metrics Query Given a simple metrics query should generate the correct request 1`] = `
 Object {
   "data": Object {
