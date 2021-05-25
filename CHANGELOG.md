@@ -2,6 +2,13 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 2.3.0 - June 1, 2021
+
+### Features
+
+- Ability to link variables so that the value of one variable can be used as an input to another.
+
+
 ## 2.2.0 - April 6, 2021
 
 ### Features

@@ -348,7 +348,7 @@ export default class CogniteDatasource extends DataSourceApi<
     let filters: ParsedFilter[];
 
     try {
-      ({ params, filters } = parseQuery(query));
+      ({ params, filters } = parseQuery(this.replaceVariable(query)));
     } catch (e) {
       return [];
     }

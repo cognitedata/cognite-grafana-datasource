@@ -73,11 +73,12 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   };
 
   handleBlur = () => {
-    const { onChange } = this.props;
+    const { onChange, datasource } = this.props;
     const { query } = this.state;
 
     try {
-      parse(query);
+      const evaluatedQuery = datasource.replaceVariable(query);
+      parse(evaluatedQuery);
 
       onChange({ query }, query);
     } catch ({ message }) {
