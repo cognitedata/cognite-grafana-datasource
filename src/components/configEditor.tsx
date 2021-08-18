@@ -22,12 +22,28 @@ If unsure, leave the URL as default.`;
 const oAuthPassThruTooltip = `Forward the user's upstream OAuth identity to the data source
 (Their access token gets passed along).`;
 
+const oAuthClientCredsTooltip = `The OAuth 2.0 client credentials grant flow permits this data source to use its own credentials, instead of impersonating a user, to authenticate when calling CDF.`;
+
+const oAuthTokenUrlTooltip = `OAuth 2.0 token endpoint (v2). E.g. https://login.microsoftonline.com/your-tenant/oauth2/v2.0/token`;
+
+const oAuthClientSecretTooltip = `A secret string that the application uses to prove its identity when requesting a token. Also can be referred to as application password.`;
+
+const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. E.g. https://api.cognitedata.com/.default.`;
+
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
   const { secureJsonData = {}, jsonData, secureJsonFields } = options;
-  const { cogniteDataPlatformApiKey = '' } = secureJsonData;
-  const { cogniteProject = '', cogniteApiUrl = '', oauthPassThru } = jsonData;
+  const { cogniteDataPlatformApiKey = '', oauthClientSecret = '' } = secureJsonData;
+  const {
+    cogniteProject = '',
+    cogniteApiUrl = '',
+    oauthPassThru,
+    oauthClientCreds,
+    oauthClientId,
+    oauthTokenUrl,
+    oauthScope,
+  } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
     onOptionsChange({
@@ -39,41 +55,37 @@ export function ConfigEditor(props: ConfigEditorProps) {
     });
   };
 
-  const onApiUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onJsonDataChange({ cogniteApiUrl: event.target.value });
-  };
+  const onJsonStringValueChange = (key: keyof CogniteDataSourceOptions) => (
+    event: ChangeEvent<HTMLInputElement>
+  ) => onJsonDataChange({ [key]: event.target.value });
 
-  const onProjectChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onJsonDataChange({ cogniteProject: event.target.value });
-  };
-
-  const onOAuthPassThruChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onJsonDataChange({ oauthPassThru: event.currentTarget.checked });
-  };
+  const onJsonBoolValueChange = (key: keyof CogniteDataSourceOptions) => (
+    event: ChangeEvent<HTMLInputElement>
+  ) => onJsonDataChange({ [key]: event.currentTarget.checked });
 
   // Secure field (only sent to the backend)
-  const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onChangeSecretValue = (secretKey: keyof CogniteSecureJsonData) => (
+    event: ChangeEvent<HTMLInputElement>
+  ) =>
     onOptionsChange({
       ...options,
       secureJsonData: {
-        cogniteDataPlatformApiKey: event.target.value,
+        [secretKey]: event.target.value,
       },
     });
-  };
 
-  const onResetAPIKey = () => {
+  const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) => () =>
     onOptionsChange({
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        cogniteDataPlatformApiKey: false,
+        [secretKey]: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        cogniteDataPlatformApiKey: '',
+        [secretKey]: '',
       },
     });
-  };
 
   return (
     <>
@@ -84,7 +96,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             label="Project"
             labelWidth={10}
             inputWidth={21}
-            onChange={onProjectChange}
+            onChange={onJsonStringValueChange('cogniteProject')}
             value={cogniteProject}
             placeholder="Cognite Data Fusion project"
             tooltip="Cognite Data Fusion project name."
@@ -96,7 +108,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             label="API URL"
             labelWidth={10}
             inputWidth={21}
-            onChange={onApiUrlChange}
+            onChange={onJsonStringValueChange('cogniteApiUrl')}
             value={cogniteApiUrl}
             placeholder="api.cognitedata.com"
             tooltip={apiUrlTooltip}
@@ -121,11 +133,71 @@ export function ConfigEditor(props: ConfigEditorProps) {
             label="Forward OAuth Identity"
             labelClass="width-11"
             checked={oauthPassThru}
-            onChange={onOAuthPassThruChange}
+            onChange={onJsonBoolValueChange('oauthPassThru')}
             tooltip={oAuthPassThruTooltip}
           />
         </div>
         {!oauthPassThru && (
+          <div className="gf-form">
+            <Switch
+              label="OAuth2 client credentials"
+              labelClass="width-11"
+              checked={oauthClientCreds}
+              onChange={onJsonBoolValueChange('oauthClientCreds')}
+              tooltip={oAuthClientCredsTooltip}
+            />
+          </div>
+        )}
+        {!oauthPassThru && oauthClientCreds && (
+          <>
+            <div className="gf-form">
+              <FormField
+                label="Token URL"
+                labelWidth={11}
+                inputWidth={21}
+                onChange={onJsonStringValueChange('oauthTokenUrl')}
+                value={oauthTokenUrl}
+                placeholder="https://login.example.com/.../oauth2/v2.0/token"
+                tooltip={oAuthTokenUrlTooltip}
+              />
+            </div>
+            <div className="gf-form">
+              <FormField
+                label="Client Id"
+                labelWidth={11}
+                inputWidth={21}
+                onChange={onJsonStringValueChange('oauthClientId')}
+                value={oauthClientId}
+                placeholder="Your Application (client) ID"
+              />
+            </div>
+            <div className="gf-form">
+              <SecretFormField
+                isConfigured={secureJsonFields.oauthClientSecret}
+                value={oauthClientSecret}
+                label="Client secret"
+                tooltip={oAuthClientSecretTooltip}
+                labelWidth={11}
+                inputWidth={21}
+                placeholder="******"
+                onReset={onResetSecretValue('oauthClientSecret')}
+                onChange={onChangeSecretValue('oauthClientSecret')}
+              />
+            </div>
+            <div className="gf-form">
+              <FormField
+                label="Scope"
+                labelWidth={11}
+                inputWidth={21}
+                onChange={onJsonStringValueChange('oauthScope')}
+                value={oauthScope}
+                tooltip={oAuthScopeTooltip}
+                placeholder="E.g. https://api.cognitedata.com/.default"
+              />
+            </div>
+          </>
+        )}
+        {!(oauthPassThru || oauthClientCreds) && (
           <div className="gf-form-inline">
             <div className="gf-form">
               <SecretFormField
@@ -136,8 +208,8 @@ export function ConfigEditor(props: ConfigEditorProps) {
                 tooltip="Cognite Data Fusion API key."
                 labelWidth={11}
                 inputWidth={20}
-                onReset={onResetAPIKey}
-                onChange={onAPIKeyChange}
+                onReset={onResetSecretValue('cogniteDataPlatformApiKey')}
+                onChange={onChangeSecretValue('cogniteDataPlatformApiKey')}
               />
             </div>
           </div>

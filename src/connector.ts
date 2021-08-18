@@ -18,7 +18,8 @@ export class Connector {
     private project: string,
     private apiUrl: string,
     private backendSrv: BackendSrv,
-    private oauthPassThru: boolean
+    private oauthPassThru?: boolean,
+    private oauthClientCredentials?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -107,12 +108,22 @@ export class Connector {
   }
 
   private get apiUrlAuth() {
-    const auth = this.oauthPassThru ? AuthType.OAuth : AuthType.ApiKey;
+    let auth;
+    switch (true) {
+      case !this.oauthPassThru && this.oauthClientCredentials:
+        auth = AuthType.OAuthClientCredentials;
+        break;
+      case this.oauthPassThru:
+        auth = AuthType.OAuth;
+        break;
+      default:
+        auth = AuthType.ApiKey;
+    }
     return `${this.apiUrl}/${auth}`;
   }
 
   public isUsingOAuth() {
-    return this.oauthPassThru;
+    return this.oauthPassThru || this.oauthClientCredentials;
   }
 
   public cachedRequest = async (
