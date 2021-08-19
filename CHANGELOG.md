@@ -2,6 +2,12 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 2.4.0 - August 20, 2021
+
+### Features
+
+- OAuth 2.0 client credentials grant flow to authenticate and authorize against CDF.
+
 ## 2.3.0 - June 1, 2021
 
 ### Features
