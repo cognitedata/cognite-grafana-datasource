@@ -201,4 +201,21 @@ describe('connector', () => {
       });
     });
   });
+
+  describe('request with oauth2 client credentials grant flow', () => {
+    const request = { path: '' };
+
+    beforeEach(() => {
+      connector = new Connector(project, protocol, { datasourceRequest } as any, false, true);
+    });
+
+    it('uses cdf-cc-oauth route when oauthClientCreds=true', async () => {
+      datasourceRequest.mockImplementation(async () => ({ data: {} }));
+      await connector.request(request);
+      expect(datasourceRequest).toHaveBeenCalledWith({
+        method: HttpMethod.GET,
+        url: 'protocol://cdf-cc-oauth/',
+      });
+    });
+  });
 });

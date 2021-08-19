@@ -53,11 +53,16 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   cogniteApiUrl?: string;
   cogniteProject: string;
   oauthPassThru?: boolean;
+  oauthClientCreds?: boolean;
+  oauthTokenUrl?: string;
+  oauthClientId?: string;
+  oauthScope?: string;
   featureFlags: { [s: string]: boolean };
 }
 
 export interface CogniteSecureJsonData {
   cogniteDataPlatformApiKey?: string;
+  oauthClientSecret?: string;
 }
 
 /**
