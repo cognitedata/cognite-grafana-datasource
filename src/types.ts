@@ -13,6 +13,7 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
+  Templates = 'Templates',
 }
 
 export const TabTitles = {
@@ -20,6 +21,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.Templates]: 'Templates',
 };
 
 const defaultAssetQuery: AssetQuery = {
@@ -33,6 +35,28 @@ const defaultEventQuery: EventQuery = {
   activeAtTimeRange: true,
 };
 
+export const defaultTemplateQuery: TemplateQuery = {
+  groupExternalId: undefined,
+  version: undefined,
+  graphQlQuery: `
+query {
+  wellQuery {
+    items {
+      name,
+      pressure {
+        datapoints(start: $__from, end: $__to, limit: 50) {
+          timestamp,
+          value
+        }
+      }
+    }
+  }
+}`,
+  dataPath: 'wellQuery.items',
+  datapointsPath: 'pressure.datapoints',
+  groupBy: 'name',
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -43,6 +67,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
+  templateQuery: defaultTemplateQuery,
 };
 
 /**
@@ -101,9 +126,19 @@ export interface CogniteQueryBase extends DataQuery {
   tab: Tab;
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
+  templateQuery: TemplateQuery;
   expr: string;
   warning: string;
 }
+
+export type TemplateQuery = {
+  groupExternalId: string;
+  version: number;
+  graphQlQuery: string;
+  groupBy: string;
+  datapointsPath: string;
+  dataPath: string;
+};
 
 export type CogniteTargetObj =
   | {

@@ -24,7 +24,7 @@ export class Connector {
 
   cachedRequests = new Map<string, Promise<any>>();
 
-  private fetchData<T>(request: RequestParams): Promise<T> {
+  public fetchData<T>(request: RequestParams): Promise<T> {
     const { path, data, method, params, requestId, cacheTime } = request;
     const queryString = params ? `?${getQueryString(params)}` : '';
     const url = `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;

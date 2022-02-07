@@ -13,7 +13,8 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition } from 'lodash';
+import { groupBy } from 'lodash';
+import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
   datapointsPath,
@@ -92,6 +93,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
   templateSrv: TemplateSrv;
   backendSrv: BackendSrv;
+  templatesDatasource: TemplatesDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -109,6 +111,7 @@ export default class CogniteDatasource extends DataSourceApi<
       oauthClientCreds
     );
     this.project = cogniteProject;
+    this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
   }
 
   /**
@@ -119,7 +122,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets, templatesTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
@@ -127,9 +130,18 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const templatesResults = await this.templatesDatasource.query({
+          ...options,
+          targets: templatesTargets,
+        });
+
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
+        responseData = [
+          ...reduceTimeseries(succeded, timeRange),
+          ...eventResults,
+          ...templatesResults.data,
+        ];
       } catch (error) {
         return {
           data: [],
@@ -458,12 +470,19 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery } = target;
+      const { tab, assetQuery, eventQuery, templateQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
         case Tab.Asset:
           return assetQuery?.target;
+        case Tab.Templates:
+          return (
+            templateQuery &&
+            templateQuery.groupExternalId &&
+            templateQuery.version &&
+            templateQuery.graphQlQuery
+          );
         case Tab.Custom:
           return target.expr;
         case Tab.Timeseries:
@@ -592,6 +611,14 @@ export async function getDataQueryRequestItems(
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
-  return { eventTargets, tsTargets };
+  const groupedByTab = groupBy(targets, ({ tab }) => tab);
+  return {
+    eventTargets: groupedByTab[Tab.Event] ?? [],
+    templatesTargets: groupedByTab[Tab.Templates] ?? [],
+    tsTargets: [
+      ...(groupedByTab[Tab.Timeseries] ?? []),
+      ...(groupedByTab[Tab.Asset] ?? []),
+      ...(groupedByTab[Tab.Custom] ?? []),
+    ],
+  };
 }
