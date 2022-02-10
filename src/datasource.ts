@@ -131,8 +131,12 @@ export default class CogniteDatasource extends DataSourceApi<
         showWarnings(succeded);
         responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
       } catch (error) {
-        /* eslint-disable-next-line no-console  */
-        console.error(error); // TODO: use app-events or something
+        return {
+          data: [],
+          error: {
+            message: error,
+          },
+        };
       }
     }
 
