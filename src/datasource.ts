@@ -10,6 +10,7 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
+  DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import { partition } from 'lodash';
@@ -64,7 +65,6 @@ import {
   MetricDescription,
   Ok,
   QueryOptions,
-  QueryResponse,
   QueryTarget,
   ResponseMetadata,
   Responses,
@@ -114,7 +114,7 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
+  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
