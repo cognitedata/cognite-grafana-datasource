@@ -134,7 +134,7 @@ export default class CogniteDatasource extends DataSourceApi<
         return {
           data: [],
           error: {
-            message: error,
+            message: error?.message ?? error,
           },
         };
       }
