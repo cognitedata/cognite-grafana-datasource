@@ -8,11 +8,7 @@
       "name": "Cognite",
       "url": "https://cognite.com"
     },
-    "keywords": [
-      "cognite",
-      "timeseries",
-      "iot"
-    ],
+    "keywords": ["cognite", "timeseries", "iot"],
     "logos": {
       "small": "img/CDF_logo.svg",
       "large": "img/CDF_logo.svg"
