@@ -20,7 +20,9 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean
-  ) { }
+  ) {
+    const def = [];
+  }
 
   cachedRequests = new Map<string, Promise<any>>();
 
@@ -163,9 +165,5 @@ export class Connector {
 }
 
 const chunkedReqId = (requestId: string, chunk: number) => {
-  return requestId
-    ? {
-      requestId: chunk ? `${requestId}${chunk}` : requestId,
-    }
-    : undefined;
+  return requestId ? { requestId: chunk ? `${requestId}${chunk}` : requestId } : undefined;
 };
