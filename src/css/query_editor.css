@@ -40,3 +40,19 @@ pre code, .help-panel {
   min-width: 200px;
 }
 
+.templateQueryRow {
+  width: 100%;
+  height: 8em;
+  display: flex;
+  margin: 6px;
+}
+
+.templateRow {
+  width: 100%;
+  display: flex;
+  margin: 6px;
+}
+
+.longInputFild > input {
+  width: 38.5em !important;
+}
