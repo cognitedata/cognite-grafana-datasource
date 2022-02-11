@@ -1,5 +1,5 @@
 import { defaults, map } from 'lodash';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -462,11 +462,9 @@ export function QueryEditor(props: EditorProps) {
     setVersions(versions);
   };
 
-  useMemo(() => {
-    getDomainList();
-  }, []);
   const domainControl = { domains, versions, getVersions };
   useEffect(() => {
+    getDomainList();
     eventsSubscribe();
     return () => eventsUnsubscribe();
   }, [tab]);
