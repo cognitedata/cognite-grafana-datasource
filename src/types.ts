@@ -75,6 +75,14 @@ export const defaultTemplateQuery: TemplateQuery = {
   constant: 6.5,
   refId: '',
 };
+
+export interface MetricSelection {
+  readonly label: string;
+  readonly value: string;
+}
+
+export type MetricFindSelectResponse = MetricSelection[];
+
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
