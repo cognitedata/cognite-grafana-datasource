@@ -13,6 +13,7 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
+  Template = 'Template',
 }
 
 export const TabTitles = {
@@ -20,8 +21,60 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.Template]: 'Template Query',
 };
 
+export interface TemplateQuery extends DataQuery {
+  [x: string]: any;
+  domain: string;
+  domainVersion: number;
+  expr: string;
+  dataPath: string;
+  dataPointsPath: string;
+  groupBy: string;
+  aliasBy: string;
+  annotationTitle: string;
+  annotationText: string;
+  annotationTags: string;
+  constant: number;
+}
+
+export const defaultTemplateQuery: TemplateQuery = {
+  domain: undefined,
+  domainVersion: undefined,
+  expr: `{
+    positionQuery {
+      items {
+        Speed {
+          name
+          aggregatedDatapoints(
+            granularity: "1d"
+            start: $__from
+            end: $__to
+          ) {
+          average {
+            timestamp
+            value
+          }
+          max {
+            timestamp
+            value
+            }
+          }
+        }
+      }
+    }
+  }`,
+  dataPath: 'positionQuery.items',
+  dataPointsPath: 'Speed.aggregatedDatapoints.average',
+  groupBy: 'Speed.name',
+  aliasBy: '',
+  annotationTitle: '',
+  annotationText: '',
+  annotationTags: '',
+  constant: 6.5,
+  refId: '',
+};
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
@@ -107,13 +160,13 @@ export interface CogniteQueryBase extends DataQuery {
 
 export type CogniteTargetObj =
   | {
-      target?: number;
-      targetRefType?: 'id';
-    }
+    target?: number;
+    targetRefType?: 'id';
+  }
   | {
-      target?: string;
-      targetRefType?: 'externalId';
-    };
+    target?: string;
+    targetRefType?: 'externalId';
+  };
 
 export type QueryTarget = CogniteQuery;
 
