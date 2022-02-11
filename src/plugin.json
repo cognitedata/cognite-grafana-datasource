@@ -2,14 +2,17 @@
   "type": "datasource",
   "name": "Cognite Data Fusion",
   "id": "cognitedata-datasource",
-
   "info": {
     "description": "Cognite Data Fusion datasource",
     "author": {
       "name": "Cognite",
       "url": "https://cognite.com"
     },
-    "keywords": ["cognite", "timeseries", "iot"],
+    "keywords": [
+      "cognite",
+      "timeseries",
+      "iot"
+    ],
     "logos": {
       "small": "img/CDF_logo.svg",
       "large": "img/CDF_logo.svg"
@@ -27,12 +30,10 @@
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
-
   "dependencies": {
     "grafanaDependency": ">=7.0.6",
     "plugins": []
   },
-
   "routes": [
     {
       "path": "cdf-oauth",
@@ -70,13 +71,25 @@
           "content": "CogniteGrafanaDatasource:%VERSION%"
         }
       ]
+    },
+    {
+      "path": "cognitetemplatesapi",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "headers": [
+        {
+          "name": "api-key",
+          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
+        },
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:%VERSION%"
+        }
+      ]
     }
   ],
-
   "queryOptions": {
     "maxDataPoints": true
   },
-
   "metrics": true,
   "annotations": true
 }
