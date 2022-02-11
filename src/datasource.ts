@@ -10,9 +10,11 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
+  DataFrame,
+  DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition } from 'lodash';
+import { partition, map, filter, replace, defaults, split, assignIn, get } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -27,6 +29,9 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
+  fetchTemplateName,
+  fetchTemplateVersion,
+  fetchTemplateForTargets,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -73,8 +78,18 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
+  TemplateQuery,
+  defaultQuery,
+  MetricFindSelectResponse,
 } from './types';
-import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
+import {
+  applyFilters,
+  getRequestId,
+  toGranularityWithLowerBound,
+  getDataPathArray,
+  createDatapointsDataFrame,
+  getDocs,
+} from './utils';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -111,6 +126,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.project = cogniteProject;
   }
 
+  cachedDomains = [];
   /**
    * used by panels to get timeseries data
    */
@@ -123,6 +139,11 @@ export default class CogniteDatasource extends DataSourceApi<
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
+    let templateResponseData = [];
+    const templateQueryTargets: TemplateQuery[] = map(
+      filter(queryTargets, { tab: Tab.Template }),
+      'templateQuery'
+    );
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
@@ -136,7 +157,18 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     }
 
-    return { data: responseData };
+    if (templateQueryTargets.length) {
+      try {
+        const { data } = await this.templateQuery({
+          ...options,
+          targets: templateQueryTargets,
+        });
+        templateResponseData = data;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    return { data: [...responseData, ...templateResponseData] };
   }
 
   async fetchTimeseriesForTargets(
@@ -329,11 +361,7 @@ export default class CogniteDatasource extends DataSourceApi<
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
     };
-    const data: any = query
-      ? {
-          search: { query },
-        }
-      : {};
+    const data: any = query ? { search: { query } } : {};
 
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
       data,
@@ -384,6 +412,128 @@ export default class CogniteDatasource extends DataSourceApi<
 
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
+  };
+
+  async listDomains() {
+    if (this.cachedDomains.length) {
+      return this.cachedDomains;
+    }
+    return this.fetchTemplateName().then((res) => {
+      this.cachedDomains = res.data.items;
+      return this.cachedDomains;
+    });
+  }
+
+  async getDomainsForDropdown(): Promise<MetricFindSelectResponse> {
+    const domains = await this.listDomains();
+
+    // need maybe filter?
+    return map(domains, ({ externalId }) => {
+      return {
+        label: externalId,
+        value: replace(externalId, ' ', '%20'),
+      };
+    });
+  }
+
+  async getCurrentDomainVersion(domainExternalId: string): Promise<any> {
+    return this.fetchTemplateVersion(domainExternalId);
+  }
+
+  private postQuery(query: Partial<TemplateQuery>, payload: string) {
+    const params = {
+      ...query,
+      expr: payload,
+    };
+    return this.fetchTemplateForTargets(params)
+      .then((results: any) => {
+        return { query, results };
+      })
+      .catch((err: any) => {
+        if (err.data && err.data.error) {
+          throw {
+            message: `GraphQL error: ${err.data.error.reason}`,
+            error: err.data.error,
+          };
+        }
+
+        throw err;
+      });
+  }
+
+  private createQuery(
+    query: TemplateQuery,
+    range: TimeRange | undefined,
+    scopedVars: ScopedVars | undefined = undefined
+  ) {
+    let payload = query.expr;
+    if (range) {
+      payload = replace(payload, '$__from', range.from.valueOf().toString());
+      payload = replace(payload, '$__to', range.to.valueOf().toString());
+    }
+    payload = this.templateSrv.replace(payload, scopedVars);
+    return this.postQuery(query, payload);
+  }
+
+  async templateQuery(options: DataQueryRequest<TemplateQuery>): Promise<DataQueryResponse> {
+    return Promise.all(
+      options.targets.map((target) => {
+        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
+      })
+    ).then((results: any) => {
+      const dataFrameArray: DataFrame[] = [];
+      map(results, (res) => {
+        const { refId } = res.query;
+        const dataPathArray: string[] = getDataPathArray(res.query.dataPath);
+        const { groupBy, aliasBy, dataPointsPath } = res.query;
+        const datapointsPaths = split(dataPointsPath, ',');
+        const splited = split(groupBy, ',');
+        const groupByList: string[] = [];
+        map(splited, (element) => {
+          const trimmed = element.trim();
+          if (trimmed) {
+            groupByList.push(trimmed);
+          }
+        });
+        map(dataPathArray, (dataPath) => {
+          const dataFrameMap = {};
+          const docs: any[] = getDocs(res.results.data, dataPath);
+          map(docs, (doc) => {
+            const identifiers = [];
+            map(groupByList, (groupByElement) => {
+              identifiers.push(get(doc, groupByElement));
+            });
+            const identifiersString = identifiers.toString();
+            const dataFrame = createDatapointsDataFrame(identifiersString, refId);
+            map(datapointsPaths, (datapointsPath) => {
+              const trimmedDatapointsPath = datapointsPath.trim();
+              const value = get(doc, trimmedDatapointsPath);
+              assignIn(dataFrameMap, { [identifiersString]: dataFrame });
+              const hasDatapoints = value != null && value.length > 0;
+              if (hasDatapoints) {
+                map(value, (datapoint) => {
+                  return dataFrame.add(datapoint);
+                });
+              }
+            });
+          });
+          map(dataFrameMap, (d) => dataFrameArray.push(d));
+        });
+      });
+      return { data: dataFrameArray };
+    });
+  }
+
+  fetchTemplateName = (): Promise<any> => {
+    return fetchTemplateName(this.connector);
+  };
+
+  fetchTemplateVersion = (domain: string): Promise<any> => {
+    return fetchTemplateVersion(domain, this.connector);
+  };
+
+  fetchTemplateForTargets = (params): Promise<any> => {
+    return fetchTemplateForTargets(params, this.connector);
   };
 
   async checkLoginStatusApiKey() {
@@ -454,7 +604,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery } = target;
+      const { tab, assetQuery, eventQuery, templateQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
@@ -462,6 +612,13 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return assetQuery?.target;
         case Tab.Custom:
           return target.expr;
+        case Tab.Template:
+          return (
+            templateQuery &&
+            templateQuery.domain &&
+            templateQuery.domainVersion &&
+            templateQuery.expr
+          );
         case Tab.Timeseries:
         default:
           return target.target;
@@ -539,12 +696,8 @@ async function findAssetTimeseries(
 ): Promise<TimeSeriesResponseItem[]> {
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
-    ? {
-        assetSubtreeIds: [{ id: Number(assetId) }],
-      }
-    : {
-        assetIds: [assetId],
-      };
+    ? { assetSubtreeIds: [{ id: Number(assetId) }] }
+    : { assetIds: [assetId] };
 
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
