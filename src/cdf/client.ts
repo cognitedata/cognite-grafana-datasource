@@ -302,13 +302,7 @@ export function datapointsPath(type: DataQueryRequestType) {
 }
 
 export const targetToIdEither = (obj: CogniteTargetObj) => {
-  return obj.targetRefType === 'externalId'
-    ? {
-        externalId: obj.target,
-      }
-    : {
-        id: obj.target,
-      };
+  return obj.targetRefType === 'externalId' ? { externalId: obj.target } : { id: obj.target };
 };
 
 export const convertItemsToTable = (items: Resource[], columns: string[]): TableData => {
@@ -325,4 +319,31 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     type: 'table',
     columns: columns.map((text) => ({ text })),
   };
+};
+
+export const fetchTemplateName = (connector: Connector) => {
+  return connector.fetchTemplateQuery({
+    method: HttpMethod.POST,
+    path: '/templategroups/list',
+    data: {},
+  });
+};
+
+export const fetchTemplateVersion = (domain: string, connector: Connector) => {
+  return connector.fetchTemplateQuery({
+    path: `/templategroups/${domain}/versions/list`,
+    method: HttpMethod.POST,
+    data: {},
+  });
+};
+
+export const fetchTemplateForTargets = (params, connector: Connector) => {
+  const { domain, domainVersion, expr } = params;
+  return connector.fetchTemplateQuery({
+    path: `/templategroups/${domain}/versions/${domainVersion}/graphql`,
+    method: HttpMethod.POST,
+    data: {
+      query: expr,
+    },
+  });
 };
