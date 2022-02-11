@@ -164,6 +164,7 @@ export default class CogniteDatasource extends DataSourceApi<
         });
         templateResponseData = data;
       } catch (error) {
+        /* eslint-disable-next-line no-console  */
         console.error(error);
       }
     }
