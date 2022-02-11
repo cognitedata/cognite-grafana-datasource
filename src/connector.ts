@@ -165,9 +165,5 @@ export class Connector {
 }
 
 const chunkedReqId = (requestId: string, chunk: number) => {
-  return requestId
-    ? {
-      requestId: chunk ? `${requestId}${chunk}` : requestId,
-    }
-    : undefined;
+  return requestId ? { requestId: chunk ? `${requestId}${chunk}` : requestId } : undefined;
 };
