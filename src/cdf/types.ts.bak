@@ -148,7 +148,7 @@ export interface ExtractorResponseItem extends Resource {
   metadata?: Record<string, string>;
   unit?: string;
   assetId?: string;
-  isStep: boolean;
+  isStep: boolean;	
   source?: string;
   sourceId?: string;
   createdTime: number;

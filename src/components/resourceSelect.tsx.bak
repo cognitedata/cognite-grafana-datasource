@@ -25,7 +25,7 @@ const optionalIdsToTargetObj = ({
 
 export function ResourceSelect(props: {
   query: CogniteTargetObj;
-  resourceType: Tab.Timeseries | Tab.Asset | Tab.Extractor;
+  resourceType: Tab.Timeseries | Tab.Asset;
   onTargetQueryChange: (patch: CogniteTargetObj, shouldRunQuery?: boolean) => void;
   fetchSingleResource: (id: IdEither) => Promise<Resource[]>;
   searchResource: (query: string) => Promise<Resource[]>;

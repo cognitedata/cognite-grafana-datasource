@@ -183,15 +183,6 @@ export function fetchSingleTimeseries(id: IdEither, connector: Connector) {
   });
 }
 
-export function fetchSingleExtractor(id: IdEither, connector: Connector) {
-  return connector.fetchItems<Resource>({
-    data: {},
-    path: `/extpipes/list`,
-    method: HttpMethod.POST,
-    cacheTime: CacheTime.ResourceByIds,
-  });
-}
-
 export function fetchSingleAsset(id: IdEither, connector: Connector) {
   return connector.fetchItems<Resource>({
     data: { items: [id] },
