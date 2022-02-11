@@ -125,25 +125,25 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.project = cogniteProject;
   }
-
   cachedDomains = [];
+
   /**
    * used by panels to get timeseries data
    */
   async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
-    const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
+    const validQueryTargets = filterEmptyQueryTargets(options.targets);
+    const queryTargets = map(validQueryTargets, (t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-
+    const templateQueryTargets: TemplateQuery[] = map(
+      filter(validQueryTargets, { tab: Tab.Template }),
+      'templateQuery'
+    );
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
     let templateResponseData = [];
-    const templateQueryTargets: TemplateQuery[] = map(
-      filter(queryTargets, { tab: Tab.Template }),
-      'templateQuery'
-    );
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
@@ -156,7 +156,6 @@ export default class CogniteDatasource extends DataSourceApi<
         console.error(error); // TODO: use app-events or something
       }
     }
-
     if (templateQueryTargets.length) {
       try {
         const { data } = await this.templateQuery({
@@ -168,6 +167,7 @@ export default class CogniteDatasource extends DataSourceApi<
         console.error(error);
       }
     }
+
     return { data: [...responseData, ...templateResponseData] };
   }
 
@@ -413,7 +413,6 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
-
   async listDomains() {
     if (this.cachedDomains.length) {
       return this.cachedDomains;
@@ -734,6 +733,9 @@ export async function getDataQueryRequestItems(
     case Tab.Custom: {
       const defaultInterval = toGranularityWithLowerBound(intervalMs);
       items = await formQueriesForExpression(expr, target, connector, defaultInterval);
+      break;
+    }
+    case Tab.Template: {
       break;
     }
   }
