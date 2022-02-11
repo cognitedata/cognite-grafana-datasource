@@ -164,6 +164,7 @@ export interface CogniteQueryBase extends DataQuery {
   eventQuery: EventQuery;
   expr: string;
   warning: string;
+  templateQuery: TemplateQuery;
 }
 
 export type CogniteTargetObj =
