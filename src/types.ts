@@ -48,7 +48,7 @@ export const defaultTemplateQuery: TemplateQuery = {
         Speed {
           name
           aggregatedDatapoints(
-            granularity: "1d"
+            granularity: $__granularity
             start: $__from
             end: $__to
           ) {

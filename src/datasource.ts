@@ -464,12 +464,14 @@ export default class CogniteDatasource extends DataSourceApi<
   private createQuery(
     query: TemplateQuery,
     range: TimeRange | undefined,
+    intervalMs,
     scopedVars: ScopedVars | undefined = undefined
   ) {
     let payload = query.expr;
     if (range) {
       payload = replace(payload, '$__from', range.from.valueOf().toString());
       payload = replace(payload, '$__to', range.to.valueOf().toString());
+      payload = replace(payload, '$__granularity', `"${toGranularityWithLowerBound(intervalMs)}"`);
     }
     payload = this.templateSrv.replace(payload, scopedVars);
     return this.postQuery(query, payload);
@@ -478,7 +480,12 @@ export default class CogniteDatasource extends DataSourceApi<
   async templateQuery(options: DataQueryRequest<TemplateQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
-        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
+        return this.createQuery(
+          defaults(target, defaultQuery),
+          options.range,
+          options.intervalMs,
+          options.scopedVars
+        );
       })
     ).then((results: any) => {
       const dataFrameArray: DataFrame[] = [];
