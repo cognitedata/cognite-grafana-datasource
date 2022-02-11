@@ -104,6 +104,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
+  templateQuery: defaultTemplateQuery,
 };
 
 /**
@@ -168,14 +169,8 @@ export interface CogniteQueryBase extends DataQuery {
 }
 
 export type CogniteTargetObj =
-  | {
-    target?: number;
-    targetRefType?: 'id';
-  }
-  | {
-    target?: string;
-    targetRefType?: 'externalId';
-  };
+  | { target?: number; targetRefType?: 'id' }
+  | { target?: string; targetRefType?: 'externalId' };
 
 export type QueryTarget = CogniteQuery;
 
