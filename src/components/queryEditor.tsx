@@ -1,6 +1,5 @@
-import defaults from 'lodash/defaults';
-
-import React, { useState, useEffect } from 'react';
+import { defaults, map } from 'lodash';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -30,6 +29,7 @@ import {
   EventQuery,
   TabTitles,
 } from '../types';
+import { TemplateQueryTab } from './TemplateQueryTab';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
@@ -411,6 +411,8 @@ export function QueryEditor(props: EditorProps) {
   const { refId: thisRefId, tab } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
+  const [domains, setDomains] = useState([]);
+  const [versions, setVersions] = useState([]);
 
   const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
     onChange({ ...query, ...patch } as CogniteQuery);
@@ -447,7 +449,23 @@ export function QueryEditor(props: EditorProps) {
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
+  const getDomainList = async () => {
+    const domains = await datasource.getDomainsForDropdown();
+    setDomains(domains);
+  };
+  const getVersions = async (domain) => {
+    const { data } = await datasource.getCurrentDomainVersion(domain);
+    const versions = map(data.items, ({ version }) => ({
+      label: version,
+      value: version,
+    }));
+    setVersions(versions);
+  };
 
+  useMemo(() => {
+    getDomainList();
+  }, []);
+  const domainControl = { domains, versions, getVersions };
   useEffect(() => {
     eventsSubscribe();
     return () => eventsUnsubscribe();
@@ -471,6 +489,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Template && <TemplateQueryTab {...{ onQueryChange, query, domainControl }} />}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
       {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}
