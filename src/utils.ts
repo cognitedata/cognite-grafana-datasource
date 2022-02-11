@@ -97,7 +97,9 @@ export const getDocs = (resultsData: any, dataPath: string): any[] => {
   }
   if (resultsData.errors) {
     // There can still be errors even if there is data
+    /* eslint-disable-next-line no-console  */
     console.log('Got GraphQL errors:');
+    /* eslint-disable-next-line no-console  */
     console.log(resultsData.errors);
   }
 
