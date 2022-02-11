@@ -14,7 +14,6 @@ export enum Tab {
   Custom = 'Custom',
   Event = 'Event',
   Template = 'Template',
-  Extractor = 'Extractor',
 }
 
 export const TabTitles = {
@@ -23,7 +22,6 @@ export const TabTitles = {
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
   [Tab.Template]: 'Template Query',
-  [Tab.Extractor]: 'Extractor Pipelines',
 };
 
 export interface TemplateQuery extends DataQuery {
@@ -39,11 +37,6 @@ export interface TemplateQuery extends DataQuery {
   annotationText: string;
   annotationTags: string;
   constant: number;
-}
-
-const defautExtractorQuery: ExtractorQuery = {
-  expr: '',
-  columns: ['id', 'name', 'externalId', 'description', 'schedule', 'source', 'documentation', 'lastSuccess', 'lastFailure', 'lastSeen', 'createdTime']
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
@@ -112,7 +105,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   templateQuery: defaultTemplateQuery,
-  extractorQuery: defautExtractorQuery,
 };
 
 /**
@@ -160,10 +152,6 @@ export interface EventQuery {
   columns: string[];
 }
 
-export interface ExtractorQuery {
-  expr: string;
-  columns: string[];
-}
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 
 export interface CogniteQueryBase extends DataQuery {
@@ -178,7 +166,6 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   templateQuery: TemplateQuery;
-  extractorQuery: ExtractorQuery;
 }
 
 export type CogniteTargetObj =

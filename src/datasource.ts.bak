@@ -27,7 +27,6 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
-  fetchSingleExtractor,
   targetToIdEither,
   convertItemsToTable,
   fetchTemplateName,
@@ -43,7 +42,6 @@ import {
   IdEither,
   CogniteEvent,
   EventsFilterTimeParams,
-  CogniteExtractor,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -141,7 +139,7 @@ export default class CogniteDatasource extends DataSourceApi<
       filter(validQueryTargets, { tab: Tab.Template }),
       'templateQuery'
     );
-    const { eventTargets, tsTargets, extractorTargets } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
@@ -150,10 +148,9 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const extractorResults = await this.fetchExtractorTargets(extractorTargets);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults, ...extractorResults];
+        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -292,20 +289,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return [];
   }
 
-  async fetchExtractorsForTarget({ extractorQuery, refId }: CogniteQuery) {
-    try {
-      const { items } = await this.fetchExtractors(extractorQuery.expr);
-
-      // if (hasMore) {
-      //   emitEvent(responseWarningEvent, { refId, warning: EXTRACTOR_LIMIT_WARNING });
-      // }
-      return items;
-    } catch (e) {
-      handleError(e, refId);
-    }
-    return [];
-  }
-
   async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
     const timeFrame = {
       activeAtTime: { min: start, max: end },
@@ -314,15 +297,6 @@ export default class CogniteDatasource extends DataSourceApi<
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
         return convertItemsToTable(events, target.eventQuery.columns);
-      })
-    );
-  }
-
-  async fetchExtractorTargets(targets: CogniteQuery[]) {
-    return Promise.all(
-      targets.map(async (target) => {
-        const extpipes = await this.fetchExtractorsForTarget(target);
-        return convertItemsToTable(extpipes, target.extractorQuery.columns);
       })
     );
   }
@@ -345,33 +319,6 @@ export default class CogniteDatasource extends DataSourceApi<
       hasMore: items.length === EVENTS_PAGE_LIMIT,
     };
   }
-
-  async fetchExtractors(expr: string) {
-    const data = {};
-    const items = await this.connector.fetchItems<CogniteExtractor>({
-      data,
-      path: `/extpipes/list`,
-      method: HttpMethod.POST,
-    });
-
-    return {
-      items
-    };
-  }
-
-  // async fetchTemplates(expr: string) {
-  //   const data = {};
-  //   const items = await this.connector.fetchItems<Cognite>({
-  //     data,
-  //     path: `/templategroups/list`,
-  //     method: HttpMethod.POST,
-  //   });
-
-  //   return {
-  //     items
-  //   };
-  // }
-  
 
   /**
    * used by dashboards to get annotations (events)
@@ -402,33 +349,6 @@ export default class CogniteDatasource extends DataSourceApi<
       title: type,
     }));
   }
-
-  /**
-   * used by dashboards to get annotations (events)
-   */
-  async extPipelinesQuery(
-    options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationEvent[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
-
-    if (error || !query) {
-      return [];
-    }
-
-    const [rangeStart, rangeEnd] = getRange(range);
-    const timeRange = {
-      activeAtTime: { min: rangeStart, max: rangeEnd },
-    };
-    const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchExtractors(evaluatedQuery);
-
-    return items.map(({ id }) => ({
-      annotation,
-      isRegion: true
-    }));
-  }
-
   /**
    * used by query editor to search for assets/timeseries
    */
@@ -448,32 +368,6 @@ export default class CogniteDatasource extends DataSourceApi<
       path: `/${resources[type]}/search`,
       method: HttpMethod.POST,
       params: options,
-      cacheTime: CacheTime.Dropdown,
-    });
-
-    return items.map(resource2DropdownOption);
-  }
-
-  /**
-   * used by query editor to search for assets/timeseries
-   */
-   async getOptionsForExtractorDropdown(
-    query: string
-  ): Promise<(SelectableValue<string> & Resource)[]> {
-    const resources = {
-      [Tab.Asset]: 'assets',
-      [Tab.Timeseries]: 'timeseries',
-    };
-    const data: any = query
-      ? {
-          search: { query },
-        }
-      : {};
-
-    const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
-      data,
-      path: `/extpipes`,
-      method: HttpMethod.GET,
       cacheTime: CacheTime.Dropdown,
     });
 
@@ -519,11 +413,6 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
-  
-  fetchSingleExtractor = (id: IdEither) => {
-    return fetchSingleExtractor(id, this.connector);
-  };
-  
   async listDomains() {
     if (this.cachedDomains.length) {
       return this.cachedDomains;
@@ -714,12 +603,10 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery, extractorQuery } = target;
+      const { tab, assetQuery, eventQuery, templateQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
-		case Tab.Extractor:
-          return true;
         case Tab.Asset:
           return assetQuery?.target;
         case Tab.Custom:
@@ -857,6 +744,5 @@ export async function getDataQueryRequestItems(
 
 function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
-  const [extractorTargets] = partition(targets, ({ tab }) => tab ===Tab.Extractor);
   return { eventTargets, tsTargets };
 }

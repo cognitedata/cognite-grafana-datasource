@@ -20,7 +20,9 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean
-  ) { }
+  ) {
+    const def = [];
+  }
 
   cachedRequests = new Map<string, Promise<any>>();
 
