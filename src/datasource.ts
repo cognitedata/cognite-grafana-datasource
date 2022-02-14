@@ -852,5 +852,5 @@ export async function getDataQueryRequestItems(
 function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
   const [extractorTargets] = partition(targets, ({ tab }) => tab === Tab.Extractor);
-  return { eventTargets, tsTargets };
+  return { eventTargets, tsTargets, extractorTargets };
 }
