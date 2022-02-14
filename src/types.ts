@@ -43,8 +43,20 @@ export interface TemplateQuery extends DataQuery {
 
 const defautExtractorQuery: ExtractorQuery = {
   expr: '',
-  columns: ['id', 'name', 'externalId', 'description', 'schedule', 'source', 'documentation', 'lastSuccess', 'lastFailure', 'lastSeen', 'createdTime']
-}
+  columns: [
+    'id',
+    'name',
+    'externalId',
+    'description',
+    'schedule',
+    'source',
+    'documentation',
+    'lastSuccess',
+    'lastFailure',
+    'lastSeen',
+    'createdTime',
+  ],
+};
 
 export const defaultTemplateQuery: TemplateQuery = {
   domain: undefined,

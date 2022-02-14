@@ -153,7 +153,11 @@ export default class CogniteDatasource extends DataSourceApi<
         const extractorResults = await this.fetchExtractorTargets(extractorTargets);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults, ...extractorResults];
+        responseData = [
+          ...reduceTimeseries(succeded, timeRange),
+          ...eventResults,
+          ...extractorResults,
+        ];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -356,23 +360,9 @@ export default class CogniteDatasource extends DataSourceApi<
     });
 
     return {
-      items
+      items,
     };
   }
-
-  // async fetchTemplates(expr: string) {
-  //   const data = {};
-  //   const items = await this.connector.fetchItems<Cognite>({
-  //     data,
-  //     path: `/templategroups/list`,
-  //     method: HttpMethod.POST,
-  //   });
-
-  //   return {
-  //     items
-  //   };
-  // }
-  
 
   /**
    * used by dashboards to get annotations (events)
@@ -426,7 +416,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
     return items.map(({ id }) => ({
       annotation,
-      isRegion: true
+      isRegion: true,
     }));
   }
 
@@ -458,18 +448,14 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by query editor to search for assets/timeseries
    */
-   async getOptionsForExtractorDropdown(
+  async getOptionsForExtractorDropdown(
     query: string
   ): Promise<(SelectableValue<string> & Resource)[]> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
     };
-    const data: any = query
-      ? {
-          search: { query },
-        }
-      : {};
+    const data: any = query ? { search: { query } } : {};
 
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
       data,
@@ -520,11 +506,11 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
-  
+
   fetchSingleExtractor = (id: IdEither) => {
     return fetchSingleExtractor(id, this.connector);
   };
-  
+
   async listDomains() {
     if (this.cachedDomains.length) {
       return this.cachedDomains;
@@ -726,7 +712,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
-		case Tab.Extractor:
+        case Tab.Extractor:
           return true;
         case Tab.Asset:
           return assetQuery?.target;
@@ -865,6 +851,6 @@ export async function getDataQueryRequestItems(
 
 function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
-  const [extractorTargets] = partition(targets, ({ tab }) => tab ===Tab.Extractor);
+  const [extractorTargets] = partition(targets, ({ tab }) => tab === Tab.Extractor);
   return { eventTargets, tsTargets };
 }
