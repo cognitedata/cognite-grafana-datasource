@@ -1,7 +1,7 @@
 {
   "type": "datasource",
-  "name": "Cognite Data Fusion",
-  "id": "cognitedata-datasource",
+  "name": "Cognite Data Fusion (w/ Templates)",
+  "id": "cognitedata-templates-datasource",
 
   "info": {
     "description": "Cognite Data Fusion datasource",

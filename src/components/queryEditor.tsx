@@ -366,6 +366,27 @@ function TemplatesTab(
   }, [templateQuery, onQueryChange]);
 
   useEffect(() => {
+    let anyTemplateQuery = query.templateQuery as any;
+    if (anyTemplateQuery.domain) {
+      // Migrate
+      anyTemplateQuery = {
+        ...anyTemplateQuery,
+        groupExternalId: anyTemplateQuery.domain,
+        version: anyTemplateQuery.domainVersion,
+        graphQlQuery: anyTemplateQuery.queryText,
+        datapointsPath: anyTemplateQuery.dataPointsPath,
+      };
+
+      delete anyTemplateQuery.domain;
+      delete anyTemplateQuery.domainVersion;
+      delete anyTemplateQuery.queryText;
+      delete anyTemplateQuery.dataPointsPath;
+      setTemplateQuery(anyTemplateQuery);
+      onQueryChange({ templateQuery: anyTemplateQuery });
+    }
+  }, []);
+
+  useEffect(() => {
     if (textAreaRef.current) {
       const editor = CodeMirror.fromTextArea(textAreaRef.current, {
         mode: 'graphql',
