@@ -1,15 +1,21 @@
-import { isEqual } from 'lodash';
-import React, { useState } from 'react';
+import { isEqual, map } from 'lodash';
+import React, { useState, useEffect } from 'react';
 import { Select, InlineFormLabel, LegacyForms, TextArea } from '@grafana/ui';
 import { CustomQueryHelp } from './queryHelp';
 
 const { FormField } = LegacyForms;
 
-export const TemplateQueryTab = ({ query, onQueryChange, domainControl }) => {
+export const TemplateQueryTab = ({ query, onQueryChange, datasource }) => {
   const { templateQuery } = query;
   const { expr, groupBy, aliasBy, dataPath, dataPointsPath, domainVersion, domain } = templateQuery;
-  const { domains, versions, getVersions } = domainControl;
   const [showHelp, setShowHelp] = useState(false);
+  const [domains, setDomains] = useState([]);
+  const [versions, setVersions] = useState([
+    {
+      label: templateQuery.domainVersion,
+      value: templateQuery.domainVersion,
+    },
+  ]);
 
   const onChangeHandler = (value, key) => {
     onQueryChange(
@@ -30,6 +36,22 @@ export const TemplateQueryTab = ({ query, onQueryChange, domainControl }) => {
     });
   };
 
+  const getDomainList = async () => {
+    const domains = await datasource.getDomainsForDropdown();
+    setDomains(domains);
+  };
+  const getVersions = async (domain) => {
+    const { data } = await datasource.getCurrentDomainVersion(domain);
+    const versions = map(data.items, ({ version }) => ({
+      label: version,
+      value: version,
+    }));
+    setVersions(versions);
+  };
+
+  useEffect(() => {
+    getDomainList();
+  }, []);
   return (
     <>
       <div className="templateQueryRow">
