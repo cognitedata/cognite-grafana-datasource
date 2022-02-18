@@ -11,15 +11,7 @@ export function nodesFrame() {
       values: new ArrayVector(),
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.subTitle]: {
-      values: new ArrayVector(),
-      type: FieldType.string,
-    },
     [NodeGraphDataFrameFieldNames.mainStat]: {
-      values: new ArrayVector(),
-      type: FieldType.string,
-    },
-    [NodeGraphDataFrameFieldNames.secondaryStat]: {
       values: new ArrayVector(),
       type: FieldType.string,
     },
@@ -27,7 +19,7 @@ export function nodesFrame() {
       values: new ArrayVector(),
       type: FieldType.other,
       config: {
-        displayName: 'Metadatas',
+        displayName: 'Metadata',
       },
     },
   };
@@ -52,6 +44,10 @@ export function edgesFrame() {
       type: FieldType.string,
     },
     [NodeGraphDataFrameFieldNames.target]: {
+      values: new ArrayVector(),
+      type: FieldType.string,
+    },
+    [NodeGraphDataFrameFieldNames.mainStat]: {
       values: new ArrayVector(),
       type: FieldType.string,
     },

@@ -683,27 +683,24 @@ export default class CogniteDatasource extends DataSourceApi<
     map(
       realtionshipsList,
       ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
-        const details = map(source.metadata, (value, key) => `${key}: ${value}`).join(',\n');
+        const details = map(source.metadata, (value, key) => `${key}: ${value}`);
         nodes.add({
           id: `${sourceExternalId}`,
-          title: source.name,
-          subTitle: source.description,
-          mainStat: trim(join(map(labels, 'externalId'), ' ')),
-          secondaryStat: trim(join(map(source.labels, 'externalId'), ' ')),
+          title: source.description,
+          mainStat: source.name,
           detail__: details,
         });
         nodes.add({
           id: `${targetExternalId}`,
-          title: target.name,
-          subTitle: target.description,
-          mainStat: trim(join(map(labels, 'externalId'), ' ')),
-          secondaryStat: trim(join(map(target.labels, 'externalId'), ' ')),
+          mainStat: target.name,
+          title: target.description,
           detail__: JSON.stringify(target.metadata),
         });
         edges.add({
           id: externalId,
           source: sourceExternalId,
           target: targetExternalId,
+          mainStat: trim(join(map(labels, 'externalId'), ' ')),
         });
       }
     );
