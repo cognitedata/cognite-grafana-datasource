@@ -31,6 +31,7 @@ import {
   TabTitles,
 } from '../types';
 import { TemplateQueryTab } from './TemplateQueryTab';
+import { RelationshipsListTab } from './RelationshipsListTab';
 import {
   failedResponseEvent,
   EventFields,
@@ -505,13 +506,6 @@ export function QueryEditor(props: EditorProps) {
   const { refId: thisRefId, tab } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
-  const [domains, setDomains] = useState([]);
-  const [versions, setVersions] = useState([
-    {
-      label: query.templateQuery.domainVersion,
-      value: query.templateQuery.domainVersion,
-    },
-  ]);
 
   const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
     onChange({ ...query, ...patch } as CogniteQuery);
@@ -548,22 +542,8 @@ export function QueryEditor(props: EditorProps) {
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
-  const getDomainList = async () => {
-    const domains = await datasource.getDomainsForDropdown();
-    setDomains(domains);
-  };
-  const getVersions = async (domain) => {
-    const { data } = await datasource.getCurrentDomainVersion(domain);
-    const versions = map(data.items, ({ version }) => ({
-      label: version,
-      value: version,
-    }));
-    setVersions(versions);
-  };
 
-  const domainControl = { domains, versions, getVersions };
   useEffect(() => {
-    getDomainList();
     eventsSubscribe();
     return () => eventsUnsubscribe();
   }, [tab]);
@@ -586,8 +566,11 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Template && <TemplateQueryTab {...{ onQueryChange, query, domainControl }} />}
+        {tab === Tabs.Template && <TemplateQueryTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Extractor && <ExtractorTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Relationships && (
+          <RelationshipsListTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
       {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}

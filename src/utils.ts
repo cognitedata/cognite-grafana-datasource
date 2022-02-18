@@ -76,7 +76,6 @@ export const createDatapointsDataFrame = (name: string, refId: string) => {
     ],
   });
 };
-
 export const getDocs = (resultsData: any, dataPath: string): any[] => {
   if (!resultsData) {
     throw 'resultsData was null or undefined';

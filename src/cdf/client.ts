@@ -356,3 +356,20 @@ export const fetchTemplateForTargets = (params, connector: Connector) => {
     },
   });
 };
+
+// Relationsships
+export const fetchRelationshipsList = (params, connector) => {
+  const { filter, limit, cursor, fetchResources = true, partition } = params;
+  // doc https://docs.cognite.com/api/v1/#operation/listRelationships
+  return connector.fetchItems({
+    method: HttpMethod.POST,
+    path: '/relationships/list',
+    data: {
+      filter,
+      limit,
+      cursor,
+      fetchResources,
+      partition,
+    },
+  });
+};

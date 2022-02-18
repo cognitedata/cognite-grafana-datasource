@@ -5,6 +5,8 @@ import {
   DataQuery,
   DataSourceJsonData,
   TableData,
+  DataFrame,
+  MutableDataFrame,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
@@ -15,6 +17,7 @@ export enum Tab {
   Event = 'Event',
   Template = 'Template',
   Extractor = 'Extractor',
+  Relationships = 'Relationships',
 }
 
 export const TabTitles = {
@@ -24,22 +27,16 @@ export const TabTitles = {
   [Tab.Event]: 'Events',
   [Tab.Template]: 'Template Query',
   [Tab.Extractor]: 'Extractor Pipelines',
+  [Tab.Relationships]: 'Relationships',
 };
 
-export interface TemplateQuery extends DataQuery {
-  [x: string]: any;
-  domain: string;
-  domainVersion: number;
-  expr: string;
-  dataPath: string;
-  dataPointsPath: string;
-  groupBy: string;
-  aliasBy: string;
-  annotationTitle: string;
-  annotationText: string;
-  annotationTags: string;
-  constant: number;
-}
+// it is just a place to try integrate the Relationships query
+const defaultRelationsShipQuery: RelationshipsQuery = {
+  dataSetId: [],
+  labels: [],
+  refId: '',
+  expr: {},
+};
 
 const defautExtractorQuery: ExtractorQuery = {
   expr: '',
@@ -58,7 +55,7 @@ const defautExtractorQuery: ExtractorQuery = {
   ],
 };
 
-export const defaultTemplateQuery: TemplateQuery = {
+const defaultTemplateQuery: TemplateQuery = {
   domain: undefined,
   domainVersion: undefined,
   expr: `{
@@ -95,13 +92,6 @@ export const defaultTemplateQuery: TemplateQuery = {
   refId: '',
 };
 
-export interface MetricSelection {
-  readonly label: string;
-  readonly value: string;
-}
-
-export type MetricFindSelectResponse = MetricSelection[];
-
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
@@ -125,6 +115,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   templateQuery: defaultTemplateQuery,
   extractorQuery: defautExtractorQuery,
+  relationsShipsQuery: defaultRelationsShipQuery,
 };
 
 /**
@@ -153,14 +144,24 @@ export interface CogniteSecureJsonData {
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
+type NodeGrapfRespone = {
+  nodes: MutableDataFrame<any>;
+  edges: MutableDataFrame<any>;
+};
 
-export type QueryResponse = DataResponse<(TimeSeries | TableData)[]>;
+export type QueryResponse = DataResponse<(TimeSeries | TableData | DataFrame | any)[]>;
+
+export interface MetricSelection {
+  readonly label: string;
+  readonly value: string;
+}
+
+export type MetricFindSelectResponse = MetricSelection[];
 
 export interface MetricDescription {
   readonly text: string;
   readonly value: number | string;
 }
-
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
@@ -176,6 +177,30 @@ export interface ExtractorQuery {
   expr: string;
   columns: string[];
 }
+
+export interface RelationshipsQuery {
+  dataSetId: number[];
+  labels: string[];
+  refId: string;
+  expr: {
+    [x: string]: string;
+  };
+}
+export interface TemplateQuery extends DataQuery {
+  [x: string]: any;
+  domain: string;
+  domainVersion: number;
+  expr: string;
+  dataPath: string;
+  dataPointsPath: string;
+  groupBy: string;
+  aliasBy: string;
+  annotationTitle: string;
+  annotationText: string;
+  annotationTags: string;
+  constant: number;
+}
+
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 
 export interface CogniteQueryBase extends DataQuery {
@@ -191,6 +216,7 @@ export interface CogniteQueryBase extends DataQuery {
   warning: string;
   templateQuery: TemplateQuery;
   extractorQuery: ExtractorQuery;
+  relationsShipsQuery: RelationshipsQuery;
 }
 
 export type CogniteTargetObj =
