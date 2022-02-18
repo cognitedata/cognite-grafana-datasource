@@ -1,7 +1,8 @@
 import { MutableDataFrame, FieldType, ArrayVector } from '@grafana/data';
 import { NodeGraphDataFrameFieldNames } from '@grafana/ui';
+import { map } from 'lodash';
 
-export function nodesFrame() {
+export function nodesFrame(iterer) {
   const fields: any = {
     [NodeGraphDataFrameFieldNames.id]: {
       values: new ArrayVector(),
@@ -15,13 +16,15 @@ export function nodesFrame() {
       values: new ArrayVector(),
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.detail]: {
-      values: new ArrayVector(),
-      type: FieldType.other,
-      config: {
-        displayName: 'Metadata',
+    ...map(iterer, (key) => ({
+      [`${NodeGraphDataFrameFieldNames.detail}${key}`]: {
+        values: new ArrayVector(),
+        type: FieldType.other,
       },
-    },
+      config: {
+        displayName: key,
+      },
+    })),
   };
 
   return new MutableDataFrame({

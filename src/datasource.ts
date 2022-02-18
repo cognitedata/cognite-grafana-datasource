@@ -24,10 +24,13 @@ import {
   replace,
   defaults,
   split,
-  get,
   join,
   trim,
   toString,
+  mapKeys,
+  keys,
+  get,
+  head,
 } from 'lodash';
 import {
   concurrent,
@@ -678,29 +681,39 @@ export default class CogniteDatasource extends DataSourceApi<
 
   createRelationshipsNode = async () => {
     const realtionshipsList = await this.fetchRelationshipsList();
-    const nodes = nodesFrame();
+    const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
+    const nodes = nodesFrame(iterrer);
     const edges = edgesFrame();
     map(
       realtionshipsList,
       ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
-        const details = map(source.metadata, (value, key) => `${key}: ${value}`);
-        nodes.add({
-          id: `${sourceExternalId}`,
-          title: source.description,
-          mainStat: source.name,
-          detail__: details,
+        const newSourceMeta = {};
+        const newTargetMeta = {};
+        map(iterrer, (key) => {
+          assign(newSourceMeta, {
+            [`${NodeGraphDataFrameFieldNames.detail}${key}`]: get(source.metadata, key),
+          });
+          assign(newTargetMeta, {
+            [`${NodeGraphDataFrameFieldNames.detail}${key}`]: get(target.metadata, key),
+          });
         });
         nodes.add({
-          id: `${targetExternalId}`,
-          mainStat: target.name,
-          title: target.description,
-          detail__: JSON.stringify(target.metadata),
+          [NodeGraphDataFrameFieldNames.id]: `${sourceExternalId}`,
+          [NodeGraphDataFrameFieldNames.title]: source.description,
+          [NodeGraphDataFrameFieldNames.mainStat]: source.name,
+          ...map(newSourceMeta),
+        });
+        nodes.add({
+          [NodeGraphDataFrameFieldNames.id]: `${targetExternalId}`,
+          [NodeGraphDataFrameFieldNames.mainStat]: target.name,
+          [NodeGraphDataFrameFieldNames.title]: target.description,
+          ...map(newTargetMeta),
         });
         edges.add({
-          id: externalId,
-          source: sourceExternalId,
-          target: targetExternalId,
-          mainStat: trim(join(map(labels, 'externalId'), ' ')),
+          [NodeGraphDataFrameFieldNames.id]: externalId,
+          [NodeGraphDataFrameFieldNames.source]: sourceExternalId,
+          [NodeGraphDataFrameFieldNames.target]: targetExternalId,
+          [NodeGraphDataFrameFieldNames.mainStat]: trim(join(map(labels, 'externalId'), ' ')),
         });
       }
     );
