@@ -14,7 +14,21 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition, map, filter, replace, defaults, split, assignIn, get } from 'lodash';
+import { NodeGraphDataFrameFieldNames } from '@grafana/ui';
+import {
+  assign,
+  assignIn,
+  partition,
+  map,
+  filter,
+  replace,
+  defaults,
+  split,
+  get,
+  join,
+  trim,
+  toString,
+} from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -33,6 +47,7 @@ import {
   fetchTemplateName,
   fetchTemplateVersion,
   fetchTemplateForTargets,
+  fetchRelationshipsList,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -92,6 +107,7 @@ import {
   createDatapointsDataFrame,
   getDocs,
 } from './utils';
+import { edgesFrame, nodesFrame } from './utils2';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -141,11 +157,17 @@ export default class CogniteDatasource extends DataSourceApi<
       filter(validQueryTargets, { tab: Tab.Template }),
       'templateQuery'
     );
+    const relationShipsQueryTargets = map(
+      filter(validQueryTargets, { tab: Tab.Relationships }),
+      'relationsShipsQuery'
+    );
+
     const { eventTargets, tsTargets, extractorTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
-    let templateResponseData = [];
+    let templateResponseData: DataFrame[] = [];
+    let nodeResponse = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
@@ -175,8 +197,18 @@ export default class CogniteDatasource extends DataSourceApi<
         console.error(error);
       }
     }
-
-    return { data: [...responseData, ...templateResponseData] };
+    if (relationShipsQueryTargets.length) {
+      try {
+        const { data } = await this.createRelationshipsNode();
+        nodeResponse = data;
+      } catch (error) {
+        /* eslint-disable-next-line no-console  */
+        console.error(error);
+      }
+    }
+    return {
+      data: [...responseData, ...templateResponseData, ...nodeResponse],
+    };
   }
 
   async fetchTimeseriesForTargets(
@@ -640,6 +672,45 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchTemplateForTargets(params, this.connector);
   };
 
+  fetchRelationshipsList = () => {
+    return fetchRelationshipsList({}, this.connector);
+  };
+
+  createRelationshipsNode = async () => {
+    const realtionshipsList = await this.fetchRelationshipsList();
+    const nodes = nodesFrame();
+    const edges = edgesFrame();
+    map(
+      realtionshipsList,
+      ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+        const details = map(source.metadata, (value, key) => `${key}: ${value}`).join(',\n');
+        nodes.add({
+          id: `${sourceExternalId}`,
+          title: source.name,
+          subTitle: source.description,
+          mainStat: trim(join(map(labels, 'externalId'), ' ')),
+          secondaryStat: trim(join(map(source.labels, 'externalId'), ' ')),
+          detail__: details,
+        });
+        nodes.add({
+          id: `${targetExternalId}`,
+          title: target.name,
+          subTitle: target.description,
+          mainStat: trim(join(map(labels, 'externalId'), ' ')),
+          secondaryStat: trim(join(map(target.labels, 'externalId'), ' ')),
+          detail__: JSON.stringify(target.metadata),
+        });
+        edges.add({
+          id: externalId,
+          source: sourceExternalId,
+          target: targetExternalId,
+        });
+      }
+    );
+
+    return { data: [nodes, edges] };
+  };
+
   async checkLoginStatusApiKey() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
@@ -708,7 +779,14 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery, extractorQuery } = target;
+      const {
+        tab,
+        assetQuery,
+        eventQuery,
+        templateQuery,
+        extractorQuery,
+        relationsShipsQuery,
+      } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
@@ -725,6 +803,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             templateQuery.domainVersion &&
             templateQuery.expr
           );
+        case Tab.Relationships:
+          return relationsShipsQuery;
         case Tab.Timeseries:
         default:
           return target.target;
@@ -816,7 +896,6 @@ async function findAssetTimeseries(
   }
   return ts;
 }
-
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
@@ -840,6 +919,9 @@ export async function getDataQueryRequestItems(
     case Tab.Custom: {
       const defaultInterval = toGranularityWithLowerBound(intervalMs);
       items = await formQueriesForExpression(expr, target, connector, defaultInterval);
+      break;
+    }
+    case Tab.Relationships: {
       break;
     }
     case Tab.Template: {
