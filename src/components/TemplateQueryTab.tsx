@@ -63,7 +63,6 @@ export const TemplateQueryTab = ({ query, onQueryChange, datasource }) => {
             onChangeHandler(target, 'expr');
           }}
           onBlur={onBlur}
-          css=""
         />
       </div>
       <div className="templateRow">

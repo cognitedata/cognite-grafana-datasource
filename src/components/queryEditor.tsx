@@ -30,7 +30,6 @@ import {
   ExtractorQuery,
   TabTitles,
 } from '../types';
-import { TemplateQueryTab } from './TemplateQueryTab';
 import { RelationshipsListTab } from './RelationshipsListTab';
 import {
   failedResponseEvent,
@@ -127,7 +126,6 @@ const LatestValueCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={query.latestValue}
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
         />
@@ -148,7 +146,6 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={query.eventQuery.activeAtTimeRange}
           onChange={({ currentTarget }) =>
             onQueryChange({
@@ -190,7 +187,6 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
       <InlineFormLabel width={9}>Include sub-assets</InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={includeSubtrees}
           onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
         />
@@ -545,20 +541,16 @@ export function QueryEditor(props: EditorProps) {
 
   useEffect(() => {
     eventsSubscribe();
-    return () => eventsUnsubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
   }, [tab]);
 
   return (
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
-          <Tab
-            css=""
-            label={TabTitles[t]}
-            key={t}
-            active={tab === t}
-            onChangeTab={onSelectTab(t)}
-          />
+          <Tab label={TabTitles[t]} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
         ))}
       </TabsBar>
       <TabContent>
@@ -566,8 +558,6 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Template && <TemplateQueryTab {...{ onQueryChange, query, datasource }} />}
-        {tab === Tabs.Extractor && <ExtractorTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Relationships && (
           <RelationshipsListTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}

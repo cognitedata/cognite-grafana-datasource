@@ -14,7 +14,6 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { NodeGraphDataFrameFieldNames } from '@grafana/ui';
 import {
   assign,
   assignIn,
@@ -277,12 +276,8 @@ export default class CogniteDatasource extends DataSourceApi<
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label, eventQuery } = target;
 
-    const [
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-      eventExprTemplated,
-    ] = this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
+    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] =
+      this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -690,30 +685,31 @@ export default class CogniteDatasource extends DataSourceApi<
         const newSourceMeta = {};
         const newTargetMeta = {};
         map(iterrer, (key) => {
+          const selector = `detail__${join(split(key, ' '), '')}`;
           assign(newSourceMeta, {
-            [`${NodeGraphDataFrameFieldNames.detail}${key}`]: get(source.metadata, key),
+            [selector]: `${get(source.metadata, key)}`,
           });
           assign(newTargetMeta, {
-            [`${NodeGraphDataFrameFieldNames.detail}${key}`]: get(target.metadata, key),
+            [selector]: `${get(target.metadata, key)}`,
           });
         });
         nodes.add({
-          [NodeGraphDataFrameFieldNames.id]: `${sourceExternalId}`,
-          [NodeGraphDataFrameFieldNames.title]: source.description,
-          [NodeGraphDataFrameFieldNames.mainStat]: source.name,
-          ...map(newSourceMeta),
+          id: `${sourceExternalId}`,
+          title: `${source.description}`,
+          mainStat: `${source.name}`,
+          ...newSourceMeta,
         });
         nodes.add({
-          [NodeGraphDataFrameFieldNames.id]: `${targetExternalId}`,
-          [NodeGraphDataFrameFieldNames.mainStat]: target.name,
-          [NodeGraphDataFrameFieldNames.title]: target.description,
-          ...map(newTargetMeta),
+          id: `${targetExternalId}`,
+          title: `${target.description}`,
+          mainStat: `${target.name}`,
+          ...newTargetMeta,
         });
         edges.add({
-          [NodeGraphDataFrameFieldNames.id]: externalId,
-          [NodeGraphDataFrameFieldNames.source]: sourceExternalId,
-          [NodeGraphDataFrameFieldNames.target]: targetExternalId,
-          [NodeGraphDataFrameFieldNames.mainStat]: trim(join(map(labels, 'externalId'), ' ')),
+          id: `${externalId}`,
+          source: `${sourceExternalId}`,
+          target: `${targetExternalId}`,
+          mainStat: trim(join(map(labels, 'externalId'), ' ')),
         });
       }
     );
@@ -789,14 +785,8 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const {
-        tab,
-        assetQuery,
-        eventQuery,
-        templateQuery,
-        extractorQuery,
-        relationsShipsQuery,
-      } = target;
+      const { tab, assetQuery, eventQuery, templateQuery, extractorQuery, relationsShipsQuery } =
+        target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;

@@ -25,8 +25,6 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
-  [Tab.Template]: 'Template Query',
-  [Tab.Extractor]: 'Extractor Pipelines',
   [Tab.Relationships]: 'Relationships',
 };
 
@@ -36,23 +34,6 @@ const defaultRelationsShipQuery: RelationshipsQuery = {
   labels: [],
   refId: '',
   expr: {},
-};
-
-const defautExtractorQuery: ExtractorQuery = {
-  expr: '',
-  columns: [
-    'id',
-    'name',
-    'externalId',
-    'description',
-    'schedule',
-    'source',
-    'documentation',
-    'lastSuccess',
-    'lastFailure',
-    'lastSeen',
-    'createdTime',
-  ],
 };
 
 const defaultTemplateQuery: TemplateQuery = {
@@ -114,7 +95,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   templateQuery: defaultTemplateQuery,
-  extractorQuery: defautExtractorQuery,
   relationsShipsQuery: defaultRelationsShipQuery,
 };
 
@@ -144,10 +124,6 @@ export interface CogniteSecureJsonData {
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
   return (<DataQueryError>maybeError).error !== undefined;
 }
-type NodeGrapfRespone = {
-  nodes: MutableDataFrame<any>;
-  edges: MutableDataFrame<any>;
-};
 
 export type QueryResponse = DataResponse<(TimeSeries | TableData | DataFrame | any)[]>;
 

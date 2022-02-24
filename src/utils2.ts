@@ -1,31 +1,28 @@
 import { MutableDataFrame, FieldType, ArrayVector } from '@grafana/data';
-import { NodeGraphDataFrameFieldNames } from '@grafana/ui';
-import { map } from 'lodash';
+import { assignIn, map, split, join } from 'lodash';
 
 export function nodesFrame(iterer) {
   const fields: any = {
-    [NodeGraphDataFrameFieldNames.id]: {
-      values: new ArrayVector(),
+    id: {
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.title]: {
-      values: new ArrayVector(),
+    title: {
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.mainStat]: {
-      values: new ArrayVector(),
+    mainStat: {
       type: FieldType.string,
     },
-    ...map(iterer, (key) => ({
-      [`${NodeGraphDataFrameFieldNames.detail}${key}`]: {
-        values: new ArrayVector(),
-        type: FieldType.other,
-      },
-      config: {
-        displayName: key,
-      },
-    })),
   };
+  map(iterer, (key) => {
+    assignIn(fields, {
+      [`detail__${join(split(key, ' '), '')}`]: {
+        type: FieldType.string,
+        config: {
+          displayName: key,
+        },
+      },
+    });
+  });
 
   return new MutableDataFrame({
     name: 'nodes',
@@ -33,25 +30,24 @@ export function nodesFrame(iterer) {
       ...fields[key],
       name: key,
     })),
+    meta: {
+      preferredVisualisationType: 'nodeGraph',
+    },
   });
 }
 
 export function edgesFrame() {
   const fields: any = {
-    [NodeGraphDataFrameFieldNames.id]: {
-      values: new ArrayVector(),
+    id: {
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.source]: {
-      values: new ArrayVector(),
+    source: {
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.target]: {
-      values: new ArrayVector(),
+    target: {
       type: FieldType.string,
     },
-    [NodeGraphDataFrameFieldNames.mainStat]: {
-      values: new ArrayVector(),
+    mainStat: {
       type: FieldType.string,
     },
   };
@@ -62,5 +58,8 @@ export function edgesFrame() {
       ...fields[key],
       name: key,
     })),
+    meta: {
+      preferredVisualisationType: 'nodeGraph',
+    },
   });
 }
