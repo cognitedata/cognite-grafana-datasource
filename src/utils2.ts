@@ -1,4 +1,4 @@
-import { MutableDataFrame, FieldType, ArrayVector } from '@grafana/data';
+import { MutableDataFrame, FieldType } from '@grafana/data';
 import { assignIn, map, split, join } from 'lodash';
 
 export function nodesFrame(iterer) {
@@ -15,7 +15,7 @@ export function nodesFrame(iterer) {
   };
   map(iterer, (key) => {
     assignIn(fields, {
-      [`detail__${join(split(key, ' '), '')}`]: {
+      [join(['detail__', split(key, ' ')], '')]: {
         type: FieldType.string,
         config: {
           displayName: key,

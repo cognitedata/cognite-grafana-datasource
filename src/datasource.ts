@@ -25,11 +25,12 @@ import {
   split,
   join,
   trim,
-  toString,
-  mapKeys,
   keys,
   get,
   head,
+  uniqBy,
+  uniq,
+  isEmpty,
 } from 'lodash';
 import {
   concurrent,
@@ -677,6 +678,13 @@ export default class CogniteDatasource extends DataSourceApi<
   createRelationshipsNode = async () => {
     const realtionshipsList = await this.fetchRelationshipsList();
     const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
+    const labels = uniqBy(map(realtionshipsList, 'labels'), 'externalId');
+    const dataSetId = uniq(map(realtionshipsList, 'dataSetId'));
+    const externalId = uniq(map(realtionshipsList, 'externalId'));
+    const sourceExternalId = uniq(map(realtionshipsList, 'sourceExternalId'));
+    const sourceType = uniq(map(realtionshipsList, 'sourceType'));
+    const targetExternalId = uniq(map(realtionshipsList, 'targetExternalId'));
+    const targetType = uniq(map(realtionshipsList, 'targetType'));
     const nodes = nodesFrame(iterrer);
     const edges = edgesFrame();
     map(
@@ -685,36 +693,47 @@ export default class CogniteDatasource extends DataSourceApi<
         const newSourceMeta = {};
         const newTargetMeta = {};
         map(iterrer, (key) => {
-          const selector = `detail__${join(split(key, ' '), '')}`;
+          const selector = join(['detail__', split(key, ' ')], '');
           assign(newSourceMeta, {
-            [selector]: `${get(source.metadata, key)}`,
+            [selector]: source.metadata[key],
           });
           assign(newTargetMeta, {
-            [selector]: `${get(target.metadata, key)}`,
+            [selector]: target.metadata[key],
           });
         });
         nodes.add({
-          id: `${sourceExternalId}`,
-          title: `${source.description}`,
-          mainStat: `${source.name}`,
+          id: sourceExternalId,
+          title: source.description,
+          mainStat: source.name,
           ...newSourceMeta,
         });
         nodes.add({
-          id: `${targetExternalId}`,
-          title: `${target.description}`,
-          mainStat: `${target.name}`,
+          id: targetExternalId,
+          title: target.description,
+          mainStat: target.name,
           ...newTargetMeta,
         });
         edges.add({
-          id: `${externalId}`,
-          source: `${sourceExternalId}`,
-          target: `${targetExternalId}`,
+          id: externalId,
+          source: sourceExternalId,
+          target: targetExternalId,
           mainStat: trim(join(map(labels, 'externalId'), ' ')),
         });
       }
     );
 
-    return { data: [nodes, edges] };
+    return {
+      data: [nodes, edges],
+      settings: {
+        labels,
+        dataSetId,
+        externalId,
+        sourceExternalId,
+        sourceType,
+        targetExternalId,
+        targetType,
+      },
+    };
   };
 
   async checkLoginStatusApiKey() {
@@ -803,8 +822,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             templateQuery.domainVersion &&
             templateQuery.expr
           );
-        case Tab.Relationships:
+        case Tab.Relationships: {
           return relationsShipsQuery;
+        }
         case Tab.Timeseries:
         default:
           return target.target;
@@ -896,6 +916,7 @@ async function findAssetTimeseries(
   }
   return ts;
 }
+
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
