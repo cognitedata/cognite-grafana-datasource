@@ -1,5 +1,5 @@
 import { MultiSelect, Select } from '@grafana/ui';
-import { groupBy, isEqual, map, uniqBy, upperFirst } from 'lodash';
+import { flatMapDeep, get, isEqual, map, reduce, set, upperFirst } from 'lodash';
 import React, { useState, useEffect } from 'react';
 
 const selectors = [
@@ -11,50 +11,52 @@ const selectors = [
   'targetExternalId',
   'targetType',
 ];
+
 export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
-  const {
-    relationsShipsQuery: { dataSetId, expr, labels },
-  } = query;
-  const [current, setCurrent] = useState([]);
-  const [selecetedDataSetId, setSelecetedDataSetId] = useState(dataSetId);
+  const { relationsShipsQuery } = query;
+  const [configs, setConfigs] = useState(
+    reduce(
+      selectors,
+      (result, value) => {
+        set(result, [value], []);
+        return result;
+      },
+      {}
+    )
+  );
+  const [selectedDataSetId, setSelectedDataSetId] = useState([]);
   const [selectedSearchKey, setSelectedSearchKey] = useState('');
   const [selectedLabel, setSelectedLabel] = useState([]);
-  const [labelsOptions, setLabelsOptions] = useState([]);
   const [customSearchValue, setCustomSearchValue] = useState([]);
-
   const handleChange = (value, selector) => {
     // onQueryChange({}, false);
   };
 
   // console.log(query);
   const getList = async () => {
-    const r = await datasource.fetchRelationshipsList();
-    const labels = [];
-    map(r, (value) => {
-      map(value.labels, ({ externalId }, key) => {
-        labels.push({ value: externalId, label: externalId });
-        // console.log(value);
-      });
-    });
-    setCurrent(r);
-    setLabelsOptions(uniqBy(labels, 'label'));
+    const { settings } = await datasource.createRelationshipsNode();
+    setConfigs(settings);
   };
-
-  const mappedOptions = (selector) =>
-    map(groupBy(current, selector), (value, label) => ({
-      label,
-      value: label,
-    }));
-  /* 
+  const mappedLabes = flatMapDeep(get(configs, 'labels'), (_) =>
+    map(_, ({ externalId }) => ({
+      label: upperFirst(externalId),
+      value: externalId,
+    }))
+  );
+  const mappedOptions = (selector) => {
+    return isEqual(selector, 'labels')
+      ? mappedLabes
+      : map(get(configs, selector), (value: any) => ({ label: upperFirst(value), value }));
+  };
   useEffect(() => {
     getList();
-  }, []); */
+  }, []);
   return (
     <div>
       <div className="templateRow">
         <MultiSelect
           options={mappedOptions('dataSetId')}
-          value={dataSetId}
+          value={selectedDataSetId}
           allowCustomValue
           onChange={(value) => handleChange(value, 'dataSetId')}
           className="cognite-dropdown"
@@ -62,7 +64,7 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
           maxMenuHeight={150}
         />
         <MultiSelect
-          options={labelsOptions}
+          options={mappedLabes}
           value={selectedLabel}
           allowCustomValue
           onChange={setSelectedLabel}
@@ -83,9 +85,7 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
           maxMenuHeight={150}
         />
         <MultiSelect
-          options={
-            isEqual(selectedSearchKey, 'labels') ? labelsOptions : mappedOptions(selectedSearchKey)
-          }
+          options={mappedOptions(selectedSearchKey)}
           value={customSearchValue}
           placeholder="Search value"
           className="cognite-dropdown"
