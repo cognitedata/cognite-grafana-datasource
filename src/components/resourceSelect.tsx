@@ -13,14 +13,8 @@ const optionalIdsToTargetObj = ({
   externalId,
 }: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
   return externalId
-    ? {
-      target: externalId,
-      targetRefType: 'externalId' as const,
-    }
-    : {
-      target: id,
-      targetRefType: 'id' as const,
-    };
+    ? { target: externalId, targetRefType: 'externalId' as const }
+    : { target: id, targetRefType: 'id' as const };
 };
 
 export function ResourceSelect(props: {
