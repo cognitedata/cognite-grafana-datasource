@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, split } from 'lodash';
+import { assignIn, isNil, omitBy, get, map, split, join } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -42,65 +42,67 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
   }
 };
 
-// Template
-export const getDataPathArray = (dataPathString: string): string[] => {
-  const dataPathArray: string[] = [];
-  map(split(dataPathString, ','), (dataPath) => {
-    const trimmed = dataPath.trim();
-    if (trimmed) {
-      dataPathArray.push(trimmed);
-    }
-  });
-  if (!dataPathArray) {
-    throw 'data path is empty!';
-  }
-  return dataPathArray;
-};
-
-export const createDatapointsDataFrame = (name: string, refId: string) => {
-  return new MutableDataFrame({
-    name,
-    refId,
-    fields: [
-      {
-        name: 'timestamp',
-        type: FieldType.time,
-      },
-      {
-        name: 'value',
-        type: FieldType.number,
+export function nodesFrame(iterer, refId) {
+  const fields: any = {
+    id: {
+      type: FieldType.string,
+    },
+    title: {
+      type: FieldType.string,
+    },
+    mainStat: {
+      type: FieldType.string,
+    },
+  };
+  map(iterer, (key) => {
+    assignIn(fields, {
+      [join(['detail__', split(key, ' ')], '')]: {
+        type: FieldType.string,
         config: {
-          displayName: name,
+          displayName: key,
         },
       },
-    ],
+    });
   });
-};
-export const getDocs = (resultsData: any, dataPath: string): any[] => {
-  if (!resultsData) {
-    throw 'resultsData was null or undefined';
-  }
 
-  const data = dataPath.split('.').reduce((d: any, p: any) => {
-    if (!d) {
-      return null;
-    }
-    return d[p];
-  }, resultsData.data);
-  if (!data) {
-    const { errors } = resultsData;
-    if (errors && errors.length !== 0) {
-      throw errors[0];
-    }
-    throw `Your data path did not exist! dataPath: ${dataPath}`;
-  }
-  if (resultsData.errors) {
-    // There can still be errors even if there is data
-    /* eslint-disable-next-line no-console  */
-    console.log('Got GraphQL errors:', resultsData.errors);
-  }
+  return new MutableDataFrame({
+    name: 'nodes',
+    fields: Object.keys(fields).map((key) => ({
+      ...fields[key],
+      name: key,
+    })),
+    meta: {
+      preferredVisualisationType: 'nodeGraph',
+    },
+    refId,
+  });
+}
 
-  return data;
-};
+export function edgesFrame(refId) {
+  const fields: any = {
+    id: {
+      type: FieldType.string,
+    },
+    source: {
+      type: FieldType.string,
+    },
+    target: {
+      type: FieldType.string,
+    },
+    mainStat: {
+      type: FieldType.string,
+    },
+  };
 
-// till here
+  return new MutableDataFrame({
+    name: 'edges',
+    fields: Object.keys(fields).map((key) => ({
+      ...fields[key],
+      name: key,
+    })),
+    meta: {
+      preferredVisualisationType: 'nodeGraph',
+    },
+    refId,
+  });
+}

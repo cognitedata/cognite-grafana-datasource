@@ -10,30 +10,20 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
-  DataFrame,
-  DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import {
   assign,
-  assignIn,
   partition,
   map,
   filter,
-  replace,
-  defaults,
   split,
   join,
   trim,
   keys,
-  get,
   head,
-  uniqBy,
-  uniq,
   isEmpty,
   reduce,
-  forEach,
-  has,
 } from 'lodash';
 import {
   concurrent,
@@ -47,12 +37,8 @@ import {
   stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
-  fetchSingleExtractor,
   targetToIdEither,
   convertItemsToTable,
-  fetchTemplateName,
-  fetchTemplateVersion,
-  fetchTemplateForTargets,
   fetchRelationshipsList,
   getRelationshipsDataSets,
   getRelationshipsLabels,
@@ -66,7 +52,6 @@ import {
   IdEither,
   CogniteEvent,
   EventsFilterTimeParams,
-  CogniteExtractor,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -103,19 +88,14 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  TemplateQuery,
-  defaultQuery,
-  MetricFindSelectResponse,
 } from './types';
 import {
   applyFilters,
   getRequestId,
   toGranularityWithLowerBound,
-  getDataPathArray,
-  createDatapointsDataFrame,
-  getDocs,
+  edgesFrame,
+  nodesFrame,
 } from './utils';
-import { edgesFrame, nodesFrame } from './utils2';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -335,20 +315,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return [];
   }
 
-  async fetchExtractorsForTarget({ extractorQuery, refId }: CogniteQuery) {
-    try {
-      const { items } = await this.fetchExtractors(extractorQuery.expr);
-
-      // if (hasMore) {
-      //   emitEvent(responseWarningEvent, { refId, warning: EXTRACTOR_LIMIT_WARNING });
-      // }
-      return items;
-    } catch (e) {
-      handleError(e, refId);
-    }
-    return [];
-  }
-
   async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
     const timeFrame = {
       activeAtTime: { min: start, max: end },
@@ -357,15 +323,6 @@ export default class CogniteDatasource extends DataSourceApi<
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
         return convertItemsToTable(events, target.eventQuery.columns);
-      })
-    );
-  }
-
-  async fetchExtractorTargets(targets: CogniteQuery[]) {
-    return Promise.all(
-      targets.map(async (target) => {
-        const extpipes = await this.fetchExtractorsForTarget(target);
-        return convertItemsToTable(extpipes, target.extractorQuery.columns);
       })
     );
   }
@@ -386,19 +343,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return {
       items: applyFilters(items, filters),
       hasMore: items.length === EVENTS_PAGE_LIMIT,
-    };
-  }
-
-  async fetchExtractors(expr: string) {
-    const data = {};
-    const items = await this.connector.fetchItems<CogniteExtractor>({
-      data,
-      path: `/extpipes/list`,
-      method: HttpMethod.POST,
-    });
-
-    return {
-      items,
     };
   }
 
@@ -429,32 +373,6 @@ export default class CogniteDatasource extends DataSourceApi<
       time: startTime,
       timeEnd: endTime || rangeEnd,
       title: type,
-    }));
-  }
-
-  /**
-   * used by dashboards to get annotations (events)
-   */
-  async extPipelinesQuery(
-    options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationEvent[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
-
-    if (error || !query) {
-      return [];
-    }
-
-    const [rangeStart, rangeEnd] = getRange(range);
-    const timeRange = {
-      activeAtTime: { min: rangeStart, max: rangeEnd },
-    };
-    const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchExtractors(evaluatedQuery);
-
-    return items.map(({ id }) => ({
-      annotation,
-      isRegion: true,
     }));
   }
 
@@ -545,166 +463,37 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  fetchSingleExtractor = (id: IdEither) => {
-    return fetchSingleExtractor(id, this.connector);
-  };
-
-  async listDomains() {
-    if (this.cachedDomains.length) {
-      return this.cachedDomains;
-    }
-    return this.fetchTemplateName().then((res) => {
-      this.cachedDomains = res.data.items;
-      return this.cachedDomains;
-    });
-  }
-
-  async getDomainsForDropdown(): Promise<MetricFindSelectResponse> {
-    const domains = await this.listDomains();
-
-    // need maybe filter?
-    return map(domains, ({ externalId }) => {
+  getRelationshipsDropdowns = async () => {
+    return Promise.all([
+      getRelationshipsLabels({}, this.connector),
+      getRelationshipsDataSets({}, this.connector),
+    ]).then((responses) => {
+      const [labels, datasets] = responses;
       return {
-        label: externalId,
-        value: replace(externalId, ' ', '%20'),
+        datasets: map(datasets, ({ name, id }) => ({
+          value: id,
+          label: name,
+        })),
+        labels: map(labels, ({ externalId, name }) => ({
+          value: externalId,
+          label: name,
+        })),
       };
     });
-  }
-
-  async getCurrentDomainVersion(domainExternalId: string): Promise<any> {
-    return this.fetchTemplateVersion(domainExternalId);
-  }
-
-  private postTemplateQuery(query: Partial<TemplateQuery>, payload: string) {
-    const params = {
-      ...query,
-      expr: payload,
-    };
-    return this.fetchTemplateForTargets(params)
-      .then((results: any) => {
-        return { query, results };
-      })
-      .catch((err: any) => {
-        if (err.data && err.data.error) {
-          throw {
-            message: `GraphQL error: ${err.data.error.reason}`,
-            error: err.data.error,
-          };
-        }
-
-        throw err;
-      });
-  }
-
-  private createTemplateQuery(
-    query: TemplateQuery,
-    range: TimeRange | undefined,
-    intervalMs,
-    scopedVars: ScopedVars | undefined = undefined
-  ) {
-    let payload = query.expr;
-    if (range) {
-      payload = replace(payload, '$__from', range.from.valueOf().toString());
-      payload = replace(payload, '$__to', range.to.valueOf().toString());
-      payload = replace(payload, '$__granularity', `"${toGranularityWithLowerBound(intervalMs)}"`);
-    }
-    payload = this.templateSrv.replace(payload, scopedVars);
-    return this.postTemplateQuery(query, payload);
-  }
-
-  async templateQuery(options: DataQueryRequest<TemplateQuery>): Promise<DataQueryResponse> {
-    return Promise.all(
-      options.targets.map((target) => {
-        return this.createTemplateQuery(
-          defaults(target, defaultQuery),
-          options.range,
-          options.intervalMs,
-          options.scopedVars
-        );
-      })
-    ).then((results: any) => {
-      const dataFrameArray: DataFrame[] = [];
-      map(results, (res) => {
-        const { refId } = res.query;
-        const dataPathArray: string[] = getDataPathArray(res.query.dataPath);
-        const { groupBy, aliasBy, dataPointsPath } = res.query;
-        const datapointsPaths = split(dataPointsPath, ',');
-        const splited = split(groupBy, ',');
-        const groupByList: string[] = [];
-        map(splited, (element) => {
-          const trimmed = element.trim();
-          if (trimmed) {
-            groupByList.push(trimmed);
-          }
-        });
-        map(dataPathArray, (dataPath) => {
-          const dataFrameMap = {};
-          const docs: any[] = getDocs(res.results.data, dataPath);
-          map(docs, (doc) => {
-            const identifiers = [];
-            map(groupByList, (groupByElement) => {
-              identifiers.push(get(doc, groupByElement));
-            });
-            const identifiersString = identifiers.toString();
-            const dataFrame = createDatapointsDataFrame(identifiersString, refId);
-            map(datapointsPaths, (datapointsPath) => {
-              const trimmedDatapointsPath = datapointsPath.trim();
-              const value = get(doc, trimmedDatapointsPath);
-              assignIn(dataFrameMap, { [identifiersString]: dataFrame });
-              const hasDatapoints = value != null && value.length > 0;
-              if (hasDatapoints) {
-                map(value, (datapoint) => {
-                  return dataFrame.add(datapoint);
-                });
-              }
-            });
-          });
-          map(dataFrameMap, (d) => dataFrameArray.push(d));
-        });
-      });
-      return { data: dataFrameArray };
-    });
-  }
-
-  fetchTemplateName = (): Promise<any> => {
-    return fetchTemplateName(this.connector);
-  };
-
-  fetchTemplateVersion = (domain: string): Promise<any> => {
-    return fetchTemplateVersion(domain, this.connector);
-  };
-
-  fetchTemplateForTargets = (params): Promise<any> => {
-    return fetchTemplateForTargets(params, this.connector);
-  };
-
-  fetchRelationshipsList = (params) => {
-    return fetchRelationshipsList(params, this.connector);
-  };
-
-  getRelationshipsDropdowns = async () => {
-    const labels = await getRelationshipsLabels({}, this.connector);
-    const datasets = await getRelationshipsDataSets({}, this.connector);
-    const datasetIds = map(datasets, ({ name, id }) => ({
-      value: id,
-      label: name,
-    }));
-    const labelsExternalIds = map(labels, ({ externalId, name }) => ({
-      value: externalId,
-      label: name,
-    }));
-    return { datasetIds, labelsExternalIds };
   };
 
   createRelationshipsNode = async (relationShipsQueryTargets) => {
     return Promise.all(
       map(relationShipsQueryTargets, ({ labels, dataSetIds }) =>
-        this.fetchRelationshipsList({
-          filter: {
-            labels,
-            dataSetIds,
+        fetchRelationshipsList(
+          {
+            filter: {
+              labels,
+              dataSetIds,
+            },
           },
-        })
+          this.connector
+        )
       )
     ).then((realtionshipsLists) => {
       return {
@@ -827,8 +616,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery, extractorQuery, relationsShipsQuery } =
-        target;
+      const { tab, assetQuery, eventQuery, relationsShipsQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;

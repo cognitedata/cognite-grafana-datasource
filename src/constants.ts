@@ -13,7 +13,7 @@ export const EVENTS_LIMIT_WARNING =
   `Some results may have been omitted.\n` +
   `This typically happens when CDF returns the maximum number of items (1000) and when you are using client-side filters.\n` +
   `To get better results, use more specific push-down filters, for example, events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
-  export const EXTRACTOR_LIMIT_WARNING =
+export const EXTRACTOR_LIMIT_WARNING =
   `Some results may have been omitted.\n` +
   `This typically happens when CDF returns the maximum number of items (1000) and when you are using client-side filters.\n` +
   `To get better results, use more specific push-down filters, for example, events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
@@ -47,20 +47,6 @@ export const EventFields = [
   'sourceId',
   'metadata',
   ...DateFields,
-];
-
-export const ExtractorFields = [
-  'id',
-  'name',
-  'externalId',
-  'description',
-  'schedule',
-  'source',
-  'documentation',
-  'lastSuccess',
-  'lastFailure',
-  'lastSeen',
-  'createdTime'
 ];
 
 export const EVENTS_PAGE_LIMIT = 1000;

@@ -17,8 +17,6 @@ import {
   QueryOptions,
   HttpMethod,
   TimeseriesFilterQuery,
-  DataQueryRequestResponse,
-  ResponseMetadata,
   Aggregates,
   Granularity,
   Tuple,
@@ -183,15 +181,6 @@ export function fetchSingleTimeseries(id: IdEither, connector: Connector) {
   });
 }
 
-export function fetchSingleExtractor(id: IdEither, connector: Connector) {
-  return connector.fetchItems<Resource>({
-    data: {},
-    path: `/extpipes/list`,
-    method: HttpMethod.POST,
-    cacheTime: CacheTime.ResourceByIds,
-  });
-}
-
 export function fetchSingleAsset(id: IdEither, connector: Connector) {
   return connector.fetchItems<Resource>({
     data: { items: [id] },
@@ -329,37 +318,8 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     columns: columns.map((text) => ({ text })),
   };
 };
-
-export const fetchTemplateName = (connector: Connector) => {
-  return connector.fetchTemplateQuery({
-    method: HttpMethod.POST,
-    path: '/templategroups/list',
-    data: {},
-  });
-};
-
-export const fetchTemplateVersion = (domain: string, connector: Connector) => {
-  return connector.fetchTemplateQuery({
-    path: `/templategroups/${domain}/versions/list`,
-    method: HttpMethod.POST,
-    data: {},
-  });
-};
-
-export const fetchTemplateForTargets = (params, connector: Connector) => {
-  const { domain, domainVersion, expr } = params;
-  return connector.fetchTemplateQuery({
-    path: `/templategroups/${domain}/versions/${domainVersion}/graphql`,
-    method: HttpMethod.POST,
-    data: {
-      query: expr,
-    },
-  });
-};
-
 // Relationsships
 export const fetchRelationshipsList = (data, connector) => {
-  // doc https://docs.cognite.com/api/v1/#operation/listRelationships
   return connector.fetchItems({
     method: HttpMethod.POST,
     path: '/relationships/list',

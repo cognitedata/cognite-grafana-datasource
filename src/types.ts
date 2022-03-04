@@ -6,7 +6,6 @@ import {
   DataSourceJsonData,
   TableData,
   DataFrame,
-  MutableDataFrame,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
@@ -35,43 +34,6 @@ const defaultRelationsShipQuery: RelationshipsQuery = {
   refId: '',
 };
 
-const defaultTemplateQuery: TemplateQuery = {
-  domain: undefined,
-  domainVersion: undefined,
-  expr: `{
-    positionQuery {
-      items {
-        Speed {
-          name
-          aggregatedDatapoints(
-            granularity: $__granularity
-            start: $__from
-            end: $__to
-          ) {
-          average {
-            timestamp
-            value
-          }
-          max {
-            timestamp
-            value
-            }
-          }
-        }
-      }
-    }
-  }`,
-  dataPath: 'positionQuery.items',
-  dataPointsPath: 'Speed.aggregatedDatapoints.average',
-  groupBy: 'Speed.name',
-  aliasBy: '',
-  annotationTitle: '',
-  annotationText: '',
-  annotationTags: '',
-  constant: 6.5,
-  refId: '',
-};
-
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
@@ -93,7 +55,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
-  templateQuery: defaultTemplateQuery,
   relationsShipsQuery: defaultRelationsShipQuery,
 };
 
@@ -131,8 +92,6 @@ export interface MetricSelection {
   readonly value: string;
 }
 
-export type MetricFindSelectResponse = MetricSelection[];
-
 export interface MetricDescription {
   readonly text: string;
   readonly value: number | string;
@@ -148,31 +107,12 @@ export interface EventQuery {
   columns: string[];
 }
 
-export interface ExtractorQuery {
-  expr: string;
-  columns: string[];
-}
-
 export interface RelationshipsQuery {
   dataSetIds: [];
   labels: {
     containsAll: [];
   };
   refId: string;
-}
-export interface TemplateQuery extends DataQuery {
-  [x: string]: any;
-  domain: string;
-  domainVersion: number;
-  expr: string;
-  dataPath: string;
-  dataPointsPath: string;
-  groupBy: string;
-  aliasBy: string;
-  annotationTitle: string;
-  annotationText: string;
-  annotationTags: string;
-  constant: number;
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
@@ -188,8 +128,6 @@ export interface CogniteQueryBase extends DataQuery {
   eventQuery: EventQuery;
   expr: string;
   warning: string;
-  templateQuery: TemplateQuery;
-  extractorQuery: ExtractorQuery;
   relationsShipsQuery: RelationshipsQuery;
 }
 

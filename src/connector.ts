@@ -1,5 +1,5 @@
 import { chunk } from 'lodash';
-import { getBackendSrv, BackendSrv } from '@grafana/runtime';
+import { BackendSrv } from '@grafana/runtime';
 import ms from 'ms';
 import {
   RequestParams,

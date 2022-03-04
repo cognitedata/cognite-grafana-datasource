@@ -1,4 +1,4 @@
-import { defaults, map } from 'lodash';
+import { defaults } from 'lodash';
 import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
@@ -27,16 +27,10 @@ import {
   CogniteTargetObj,
   CogniteQueryBase,
   EventQuery,
-  ExtractorQuery,
   TabTitles,
 } from '../types';
 import { RelationshipsListTab } from './RelationshipsListTab';
-import {
-  failedResponseEvent,
-  EventFields,
-  responseWarningEvent,
-  ExtractorFields,
-} from '../constants';
+import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
@@ -337,38 +331,6 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 
-function ExtractorTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange } = props;
-  const [showHelp, setShowHelp] = useState(false);
-  const [value, setValue] = useState(query.extractorQuery.expr);
-  return (
-    <>
-      <div className="gf-form">
-        {/* <FormField
-          label="Query"
-          labelWidth={7}
-          inputWidth={30}
-          className="custom-query"
-          onChange={({ target }) => setValue(target.value)}
-          placeholder="extractors{}"
-          onBlur={() =>
-            onQueryChange({
-              extractorQuery: {
-                ...query.extractorQuery,
-                expr: value,
-              },
-            })
-          }
-          value={value}
-          tooltip="Click [?] button for help."
-        /> */}
-        {/* <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} /> */}
-      </div>
-      <ExtractorColumnsPicker {...{ query, onQueryChange }} />
-      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
-    </>
-  );
-}
 const InlineButton = ({ onClick, iconName }) => {
   return (
     <div
@@ -440,62 +402,6 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   );
 };
 
-const ExtractorColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
-  const options = ExtractorFields.map((value) => ({ value, label: value }));
-  const { columns } = query.extractorQuery;
-  // const {columns} = ['id','name','externalId','description','schedule','source','documentation','lastSuccess','lastFailure','lastSeen','createdTime'];
-  const onEventQueryChange = (e: Partial<ExtractorQuery>) => {
-    onQueryChange({
-      extractorQuery: {
-        ...query.extractorQuery,
-        ...e,
-      },
-    });
-  };
-
-  return (
-    <div className="gf-form">
-      <InlineFormLabel
-        tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
-        width={7}
-      >
-        Columns
-      </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
-        {columns.map((val, key) => (
-          <>
-            <Segment
-              value={val}
-              options={options}
-              onChange={({ value }) => {
-                onEventQueryChange({
-                  columns: columns.map((old, i) => (i === key ? value : old)),
-                });
-              }}
-              allowCustomValue
-            />
-            <InlineButton
-              onClick={() => {
-                onEventQueryChange({
-                  columns: columns.filter((_, i) => i !== key),
-                });
-              }}
-              iconName="times"
-            />
-          </>
-        ))}
-        <InlineButton
-          onClick={() => {
-            onEventQueryChange({
-              columns: [...columns, `column${columns.length}`],
-            });
-          }}
-          iconName="plus-circle"
-        />
-      </div>
-    </div>
-  );
-};
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);

@@ -46,24 +46,6 @@ export interface CogniteEvent {
   metadata?: { [s: string]: string };
 }
 
-export interface CogniteExtractor {
-  externalId: string;
-  id: number;
-  name: string;
-  description: string;
-  dataSetId: number;
-  rawTables: { [s: string]: string };
-  schedule: string;
-  source: string;
-  documentation: string;
-  lastSuccess: number;
-  lastFailure: number;
-  lastSeen: number;
-  createdTime: number;
-  lastUpdatedTime: number;
-  createdBy: string;
-}
-
 export interface FilterRequestParams {
   metadata?: Metadata;
   assetSubtreeIds?: IdEither[];
@@ -103,19 +85,9 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
   subtype?: string;
 }
 
-export interface ExtractorsFilterRequestParams extends FilterRequestParams {
-  filter?: {};
-  limit?: number;
-}
-
 export type EventsFilterTimeParams =
   | Pick<EventsFilterRequestParams, 'activeAtTime'>
   | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
-
-export type ExtractorFilterTimeParams =
-  | Pick<ExtractorsFilterRequestParams, 'filter'>
-  | Pick<ExtractorsFilterRequestParams, 'limit'>;
-
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
   filter: Filter;
@@ -143,21 +115,6 @@ export interface TimeSeriesResponseItem extends Resource {
 
 export type TimeSeriesResponse = Items<TimeSeriesResponseItem>;
 
-export interface ExtractorResponseItem extends Resource {
-  isString?: boolean;
-  metadata?: Record<string, string>;
-  unit?: string;
-  assetId?: string;
-  isStep: boolean;
-  source?: string;
-  sourceId?: string;
-  createdTime: number;
-  lastUpdatedTime: number;
-  selected: boolean;
-}
-
-export type ExtractorResponse = Items<ExtractorResponseItem>;
-
 export type Limit = {
   limit?: number;
 };
@@ -182,13 +139,7 @@ export type Items<T = any> = {
   items: T[];
 };
 
-export type IdEither =
-  | {
-      id: number;
-    }
-  | {
-      externalId: string;
-    };
+export type IdEither = { id: number } | { externalId: string };
 
 export interface Range<T> {
   min?: T;
