@@ -1,8 +1,6 @@
 import { MultiSelect } from '@grafana/ui';
-import { filter, flatMapDeep, get, isEmpty, isEqual, map, reduce, set, upperFirst } from 'lodash';
+import { isEqual, map } from 'lodash';
 import React, { useState, useEffect } from 'react';
-
-const targets = ['datasets', 'labels'];
 
 export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
   const { relationsShipsQuery } = query;
@@ -18,7 +16,7 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
           labels: {
             containsAll: map(value, ({ value }) => ({ externalId: value })),
           },
-          refId: query.refId,
+          refId,
         },
       });
     } else {
@@ -26,16 +24,16 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
         relationsShipsQuery: {
           ...relationsShipsQuery,
           dataSetIds: map(value, ({ value }) => ({ id: value })),
-          refId: query.refId,
+          refId,
         },
       });
     }
   };
   const getDropdowns = async () => {
-    const { labelsExternalIds, datasetIds } = await datasource.getRelationshipsDropdowns();
+    const { labels, datasets } = await datasource.getRelationshipsDropdowns();
     setOptions({
-      datasets: datasetIds,
-      labels: labelsExternalIds,
+      datasets,
+      labels,
     });
   };
   useEffect(() => {
