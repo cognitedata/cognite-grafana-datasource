@@ -32,8 +32,8 @@ export function getItemsResponseObject(items, aggregates?: string) {
   };
 }
 
-const instanceSettings = ({ oauthPassThru }) =>
-  (({
+const instanceSettings = ({ oauthPassThru }) => {
+  return {
     id: 1,
     name: 'Cognite Test Data',
     type: 'cognitedata-platform-datasource',
@@ -48,7 +48,8 @@ const instanceSettings = ({ oauthPassThru }) =>
       oauthPassThru,
     },
     withCredentials: false,
-  } as unknown) as DataSourceInstanceSettings<CogniteDataSourceOptions>);
+  } as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>;
+};
 
 export const getMockedDataSource = (options = { oauthPassThru: false }) =>
   new CogniteDatasource(instanceSettings(options));
