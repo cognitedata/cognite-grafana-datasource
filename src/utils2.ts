@@ -1,7 +1,7 @@
 import { MutableDataFrame, FieldType } from '@grafana/data';
 import { assignIn, map, split, join } from 'lodash';
 
-export function nodesFrame(iterer) {
+export function nodesFrame(iterer, refId) {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -33,10 +33,11 @@ export function nodesFrame(iterer) {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
+    refId,
   });
 }
 
-export function edgesFrame() {
+export function edgesFrame(refId) {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -61,5 +62,6 @@ export function edgesFrame() {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
+    refId,
   });
 }

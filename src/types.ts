@@ -15,8 +15,6 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
-  Template = 'Template',
-  Extractor = 'Extractor',
   Relationships = 'Relationships',
 }
 
@@ -30,10 +28,11 @@ export const TabTitles = {
 
 // it is just a place to try integrate the Relationships query
 const defaultRelationsShipQuery: RelationshipsQuery = {
-  dataSetId: [],
-  labels: [],
+  dataSetIds: [],
+  labels: {
+    containsAll: [],
+  },
   refId: '',
-  expr: {},
 };
 
 const defaultTemplateQuery: TemplateQuery = {
@@ -155,12 +154,11 @@ export interface ExtractorQuery {
 }
 
 export interface RelationshipsQuery {
-  dataSetId: number[];
-  labels: string[];
-  refId: string;
-  expr: {
-    [x: string]: string;
+  dataSetIds: [];
+  labels: {
+    containsAll: [];
   };
+  refId: string;
 }
 export interface TemplateQuery extends DataQuery {
   [x: string]: any;

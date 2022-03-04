@@ -14,18 +14,18 @@ const optionalIdsToTargetObj = ({
 }: Partial<Pick<Resource, 'id' | 'externalId'>>): CogniteTargetObj => {
   return externalId
     ? {
-        target: externalId,
-        targetRefType: 'externalId' as const,
-      }
+      target: externalId,
+      targetRefType: 'externalId' as const,
+    }
     : {
-        target: id,
-        targetRefType: 'id' as const,
-      };
+      target: id,
+      targetRefType: 'id' as const,
+    };
 };
 
 export function ResourceSelect(props: {
   query: CogniteTargetObj;
-  resourceType: Tab.Timeseries | Tab.Asset | Tab.Extractor;
+  resourceType: Tab.Timeseries | Tab.Asset;
   onTargetQueryChange: (patch: CogniteTargetObj, shouldRunQuery?: boolean) => void;
   fetchSingleResource: (id: IdEither) => Promise<Resource[]>;
   searchResource: (query: string) => Promise<Resource[]>;

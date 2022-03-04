@@ -1,99 +1,66 @@
-import { MultiSelect, Select } from '@grafana/ui';
-import { flatMapDeep, get, isEqual, map, reduce, set, upperFirst } from 'lodash';
+import { MultiSelect } from '@grafana/ui';
+import { filter, flatMapDeep, get, isEmpty, isEqual, map, reduce, set, upperFirst } from 'lodash';
 import React, { useState, useEffect } from 'react';
 
-const selectors = [
-  'dataSetId',
-  'externalId',
-  'labels',
-  'sourceExternalId',
-  'sourceType',
-  'targetExternalId',
-  'targetType',
-];
+const targets = ['datasets', 'labels'];
 
 export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
   const { relationsShipsQuery } = query;
-  const [configs, setConfigs] = useState(
-    reduce(
-      selectors,
-      (result, value) => {
-        set(result, [value], []);
-        return result;
-      },
-      {}
-    )
-  );
-  const [selectedDataSetId, setSelectedDataSetId] = useState([]);
-  const [selectedSearchKey, setSelectedSearchKey] = useState('');
-  const [selectedLabel, setSelectedLabel] = useState([]);
-  const [customSearchValue, setCustomSearchValue] = useState([]);
-  const handleChange = (value, selector) => {
-    // onQueryChange({}, false);
+  const [options, setOptions] = useState({ datasets: [], labels: [] });
+  const [selectedOptions, setSelectedOptions] = useState({ datasets: [], labels: [] });
+  const handleChange = (value, target) => {
+    const { refId } = query;
+    setSelectedOptions({ ...selectedOptions, [target]: value });
+    if (isEqual(target, 'labels')) {
+      onQueryChange({
+        relationsShipsQuery: {
+          ...relationsShipsQuery,
+          labels: {
+            containsAll: map(value, ({ value }) => ({ externalId: value })),
+          },
+          refId: query.refId,
+        },
+      });
+    } else {
+      onQueryChange({
+        relationsShipsQuery: {
+          ...relationsShipsQuery,
+          dataSetIds: map(value, ({ value }) => ({ id: value })),
+          refId: query.refId,
+        },
+      });
+    }
   };
-
-  // console.log(query);
-  const getList = async () => {
-    const { settings } = await datasource.createRelationshipsNode();
-    setConfigs(settings);
-  };
-  const mappedLabes = flatMapDeep(get(configs, 'labels'), (_) =>
-    map(_, ({ externalId }) => ({
-      label: upperFirst(externalId),
-      value: externalId,
-    }))
-  );
-  const mappedOptions = (selector) => {
-    return isEqual(selector, 'labels')
-      ? mappedLabes
-      : map(get(configs, selector), (value: any) => ({ label: upperFirst(value), value }));
+  const getDropdowns = async () => {
+    const { labelsExternalIds, datasetIds } = await datasource.getRelationshipsDropdowns();
+    setOptions({
+      datasets: datasetIds,
+      labels: labelsExternalIds,
+    });
   };
   useEffect(() => {
-    getList();
+    getDropdowns();
   }, []);
   return (
-    <div>
-      <div className="templateRow">
-        <MultiSelect
-          options={mappedOptions('dataSetId')}
-          value={selectedDataSetId}
-          allowCustomValue
-          onChange={(value) => handleChange(value, 'dataSetId')}
-          className="cognite-dropdown"
-          placeholder="Search relations by dataSetId"
-          maxMenuHeight={150}
-        />
-        <MultiSelect
-          options={mappedLabes}
-          value={selectedLabel}
-          allowCustomValue
-          onChange={setSelectedLabel}
-          className="cognite-dropdown"
-          placeholder="Search relations by Labale"
-          maxMenuHeight={150}
-        />
-      </div>
-      <div className="templateRow">
-        <Select
-          prefix="Select key for search: "
-          options={map(selectors, (value) => ({ value, label: upperFirst(value) }))}
-          onChange={({ value }) => {
-            setSelectedSearchKey(value);
-          }}
-          className="width-20"
-          value={selectedSearchKey}
-          maxMenuHeight={150}
-        />
-        <MultiSelect
-          options={mappedOptions(selectedSearchKey)}
-          value={customSearchValue}
-          placeholder="Search value"
-          className="cognite-dropdown"
-          allowCustomValue
-          onChange={setCustomSearchValue}
-          maxMenuHeight={150}
-        />
-      </div>
+    <div className="templateRow">
+      <MultiSelect
+        options={options.datasets}
+        value={selectedOptions.datasets}
+        allowCustomValue
+        onChange={(value) => handleChange(value, 'datasets')}
+        className="cognite-dropdown"
+        placeholder="Filter relations by dataset"
+        maxMenuHeight={150}
+      />
+      <MultiSelect
+        options={options.labels}
+        value={selectedOptions.labels}
+        allowCustomValue
+        onChange={(value) => handleChange(value, 'labels')}
+        className="cognite-dropdown"
+        placeholder="Filter relations by Label"
+        maxMenuHeight={150}
+      />
     </div>
   );
 };

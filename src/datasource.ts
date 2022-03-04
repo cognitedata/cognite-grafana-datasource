@@ -31,6 +31,9 @@ import {
   uniqBy,
   uniq,
   isEmpty,
+  reduce,
+  forEach,
+  has,
 } from 'lodash';
 import {
   concurrent,
@@ -51,6 +54,8 @@ import {
   fetchTemplateVersion,
   fetchTemplateForTargets,
   fetchRelationshipsList,
+  getRelationshipsDataSets,
+  getRelationshipsLabels,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -156,61 +161,63 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = map(validQueryTargets, (t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    const templateQueryTargets: TemplateQuery[] = map(
-      filter(validQueryTargets, { tab: Tab.Template }),
-      'templateQuery'
-    );
     const relationShipsQueryTargets = map(
       filter(validQueryTargets, { tab: Tab.Relationships }),
       'relationsShipsQuery'
     );
 
-    const { eventTargets, tsTargets, extractorTargets } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData)[] = [];
-    let templateResponseData: DataFrame[] = [];
     let nodeResponse = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const extractorResults = await this.fetchExtractorTargets(extractorTargets);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [
-          ...reduceTimeseries(succeded, timeRange),
-          ...eventResults,
-          ...extractorResults,
-        ];
+        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
       }
     }
-    if (templateQueryTargets.length) {
-      try {
-        const { data } = await this.templateQuery({
-          ...options,
-          targets: templateQueryTargets,
-        });
-        templateResponseData = data;
-      } catch (error) {
-        /* eslint-disable-next-line no-console  */
-        console.error(error);
-      }
-    }
     if (relationShipsQueryTargets.length) {
-      try {
-        const { data } = await this.createRelationshipsNode();
-        nodeResponse = data;
-      } catch (error) {
-        /* eslint-disable-next-line no-console  */
-        console.error(error);
+      const filteredrelationShipsQueryTargets = filter(
+        map(relationShipsQueryTargets, (_) => {
+          const { labels, dataSetIds } = _;
+          if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
+            if (isEmpty(labels.containsAll)) {
+              return {
+                dataSetIds,
+              };
+            }
+            if (isEmpty(dataSetIds)) {
+              return {
+                labels,
+              };
+            }
+            return {
+              labels,
+              dataSetIds,
+            };
+          }
+          return false;
+        })
+      );
+      if (!isEmpty(filteredrelationShipsQueryTargets)) {
+        try {
+          const { data } = await this.createRelationshipsNode(filteredrelationShipsQueryTargets);
+          nodeResponse = data;
+        } catch (error) {
+          /* eslint-disable-next-line no-console  */
+          console.error(error);
+        }
       }
     }
     return {
-      data: [...responseData, ...templateResponseData, ...nodeResponse],
+      data: [...responseData, ...nodeResponse],
     };
   }
 
@@ -568,7 +575,7 @@ export default class CogniteDatasource extends DataSourceApi<
     return this.fetchTemplateVersion(domainExternalId);
   }
 
-  private postQuery(query: Partial<TemplateQuery>, payload: string) {
+  private postTemplateQuery(query: Partial<TemplateQuery>, payload: string) {
     const params = {
       ...query,
       expr: payload,
@@ -589,7 +596,7 @@ export default class CogniteDatasource extends DataSourceApi<
       });
   }
 
-  private createQuery(
+  private createTemplateQuery(
     query: TemplateQuery,
     range: TimeRange | undefined,
     intervalMs,
@@ -602,13 +609,13 @@ export default class CogniteDatasource extends DataSourceApi<
       payload = replace(payload, '$__granularity', `"${toGranularityWithLowerBound(intervalMs)}"`);
     }
     payload = this.templateSrv.replace(payload, scopedVars);
-    return this.postQuery(query, payload);
+    return this.postTemplateQuery(query, payload);
   }
 
   async templateQuery(options: DataQueryRequest<TemplateQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
-        return this.createQuery(
+        return this.createTemplateQuery(
           defaults(target, defaultQuery),
           options.range,
           options.intervalMs,
@@ -671,69 +678,85 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchTemplateForTargets(params, this.connector);
   };
 
-  fetchRelationshipsList = () => {
-    return fetchRelationshipsList({}, this.connector);
+  fetchRelationshipsList = (params) => {
+    return fetchRelationshipsList(params, this.connector);
   };
 
-  createRelationshipsNode = async () => {
-    const realtionshipsList = await this.fetchRelationshipsList();
-    const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
-    const labels = uniqBy(map(realtionshipsList, 'labels'), 'externalId');
-    const dataSetId = uniq(map(realtionshipsList, 'dataSetId'));
-    const externalId = uniq(map(realtionshipsList, 'externalId'));
-    const sourceExternalId = uniq(map(realtionshipsList, 'sourceExternalId'));
-    const sourceType = uniq(map(realtionshipsList, 'sourceType'));
-    const targetExternalId = uniq(map(realtionshipsList, 'targetExternalId'));
-    const targetType = uniq(map(realtionshipsList, 'targetType'));
-    const nodes = nodesFrame(iterrer);
-    const edges = edgesFrame();
-    map(
-      realtionshipsList,
-      ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
-        const newSourceMeta = {};
-        const newTargetMeta = {};
-        map(iterrer, (key) => {
-          const selector = join(['detail__', split(key, ' ')], '');
-          assign(newSourceMeta, {
-            [selector]: source.metadata[key],
-          });
-          assign(newTargetMeta, {
-            [selector]: target.metadata[key],
-          });
-        });
-        nodes.add({
-          id: sourceExternalId,
-          title: source.description,
-          mainStat: source.name,
-          ...newSourceMeta,
-        });
-        nodes.add({
-          id: targetExternalId,
-          title: target.description,
-          mainStat: target.name,
-          ...newTargetMeta,
-        });
-        edges.add({
-          id: externalId,
-          source: sourceExternalId,
-          target: targetExternalId,
-          mainStat: trim(join(map(labels, 'externalId'), ' ')),
-        });
-      }
-    );
+  getRelationshipsDropdowns = async () => {
+    const labels = await getRelationshipsLabels({}, this.connector);
+    const datasets = await getRelationshipsDataSets({}, this.connector);
+    const datasetIds = map(datasets, ({ name, id }) => ({
+      value: id,
+      label: name,
+    }));
+    const labelsExternalIds = map(labels, ({ externalId, name }) => ({
+      value: externalId,
+      label: name,
+    }));
+    return { datasetIds, labelsExternalIds };
+  };
 
-    return {
-      data: [nodes, edges],
-      settings: {
-        labels,
-        dataSetId,
-        externalId,
-        sourceExternalId,
-        sourceType,
-        targetExternalId,
-        targetType,
-      },
-    };
+  createRelationshipsNode = async (relationShipsQueryTargets) => {
+    return Promise.all(
+      map(relationShipsQueryTargets, ({ labels, dataSetIds }) =>
+        this.fetchRelationshipsList({
+          filter: {
+            labels,
+            dataSetIds,
+          },
+        })
+      )
+    ).then((realtionshipsLists) => {
+      return {
+        data: reduce(
+          map(realtionshipsLists, (realtionshipsList, index) => {
+            const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
+            const nodes = nodesFrame(iterrer, relationShipsQueryTargets[index].refId);
+            const edges = edgesFrame(relationShipsQueryTargets[index].refId);
+            map(
+              realtionshipsList,
+              ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+                const newSourceMeta = {};
+                const newTargetMeta = {};
+                map(iterrer, (key) => {
+                  const selector = join(['detail__', split(key, ' ')], '');
+                  assign(newSourceMeta, {
+                    [selector]: source.metadata[key],
+                  });
+                  assign(newTargetMeta, {
+                    [selector]: target.metadata[key],
+                  });
+                });
+                nodes.add({
+                  id: sourceExternalId,
+                  title: source.description,
+                  mainStat: source.name,
+                  ...newSourceMeta,
+                });
+                nodes.add({
+                  id: targetExternalId,
+                  title: target.description,
+                  mainStat: target.name,
+                  ...newTargetMeta,
+                });
+                edges.add({
+                  id: externalId,
+                  source: sourceExternalId,
+                  target: targetExternalId,
+                  mainStat: trim(join(map(labels, 'externalId'), ' ')),
+                });
+              }
+            );
+
+            return [nodes, edges];
+          }),
+          (result, value) => {
+            return value;
+          },
+          []
+        ),
+      };
+    });
   };
 
   async checkLoginStatusApiKey() {
@@ -809,19 +832,10 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
-        case Tab.Extractor:
-          return true;
         case Tab.Asset:
           return assetQuery?.target;
         case Tab.Custom:
           return target.expr;
-        case Tab.Template:
-          return (
-            templateQuery &&
-            templateQuery.domain &&
-            templateQuery.domainVersion &&
-            templateQuery.expr
-          );
         case Tab.Relationships: {
           return relationsShipsQuery;
         }
@@ -945,15 +959,11 @@ export async function getDataQueryRequestItems(
     case Tab.Relationships: {
       break;
     }
-    case Tab.Template: {
-      break;
-    }
   }
   return { type, items, target };
 }
 
 function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
-  const [extractorTargets] = partition(targets, ({ tab }) => tab === Tab.Extractor);
-  return { eventTargets, tsTargets, extractorTargets };
+  return { eventTargets, tsTargets };
 }
