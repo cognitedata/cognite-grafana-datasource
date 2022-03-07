@@ -8,7 +8,11 @@
       "name": "Cognite",
       "url": "https://cognite.com"
     },
-    "keywords": ["cognite", "timeseries", "iot"],
+    "keywords": [
+      "cognite",
+      "timeseries",
+      "iot"
+    ],
     "logos": {
       "small": "img/CDF_logo.svg",
       "large": "img/CDF_logo.svg"
@@ -56,20 +60,6 @@
     },
     {
       "path": "cdf-api-key",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
-      "headers": [
-        {
-          "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
-        },
-        {
-          "name": "x-cdp-sdk",
-          "content": "CogniteGrafanaDatasource:%VERSION%"
-        }
-      ]
-    },
-    {
-      "path": "cognitetemplatesapi",
       "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
       "headers": [
         {

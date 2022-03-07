@@ -13,10 +13,6 @@ export const EVENTS_LIMIT_WARNING =
   `Some results may have been omitted.\n` +
   `This typically happens when CDF returns the maximum number of items (1000) and when you are using client-side filters.\n` +
   `To get better results, use more specific push-down filters, for example, events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
-export const EXTRACTOR_LIMIT_WARNING =
-  `Some results may have been omitted.\n` +
-  `This typically happens when CDF returns the maximum number of items (1000) and when you are using client-side filters.\n` +
-  `To get better results, use more specific push-down filters, for example, events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
 
 export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
 export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');
@@ -50,8 +46,6 @@ export const EventFields = [
 ];
 
 export const EVENTS_PAGE_LIMIT = 1000;
-
-export const EXTRACTOR_PAGE_LIMIT = 1000;
 
 export const DOCS_URL =
   'https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html';

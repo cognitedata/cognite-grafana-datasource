@@ -402,28 +402,6 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 
   /**
-   * used by query editor to search for assets/timeseries
-   */
-  async getOptionsForExtractorDropdown(
-    query: string
-  ): Promise<(SelectableValue<string> & Resource)[]> {
-    const resources = {
-      [Tab.Asset]: 'assets',
-      [Tab.Timeseries]: 'timeseries',
-    };
-    const data: any = query ? { search: { query } } : {};
-
-    const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
-      data,
-      path: `/extpipes`,
-      method: HttpMethod.GET,
-      cacheTime: CacheTime.Dropdown,
-    });
-
-    return items.map(resource2DropdownOption);
-  }
-
-  /**
    * used by query editor to get metric suggestions (template variables)
    */
   async metricFindQuery({ query }: VariableQueryData): Promise<MetricDescription[]> {

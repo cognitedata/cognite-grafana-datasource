@@ -20,9 +20,7 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean
-  ) {
-    const def = [];
-  }
+  ) { }
 
   cachedRequests = new Map<string, Promise<any>>();
 
@@ -157,11 +155,6 @@ export class Connector {
     this.cachedRequests.set(hash, request);
     return request;
   };
-
-  public async fetchTemplateQuery(params) {
-    const res = await this.fetchData<Response<any>>(params);
-    return res;
-  }
 }
 
 const chunkedReqId = (requestId: string, chunk: number) => {
