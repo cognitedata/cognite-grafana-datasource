@@ -1,4 +1,4 @@
-import { assignIn, isNil, omitBy, get, map, split, join } from 'lodash';
+import { isNil, omitBy, get } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -54,21 +54,22 @@ export function nodesFrame(iterer, refId) {
       type: FieldType.string,
     },
   };
-  map(iterer, (key) => {
-    assignIn(fields, {
-      [join(['detail__', split(key, ' ')], '')]: {
+
+  const extendedFields = iterer.reduce((previousValue, currentValue) => {
+    return {
+      ...previousValue,
+      [['detail__', currentValue.split(' ')].join('')]: {
         type: FieldType.string,
         config: {
-          displayName: key,
+          displayName: currentValue,
         },
       },
-    });
-  });
-
+    };
+  }, fields);
   return new MutableDataFrame({
     name: 'nodes',
-    fields: Object.keys(fields).map((key) => ({
-      ...fields[key],
+    fields: Object.keys(extendedFields).map((key) => ({
+      ...extendedFields[key],
       name: key,
     })),
     meta: {
