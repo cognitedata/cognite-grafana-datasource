@@ -100,11 +100,13 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
 }
+
 export interface RelationshipsQuery {
-  dataSetIds: [];
+  dataSetIds: { id: string | number }[];
   labels: {
-    containsAll: [];
+    containsAll: { externalId: string | number }[];
   };
+  // fix this
   refId: string;
 }
 
