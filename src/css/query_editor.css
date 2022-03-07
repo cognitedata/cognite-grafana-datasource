@@ -42,14 +42,7 @@ pre code,
   min-width: 200px;
 }
 
-.templateQueryRow {
-  width: 100%;
-  height: 8em;
-  display: flex;
-  margin: 6px;
-}
-
-.templateRow {
+.full-width-row {
   width: 100%;
   display: flex;
   margin: 6px;
