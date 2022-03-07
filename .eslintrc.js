@@ -45,9 +45,9 @@ module.exports = {
         "@typescript-eslint/ban-ts-comment": "off",
         "@typescript-eslint/no-unused-vars": "off",
         // Allow referencing functions/vars that are defined below in the same file
-        "@typescript-eslint/no-use-before-define" : "off",
+        "@typescript-eslint/no-use-before-define": "off",
         "react/prop-types": "off",
-        "prettier/prettier": ["error", {"endOfLine":"auto"}],
+        "prettier/prettier": ["error", { "endOfLine": "auto" }],
         "import/no-cycle": "off",
         // Disable "prefer default export" since we don't use default exports
         "import/prefer-default-export": "off",
@@ -55,6 +55,7 @@ module.exports = {
         "@typescript-eslint/lines-between-class-members": "off",
         "@typescript-eslint/no-shadow": "off",
         "@typescript-eslint/no-throw-literal": "off",
-        "prefer-promise-reject-errors": "off"
+        "prefer-promise-reject-errors": "off",
+        "prettier/prettier": ["warn", { "endOfLine": "auto" }],
     },
 };
