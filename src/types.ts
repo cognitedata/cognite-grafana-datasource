@@ -85,13 +85,7 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<(TimeSeries | TableData | DataFrame | any)[]>;
-
-export interface MetricSelection {
-  readonly label: string;
-  readonly value: string;
-}
-
+export type QueryResponse = DataResponse<(TimeSeries | TableData | DataFrame)[]>;
 export interface MetricDescription {
   readonly text: string;
   readonly value: number | string;
@@ -106,7 +100,6 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
 }
-
 export interface RelationshipsQuery {
   dataSetIds: [];
   labels: {
