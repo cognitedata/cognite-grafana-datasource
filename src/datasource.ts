@@ -137,18 +137,12 @@ export default class CogniteDatasource extends DataSourceApi<
    * used by panels to get timeseries data
    */
   async query(options: DataQueryRequest<CogniteQuery>): Promise<QueryResponse> {
-    const validQueryTargets = filterEmptyQueryTargets(options.targets);
-    const queryTargets = map(validQueryTargets, (t) =>
+    const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    const relationShipsQueryTargets = map(
-      filter(validQueryTargets, { tab: Tab.Relationships }),
-      'relationsShipsQuery'
-    );
-
+    const relationShipsQueryTargets = queryTargets.filter(({ tab }) => tab === Tab.Relationships);
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
-
     let responseData: (TimeSeries | TableData)[] = [];
     let nodeResponse = [];
     if (queryTargets.length) {
@@ -164,36 +158,12 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     }
     if (relationShipsQueryTargets.length) {
-      const filteredrelationShipsQueryTargets = filter(
-        map(relationShipsQueryTargets, (_) => {
-          const { labels, dataSetIds } = _;
-          if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
-            if (isEmpty(labels.containsAll)) {
-              return {
-                dataSetIds,
-              };
-            }
-            if (isEmpty(dataSetIds)) {
-              return {
-                labels,
-              };
-            }
-            return {
-              labels,
-              dataSetIds,
-            };
-          }
-          return false;
-        })
-      );
-      if (!isEmpty(filteredrelationShipsQueryTargets)) {
-        try {
-          const { data } = await this.createRelationshipsNode(filteredrelationShipsQueryTargets);
-          nodeResponse = data;
-        } catch (error) {
-          /* eslint-disable-next-line no-console  */
-          console.error(error);
-        }
+      try {
+        const { data } = await this.createRelationshipsNode(relationShipsQueryTargets);
+        nodeResponse = data;
+      } catch (error) {
+        /* eslint-disable-next-line no-console  */
+        console.error(error);
       }
     }
     return {
@@ -441,6 +411,7 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
+  // fix this
   getRelationshipsDropdowns = async () => {
     return Promise.all([
       getRelationshipsLabels({}, this.connector),
@@ -448,11 +419,11 @@ export default class CogniteDatasource extends DataSourceApi<
     ]).then((responses) => {
       const [labels, datasets] = responses;
       return {
-        datasets: map(datasets, ({ name, id }) => ({
+        datasets: datasets.map(({ name, id }) => ({
           value: id,
           label: name,
         })),
-        labels: map(labels, ({ externalId, name }) => ({
+        labels: labels.map(({ externalId, name }) => ({
           value: externalId,
           label: name,
         })),
@@ -474,6 +445,7 @@ export default class CogniteDatasource extends DataSourceApi<
         )
       )
     ).then((realtionshipsLists) => {
+      // fix this
       return {
         data: reduce(
           map(realtionshipsLists, (realtionshipsList, index) => {
