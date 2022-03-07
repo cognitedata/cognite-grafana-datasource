@@ -31,7 +31,6 @@ const defaultRelationsShipQuery: RelationshipsQuery = {
   labels: {
     containsAll: [],
   },
-  refId: '',
 };
 
 const defaultAssetQuery: AssetQuery = {
@@ -106,8 +105,6 @@ export interface RelationshipsQuery {
   labels: {
     containsAll: { externalId: string | number }[];
   };
-  // fix this
-  refId: string;
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;

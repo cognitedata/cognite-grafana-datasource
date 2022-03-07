@@ -1,30 +1,27 @@
 import { MultiSelect } from '@grafana/ui';
-import { isEqual, map } from 'lodash';
 import React, { useState, useEffect } from 'react';
 
+// FIX //
 export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
   const { relationsShipsQuery } = query;
   const [options, setOptions] = useState({ datasets: [], labels: [] });
   const [selectedOptions, setSelectedOptions] = useState({ datasets: [], labels: [] });
-  const handleChange = (value, target) => {
-    const { refId } = query;
-    setSelectedOptions({ ...selectedOptions, [target]: value });
-    if (isEqual(target, 'labels')) {
+  const handleChange = (values, target) => {
+    setSelectedOptions({ ...selectedOptions, [target]: values });
+    if (target === 'labels') {
       onQueryChange({
         relationsShipsQuery: {
           ...relationsShipsQuery,
           labels: {
-            containsAll: map(value, ({ value }) => ({ externalId: value })),
+            containsAll: values.map(({ value }) => ({ externalId: value })),
           },
-          refId,
         },
       });
     } else {
       onQueryChange({
         relationsShipsQuery: {
           ...relationsShipsQuery,
-          dataSetIds: map(value, ({ value }) => ({ id: value })),
-          refId,
+          dataSetIds: values.map(({ value }) => ({ id: value })),
         },
       });
     }
@@ -40,7 +37,7 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
     getDropdowns();
   }, []);
   return (
-    <div className="templateRow">
+    <div className="full-width-row">
       <MultiSelect
         options={options.datasets}
         value={selectedOptions.datasets}

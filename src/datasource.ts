@@ -478,8 +478,8 @@ export default class CogniteDatasource extends DataSourceApi<
         data: reduce(
           map(realtionshipsLists, (realtionshipsList, index) => {
             const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
-            const nodes = nodesFrame(iterrer, relationShipsQueryTargets[index].refId);
-            const edges = edgesFrame(relationShipsQueryTargets[index].refId);
+            const nodes = nodesFrame(iterrer);
+            const edges = edgesFrame();
             map(
               realtionshipsList,
               ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {

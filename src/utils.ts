@@ -42,7 +42,7 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
   }
 };
 
-export function nodesFrame(iterer, refId) {
+export function nodesFrame(iterer) {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -75,11 +75,10 @@ export function nodesFrame(iterer, refId) {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
-    refId,
   });
 }
 
-export function edgesFrame(refId) {
+export function edgesFrame() {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -104,6 +103,5 @@ export function edgesFrame(refId) {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
-    refId,
   });
 }
