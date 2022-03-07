@@ -1,4 +1,4 @@
-import { defaults } from 'lodash';
+import defaults from 'lodash/defaults';
 import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
