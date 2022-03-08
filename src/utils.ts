@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assign, isEmpty, mapKeys, includes, concat } from 'lodash';
+import { isNil, omitBy, get, map, assign, isEmpty, includes } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -45,9 +45,9 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
 const getMetaKeys = (list) => {
   const metas = [];
   const setMeta = (object) => {
-    mapKeys(object, (key) => {
+    Object.keys(object).map((key) => {
       if (!includes(metas, key)) {
-        concat(metas, key);
+        metas.push(key);
       }
       return key;
     });
