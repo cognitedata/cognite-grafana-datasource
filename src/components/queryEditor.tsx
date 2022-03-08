@@ -120,6 +120,7 @@ const LatestValueCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
+          css=""
           value={query.latestValue}
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
         />
@@ -141,6 +142,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
       <div className="gf-form-switch">
         <Switch
           value={query.eventQuery.activeAtTimeRange}
+          css=""
           onChange={({ currentTarget }) =>
             onQueryChange({
               eventQuery: {
@@ -183,6 +185,7 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
         <Switch
           value={includeSubtrees}
           onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
+          css=""
         />
       </div>
     </div>
@@ -456,7 +459,13 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
-          <Tab label={TabTitles[t]} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
+          <Tab
+            label={TabTitles[t]}
+            key={t}
+            active={tab === t}
+            onChangeTab={onSelectTab(t)}
+            css=""
+          />
         ))}
       </TabsBar>
       <TabContent>
