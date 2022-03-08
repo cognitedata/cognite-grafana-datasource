@@ -27,7 +27,7 @@ export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
     }
   };
   const getDropdowns = async () => {
-    const { labels, datasets } = await datasource.getRelationshipsDropdowns();
+    const { labels, datasets } = await datasource.getRelationshipsDropdowns(query.refId);
     setOptions({
       datasets,
       labels,
