@@ -10,21 +10,10 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
+  MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import {
-  assign,
-  partition,
-  map,
-  filter,
-  split,
-  join,
-  trim,
-  keys,
-  head,
-  isEmpty,
-  reduce,
-} from 'lodash';
+import { partition, map, filter } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -39,9 +28,6 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
-  fetchRelationshipsList,
-  getRelationshipsDataSets,
-  getRelationshipsLabels,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -93,8 +79,8 @@ import {
   applyFilters,
   getRequestId,
   toGranularityWithLowerBound,
-  edgesFrame,
-  nodesFrame,
+  generateNodesAndEdges,
+  relationshipsFilters,
 } from './utils';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
@@ -140,34 +126,33 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    const relationShipsQueryTargets = queryTargets.filter(({ tab }) => tab === Tab.Relationships);
+    // fix this
+    const relationShipsQueryTargets = filter(queryTargets, ({ tab }) => {
+      return tab === Tab.Relationships;
+    }).map(({ relationsShipsQuery, refId }) => ({ ...relationsShipsQuery, refId }));
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
-    let responseData: (TimeSeries | TableData)[] = [];
-    let nodeResponse = [];
+    let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
-        const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
-        const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        handleFailedTargets(failed);
-        showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
+        if (relationShipsQueryTargets.length) {
+          const { data } = await this.createRelationshipsNode(relationShipsQueryTargets);
+          responseData = data;
+        } else {
+          const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
+          const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+          handleFailedTargets(failed);
+          showWarnings(succeded);
+          responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
+        }
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
       }
     }
-    if (relationShipsQueryTargets.length) {
-      try {
-        const { data } = await this.createRelationshipsNode(relationShipsQueryTargets);
-        nodeResponse = data;
-      } catch (error) {
-        /* eslint-disable-next-line no-console  */
-        console.error(error);
-      }
-    }
+
     return {
-      data: [...responseData, ...nodeResponse],
+      data: [...responseData],
     };
   }
 
@@ -411,13 +396,18 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  // fix this
-  getRelationshipsDropdowns = async () => {
-    return Promise.all([
-      getRelationshipsLabels({}, this.connector),
-      getRelationshipsDataSets({}, this.connector),
-    ]).then((responses) => {
-      const [labels, datasets] = responses;
+  getRelationshipsDropdowns = async (refId) => {
+    const settings = {
+      method: HttpMethod.POST,
+      data: {
+        filter: {},
+        limit: 1000,
+      },
+    };
+    try {
+      const labels = await this.connector.fetchItems({ ...settings, path: '/labels/list' });
+      const datasets = await this.connector.fetchItems({ ...settings, path: '/datasets/list' });
+
       return {
         datasets: datasets.map(({ name, id }) => ({
           value: id,
@@ -428,74 +418,34 @@ export default class CogniteDatasource extends DataSourceApi<
           label: name,
         })),
       };
-    });
+    } catch (error) {
+      handleError(error, refId);
+      return {};
+    }
   };
 
   createRelationshipsNode = async (relationShipsQueryTargets) => {
-    return Promise.all(
-      map(relationShipsQueryTargets, ({ labels, dataSetIds }) =>
-        fetchRelationshipsList(
-          {
-            filter: {
-              labels,
-              dataSetIds,
+    return {
+      data: await map(relationShipsQueryTargets, async ({ labels, dataSetIds, refId }) => {
+        try {
+          const filter = relationshipsFilters(labels, dataSetIds);
+          const r = await this.connector.fetchItems({
+            method: HttpMethod.POST,
+            path: '/relationships/list',
+            data: {
+              fetchResources: true,
+              limit: 1000,
+              filter,
             },
-          },
-          this.connector
-        )
-      )
-    ).then((realtionshipsLists) => {
-      // fix this
-      return {
-        data: reduce(
-          map(realtionshipsLists, (realtionshipsList, index) => {
-            const iterrer = head(map(realtionshipsList, ({ source }) => keys(source.metadata)));
-            const nodes = nodesFrame(iterrer);
-            const edges = edgesFrame();
-            map(
-              realtionshipsList,
-              ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
-                const newSourceMeta = {};
-                const newTargetMeta = {};
-                map(iterrer, (key) => {
-                  const selector = join(['detail__', split(key, ' ')], '');
-                  assign(newSourceMeta, {
-                    [selector]: source.metadata[key],
-                  });
-                  assign(newTargetMeta, {
-                    [selector]: target.metadata[key],
-                  });
-                });
-                nodes.add({
-                  id: sourceExternalId,
-                  title: source.description,
-                  mainStat: source.name,
-                  ...newSourceMeta,
-                });
-                nodes.add({
-                  id: targetExternalId,
-                  title: target.description,
-                  mainStat: target.name,
-                  ...newTargetMeta,
-                });
-                edges.add({
-                  id: externalId,
-                  source: sourceExternalId,
-                  target: targetExternalId,
-                  mainStat: trim(join(map(labels, 'externalId'), ' ')),
-                });
-              }
-            );
+          });
 
-            return [nodes, edges];
-          }),
-          (result, value) => {
-            return value;
-          },
-          []
-        ),
-      };
-    });
+          return generateNodesAndEdges(r, refId);
+        } catch (error) {
+          handleError(error, refId);
+          return [];
+        }
+      }).reduce((total, current) => current),
+    };
   };
 
   async checkLoginStatusApiKey() {
