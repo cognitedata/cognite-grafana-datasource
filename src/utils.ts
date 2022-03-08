@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assign, isEmpty, includes } from 'lodash';
+import { isNil, omitBy, get, map, assign, isEmpty } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -46,7 +46,7 @@ const getMetaKeys = (list) => {
   const metas = [];
   const setMeta = (object) => {
     Object.keys(object).map((key) => {
-      if (!includes(metas, key)) {
+      if (!metas.includes(key)) {
         metas.push(key);
       }
       return key;
