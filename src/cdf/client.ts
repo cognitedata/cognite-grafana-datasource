@@ -318,39 +318,3 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     columns: columns.map((text) => ({ text })),
   };
 };
-// Relationsships
-export const fetchRelationshipsList = (data, connector) => {
-  return connector.fetchItems({
-    method: HttpMethod.POST,
-    path: '/relationships/list',
-    data: {
-      fetchResources: true,
-      limit: 1000,
-      ...data,
-    },
-  });
-};
-
-export const getRelationshipsDataSets = (params, connector) => {
-  const { filter, limit, cursor } = params;
-  return connector.fetchItems({
-    method: HttpMethod.POST,
-    path: '/datasets/list',
-    data: {
-      filter,
-      limit: 1000,
-    },
-  });
-};
-
-export const getRelationshipsLabels = (params, connector) => {
-  const { filter, limit, cursor } = params;
-  return connector.fetchItems({
-    method: HttpMethod.POST,
-    path: '/labels/list',
-    data: {
-      filter,
-      limit: 1000,
-    },
-  });
-};
