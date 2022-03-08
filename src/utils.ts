@@ -1,4 +1,4 @@
-import { isNil, omitBy, get } from 'lodash';
+import { isNil, omitBy, get, map, assign, isEmpty } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -42,7 +42,28 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
   }
 };
 
-export function nodesFrame(iterer) {
+const getMetaKeys = (list) => {
+  const metas = [];
+  const setMeta = (object) => {
+    Object.keys(object).map((key) => {
+      if (!metas.includes(key)) {
+        metas.push(key);
+      }
+      return key;
+    });
+  };
+  const getItemMeta = (item) => {
+    if (item.source) {
+      setMeta(item.source);
+    } else if (item.target) {
+      setMeta(item.target);
+    }
+  };
+  list.map(getItemMeta);
+  return metas;
+};
+
+const nodesFrame = (iterer, refId) => {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -75,10 +96,11 @@ export function nodesFrame(iterer) {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
+    refId,
   });
-}
+};
 
-export function edgesFrame() {
+const edgesFrame = (refId) => {
   const fields: any = {
     id: {
       type: FieldType.string,
@@ -103,5 +125,71 @@ export function edgesFrame() {
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
+    refId,
   });
-}
+};
+const metaFieldsValues = (source, target, iterrer) => {
+  const sourceMeta = {};
+  const targetMeta = {};
+  map(iterrer, (key) => {
+    const selector = ['detail__', key.split(' ')].join('');
+    assign(sourceMeta, {
+      [selector]: get(source, `metadata.${key}`),
+    });
+    assign(targetMeta, {
+      [selector]: get(target, `metadata.${key}`),
+    });
+  });
+  return { sourceMeta, targetMeta };
+};
+export const generateNodesAndEdges = (realtionshipsList, refId) => {
+  const iterrer = getMetaKeys(realtionshipsList);
+  const nodes = nodesFrame(iterrer, refId);
+  const edges = edgesFrame(refId);
+  map(
+    realtionshipsList,
+    ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+      const { sourceMeta, targetMeta } = metaFieldsValues(source, target, iterrer);
+      nodes.add({
+        id: sourceExternalId,
+        title: get(source, 'description'),
+        mainStat: get(source, 'name'),
+        ...sourceMeta,
+      });
+      nodes.add({
+        id: targetExternalId,
+        title: get(target, 'description'),
+        mainStat: get(target, 'name'),
+        ...targetMeta,
+      });
+      edges.add({
+        id: externalId,
+        source: sourceExternalId,
+        target: targetExternalId,
+        mainStat: map(labels, 'externalId').join(' ').trim(),
+      });
+    }
+  );
+
+  return [nodes, edges];
+};
+
+export const relationshipsFilters = (labels, dataSetIds) => {
+  if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
+    if (isEmpty(labels.containsAll)) {
+      return {
+        dataSetIds,
+      };
+    }
+    if (isEmpty(dataSetIds)) {
+      return {
+        labels,
+      };
+    }
+    return {
+      labels,
+      dataSetIds,
+    };
+  }
+  return {};
+};
