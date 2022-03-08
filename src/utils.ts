@@ -94,7 +94,7 @@ const nodesFrame = (iterer, refId) => {
       name: key,
     })),
     meta: {
-      preferredVisualisationType: 'nodeGraph',
+      // preferredVisualisationType: 'nodeGraph',
     },
     refId,
   });
@@ -123,7 +123,7 @@ const edgesFrame = (refId) => {
       name: key,
     })),
     meta: {
-      preferredVisualisationType: 'nodeGraph',
+      // preferredVisualisationType: 'nodeGraph',
     },
     refId,
   });
