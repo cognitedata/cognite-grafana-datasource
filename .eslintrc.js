@@ -56,6 +56,6 @@ module.exports = {
         "@typescript-eslint/no-shadow": "off",
         "@typescript-eslint/no-throw-literal": "off",
         "prefer-promise-reject-errors": "off",
-        "prettier/prettier": ["warn", { "endOfLine": "auto" }],
+        //"prettier/prettier": ["warn", { "endOfLine": "auto" }],
     },
 };
