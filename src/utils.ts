@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assign, isEmpty } from 'lodash';
+import { isNil, omitBy, get, map, assign, isEmpty, mapKeys, includes, concat } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
@@ -45,9 +45,9 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
 const getMetaKeys = (list) => {
   const metas = [];
   const setMeta = (object) => {
-    Object.keys(object).map((key) => {
-      if (!metas.includes(key)) {
-        metas.push(key);
+    mapKeys(object, (key) => {
+      if (!includes(metas, key)) {
+        concat(metas, key);
       }
       return key;
     });
@@ -94,7 +94,7 @@ const nodesFrame = (iterer, refId) => {
       name: key,
     })),
     meta: {
-      // preferredVisualisationType: 'nodeGraph',
+      preferredVisualisationType: 'nodeGraph',
     },
     refId,
   });
@@ -123,7 +123,7 @@ const edgesFrame = (refId) => {
       name: key,
     })),
     meta: {
-      // preferredVisualisationType: 'nodeGraph',
+      preferredVisualisationType: 'nodeGraph',
     },
     refId,
   });
