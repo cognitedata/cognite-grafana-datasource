@@ -13,7 +13,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition, map, filter } from 'lodash';
+import partition from 'lodash/partition';
 import {
   concurrent,
   datapointsPath,
@@ -127,9 +127,11 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
     // fix this
-    const relationShipsQueryTargets = filter(queryTargets, ({ tab }) => {
-      return tab === Tab.Relationships;
-    }).map(({ relationsShipsQuery, refId }) => ({ ...relationsShipsQuery, refId }));
+    const relationShipsQueryTargets = queryTargets
+      .filter(({ tab }) => {
+        return tab === Tab.Relationships;
+      })
+      .map(({ relationsShipsQuery, refId }) => ({ ...relationsShipsQuery, refId }));
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
@@ -426,25 +428,27 @@ export default class CogniteDatasource extends DataSourceApi<
 
   createRelationshipsNode = async (relationShipsQueryTargets) => {
     return {
-      data: await map(relationShipsQueryTargets, async ({ labels, dataSetIds, refId }) => {
-        try {
-          const filter = relationshipsFilters(labels, dataSetIds);
-          const r = await this.connector.fetchItems({
-            method: HttpMethod.POST,
-            path: '/relationships/list',
-            data: {
-              fetchResources: true,
-              limit: 1000,
-              filter,
-            },
-          });
+      data: await relationShipsQueryTargets
+        .map(async ({ labels, dataSetIds, refId }) => {
+          try {
+            const filter = relationshipsFilters(labels, dataSetIds);
+            const r = await this.connector.fetchItems({
+              method: HttpMethod.POST,
+              path: '/relationships/list',
+              data: {
+                fetchResources: true,
+                limit: 1000,
+                filter,
+              },
+            });
 
-          return generateNodesAndEdges(r, refId);
-        } catch (error) {
-          handleError(error, refId);
-          return [];
-        }
-      }).reduce((total, current) => current),
+            return generateNodesAndEdges(r, refId);
+          } catch (error) {
+            handleError(error, refId);
+            return [];
+          }
+        })
+        .reduce((total, current) => current),
     };
   };
 
