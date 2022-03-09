@@ -219,12 +219,8 @@ export default class CogniteDatasource extends DataSourceApi<
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label, eventQuery } = target;
 
-    const [
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-      eventExprTemplated,
-    ] = this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
+    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] =
+      this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {

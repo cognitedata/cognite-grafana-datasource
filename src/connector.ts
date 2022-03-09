@@ -20,7 +20,7 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean
-  ) { }
+  ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
 
