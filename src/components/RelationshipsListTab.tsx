@@ -1,12 +1,18 @@
 import { MultiSelect } from '@grafana/ui';
 import React, { useState, useEffect } from 'react';
+import { RelationshipSelectableValue, RelationshipsQuerySelector } from '../types';
+import CogniteDatasource from '../datasource';
+import { SelectedProps } from './queryEditor';
 
-// FIX //
-export const RelationshipsListTab = ({ query, onQueryChange, datasource }) => {
+export const RelationshipsListTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
+  const { query, datasource, onQueryChange } = props;
   const { relationsShipsQuery } = query;
-  const [options, setOptions] = useState({ datasets: [], labels: [] });
-  const [selectedOptions, setSelectedOptions] = useState({ datasets: [], labels: [] });
-  const handleChange = (values, target) => {
+  const [options, setOptions] = useState<RelationshipsQuerySelector>({ datasets: [], labels: [] });
+  const [selectedOptions, setSelectedOptions] = useState<RelationshipsQuerySelector>({
+    datasets: [],
+    labels: [],
+  });
+  const handleChange = (values: RelationshipSelectableValue[], target: string) => {
     setSelectedOptions({ ...selectedOptions, [target]: values });
     if (target === 'labels') {
       onQueryChange({

@@ -38,6 +38,9 @@ import {
   IdEither,
   CogniteEvent,
   EventsFilterTimeParams,
+  CogniteLabelsResponse,
+  CogniteDataSetsResponse,
+  CogniteRelationshipResponse,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -74,6 +77,8 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
+  RelationshipsQuerySelector,
+  RequestParams,
 } from './types';
 import {
   applyFilters,
@@ -398,7 +403,7 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  getRelationshipsDropdowns = async (refId) => {
+  getRelationshipsDropdowns = async (refId): Promise<RelationshipsQuerySelector> => {
     const settings = {
       method: HttpMethod.POST,
       data: {
@@ -407,8 +412,14 @@ export default class CogniteDatasource extends DataSourceApi<
       },
     };
     try {
-      const labels = await this.connector.fetchItems({ ...settings, path: '/labels/list' });
-      const datasets = await this.connector.fetchItems({ ...settings, path: '/datasets/list' });
+      const labels = await this.connector.fetchItems<CogniteLabelsResponse>({
+        ...settings,
+        path: '/labels/list',
+      });
+      const datasets = await this.connector.fetchItems<CogniteDataSetsResponse>({
+        ...settings,
+        path: '/datasets/list',
+      });
 
       return {
         datasets: datasets.map(({ name, id }) => ({
@@ -422,7 +433,15 @@ export default class CogniteDatasource extends DataSourceApi<
       };
     } catch (error) {
       handleError(error, refId);
-      return {};
+      return {
+        datasets: [
+          {
+            value: '',
+            label: '',
+          },
+        ],
+        labels: [],
+      };
     }
   };
 
@@ -432,7 +451,7 @@ export default class CogniteDatasource extends DataSourceApi<
         .map(async ({ labels, dataSetIds, refId }) => {
           try {
             const filter = relationshipsFilters(labels, dataSetIds);
-            const r = await this.connector.fetchItems({
+            const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
               method: HttpMethod.POST,
               path: '/relationships/list',
               data: {
@@ -442,7 +461,7 @@ export default class CogniteDatasource extends DataSourceApi<
               },
             });
 
-            return generateNodesAndEdges(r, refId);
+            return generateNodesAndEdges(response, refId);
           } catch (error) {
             handleError(error, refId);
             return [];

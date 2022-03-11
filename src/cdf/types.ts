@@ -1,3 +1,5 @@
+import { type } from 'os';
+
 export type Datapoints = Items<Datapoint>;
 export type Events = Items<Event>;
 
@@ -144,4 +146,63 @@ export type IdEither = { id: number } | { externalId: string };
 export interface Range<T> {
   min?: T;
   max?: T;
+}
+
+export interface CogniteLabelsResponse {
+  externalId: string;
+  name: string;
+  description: string;
+  dataSetId: number;
+  createdTime: number | string;
+}
+export interface CogniteDataSetsResponse {
+  externalId: string;
+  name?: string;
+  description?: string;
+  metadata?: any;
+  writeProtected?: boolean;
+  id?: number;
+  createdTime?: number | string;
+  lastUpdatedTime?: number | string;
+}
+
+interface CogniteRealtionshipObject {
+  createdTime?: number | string;
+  lastUpdatedTime?: number | string;
+  rootId?: number | string;
+  aggregates?: {
+    childCount: number;
+    depth: number;
+    path?: [
+      {
+        id: string | number;
+      }
+    ];
+  };
+  parentId?: number | string;
+  parentExternalId?: string;
+  externalId: string;
+  name?: string;
+  description?: string;
+  dataSetId: number;
+  metadata?: { [s: string]: string };
+  source?: string;
+  labels?: CogniteLabelsResponse[];
+  id: number | string;
+}
+export interface CogniteRelationshipResponse {
+  externalId: string;
+  sourceExternalId: string;
+  sourceType?: string;
+  targetExternalId: string;
+  targetType?: string;
+  startTime?: number | string;
+  endTime?: number | string;
+  confidence?: number;
+  dataSetId?: number;
+  labels?: CogniteLabelsResponse[];
+  createdTime?: number | string;
+  lastUpdatedTime?: number | string;
+  source?: CogniteRealtionshipObject;
+  target?: CogniteRealtionshipObject;
 }

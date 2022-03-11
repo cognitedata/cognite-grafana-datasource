@@ -654,3 +654,25 @@ describe('custom query granularity less then a second', () => {
     ).toMatch('granularity="1s"}');
   });
 });
+
+describe('Relationships', () => {
+  beforeAll(async () => {
+    jest.clearAllMocks();
+  });
+  describe('Test labels and datasets', () => {
+    const dropdownResponse = {
+      labels: [],
+      datasets: [],
+    };
+    it('drop error on ', async () => {
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(dropdownResponse));
+      const result = await ds.getRelationshipsDropdowns('A');
+
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(dropdownResponse);
+    });
+  });
+});

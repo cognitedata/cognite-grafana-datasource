@@ -2,6 +2,7 @@ import { isNil, omitBy, get, map, assign, isEmpty } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
+import { CogniteRelationshipResponse } from './cdf/types';
 import { QueryOptions, QueryTarget } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 
@@ -142,7 +143,10 @@ const metaFieldsValues = (source, target, iterrer) => {
   });
   return { sourceMeta, targetMeta };
 };
-export const generateNodesAndEdges = (realtionshipsList, refId) => {
+export const generateNodesAndEdges = (
+  realtionshipsList: CogniteRelationshipResponse[],
+  refId: any
+) => {
   const iterrer = getMetaKeys(realtionshipsList);
   const nodes = nodesFrame(iterrer, refId);
   const edges = edgesFrame(refId);

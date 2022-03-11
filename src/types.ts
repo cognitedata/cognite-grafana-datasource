@@ -100,6 +100,17 @@ export interface EventQuery {
   columns: string[];
 }
 
+export interface RelationshipSelectableValue {
+  value?: string | number;
+  label?: string;
+}
+export interface DatasetSelector {
+  datasets: RelationshipSelectableValue[];
+}
+export interface LabelsSelector {
+  labels: RelationshipSelectableValue[];
+}
+export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
   dataSetIds: { id: string | number }[];
   labels: {
