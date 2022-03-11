@@ -434,12 +434,7 @@ export default class CogniteDatasource extends DataSourceApi<
     } catch (error) {
       handleError(error, refId);
       return {
-        datasets: [
-          {
-            value: '',
-            label: '',
-          },
-        ],
+        datasets: [],
         labels: [],
       };
     }
