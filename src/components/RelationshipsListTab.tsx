@@ -27,7 +27,7 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
       onQueryChange({
         relationsShipsQuery: {
           ...relationsShipsQuery,
-          dataSetIds: values.map(({ value }) => ({ id: value })),
+          datasets: values.map(({ value }) => ({ id: value })),
         },
       });
     }

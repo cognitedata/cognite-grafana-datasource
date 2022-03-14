@@ -443,9 +443,9 @@ export default class CogniteDatasource extends DataSourceApi<
   createRelationshipsNode = async (relationShipsQueryTargets) => {
     return {
       data: await relationShipsQueryTargets
-        .map(async ({ labels, dataSetIds, refId }) => {
+        .map(async ({ labels, datasets, refId }) => {
           try {
-            const filter = relationshipsFilters(labels, dataSetIds);
+            const filter = relationshipsFilters(labels, datasets);
             const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
               method: HttpMethod.POST,
               path: '/relationships/list',

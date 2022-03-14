@@ -63,7 +63,6 @@ const getMetaKeys = (list) => {
   list.map(getItemMeta);
   return metas;
 };
-
 const nodesFrame = (iterer, refId) => {
   const fields: any = {
     id: {
@@ -100,7 +99,6 @@ const nodesFrame = (iterer, refId) => {
     refId,
   });
 };
-
 const edgesFrame = (refId) => {
   const fields: any = {
     id: {
@@ -177,22 +175,21 @@ export const generateNodesAndEdges = (
 
   return [nodes, edges];
 };
-
-export const relationshipsFilters = (labels, dataSetIds) => {
-  if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
+export const relationshipsFilters = (labels, datasets) => {
+  if (!isEmpty(labels.containsAll) || !isEmpty(datasets)) {
     if (isEmpty(labels.containsAll)) {
       return {
-        dataSetIds,
+        datasets,
       };
     }
-    if (isEmpty(dataSetIds)) {
+    if (isEmpty(datasets)) {
       return {
         labels,
       };
     }
     return {
       labels,
-      dataSetIds,
+      datasets,
     };
   }
   return {};
