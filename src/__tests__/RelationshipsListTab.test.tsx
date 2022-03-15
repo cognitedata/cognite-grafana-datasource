@@ -18,12 +18,13 @@ const elem = (
     onQueryChange={() => jest.fn()}
   />
 );
-let wrapper = shallow(elem);
+const wrapper = shallow(elem);
 describe('RelationshipsListTab', () => {
   it('equals with snapshot', () => {
     expect(toJson(wrapper)).toMatchSnapshot();
   });
-  it('renders under mount', () => {});
   // TODO integrate a full react component unit and feature test
-  wrapper = mount(elem);
+  /* it('renders under mount', () => {
+    wrapper = mount(elem);
+  }); */
 });

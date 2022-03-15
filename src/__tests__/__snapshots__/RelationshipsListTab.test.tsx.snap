@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RelationshipsListTab equals with snapshot 1`] = `
+<div
+  className="full-width-row"
+>
+  <MultiSelect
+    allowCustomValue={true}
+    className="cognite-dropdown"
+    maxMenuHeight={150}
+    onChange={[Function]}
+    options={Array []}
+    placeholder="Filter relations by dataset"
+    value={Array []}
+  />
+  <MultiSelect
+    allowCustomValue={true}
+    className="cognite-dropdown"
+    maxMenuHeight={150}
+    onChange={[Function]}
+    options={Array []}
+    placeholder="Filter relations by Label"
+    value={Array []}
+  />
+</div>
+`;
