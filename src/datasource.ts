@@ -422,25 +422,24 @@ export default class CogniteDatasource extends DataSourceApi<
       });
 
       return {
-        datasets: datasets.map(({ name, id }) => ({
+        dataSetIds: datasets.map(({ name, id }) => ({
           value: id,
           label: name,
         })),
-        labels: labels.map(({ externalId, name }) => ({
-          value: externalId,
-          label: name,
-        })),
+        labels: {
+          containsAll: labels.map(({ externalId, name }) => ({
+            value: externalId,
+            label: name,
+          })),
+        },
       };
     } catch (error) {
       handleError(error, refId);
       return {
-        datasets: [
-          {
-            value: '',
-            label: '',
-          },
-        ],
-        labels: [],
+        dataSetIds: [],
+        labels: {
+          containsAll: [],
+        },
       };
     }
   };
@@ -450,7 +449,7 @@ export default class CogniteDatasource extends DataSourceApi<
       data: await relationShipsQueryTargets
         .map(async ({ labels, dataSetIds, refId }) => {
           try {
-            const filter = relationshipsFilters(labels, dataSetIds);
+            const filter = relationshipsFilters({ labels, dataSetIds });
             const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
               method: HttpMethod.POST,
               path: '/relationships/list',

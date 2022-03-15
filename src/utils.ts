@@ -3,7 +3,7 @@ import { stringify } from 'query-string';
 import ms from 'ms';
 import { MutableDataFrame, FieldType } from '@grafana/data';
 import { CogniteRelationshipResponse } from './cdf/types';
-import { QueryOptions, QueryTarget } from './types';
+import { QueryOptions, QueryTarget, RelationshipsQuery } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 
 export function getQueryString(obj: any) {
@@ -178,7 +178,7 @@ export const generateNodesAndEdges = (
   return [nodes, edges];
 };
 
-export const relationshipsFilters = (labels, dataSetIds) => {
+export const relationshipsFilters = ({ labels, dataSetIds }): RelationshipsQuery => {
   if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
     if (isEmpty(labels.containsAll)) {
       return {

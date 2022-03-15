@@ -105,15 +105,17 @@ export interface RelationshipSelectableValue {
   label?: string;
 }
 export interface DatasetSelector {
-  datasets: RelationshipSelectableValue[];
+  dataSetIds: RelationshipSelectableValue[];
 }
 export interface LabelsSelector {
-  labels: RelationshipSelectableValue[];
+  labels: {
+    containsAll: RelationshipSelectableValue[];
+  };
 }
 export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
-  dataSetIds: { id: string | number }[];
-  labels: {
+  dataSetIds?: { id: string | number }[];
+  labels?: {
     containsAll: { externalId: string | number }[];
   };
 }
