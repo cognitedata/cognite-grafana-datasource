@@ -549,3 +549,10 @@ Object {
   ],
 }
 `;
+
+exports[`Relationships Test labels and datasets matches his snapshot 1`] = `
+Object {
+  "datasets": Array [],
+  "labels": Array [],
+}
+`;

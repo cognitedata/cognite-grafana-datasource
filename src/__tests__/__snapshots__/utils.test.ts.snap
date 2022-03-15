@@ -1,0 +1,73 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Utils generateNodesAndEdges should match snapshot 1`] = `
+Array [
+  Object {
+    "fields": Array [
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "id",
+        "type": "string",
+        "values": Array [],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "title",
+        "type": "string",
+        "values": Array [],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "mainStat",
+        "type": "string",
+        "values": Array [],
+      },
+    ],
+    "meta": Object {
+      "preferredVisualisationType": "nodeGraph",
+    },
+    "name": "nodes",
+    "refId": undefined,
+  },
+  Object {
+    "fields": Array [
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "id",
+        "type": "string",
+        "values": Array [],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "source",
+        "type": "string",
+        "values": Array [],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "target",
+        "type": "string",
+        "values": Array [],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "mainStat",
+        "type": "string",
+        "values": Array [],
+      },
+    ],
+    "meta": Object {
+      "preferredVisualisationType": "nodeGraph",
+    },
+    "name": "edges",
+    "refId": undefined,
+  },
+]
+`;
