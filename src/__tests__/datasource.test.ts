@@ -7,6 +7,10 @@ import { CogniteQuery, defaultQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
 
+jest.mock('module', () => ({
+  __esModule: true, // this makes it work
+  default: jest.fn(),
+}));
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
 
@@ -249,7 +253,9 @@ describe('Datasource Query', () => {
       { id: 456, externalId: 'Timeseries456', description: 'test timeseriesB' },
       { id: 789, externalId: 'Timeseries789', description: 'test timeseriesC' },
     ]);
-
+    /* TODO
+    intergrate the Realationship query
+    */
     beforeAll(async () => {
       options.intervalMs = ms('6m');
       options.targets = [targetC, targetD, targetError1, targetError2];
@@ -660,19 +666,30 @@ describe('Relationships', () => {
     jest.clearAllMocks();
   });
   describe('Test labels and datasets', () => {
+    let response;
     const dropdownResponse = {
-      labels: [],
-      datasets: [],
+      labels: {
+        containsAll: [],
+      },
+      dataSetIds: [],
     };
-    it('drop error on ', async () => {
+    beforeAll(async () => {
       backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(dropdownResponse));
-      const result = await ds.getRelationshipsDropdowns('A');
-
+      response = await ds.getRelationshipsDropdowns('A');
+    });
+    it('execute once', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+    });
+    it('throws error due to fetch', () => {
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(dropdownResponse);
+    });
+    it('returns dropdownResponse', () => {
+      expect(response).toEqual(dropdownResponse);
+    });
+    it('matches his snapshot', () => {
+      expect(response).toMatchSnapshot();
     });
   });
 });

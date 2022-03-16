@@ -24,3 +24,5 @@ yarn-error.log*
 .ionide/
 # bakup files
 *.bak
+/.vscode/settings.json
+/.vscode/launch.json

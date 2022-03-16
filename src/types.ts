@@ -27,7 +27,7 @@ export const TabTitles = {
 
 // it is just a place to try integrate the Relationships query
 const defaultRelationsShipQuery: RelationshipsQuery = {
-  datasets: [],
+  dataSetIds: [],
   labels: {
     containsAll: [],
   },
@@ -105,15 +105,17 @@ export interface RelationshipSelectableValue {
   label?: string;
 }
 export interface DatasetSelector {
-  datasets: RelationshipSelectableValue[];
+  dataSetIds: RelationshipSelectableValue[];
 }
 export interface LabelsSelector {
-  labels: RelationshipSelectableValue[];
+  labels: {
+    containsAll: RelationshipSelectableValue[];
+  };
 }
 export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
-  datasets: { id: string | number }[];
-  labels: {
+  dataSetIds?: { id: string | number }[];
+  labels?: {
     containsAll: { externalId: string | number }[];
   };
 }

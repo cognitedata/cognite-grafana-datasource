@@ -7,10 +7,17 @@ import { SelectedProps } from './queryEditor';
 export const RelationshipsListTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
   const { query, datasource, onQueryChange } = props;
   const { relationsShipsQuery } = query;
-  const [options, setOptions] = useState<RelationshipsQuerySelector>({ datasets: [], labels: [] });
+  const [options, setOptions] = useState<RelationshipsQuerySelector>({
+    dataSetIds: [],
+    labels: {
+      containsAll: [],
+    },
+  });
   const [selectedOptions, setSelectedOptions] = useState<RelationshipsQuerySelector>({
-    datasets: [],
-    labels: [],
+    dataSetIds: [],
+    labels: {
+      containsAll: [],
+    },
   });
   const handleChange = (values: RelationshipSelectableValue[], target: string) => {
     setSelectedOptions({ ...selectedOptions, [target]: values });
@@ -33,9 +40,9 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
     }
   };
   const getDropdowns = async () => {
-    const { labels, datasets } = await datasource.getRelationshipsDropdowns(query.refId);
+    const { labels, dataSetIds } = await datasource.getRelationshipsDropdowns(query.refId);
     setOptions({
-      datasets,
+      dataSetIds,
       labels,
     });
   };
@@ -45,17 +52,17 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
   return (
     <div className="full-width-row">
       <MultiSelect
-        options={options.datasets}
-        value={selectedOptions.datasets}
+        options={options.dataSetIds}
+        value={selectedOptions.dataSetIds}
         allowCustomValue
-        onChange={(value) => handleChange(value, 'datasets')}
+        onChange={(value) => handleChange(value, 'dataSetIds')}
         className="cognite-dropdown"
         placeholder="Filter relations by dataset"
         maxMenuHeight={150}
       />
       <MultiSelect
-        options={options.labels}
-        value={selectedOptions.labels}
+        options={options.labels.containsAll}
+        value={selectedOptions.labels.containsAll}
         allowCustomValue
         onChange={(value) => handleChange(value, 'labels')}
         className="cognite-dropdown"
