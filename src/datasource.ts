@@ -11,9 +11,10 @@ import {
   TimeSeries,
   AppEvent,
   MutableDataFrame,
+  FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import partition from 'lodash/partition';
+import { assign, each, get, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -38,8 +39,6 @@ import {
   IdEither,
   CogniteEvent,
   EventsFilterTimeParams,
-  CogniteLabelsResponse,
-  CogniteDataSetsResponse,
   CogniteRelationshipResponse,
 } from './cdf/types';
 import { Connector } from './connector';
@@ -77,16 +76,10 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  RelationshipsQuerySelector,
-  RequestParams,
+  RelationshipsQuery,
+  RelationshipsSelectableValue,
 } from './types';
-import {
-  applyFilters,
-  getRequestId,
-  toGranularityWithLowerBound,
-  generateNodesAndEdges,
-  relationshipsFilters,
-} from './utils';
+import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
@@ -122,8 +115,6 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.project = cogniteProject;
   }
-  cachedDomains = [];
-
   /**
    * used by panels to get timeseries data
    */
@@ -131,33 +122,21 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    // fix this
-    const relationShipsQueryTargets = queryTargets
-      .filter(({ tab }) => {
-        return tab === Tab.Relationships;
-      })
-      .map(({ relationsShipsQuery, refId }) => ({ ...relationsShipsQuery, refId }));
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
-        if (relationShipsQueryTargets.length) {
-          const { data } = await this.createRelationshipsNode(relationShipsQueryTargets);
-          responseData = data;
-        } else {
-          const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
-          const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-          handleFailedTargets(failed);
-          showWarnings(succeded);
-          responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
-        }
+        const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
+        const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        handleFailedTargets(failed);
+        showWarnings(succeded);
+        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
       }
     }
-
     return {
       data: [...responseData],
     };
@@ -281,6 +260,14 @@ export default class CogniteDatasource extends DataSourceApi<
     const timeFrame = {
       activeAtTime: { min: start, max: end },
     };
+    const filtered = each(targets, ({ tab }) => tab === Tab.Relationships);
+    if (filtered.length) {
+      return Promise.all(
+        targets.map(async (target) => {
+          return this.createRelationshipsNode(target.relationsShipsQuery, target.refId);
+        })
+      ).then((_) => _.reduce((total, actual) => actual));
+    }
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
@@ -403,7 +390,11 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  getRelationshipsDropdowns = async (refId): Promise<RelationshipsQuerySelector> => {
+  getRelationshipsDropdownOptions = async (
+    type: string,
+    selector: string,
+    refId: string
+  ): Promise<RelationshipsSelectableValue> => {
     const settings = {
       method: HttpMethod.POST,
       data: {
@@ -412,62 +403,202 @@ export default class CogniteDatasource extends DataSourceApi<
       },
     };
     try {
-      const labels = await this.connector.fetchItems<CogniteLabelsResponse>({
+      const response = await this.connector.fetchItems({
         ...settings,
-        path: '/labels/list',
+        path: `/${type}/list`,
       });
-      const datasets = await this.connector.fetchItems<CogniteDataSetsResponse>({
-        ...settings,
-        path: '/datasets/list',
-      });
-
       return {
-        dataSetIds: datasets.map(({ name, id }) => ({
-          value: id,
+        [selector]: response.map(({ name, id, externalId }) => ({
+          value: id || externalId,
           label: name,
         })),
-        labels: {
-          containsAll: labels.map(({ externalId, name }) => ({
-            value: externalId,
-            label: name,
-          })),
-        },
       };
     } catch (error) {
       handleError(error, refId);
       return {
-        dataSetIds: [],
-        labels: {
-          containsAll: [],
-        },
+        [selector]: [],
       };
     }
   };
-
-  createRelationshipsNode = async (relationShipsQueryTargets) => {
-    return {
-      data: await relationShipsQueryTargets
-        .map(async ({ labels, dataSetIds, refId }) => {
-          try {
-            const filter = relationshipsFilters({ labels, dataSetIds });
-            const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
-              method: HttpMethod.POST,
-              path: '/relationships/list',
-              data: {
-                fetchResources: true,
-                limit: 1000,
-                filter,
-              },
-            });
-
-            return generateNodesAndEdges(response, refId);
-          } catch (error) {
-            handleError(error, refId);
-            return [];
+  createRelationshipsNode = async (queryTargets, refId: string) => {
+    const generateDetailKey = (key: string): string => ['detail__', key.split(' ')].join('');
+    const getMetaKeys = (list) => {
+      const metas = [];
+      const setMeta = (object) => {
+        Object.keys(object).map((key) => {
+          if (!metas.includes(key)) {
+            metas.push(key);
           }
-        })
-        .reduce((total, current) => current),
+          return key;
+        });
+      };
+      const getItemMeta = (item) => {
+        if (item.source) {
+          setMeta(item.source);
+        } else if (item.target) {
+          setMeta(item.target);
+        }
+      };
+      list.map(getItemMeta);
+      return metas;
     };
+    const nodesFrame = (metaKeys): MutableDataFrame => {
+      const fields: any = {
+        id: {
+          type: FieldType.string,
+        },
+        title: {
+          type: FieldType.string,
+        },
+        mainStat: {
+          type: FieldType.string,
+        },
+      };
+
+      const extendedFields = metaKeys.reduce((previousValue, currentValue) => {
+        return {
+          ...previousValue,
+          [generateDetailKey(currentValue)]: {
+            type: FieldType.string,
+            config: {
+              displayName: currentValue,
+            },
+          },
+        };
+      }, fields);
+      return new MutableDataFrame({
+        name: 'nodes',
+        fields: Object.keys(extendedFields).map((key) => ({
+          ...extendedFields[key],
+          name: key,
+        })),
+        meta: {
+          preferredVisualisationType: 'nodeGraph',
+        },
+        refId,
+      });
+    };
+    const edgesFrame = (): MutableDataFrame => {
+      const fields: any = {
+        id: {
+          type: FieldType.string,
+        },
+        source: {
+          type: FieldType.string,
+        },
+        target: {
+          type: FieldType.string,
+        },
+        mainStat: {
+          type: FieldType.string,
+        },
+      };
+
+      return new MutableDataFrame({
+        name: 'edges',
+        fields: Object.keys(fields).map((key) => ({
+          ...fields[key],
+          name: key,
+        })),
+        meta: {
+          preferredVisualisationType: 'nodeGraph',
+        },
+        refId,
+      });
+    };
+    const metaFieldsValues = (source, target, metaKeys) => {
+      const sourceMeta = {};
+      const targetMeta = {};
+      metaKeys.map((key) => {
+        const selector = generateDetailKey(key);
+        assign(sourceMeta, {
+          [selector]: get(source, `metadata.${key}`),
+        });
+        assign(targetMeta, {
+          [selector]: get(target, `metadata.${key}`),
+        });
+        return null;
+      });
+      return { sourceMeta, targetMeta };
+    };
+    const generateNodesAndEdges = (realtionshipsList: CogniteRelationshipResponse[]) => {
+      const allMetaKeysFromSourceAndTarget = getMetaKeys(realtionshipsList);
+      const nodes = nodesFrame(allMetaKeysFromSourceAndTarget);
+      const edges = edgesFrame();
+      realtionshipsList.map(
+        ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+          const { sourceMeta, targetMeta } = metaFieldsValues(
+            source,
+            target,
+            allMetaKeysFromSourceAndTarget
+          );
+          nodes.add({
+            id: sourceExternalId,
+            title: get(source, 'description'),
+            mainStat: get(source, 'name'),
+            ...sourceMeta,
+          });
+          nodes.add({
+            id: targetExternalId,
+            title: get(target, 'description'),
+            mainStat: get(target, 'name'),
+            ...targetMeta,
+          });
+          edges.add({
+            id: externalId,
+            source: sourceExternalId,
+            target: targetExternalId,
+            mainStat: labels
+              .map(({ externalId }) => externalId)
+              .join(', ')
+              .trim(),
+          });
+          return null;
+        }
+      );
+
+      return [nodes, edges];
+    };
+    const relationshipsFilters = ({
+      labels,
+      dataSetIds,
+    }: RelationshipsQuery): RelationshipsQuery => {
+      if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
+        if (isEmpty(labels.containsAll)) {
+          return {
+            dataSetIds,
+          };
+        }
+        if (isEmpty(dataSetIds)) {
+          return {
+            labels,
+          };
+        }
+        return {
+          labels,
+          dataSetIds,
+        };
+      }
+      return {};
+    };
+    const { labels, dataSetIds } = queryTargets;
+    try {
+      const filter = relationshipsFilters({ labels, dataSetIds });
+      const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
+        method: HttpMethod.POST,
+        path: '/relationships/list',
+        data: {
+          fetchResources: true,
+          limit: 1000,
+          filter,
+        },
+      });
+
+      return generateNodesAndEdges(response);
+    } catch (error) {
+      handleError(error, refId);
+      return [];
+    }
   };
 
   async checkLoginStatusApiKey() {
@@ -671,6 +802,9 @@ export async function getDataQueryRequestItems(
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
+  const [eventTargets, tsTargets] = partition(
+    targets,
+    ({ tab }) => tab === Tab.Event || tab === Tab.Relationships
+  );
   return { eventTargets, tsTargets };
 }
