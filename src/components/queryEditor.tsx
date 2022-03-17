@@ -1,4 +1,4 @@
-import defaults from 'lodash/defaults';
+import { defaults, get, set } from 'lodash';
 import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
@@ -12,6 +12,7 @@ import {
   AsyncSelect,
   Segment,
   Button,
+  MultiSelect,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
@@ -28,12 +29,13 @@ import {
   CogniteQueryBase,
   EventQuery,
   TabTitles,
+  RelationshipsSelectableValue,
+  RelationshipsQuery,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
-import { RelationshipsListTab } from './relationshipsListTab';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -41,7 +43,7 @@ type OnQueryChange = (
   patch: Partial<CogniteQueryBase> | CogniteTargetObj,
   shouldRunQuery?: boolean
 ) => void;
-export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
+type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
@@ -401,6 +403,93 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
           iconName="plus-circle"
         />
       </div>
+    </div>
+  );
+};
+
+const relationshipQueryToSelectable = (
+  relationsShipsQuery: RelationshipsQuery[],
+  identifier: string
+): SelectableValue[] => {
+  return relationsShipsQuery.map((value) => ({
+    value: value[identifier],
+    text: value[identifier],
+  }));
+};
+
+const selectedToQuery = (
+  identifier: string,
+  values: RelationshipsSelectableValue[]
+): RelationshipsQuery[] => values.map(({ value }) => ({ [identifier]: value }));
+
+const MultiSelectField = ({
+  name,
+  type,
+  selector,
+  datasource,
+  relationsShipsQuery,
+  onQueryChange,
+  identifier,
+  refId,
+}) => {
+  const [options, setOptions] = useState({ [selector]: [] });
+  useEffect(() => {
+    datasource.getRelationshipsDropdownOptions(type, selector, refId).then(setOptions);
+  }, []);
+  const handleChange = (values) => {
+    onQueryChange({
+      relationsShipsQuery: {
+        ...set(relationsShipsQuery, selector, selectedToQuery(identifier, values)),
+      },
+    });
+  };
+  return (
+    <MultiSelect
+      options={options[selector]}
+      value={relationshipQueryToSelectable(get(relationsShipsQuery, selector), identifier)}
+      allowCustomValue
+      onChange={handleChange}
+      className="cognite-dropdown"
+      placeholder={`Filter relations by ${name}`}
+      maxMenuHeight={150}
+    />
+  );
+};
+
+export const RelationshipsListTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
+  const { query, datasource, onQueryChange } = props;
+  const { relationsShipsQuery } = query;
+  const fieldSettings = [
+    {
+      type: 'datasets',
+      name: 'Dataset',
+      selector: 'dataSetIds',
+      identifier: 'id',
+    },
+    {
+      type: 'labels',
+      name: 'Label',
+      selector: 'labels.containsAll',
+      identifier: 'externalId',
+    },
+  ];
+  return (
+    <div className="full-width-row">
+      {fieldSettings.map(({ type, name, selector, identifier }) => (
+        <MultiSelectField
+          {...{
+            name,
+            type,
+            selector,
+            datasource,
+            relationsShipsQuery,
+            onQueryChange,
+            identifier,
+            refId: query.refId,
+          }}
+          key={type}
+        />
+      ))}
     </div>
   );
 };
