@@ -25,8 +25,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
 };
 
-// it is just a place to try integrate the Relationships query
-const defaultRelationsShipQuery: RelationshipsQuery = {
+export const defaultRelationshipsQuery: RelationshipsQuery = {
   dataSetIds: [],
   labels: {
     containsAll: [],
@@ -54,7 +53,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
-  relationsShipsQuery: defaultRelationsShipQuery,
+  relationsShipsQuery: defaultRelationshipsQuery,
 };
 
 /**
@@ -100,23 +99,18 @@ export interface EventQuery {
   columns: string[];
 }
 
-export interface RelationshipSelectableValue {
+export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
 }
-export interface DatasetSelector {
-  dataSetIds: RelationshipSelectableValue[];
-}
-export interface LabelsSelector {
-  labels: {
-    containsAll: RelationshipSelectableValue[];
-  };
-}
-export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
-  dataSetIds?: { id: string | number }[];
+  dataSetIds?: {
+    id: number;
+  }[];
   labels?: {
-    containsAll: { externalId: string | number }[];
+    containsAll: {
+      externalId: string;
+    }[];
   };
 }
 

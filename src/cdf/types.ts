@@ -1,5 +1,3 @@
-import { type } from 'os';
-
 export type Datapoints = Items<Datapoint>;
 export type Events = Items<Event>;
 
@@ -153,7 +151,7 @@ export interface CogniteLabelsResponse {
   name: string;
   description: string;
   dataSetId: number;
-  createdTime: number | string;
+  createdTime: number;
 }
 export interface CogniteDataSetsResponse {
   externalId: string;
@@ -162,14 +160,14 @@ export interface CogniteDataSetsResponse {
   metadata?: any;
   writeProtected?: boolean;
   id?: number;
-  createdTime?: number | string;
-  lastUpdatedTime?: number | string;
+  createdTime?: number;
+  lastUpdatedTime?: number;
 }
 
-interface CogniteRealtionshipObject {
-  createdTime?: number | string;
-  lastUpdatedTime?: number | string;
-  rootId?: number | string;
+interface CogniteRealtionshipAsset {
+  createdTime?: number;
+  lastUpdatedTime?: number;
+  rootId?: number;
   aggregates?: {
     childCount: number;
     depth: number;
@@ -179,7 +177,7 @@ interface CogniteRealtionshipObject {
       }
     ];
   };
-  parentId?: number | string;
+  parentId?: number;
   parentExternalId?: string;
   externalId: string;
   name?: string;
@@ -188,7 +186,7 @@ interface CogniteRealtionshipObject {
   metadata?: { [s: string]: string };
   source?: string;
   labels?: CogniteLabelsResponse[];
-  id: number | string;
+  id: number;
 }
 export interface CogniteRelationshipResponse {
   externalId: string;
@@ -196,13 +194,13 @@ export interface CogniteRelationshipResponse {
   sourceType?: string;
   targetExternalId: string;
   targetType?: string;
-  startTime?: number | string;
-  endTime?: number | string;
+  startTime?: number;
+  endTime?: number;
   confidence?: number;
   dataSetId?: number;
   labels?: CogniteLabelsResponse[];
-  createdTime?: number | string;
-  lastUpdatedTime?: number | string;
-  source?: CogniteRealtionshipObject;
-  target?: CogniteRealtionshipObject;
+  createdTime?: number;
+  lastUpdatedTime?: number;
+  source?: CogniteRealtionshipAsset;
+  target?: CogniteRealtionshipAsset;
 }
