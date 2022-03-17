@@ -3,7 +3,7 @@ import 'react-dom';
 import Enzyme, { shallow, mount } from 'enzyme';
 import toJson from 'enzyme-to-json';
 import Adapter from 'enzyme-adapter-react-16';
-import { RelationshipsListTab } from '../components/RelationshipsListTab';
+import { RelationshipsListTab } from '../components/relationshipsListTab';
 import { defaultQuery, CogniteQuery } from '../types';
 import { getMockedDataSource } from './utils';
 
