@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
 import { AsyncSelect, InlineFormLabel, LegacyForms } from '@grafana/ui';
+import { isEmpty } from 'lodash';
 import { targetToIdEither } from '../cdf/client';
 import { IdEither, Resource } from '../cdf/types';
 import { resource2DropdownOption } from '../datasource';
@@ -44,7 +45,7 @@ export function ResourceSelect(props: {
 
   const fetchDropdownResource = async (id: IdEither) => {
     try {
-      const [res] = await fetchSingleResource(id);
+      const [res] = !isEmpty(Object.values(id).join('')) && (await fetchSingleResource(id));
       return res;
     } catch {
       return null;
