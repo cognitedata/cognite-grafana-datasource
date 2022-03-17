@@ -253,9 +253,7 @@ describe('Datasource Query', () => {
       { id: 456, externalId: 'Timeseries456', description: 'test timeseriesB' },
       { id: 789, externalId: 'Timeseries789', description: 'test timeseriesC' },
     ]);
-    /* TODO
-    intergrate the Realationship query
-    */
+
     beforeAll(async () => {
       options.intervalMs = ms('6m');
       options.targets = [targetC, targetD, targetError1, targetError2];
@@ -665,19 +663,19 @@ describe('Relationships', () => {
   beforeAll(async () => {
     jest.clearAllMocks();
   });
-  describe('Test labels and datasets', () => {
+  describe('Test getRelationshipsDropdownOptions', () => {
     let response;
+    const type = 'datasets';
+    const selector = 'dataSetIds';
+    const refId = 'A';
     const dropdownResponse = {
-      labels: {
-        containsAll: [],
-      },
-      dataSetIds: [],
+      [selector]: [],
     };
     beforeAll(async () => {
       backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(dropdownResponse));
-      response = await ds.getRelationshipsDropdowns('A');
+      response = await ds.getRelationshipsDropdownOptions(type, selector, refId);
     });
     it('execute once', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
