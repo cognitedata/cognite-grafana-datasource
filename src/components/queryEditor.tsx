@@ -29,7 +29,7 @@ import {
   EventQuery,
   TabTitles,
 } from '../types';
-import { RelationshipsListTab } from './RelationshipsListTab';
+import { RelationshipsListTab } from './relationshipsListTab';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
