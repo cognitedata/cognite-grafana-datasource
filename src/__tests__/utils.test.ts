@@ -1,4 +1,4 @@
-import { applyFilters, relationshipsFilters, generateNodesAndEdges } from '../utils';
+import { applyFilters } from '../utils';
 import { FilterTypes, ParsedFilter } from '../parser/types';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterTypes;
@@ -50,61 +50,6 @@ describe('Utils', () => {
     });
     it('should follow "and" logic for multiple filter', () => {
       expect(applyFilters(assets, filters).length).toEqual(2);
-    });
-  });
-
-  describe('relationships Filters', () => {
-    const labels = { containsAll: [] };
-    const dataSetIds = [];
-    const datasetsNE = [{ id: '' }];
-    const labelsNE = { containsAll: [{ externalId: '' }] };
-    it('retusrn empty obj if args are empty', () => {
-      const emptyRelationFilter = relationshipsFilters({ labels, dataSetIds });
-      expect(emptyRelationFilter).toStrictEqual({});
-    });
-    it('retusrn labels if labels not empty', () => {
-      const labels = labelsNE;
-      const prop = { labels, dataSetIds };
-      const NELRelationFilter = relationshipsFilters(prop);
-      expect(NELRelationFilter).toHaveProperty('labels', labels);
-    });
-    it('retusrn dataSetIds if dataSetIds not empty', () => {
-      const dataSetIds = datasetsNE;
-      const prop = { labels, dataSetIds };
-      const NEDRelationFilter = relationshipsFilters(prop);
-      expect(NEDRelationFilter).toHaveProperty('dataSetIds', dataSetIds);
-    });
-    it('return all if args are not empty', () => {
-      const labels = labelsNE;
-      const dataSetIds = datasetsNE;
-      const prop = { labels, dataSetIds };
-      const NERelationFilter = relationshipsFilters(prop);
-      expect(NERelationFilter).toEqual({ labels: { ...labelsNE }, dataSetIds: datasetsNE });
-    });
-  });
-
-  describe('generateNodesAndEdges', () => {
-    let response;
-    const realtionshipsList = [];
-    const refId = '';
-    /* TODO intgrate more fields lookup
-    const emptyEdgeSourceField = [{ config: {}, name: 'source', type: 'string', values: [] }];
-    const emptyEdgeTargetField = [{ config: {}, name: 'target', type: 'string', values: [] }];
-    */
-    beforeEach(() => {
-      response = generateNodesAndEdges(realtionshipsList, refId);
-    });
-    it('should match snapshot', () => {
-      expect(response).toMatchSnapshot();
-    });
-    it('should give back nodes, and edegs', () => {
-      expect(response).toHaveLength(2);
-    });
-    it('should have nodes', () => {
-      expect(response[0]).toHaveProperty('name', 'nodes');
-    });
-    it('should have edges', () => {
-      expect(response[1]).toHaveProperty('name', 'edges');
     });
   });
 });
