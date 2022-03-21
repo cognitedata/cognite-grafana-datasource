@@ -129,9 +129,10 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const d = await this.fetchRelationshipsTargets(eventTargets);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
+        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults, ...d[0]];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -260,14 +261,6 @@ export default class CogniteDatasource extends DataSourceApi<
     const timeFrame = {
       activeAtTime: { min: start, max: end },
     };
-    const filtered = each(targets, ({ tab }) => tab === Tab.Relationships);
-    if (filtered.length) {
-      return Promise.all(
-        targets.map(async (target) => {
-          return this.createRelationshipsNode(target.relationsShipsQuery, target.refId);
-        })
-      ).then((_) => _.reduce((total, actual) => actual));
-    }
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
@@ -276,6 +269,13 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
+  async fetchRelationshipsTargets(targets: CogniteQuery[]) {
+    return Promise.all(
+      targets.map(async (target) => {
+        return this.createRelationshipsNode(target.relationsShipsQuery, target.refId);
+      })
+    ); // .then((_) => _.reduce((total, actual) => actual));
+  }
   async fetchEvents(expr: string, timeRange: EventsFilterTimeParams) {
     const { filters, params } = parseQuery(expr);
     const data: FilterRequest<EventsFilterRequestParams> = {
@@ -420,92 +420,9 @@ export default class CogniteDatasource extends DataSourceApi<
       };
     }
   };
+
   createRelationshipsNode = async (queryTargets, refId: string) => {
     const generateDetailKey = (key: string): string => ['detail__', key.split(' ')].join('');
-    const getMetaKeys = (list) => {
-      const metas = [];
-      const setMeta = (object) => {
-        Object.keys(object).map((key) => {
-          if (!metas.includes(key)) {
-            metas.push(key);
-          }
-          return key;
-        });
-      };
-      const getItemMeta = (item) => {
-        if (item.source) {
-          setMeta(item.source);
-        } else if (item.target) {
-          setMeta(item.target);
-        }
-      };
-      list.map(getItemMeta);
-      return metas;
-    };
-    const nodesFrame = (metaKeys): MutableDataFrame => {
-      const fields: any = {
-        id: {
-          type: FieldType.string,
-        },
-        title: {
-          type: FieldType.string,
-        },
-        mainStat: {
-          type: FieldType.string,
-        },
-      };
-
-      const extendedFields = metaKeys.reduce((previousValue, currentValue) => {
-        return {
-          ...previousValue,
-          [generateDetailKey(currentValue)]: {
-            type: FieldType.string,
-            config: {
-              displayName: currentValue,
-            },
-          },
-        };
-      }, fields);
-      return new MutableDataFrame({
-        name: 'nodes',
-        fields: Object.keys(extendedFields).map((key) => ({
-          ...extendedFields[key],
-          name: key,
-        })),
-        meta: {
-          preferredVisualisationType: 'nodeGraph',
-        },
-        refId,
-      });
-    };
-    const edgesFrame = (): MutableDataFrame => {
-      const fields: any = {
-        id: {
-          type: FieldType.string,
-        },
-        source: {
-          type: FieldType.string,
-        },
-        target: {
-          type: FieldType.string,
-        },
-        mainStat: {
-          type: FieldType.string,
-        },
-      };
-
-      return new MutableDataFrame({
-        name: 'edges',
-        fields: Object.keys(fields).map((key) => ({
-          ...fields[key],
-          name: key,
-        })),
-        meta: {
-          preferredVisualisationType: 'nodeGraph',
-        },
-        refId,
-      });
-    };
     const metaFieldsValues = (source, target, metaKeys) => {
       const sourceMeta = {};
       const targetMeta = {};
@@ -522,6 +439,90 @@ export default class CogniteDatasource extends DataSourceApi<
       return { sourceMeta, targetMeta };
     };
     const generateNodesAndEdges = (realtionshipsList: CogniteRelationshipResponse[]) => {
+      const getMetaKeys = (list) => {
+        const metas = [];
+        const setMeta = (object) => {
+          Object.keys(object).map((key) => {
+            if (!metas.includes(key)) {
+              metas.push(key);
+            }
+            return key;
+          });
+        };
+        const getItemMeta = (item) => {
+          if (item.source) {
+            setMeta(item.source);
+          } else if (item.target) {
+            setMeta(item.target);
+          }
+        };
+        list.map(getItemMeta);
+        return metas;
+      };
+      const nodesFrame = (metaKeys): MutableDataFrame => {
+        const fields: any = {
+          id: {
+            type: FieldType.string,
+          },
+          title: {
+            type: FieldType.string,
+          },
+          mainStat: {
+            type: FieldType.string,
+          },
+        };
+
+        const extendedFields = metaKeys.reduce((previousValue, currentValue) => {
+          return {
+            ...previousValue,
+            [generateDetailKey(currentValue)]: {
+              type: FieldType.string,
+              config: {
+                displayName: currentValue,
+              },
+            },
+          };
+        }, fields);
+        return new MutableDataFrame({
+          name: 'nodes',
+          fields: Object.keys(extendedFields).map((key) => ({
+            ...extendedFields[key],
+            name: key,
+          })),
+          meta: {
+            preferredVisualisationType: 'nodeGraph',
+          },
+          refId,
+        });
+      };
+      const edgesFrame = (): MutableDataFrame => {
+        const fields: any = {
+          id: {
+            type: FieldType.string,
+          },
+          source: {
+            type: FieldType.string,
+          },
+          target: {
+            type: FieldType.string,
+          },
+          mainStat: {
+            type: FieldType.string,
+          },
+        };
+
+        return new MutableDataFrame({
+          name: 'edges',
+          fields: Object.keys(fields).map((key) => ({
+            ...fields[key],
+            name: key,
+          })),
+          meta: {
+            preferredVisualisationType: 'nodeGraph',
+          },
+          refId,
+        });
+      };
       const allMetaKeysFromSourceAndTarget = getMetaKeys(realtionshipsList);
       const nodes = nodesFrame(allMetaKeysFromSourceAndTarget);
       const edges = edgesFrame();
@@ -584,7 +585,7 @@ export default class CogniteDatasource extends DataSourceApi<
     const { labels, dataSetIds } = queryTargets;
     try {
       const filter = relationshipsFilters({ labels, dataSetIds });
-      const response = await this.connector.fetchItems<CogniteRelationshipResponse>({
+      const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
         method: HttpMethod.POST,
         path: '/relationships/list',
         data: {
@@ -594,7 +595,7 @@ export default class CogniteDatasource extends DataSourceApi<
         },
       });
 
-      return generateNodesAndEdges(response);
+      return generateNodesAndEdges(realtionshipsList);
     } catch (error) {
       handleError(error, refId);
       return [];
@@ -678,7 +679,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         case Tab.Custom:
           return target.expr;
         case Tab.Relationships: {
-          return relationsShipsQuery;
+          return true;
         }
         case Tab.Timeseries:
         default:
