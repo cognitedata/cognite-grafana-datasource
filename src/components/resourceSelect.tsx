@@ -45,7 +45,7 @@ export function ResourceSelect(props: {
 
   const fetchDropdownResource = async (id: IdEither) => {
     try {
-      const [res] = !isEmpty(Object.values(id).join('')) && (await fetchSingleResource(id));
+      const [res] = !isEmpty(Object.values(id).filter(Boolean)) && (await fetchSingleResource(id));
       return res;
     } catch {
       return null;
