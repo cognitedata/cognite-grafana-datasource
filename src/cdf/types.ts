@@ -164,7 +164,7 @@ export interface CogniteDataSetsResponse {
   lastUpdatedTime?: number;
 }
 
-interface CogniteRealtionshipAsset {
+interface CogniteRelationshipAsset {
   createdTime?: number;
   lastUpdatedTime?: number;
   rootId?: number;
@@ -201,6 +201,6 @@ export interface CogniteRelationshipResponse {
   labels?: CogniteLabelsResponse[];
   createdTime?: number;
   lastUpdatedTime?: number;
-  source?: CogniteRealtionshipAsset;
-  target?: CogniteRealtionshipAsset;
+  source?: CogniteRelationshipAsset;
+  target?: CogniteRelationshipAsset;
 }
