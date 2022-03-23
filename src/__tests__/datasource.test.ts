@@ -663,7 +663,7 @@ describe('Relationships', () => {
   beforeAll(async () => {
     jest.clearAllMocks();
   });
-  describe('Test getRelationshipsDropdownOptions', () => {
+  describe('getRelationshipsDropdownOptions', () => {
     let response;
     const type = 'datasets';
     const selector = 'dataSetIds';
@@ -689,5 +689,28 @@ describe('Relationships', () => {
     it('matches his snapshot', () => {
       expect(response).toMatchSnapshot();
     });
+  });
+  describe('createRelationshipsNode', () => {
+    let response;
+    const queryTargets = {};
+    const refId = 'A';
+    const r = [{ externalId: '', sourceExternalId: '', targetExternalId: '' }];
+    it('throws error due to fetch', async () => {
+      backendSrv.datasourceRequest = jest.fn().mockImplementation((conector) => Promise.resolve(r));
+      response = await ds.createRelationshipsNode(queryTargets, refId);
+
+      expect(appEvents.emit).toHaveBeenCalledTimes(2);
+    });
+    /* 
+    it('should give back nodes, and edges', () => {
+      expect(response).toHaveLength(2);
+    });
+    it('should have nodes', () => {
+      expect(response[0]).toHaveProperty('name', 'nodes');
+    });
+    it('should have edges', () => {
+      expect(response[1]).toHaveProperty('name', 'edges');
+    }); 
+    */
   });
 });

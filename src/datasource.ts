@@ -130,10 +130,14 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const d = await this.fetchRelationshipsTargets(eventTargets);
+        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults, ...d[0]];
+        responseData = [
+          ...reduceTimeseries(succeded, timeRange),
+          ...eventResults,
+          ...relationshipsResults,
+        ];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -270,13 +274,6 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
-  async fetchRelationshipsTargets(targets: CogniteQuery[]) {
-    return Promise.all(
-      targets.map(async (target) => {
-        return this.createRelationshipsNode(target.relationsShipsQuery, target.refId);
-      })
-    ); // .then((_) => _.reduce((total, actual) => actual));
-  }
   async fetchEvents(expr: string, timeRange: EventsFilterTimeParams) {
     const { filters, params } = parseQuery(expr);
     const data: FilterRequest<EventsFilterRequestParams> = {
@@ -391,6 +388,14 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
+  fetchRelationshipsTargets = async (targets) => {
+    return Promise.all(
+      targets.map(async (target) => {
+        return this.createRelationshipsNode(target);
+      })
+    ).then((res) => res[0]);
+  };
+
   getRelationshipsDropdowns = async (refId: string): Promise<RelationshipsQuerySelector> => {
     const settings = {
       method: HttpMethod.POST,
@@ -432,7 +437,8 @@ export default class CogniteDatasource extends DataSourceApi<
     }
   };
 
-  createRelationshipsNode = async (queryTargets, refId: string) => {
+  createRelationshipsNode = async (queryTargets) => {
+    const { refId } = queryTargets;
     const generateDetailKey = (key: string): string => ['detail__', key.split(' ')].join('');
     const metaFieldsValues = (source, target, metaKeys) => {
       const sourceMeta = {};
@@ -809,14 +815,14 @@ export async function getDataQueryRequestItems(
       items = await formQueriesForExpression(expr, target, connector, defaultInterval);
       break;
     }
+    case Tab.Relationships: {
+      break;
+    }
   }
   return { type, items, target };
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const [eventTargets, tsTargets] = partition(
-    targets,
-    ({ tab }) => tab === Tab.Event || tab === Tab.Relationships
-  );
+  const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
   return { eventTargets, tsTargets };
 }
