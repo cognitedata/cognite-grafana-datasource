@@ -103,6 +103,15 @@ export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
 }
+export interface DatasetSelector {
+  dataSetIds: RelationshipsSelectableValue[];
+}
+export interface LabelsSelector {
+  labels: {
+    containsAll: RelationshipsSelectableValue[];
+  };
+}
+export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
   dataSetIds?: {
     id: number;

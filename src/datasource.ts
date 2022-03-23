@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { assign, each, get, isEmpty, partition } from 'lodash';
+import { assign, get, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -78,6 +78,7 @@ import {
   QueriesDataItem,
   RelationshipsQuery,
   RelationshipsSelectableValue,
+  RelationshipsQuerySelector,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -390,11 +391,7 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  getRelationshipsDropdownOptions = async (
-    type: string,
-    selector: string,
-    refId: string
-  ): Promise<RelationshipsSelectableValue> => {
+  getRelationshipsDropdowns = async (refId: string): Promise<RelationshipsQuerySelector> => {
     const settings = {
       method: HttpMethod.POST,
       data: {
@@ -403,20 +400,34 @@ export default class CogniteDatasource extends DataSourceApi<
       },
     };
     try {
-      const response = await this.connector.fetchItems({
+      const labels = await this.connector.fetchItems({
         ...settings,
-        path: `/${type}/list`,
+        path: '/labels/list',
       });
+      const datasets = await this.connector.fetchItems({
+        ...settings,
+        path: '/datasets/list',
+      });
+
       return {
-        [selector]: response.map(({ name, id, externalId }) => ({
-          value: id || externalId,
+        dataSetIds: datasets.map(({ name, id }) => ({
+          value: id,
           label: name,
         })),
+        labels: {
+          containsAll: labels.map(({ externalId, name }) => ({
+            value: externalId,
+            label: name,
+          })),
+        },
       };
     } catch (error) {
       handleError(error, refId);
       return {
-        [selector]: [],
+        dataSetIds: [],
+        labels: {
+          containsAll: [],
+        },
       };
     }
   };
