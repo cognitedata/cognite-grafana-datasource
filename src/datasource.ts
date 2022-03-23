@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { assign, get, isEmpty, partition } from 'lodash';
+import { assign, get, isEmpty, map, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -77,7 +77,6 @@ import {
   VariableQueryData,
   QueriesDataItem,
   RelationshipsQuery,
-  RelationshipsSelectableValue,
   RelationshipsQuerySelector,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
@@ -130,7 +129,10 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets);
+        const relationshipsResults = queryTargets.find(({ tab }) => tab === Tab.Relationships)
+          ? await this.fetchRelationshipsTargets(queryTargets)
+          : [];
+
         handleFailedTargets(failed);
         showWarnings(succeded);
         responseData = [
@@ -599,7 +601,9 @@ export default class CogniteDatasource extends DataSourceApi<
       }
       return {};
     };
-    const { labels, dataSetIds } = queryTargets;
+    const {
+      relationsShipsQuery: { labels, dataSetIds },
+    } = queryTargets;
     try {
       const filter = relationshipsFilters({ labels, dataSetIds });
       const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
@@ -687,7 +691,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, relationsShipsQuery } = target;
+      const { tab, assetQuery, eventQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
