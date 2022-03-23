@@ -146,7 +146,92 @@ Object {
 
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesA-Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB-Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC-Timeseries789",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseries",
+    },
+  ],
 }
 `;
 
@@ -307,7 +392,16 @@ Object {
 
 exports[`Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+  ],
 }
 `;
 
@@ -427,8 +521,40 @@ Object {
 
 exports[`Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3 * Timeseries1 - Timeseries1",
+    },
+  ],
 }
 `;
 
-exports[`Relationships getRelationshipsDropdownOptions matches his snapshot 1`] = `undefined`;
+exports[`Relationships getRelationshipsDropdownOptions matches his snapshot 1`] = `
+Object {
+  "dataSetIds": Array [],
+  "labels": Object {
+    "containsAll": Array [],
+  },
+}
+`;

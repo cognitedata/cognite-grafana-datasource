@@ -660,31 +660,26 @@ describe('custom query granularity less then a second', () => {
 });
 
 describe('Relationships', () => {
+  let response;
+  const dropdownResponse = {
+    dataSetIds: [],
+    labels: {
+      containsAll: [],
+    },
+  };
   beforeAll(async () => {
     jest.clearAllMocks();
   });
   describe('getRelationshipsDropdownOptions', () => {
-    let response;
-    const type = 'datasets';
-    const selector = 'dataSetIds';
-    const refId = 'A';
-    const dropdownResponse = {
-      [selector]: [],
-    };
     beforeAll(async () => {
       backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(dropdownResponse));
-      response = await ds.getRelationshipsDropdownOptions(type, selector, refId);
+      response = await ds.getRelationshipsDropdowns('A');
     });
-    it('execute once', () => {
+    it('execute once and throws error due to fetch', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-    });
-    it('throws error due to fetch', () => {
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
-    });
-    it('returns dropdownResponse', () => {
-      expect(response).toEqual(dropdownResponse);
     });
     it('matches his snapshot', () => {
       expect(response).toMatchSnapshot();
@@ -692,25 +687,16 @@ describe('Relationships', () => {
   });
   describe('createRelationshipsNode', () => {
     let response;
-    const queryTargets = {};
-    const refId = 'A';
-    const r = [{ externalId: '', sourceExternalId: '', targetExternalId: '' }];
-    it('throws error due to fetch', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementation((conector) => Promise.resolve(r));
-      response = await ds.createRelationshipsNode(queryTargets, refId);
-
-      expect(appEvents.emit).toHaveBeenCalledTimes(2);
+    const queryTargets = {
+      relationsShipsQuery: { labels: { containsAll: [] }, dataSetIds: [] },
+      refId: 'A',
+    };
+    it('throws error due to fetch', () => {
+      beforeAll(async () => {
+        backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve([]));
+        response = await ds.createRelationshipsNode(queryTargets);
+      });
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
     });
-    /* 
-    it('should give back nodes, and edges', () => {
-      expect(response).toHaveLength(2);
-    });
-    it('should have nodes', () => {
-      expect(response[0]).toHaveProperty('name', 'nodes');
-    });
-    it('should have edges', () => {
-      expect(response[1]).toHaveProperty('name', 'edges');
-    }); 
-    */
   });
 });
