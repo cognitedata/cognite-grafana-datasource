@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { assign, get, isEmpty, map, partition } from 'lodash';
+import { assign, get, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -129,9 +129,7 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = queryTargets.find(({ tab }) => tab === Tab.Relationships)
-          ? await this.fetchRelationshipsTargets(queryTargets)
-          : [];
+        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets, timeRange);
 
         handleFailedTargets(failed);
         showWarnings(succeded);
@@ -390,10 +388,14 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  fetchRelationshipsTargets = async (targets) => {
+  fetchRelationshipsTargets = async (targets, timeRange) => {
     return Promise.all(
       targets.map(async (target) => {
-        return this.createRelationshipsNode(target);
+        const { tab } = target;
+        if (tab === Tab.Relationships) {
+          return this.createRelationshipsNode(target, timeRange);
+        }
+        return [];
       })
     ).then((res) => res[0]);
   };
@@ -439,8 +441,15 @@ export default class CogniteDatasource extends DataSourceApi<
     }
   };
 
-  createRelationshipsNode = async (queryTargets) => {
-    const { refId } = queryTargets;
+  createRelationshipsNode = async (queryTargets, timeRange) => {
+    const activeAtTime = {
+      max: timeRange[1],
+      min: timeRange[0],
+    };
+    const {
+      refId,
+      relationsShipsQuery: { labels, dataSetIds, isActiveAtTime },
+    } = queryTargets;
     const generateDetailKey = (key: string): string => ['detail__', key.split(' ')].join('');
     const metaFieldsValues = (source, target, metaKeys) => {
       const sourceMeta = {};
@@ -579,33 +588,18 @@ export default class CogniteDatasource extends DataSourceApi<
 
       return [nodes, edges];
     };
-    const relationshipsFilters = ({
-      labels,
-      dataSetIds,
-    }: RelationshipsQuery): RelationshipsQuery => {
-      if (!isEmpty(labels.containsAll) || !isEmpty(dataSetIds)) {
-        if (isEmpty(labels.containsAll)) {
-          return {
-            dataSetIds,
-          };
-        }
-        if (isEmpty(dataSetIds)) {
-          return {
-            labels,
-          };
-        }
-        return {
-          labels,
-          dataSetIds,
-        };
-      }
-      return {};
+    const relationshipsFilters = (): RelationshipsQuery => {
+      const filterLabels = !isEmpty(labels.containsAll) && { labels };
+      const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
+      const timeFrame = isActiveAtTime && { activeAtTime };
+      return {
+        ...filterLabels,
+        ...filterdataSetIds,
+        ...timeFrame,
+      };
     };
-    const {
-      relationsShipsQuery: { labels, dataSetIds },
-    } = queryTargets;
     try {
-      const filter = relationshipsFilters({ labels, dataSetIds });
+      const filter = relationshipsFilters();
       const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
         method: HttpMethod.POST,
         path: '/relationships/list',

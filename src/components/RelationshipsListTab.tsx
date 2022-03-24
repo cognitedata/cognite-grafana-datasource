@@ -1,4 +1,4 @@
-import { MultiSelect } from '@grafana/ui';
+import { InlineFormLabel, MultiSelect, Switch } from '@grafana/ui';
 import React, { useState, useEffect } from 'react';
 import { RelationshipsQuerySelector } from '../types';
 import CogniteDatasource from '../datasource';
@@ -69,6 +69,23 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
         placeholder="Filter relations by Label"
         maxMenuHeight={150}
       />
+      <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range" width={8}>
+        Active at Time
+      </InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={relationsShipsQuery.isActiveAtTime}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              relationsShipsQuery: {
+                ...relationsShipsQuery,
+                isActiveAtTime: currentTarget.checked,
+              },
+            })
+          }
+        />
+      </div>
     </div>
   );
 };

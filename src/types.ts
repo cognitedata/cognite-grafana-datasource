@@ -121,6 +121,11 @@ export interface RelationshipsQuery {
       externalId: string;
     }[];
   };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
