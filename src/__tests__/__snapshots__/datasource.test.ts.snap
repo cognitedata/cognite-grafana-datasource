@@ -554,7 +554,7 @@ exports[`Relationships getRelationshipsDropdownOptions matches his snapshot 1`] 
 Object {
   "dataSetIds": Array [],
   "labels": Object {
-    "containsAll": Array [],
+    "containsAny": Array [],
   },
 }
 `;

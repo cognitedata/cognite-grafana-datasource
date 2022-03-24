@@ -424,7 +424,7 @@ export default class CogniteDatasource extends DataSourceApi<
           label: name,
         })),
         labels: {
-          containsAll: labels.map(({ externalId, name }) => ({
+          containsAny: labels.map(({ externalId, name }) => ({
             value: externalId,
             label: name,
           })),
@@ -435,7 +435,7 @@ export default class CogniteDatasource extends DataSourceApi<
       return {
         dataSetIds: [],
         labels: {
-          containsAll: [],
+          containsAny: [],
         },
       };
     }
@@ -589,7 +589,7 @@ export default class CogniteDatasource extends DataSourceApi<
       return [nodes, edges];
     };
     const relationshipsFilters = (): RelationshipsQuery => {
-      const filterLabels = !isEmpty(labels.containsAll) && { labels };
+      const filterLabels = !isEmpty(labels.containsAny) && { labels };
       const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
       const timeFrame = isActiveAtTime && { activeAtTime };
       return {

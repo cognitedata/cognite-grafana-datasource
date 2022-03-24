@@ -10,13 +10,13 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
   const [options, setOptions] = useState<RelationshipsQuerySelector>({
     dataSetIds: [],
     labels: {
-      containsAll: [],
+      containsAny: [],
     },
   });
   const [selectedOptions, setSelectedOptions] = useState<RelationshipsQuerySelector>({
     dataSetIds: [],
     labels: {
-      containsAll: [],
+      containsAny: [],
     },
   });
   const handleChange = (values, target: string) => {
@@ -26,7 +26,7 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
         relationsShipsQuery: {
           ...relationsShipsQuery,
           labels: {
-            containsAll: values.map(({ value }) => ({ externalId: value })),
+            containsAny: values.map(({ value }) => ({ externalId: value })),
           },
         },
       });
@@ -61,8 +61,8 @@ export const RelationshipsListTab = (props: SelectedProps & { datasource: Cognit
         maxMenuHeight={150}
       />
       <MultiSelect
-        options={options.labels.containsAll}
-        value={selectedOptions.labels.containsAll}
+        options={options.labels.containsAny}
+        value={selectedOptions.labels.containsAny}
         allowCustomValue
         onChange={(value) => handleChange(value, 'labels')}
         className="cognite-dropdown"

@@ -664,7 +664,7 @@ describe('Relationships', () => {
   const dropdownResponse = {
     dataSetIds: [],
     labels: {
-      containsAll: [],
+      containsAny: [],
     },
   };
   beforeAll(async () => {
@@ -688,7 +688,7 @@ describe('Relationships', () => {
   describe('createRelationshipsNode', () => {
     let response;
     const queryTargets = {
-      relationsShipsQuery: { labels: { containsAll: [] }, dataSetIds: [] },
+      relationsShipsQuery: { labels: { containsAny: [] }, dataSetIds: [] },
       refId: 'A',
     };
     it('throws error due to fetch', () => {

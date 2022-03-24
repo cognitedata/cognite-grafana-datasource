@@ -28,7 +28,7 @@ export const TabTitles = {
 export const defaultRelationshipsQuery: RelationshipsQuery = {
   dataSetIds: [],
   labels: {
-    containsAll: [],
+    containsAny: [],
   },
 };
 
@@ -108,7 +108,7 @@ export interface DatasetSelector {
 }
 export interface LabelsSelector {
   labels: {
-    containsAll: RelationshipsSelectableValue[];
+    containsAny: RelationshipsSelectableValue[];
   };
 }
 export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
@@ -117,7 +117,7 @@ export interface RelationshipsQuery {
     id: number;
   }[];
   labels?: {
-    containsAll: {
+    containsAny: {
       externalId: string;
     }[];
   };
