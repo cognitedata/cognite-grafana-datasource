@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { assign, get, isEmpty, partition } from 'lodash';
+import { get, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -49,6 +49,8 @@ import {
   EVENTS_PAGE_LIMIT,
   responseWarningEvent,
   EVENTS_LIMIT_WARNING,
+  nodeField,
+  edgeField,
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -76,7 +78,6 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  RelationshipsQuery,
   RelationshipsQuerySelector,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
@@ -390,13 +391,35 @@ export default class CogniteDatasource extends DataSourceApi<
 
   fetchRelationshipsTargets = async (
     targets: CogniteQuery[],
-    timeRange
+    [min, max]
   ): Promise<MutableDataFrame[]> => {
     return Promise.all(
       targets.map(async (target) => {
         const { tab } = target;
         if (tab === Tab.Relationships) {
-          return this.createRelationshipsNode(target, timeRange);
+          const {
+            refId,
+            relationsShipsQuery: { labels, dataSetIds, isActiveAtTime },
+          } = target;
+          const filterLabels = !isEmpty(labels.containsAny) && { labels };
+          const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
+          const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+          const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
+            method: HttpMethod.POST,
+            path: '/relationships/list',
+            data: {
+              fetchResources: true,
+              limit: 1000,
+              filter: {
+                ...filterLabels,
+                ...filterdataSetIds,
+                ...timeFrame,
+              },
+            },
+          });
+          return !isEmpty(realtionshipsList)
+            ? this.createRelationshipsNode(realtionshipsList, refId)
+            : [];
         }
         return [];
       })
@@ -444,152 +467,93 @@ export default class CogniteDatasource extends DataSourceApi<
     }
   };
 
-  createRelationshipsNode = async (
-    queryTargets: CogniteQuery,
-    [min, max]: Tuple<number>
-  ): Promise<MutableDataFrame[]> => {
-    const {
+  createRelationshipsNode = (realtionshipsList, refId): Promise<MutableDataFrame[]> => {
+    const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
+
+    const allMetaKeysFromSourceAndTarget = realtionshipsList.reduce(
+      (previousValue, currentValue) => {
+        if (currentValue.source?.metadata) {
+          return Object.keys(currentValue.source.metadata).map((key) => key);
+        }
+        if (currentValue.target?.metadata) {
+          return Object.keys(currentValue.target.metadata).map((key) => key);
+        }
+        return previousValue;
+      },
+      []
+    );
+    const extendedFields = allMetaKeysFromSourceAndTarget.reduce((previousValue, currentValue) => {
+      return {
+        ...previousValue,
+        [generateDetailKey(currentValue)]: {
+          type: FieldType.string,
+          config: {
+            displayName: currentValue,
+          },
+        },
+      };
+    }, nodeField);
+    const edges = new MutableDataFrame({
+      name: 'edges',
+      fields: Object.keys(edgeField).map((key) => ({
+        ...edgeField[key],
+        name: key,
+      })),
+      meta: {
+        preferredVisualisationType: 'nodeGraph',
+      },
       refId,
-      relationsShipsQuery: { labels, dataSetIds, isActiveAtTime },
-    } = queryTargets;
-    try {
-      const filterLabels = !isEmpty(labels.containsAny) && { labels };
-      const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
-      const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-      const edgeField: any = {
-        id: {
-          type: FieldType.string,
-        },
-        source: {
-          type: FieldType.string,
-        },
-        target: {
-          type: FieldType.string,
-        },
-        mainStat: {
-          type: FieldType.string,
-        },
-      };
-      const nodeField: any = {
-        id: {
-          type: FieldType.string,
-        },
-        title: {
-          type: FieldType.string,
-        },
-        mainStat: {
-          type: FieldType.string,
-        },
-      };
-      const generateDetailKey = (key: string): string =>
-        ['detail__', key.trim().split(' ')].join('');
-      const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
-        method: HttpMethod.POST,
-        path: '/relationships/list',
-        data: {
-          fetchResources: true,
-          limit: 1000,
-          filter: {
-            ...filterLabels,
-            ...filterdataSetIds,
-            ...timeFrame,
-          },
-        },
-      });
-      if (realtionshipsList.length) {
-        const allMetaKeysFromSourceAndTarget = realtionshipsList.reduce(
-          (previousValue, currentValue) => {
-            if (currentValue.source?.metadata) {
-              return Object.keys(currentValue.source.metadata).map((key) => key);
-            }
-            if (currentValue.target?.metadata) {
-              return Object.keys(currentValue.target.metadata).map((key) => key);
-            }
-            return previousValue;
-          },
-          []
-        );
-        const extendedFields = allMetaKeysFromSourceAndTarget.reduce(
-          (previousValue, currentValue) => {
-            return {
-              ...previousValue,
-              [generateDetailKey(currentValue)]: {
-                type: FieldType.string,
-                config: {
-                  displayName: currentValue,
-                },
-              },
-            };
-          },
-          nodeField
-        );
-        const edges = new MutableDataFrame({
-          name: 'edges',
-          fields: Object.keys(edgeField).map((key) => ({
-            ...edgeField[key],
-            name: key,
-          })),
-          meta: {
-            preferredVisualisationType: 'nodeGraph',
-          },
-          refId,
+    });
+    const nodes = new MutableDataFrame({
+      name: 'nodes',
+      fields: Object.keys(extendedFields).map((key) => ({
+        ...extendedFields[key],
+        name: key,
+      })),
+      meta: {
+        preferredVisualisationType: 'nodeGraph',
+      },
+      refId,
+    });
+    return realtionshipsList.map(
+      ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+        const { sourceMeta, targetMeta } = allMetaKeysFromSourceAndTarget.reduce((a, key) => {
+          const selector = generateDetailKey(key);
+          return {
+            sourceMeta: {
+              ...a.sourceMeta,
+              [selector]: get(source, `metadata.${key}`),
+            },
+            targetMeta: {
+              ...a.targetMeta,
+              [selector]: get(target, `metadata.${key}`),
+            },
+          };
+        }, {});
+        nodes.add({
+          id: sourceExternalId,
+          title: get(source, 'description'),
+          mainStat: get(source, 'name'),
+          ...sourceMeta,
         });
-        const nodes = new MutableDataFrame({
-          name: 'nodes',
-          fields: Object.keys(extendedFields).map((key) => ({
-            ...extendedFields[key],
-            name: key,
-          })),
-          meta: {
-            preferredVisualisationType: 'nodeGraph',
-          },
-          refId,
+        nodes.add({
+          id: targetExternalId,
+          title: get(target, 'description'),
+          mainStat: get(target, 'name'),
+          ...targetMeta,
         });
-        return realtionshipsList.map(
-          ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
-            const { sourceMeta, targetMeta } = allMetaKeysFromSourceAndTarget.reduce((a, key) => {
-              const selector = generateDetailKey(key);
-              return {
-                sourceMeta: {
-                  ...a.sourceMeta,
-                  [selector]: get(source, `metadata.${key}`),
-                },
-                targetMeta: {
-                  ...a.targetMeta,
-                  [selector]: get(target, `metadata.${key}`),
-                },
-              };
-            }, {});
-            nodes.add({
-              id: sourceExternalId,
-              title: get(source, 'description'),
-              mainStat: get(source, 'name'),
-              ...sourceMeta,
-            });
-            nodes.add({
-              id: targetExternalId,
-              title: get(target, 'description'),
-              mainStat: get(target, 'name'),
-              ...targetMeta,
-            });
-            edges.add({
-              id: externalId,
-              source: sourceExternalId,
-              target: targetExternalId,
-              mainStat: labels
-                .map(({ externalId }) => externalId)
-                .join(', ')
-                .trim(),
-            });
-            return [nodes, edges];
-          }
-        )[realtionshipsList.length - 1];
+        edges.add({
+          id: externalId,
+          source: sourceExternalId,
+          target: targetExternalId,
+          mainStat: labels
+            .map(({ externalId }) => externalId)
+            .join(', ')
+            .trim(),
+        });
+        return [nodes, edges];
       }
-      return [];
-    } catch (error) {
-      handleError(error, refId);
-      return [];
-    }
+    )[realtionshipsList.length - 1];
   };
 
   async checkLoginStatusApiKey() {
