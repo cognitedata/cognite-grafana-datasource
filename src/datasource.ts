@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { get, isEmpty, partition } from 'lodash';
+import _, { get, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -470,15 +470,16 @@ export default class CogniteDatasource extends DataSourceApi<
   createRelationshipsNode = (realtionshipsList, refId): Promise<MutableDataFrame[]> => {
     const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
 
-    const allMetaKeysFromSourceAndTarget = realtionshipsList.reduce(
+    const allMetaKeysFromSourceAndTarget = _.reduce(
+      realtionshipsList,
       (previousValue, currentValue) => {
         if (currentValue.source?.metadata) {
-          return Object.keys(currentValue.source.metadata).map((key) => key);
+          Object.keys(currentValue.source.metadata).map((key) => previousValue.push(key));
         }
         if (currentValue.target?.metadata) {
-          return Object.keys(currentValue.target.metadata).map((key) => key);
+          Object.keys(currentValue.target.metadata).map((key) => previousValue.push(key));
         }
-        return previousValue;
+        return _.uniq(previousValue);
       },
       []
     );
