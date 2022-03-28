@@ -51,6 +51,15 @@ const options: any = {
 const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
   getItemsResponseObject([{ id, externalId, description }]);
 
+const relationshipsQueryTarget = {
+  relationsShipsQuery: { labels: { containsAny: [] }, dataSetIds: [], activeAtTime: false },
+  refId: 'A',
+};
+const relationshipsResponse = [{}];
+
+const getRelationshipsResponse = (relationshipsQueryTarget, options) =>
+  getItemsResponseObject(relationshipsQueryTarget);
+
 describe('Datasource Query', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -686,17 +695,39 @@ describe('Relationships', () => {
     });
   });
   describe('createRelationshipsNode', () => {
-    let response;
-    const queryTargets = {
-      relationsShipsQuery: { labels: { containsAny: [] }, dataSetIds: [] },
-      refId: 'A',
-    };
-    it('throws error due to fetch', () => {
-      beforeAll(async () => {
-        backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve([]));
-        response = await ds.createRelationshipsNode(queryTargets);
-      });
-      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+    test('empty list return undefined', () => {
+      const realtionshipsList = [];
+      const response = ds.createRelationshipsNode(realtionshipsList, 'A');
+      expect(response).toEqual(undefined);
+    });
+    test('list with values match Snapshot', () => {
+      const realtionship = [
+        {
+          dataSetId: 5,
+          externalId: 'test',
+          labels: [{ externalId: 'test' }],
+          source: {
+            externalId: 'source-1-test',
+            name: 'Test Source 1',
+            description: 'Source Test 1',
+            metadata: {
+              sourceMetaFirstkey: 'Source Meta first Value',
+            },
+          },
+          sourceExternalId: 'source-1-test',
+          target: {
+            externalId: 'target-1-test',
+            name: 'Test Target 1',
+            description: 'Target Test 1',
+            metadata: {
+              targetMetaFirstkey: 'Target Meta first Value',
+            },
+          },
+          targetExternalId: 'target-1-test',
+        },
+      ];
+      const response = ds.createRelationshipsNode(realtionship, 'A');
+      expect(response).toMatchSnapshot();
     });
   });
 });

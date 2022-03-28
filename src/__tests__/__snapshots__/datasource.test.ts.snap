@@ -550,6 +550,107 @@ Object {
 }
 `;
 
+exports[`Relationships createRelationshipsNode list with values match Snapshot 1`] = `
+Array [
+  Object {
+    "fields": Array [
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "id",
+        "type": "string",
+        "values": Array [
+          "source-1-test",
+          "target-1-test",
+        ],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "title",
+        "type": "string",
+        "values": Array [
+          "Source Test 1",
+          "Target Test 1",
+        ],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "mainStat",
+        "type": "string",
+        "values": Array [
+          "Test Source 1",
+          "Test Target 1",
+        ],
+      },
+      Object {
+        "config": Object {
+          "displayName": "sourceMetaFirstkey",
+        },
+        "labels": undefined,
+        "name": "detail__sourceMetaFirstkey",
+        "type": "string",
+        "values": Array [
+          "Source Meta first Value",
+          undefined,
+        ],
+      },
+    ],
+    "meta": Object {
+      "preferredVisualisationType": "nodeGraph",
+    },
+    "name": "nodes",
+    "refId": "A",
+  },
+  Object {
+    "fields": Array [
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "id",
+        "type": "string",
+        "values": Array [
+          "test",
+        ],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "source",
+        "type": "string",
+        "values": Array [
+          "source-1-test",
+        ],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "target",
+        "type": "string",
+        "values": Array [
+          "target-1-test",
+        ],
+      },
+      Object {
+        "config": Object {},
+        "labels": undefined,
+        "name": "mainStat",
+        "type": "string",
+        "values": Array [
+          "test",
+        ],
+      },
+    ],
+    "meta": Object {
+      "preferredVisualisationType": "nodeGraph",
+    },
+    "name": "edges",
+    "refId": "A",
+  },
+]
+`;
+
 exports[`Relationships getRelationshipsDropdownOptions matches his snapshot 1`] = `
 Object {
   "dataSetIds": Array [],
