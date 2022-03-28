@@ -596,6 +596,18 @@ Array [
           undefined,
         ],
       },
+      Object {
+        "config": Object {
+          "displayName": "targetMetaFirstkey",
+        },
+        "labels": undefined,
+        "name": "detail__targetMetaFirstkey",
+        "type": "string",
+        "values": Array [
+          undefined,
+          "Target Meta first Value",
+        ],
+      },
     ],
     "meta": Object {
       "preferredVisualisationType": "nodeGraph",
