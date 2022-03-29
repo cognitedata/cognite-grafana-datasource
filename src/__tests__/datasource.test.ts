@@ -684,7 +684,10 @@ describe('Relationships', () => {
       backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation(() => Promise.resolve(dropdownResponse));
-      response = await ds.getRelationshipsDropdowns('A');
+      response = await ds.getRelationshipsDropdowns('A', {
+        type: 'test',
+        keyPropName: 'id',
+      });
     });
     it('execute once and throws error due to fetch', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);

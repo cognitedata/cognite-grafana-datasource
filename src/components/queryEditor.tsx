@@ -6,16 +6,17 @@ import {
   TabsBar,
   TabContent,
   Select,
-  MultiSelect,
   InlineFormLabel,
   Icon,
   Switch,
   AsyncSelect,
   Segment,
   Button,
+  AsyncMultiSelect,
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
+import { get, set } from 'lodash';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -29,7 +30,6 @@ import {
   CogniteQueryBase,
   EventQuery,
   TabTitles,
-  RelationshipsQuerySelector,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
@@ -59,6 +59,22 @@ const aggregateOptions = [
   { value: 'discreteVariance', label: 'Discrete Variance' },
   { value: 'totalVariation', label: 'Total Variation' },
 ];
+
+const MultiSelectAsync = (props) => {
+  const { datasource, query, onQueryChange, selector, placeholder } = props;
+  const { refId } = query;
+  return (
+    <AsyncMultiSelect
+      loadOptions={() => datasource.getRelationshipsDropdowns(refId, selector)}
+      value={[...get(query, selector.rout)]}
+      defaultOptions
+      allowCustomValue
+      onChange={(values) => onQueryChange(set(query, selector.rout, values))}
+      placeholder={placeholder}
+      maxMenuHeight={150}
+    />
+  );
+};
 
 const GranularityEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -216,48 +232,10 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
 
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
-
-  console.log(query);
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
   });
 
-  const handleRelationshipChange = (values, target: string) => {
-    const { assetQuery } = query;
-    if (target === 'labels') {
-      onQueryChange({
-        assetQuery: {
-          ...assetQuery,
-          relationships: {
-            ...assetQuery.relationships,
-            labels: {
-              containsAny: values.map(({ value }) => ({ externalId: value })),
-            },
-          },
-        },
-      });
-    } else if (target === 'dataSetIds') {
-      onQueryChange({
-        assetQuery: {
-          ...assetQuery,
-          relationships: {
-            ...assetQuery.relationships,
-            dataSetIds: values.map(({ value }) => ({ id: value })),
-          },
-        },
-      });
-    } else {
-      onQueryChange({
-        assetQuery: {
-          ...assetQuery,
-          relationships: {
-            ...assetQuery.relationships,
-            isActiveAtTime: values,
-          },
-        },
-      });
-    }
-  };
   const fetchAndSetDropdownLabel = async (idInput: string) => {
     const id = Number(idInput);
     if (Number.isNaN(id)) {
@@ -308,9 +286,18 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
       {query.withRelationship && (
         <RelationshipsListTab
           {...{
-            query: { ...query, value: query.assetQuery.relationships.isActiveAtTime },
-            handleRelationshipChange,
+            query,
+            onQueryChange,
             datasource,
+            selectors: [
+              { rout: 'assetQuery.relationships.dataSetIds', type: 'datasets', keyPropName: 'id' },
+              {
+                rout: 'assetQuery.relationships.labels.containsAny',
+                type: 'labels',
+                keyPropName: 'externalId',
+              },
+              'assetQuery.relationships.isActiveAtTime',
+            ],
           }}
         />
       )}
@@ -476,58 +463,24 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
 };
 
 const RelationshipsListTab = (
-  props: RelationshipSelectedProps & { datasource: CogniteDatasource }
+  props: SelectedProps & { datasource: CogniteDatasource } & { selectors }
 ) => {
-  const {
-    query: { refId, value },
-    datasource,
-    handleRelationshipChange,
-  } = props;
-  const [options, setOptions] = useState<RelationshipsQuerySelector>({
-    dataSetIds: [],
-    labels: {
-      containsAny: [],
-    },
-  });
-  const [selectedOptions, setSelectedOptions] = useState<RelationshipsQuerySelector>({
-    dataSetIds: [],
-    labels: {
-      containsAny: [],
-    },
-  });
-  const handleChange = (values, target: string) => {
-    setSelectedOptions({ ...selectedOptions, [target]: values });
-    handleRelationshipChange(values, target);
-  };
-  const getDropdowns = async () => {
-    const { labels, dataSetIds } = await datasource.getRelationshipsDropdowns(refId);
-    setOptions({
-      dataSetIds,
-      labels,
-    });
-  };
-  useEffect(() => {
-    getDropdowns();
-  }, []);
+  const { datasource, query, onQueryChange, selectors } = props;
   return (
     <div className="full-width-row">
-      <MultiSelect
-        options={options.dataSetIds}
-        value={selectedOptions.dataSetIds}
-        allowCustomValue
-        onChange={(value) => handleChange(value, 'dataSetIds')}
-        className="cognite-dropdown"
+      <MultiSelectAsync
+        query={query}
+        datasource={datasource}
+        selector={selectors[0]}
         placeholder="Filter relations by dataset"
-        maxMenuHeight={150}
+        onQueryChange={onQueryChange}
       />
-      <MultiSelect
-        options={options.labels.containsAny}
-        value={selectedOptions.labels.containsAny}
-        allowCustomValue
-        onChange={(value) => handleChange(value, 'labels')}
-        className="cognite-dropdown"
+      <MultiSelectAsync
+        query={query}
+        datasource={datasource}
+        selector={selectors[1]}
         placeholder="Filter relations by Label"
-        maxMenuHeight={150}
+        onQueryChange={onQueryChange}
       />
       <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range" width={8}>
         Active at Time
@@ -535,8 +488,10 @@ const RelationshipsListTab = (
       <div className="gf-form-switch">
         <Switch
           css=""
-          value={value}
-          onChange={({ currentTarget }) => handleRelationshipChange(currentTarget.checked)}
+          value={get(query, selectors[2])}
+          onChange={({ currentTarget }) =>
+            onQueryChange(set(query, selectors[2], currentTarget.checked))
+          }
         />
       </div>
     </div>
@@ -546,7 +501,7 @@ const RelationshipsListTab = (
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
-  const { refId: thisRefId, tab, relationsShipsQuery } = query;
+  const { refId: thisRefId, tab } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
@@ -585,32 +540,7 @@ export function QueryEditor(props: EditorProps) {
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
-  const handleRelationshipChange = (values, target: string) => {
-    if (target === 'labels') {
-      onQueryChange({
-        relationsShipsQuery: {
-          ...relationsShipsQuery,
-          labels: {
-            containsAny: values.map(({ value }) => ({ externalId: value })),
-          },
-        },
-      });
-    } else if (target === 'dataSetIds') {
-      onQueryChange({
-        relationsShipsQuery: {
-          ...relationsShipsQuery,
-          dataSetIds: values.map(({ value }) => ({ id: value })),
-        },
-      });
-    } else {
-      onQueryChange({
-        relationsShipsQuery: {
-          ...relationsShipsQuery,
-          isActiveAtTime: values,
-        },
-      });
-    }
-  };
+
   useEffect(() => {
     eventsSubscribe();
     return () => {
@@ -639,9 +569,22 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Relationships && (
           <RelationshipsListTab
             {...{
-              query: { ...query, value: relationsShipsQuery.isActiveAtTime },
-              handleRelationshipChange,
+              query,
               datasource,
+              onQueryChange,
+              selectors: [
+                {
+                  rout: 'relationsShipsQuery.dataSetIds',
+                  type: 'datasets',
+                  keyPropName: 'id',
+                },
+                {
+                  rout: 'relationsShipsQuery.labels.containsAny',
+                  type: 'labels',
+                  keyPropName: 'externalId',
+                },
+                'relationsShipsQuery.isActiveAtTime',
+              ],
             }}
           />
         )}

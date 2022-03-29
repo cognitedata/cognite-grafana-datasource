@@ -107,22 +107,15 @@ export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
 }
-export interface DatasetSelector {
-  dataSetIds: RelationshipsSelectableValue[];
-}
-export interface LabelsSelector {
-  labels: {
-    containsAny: RelationshipsSelectableValue[];
-  };
-}
-export interface RelationshipsQuerySelector extends DatasetSelector, LabelsSelector {}
 export interface RelationshipsQuery {
   dataSetIds?: {
     id: number;
+    value?: string;
   }[];
   labels?: {
     containsAny: {
       externalId: string;
+      value?: string;
     }[];
   };
   isActiveAtTime?: boolean;
@@ -149,7 +142,6 @@ export interface CogniteQueryBase extends DataQuery {
   warning: string;
   relationsShipsQuery: RelationshipsQuery;
   withRelationship: boolean;
-  value?: boolean;
 }
 
 export type CogniteTargetObj =

@@ -40,7 +40,6 @@ import {
   IdEither,
   CogniteEvent,
   EventsFilterTimeParams,
-  CogniteRelationshipResponse,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
@@ -79,7 +78,7 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  RelationshipsQuerySelector,
+  RelationshipsSelectableValue,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -349,7 +348,6 @@ export default class CogniteDatasource extends DataSourceApi<
 
     return items.map(resource2DropdownOption);
   }
-
   /**
    * used by query editor to get metric suggestions (template variables)
    */
@@ -390,6 +388,32 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
+  async getRelationshipsDropdowns(
+    refId: string,
+    selector
+  ): Promise<RelationshipsSelectableValue[]> {
+    const settings = {
+      method: HttpMethod.POST,
+      data: {
+        filter: {},
+        limit: 1000,
+      },
+    };
+    try {
+      const response = await this.connector.fetchItems({
+        ...settings,
+        path: `/${selector.type}/list`,
+      });
+      return response.map(({ name, ...rest }) => ({
+        value: rest[selector.keyPropName],
+        label: name,
+      }));
+    } catch (error) {
+      handleError(error, refId);
+      return [];
+    }
+  }
+
   fetchRelationshipsTargets = async (
     targets: CogniteQuery[],
     [min, max]
@@ -399,8 +423,14 @@ export default class CogniteDatasource extends DataSourceApi<
         const { tab, refId, relationsShipsQuery } = target;
         if (tab === Tab.Relationships) {
           const { labels, dataSetIds, isActiveAtTime } = relationsShipsQuery;
-          const filterLabels = !isEmpty(labels.containsAny) && { labels };
-          const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
+          const filterLabels = !isEmpty(labels.containsAny) && {
+            labels: {
+              containsAny: _.map(labels.containsAny, ({ value }) => ({ externalId: value })),
+            },
+          };
+          const filterdataSetIds = !isEmpty(dataSetIds) && {
+            dataSetIds: _.map(dataSetIds, ({ value }) => ({ id: Number(value) })),
+          };
           const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
           const realtionshipsList = await fetchRelationships(
             {
@@ -417,47 +447,6 @@ export default class CogniteDatasource extends DataSourceApi<
         return [];
       })
     ).then((res) => res[0]);
-  };
-
-  getRelationshipsDropdowns = async (refId: string): Promise<RelationshipsQuerySelector> => {
-    const settings = {
-      method: HttpMethod.POST,
-      data: {
-        filter: {},
-        limit: 1000,
-      },
-    };
-    try {
-      const labels = await this.connector.fetchItems({
-        ...settings,
-        path: '/labels/list',
-      });
-      const datasets = await this.connector.fetchItems({
-        ...settings,
-        path: '/datasets/list',
-      });
-
-      return {
-        dataSetIds: datasets.map(({ name, id }) => ({
-          value: id,
-          label: name,
-        })),
-        labels: {
-          containsAny: labels.map(({ externalId, name }) => ({
-            value: externalId,
-            label: name,
-          })),
-        },
-      };
-    } catch (error) {
-      handleError(error, refId);
-      return {
-        dataSetIds: [],
-        labels: {
-          containsAny: [],
-        },
-      };
-    }
   };
 
   createRelationshipsNode = (realtionshipsList, refId): Promise<MutableDataFrame[]> => {
