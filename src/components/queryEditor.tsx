@@ -6,6 +6,7 @@ import {
   TabsBar,
   TabContent,
   Select,
+  MultiSelect,
   InlineFormLabel,
   Icon,
   Switch,
@@ -28,12 +29,12 @@ import {
   CogniteQueryBase,
   EventQuery,
   TabTitles,
+  RelationshipsQuerySelector,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
-import { RelationshipsListTab } from './RelationshipsListTab';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -42,6 +43,7 @@ type OnQueryChange = (
   shouldRunQuery?: boolean
 ) => void;
 export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
+export type RelationshipSelectedProps = Pick<EditorProps, 'query'> & { handleRelationshipChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
@@ -129,6 +131,26 @@ const LatestValueCheckbox = (props: SelectedProps) => {
   );
 };
 
+const RelationshipCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  return (
+    <div className="gf-form gf-form-inline">
+      <InlineFormLabel tooltip="Fetch the realationship" width={7}>
+        Relationship
+      </InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={query.withRelationship}
+          onChange={({ currentTarget }) =>
+            onQueryChange({ withRelationship: currentTarget.checked })
+          }
+        />
+      </div>
+    </div>
+  );
+};
+
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -195,10 +217,47 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
 
+  console.log(query);
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
   });
 
+  const handleRelationshipChange = (values, target: string) => {
+    const { assetQuery } = query;
+    if (target === 'labels') {
+      onQueryChange({
+        assetQuery: {
+          ...assetQuery,
+          relationships: {
+            ...assetQuery.relationships,
+            labels: {
+              containsAny: values.map(({ value }) => ({ externalId: value })),
+            },
+          },
+        },
+      });
+    } else if (target === 'dataSetIds') {
+      onQueryChange({
+        assetQuery: {
+          ...assetQuery,
+          relationships: {
+            ...assetQuery.relationships,
+            dataSetIds: values.map(({ value }) => ({ id: value })),
+          },
+        },
+      });
+    } else {
+      onQueryChange({
+        assetQuery: {
+          ...assetQuery,
+          relationships: {
+            ...assetQuery.relationships,
+            isActiveAtTime: values,
+          },
+        },
+      });
+    }
+  };
   const fetchAndSetDropdownLabel = async (idInput: string) => {
     const id = Number(idInput);
     if (Number.isNaN(id)) {
@@ -240,10 +299,20 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
       </div>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
+      <RelationshipCheckbox {...{ query, onQueryChange }} />
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
+      )}
+      {query.withRelationship && (
+        <RelationshipsListTab
+          {...{
+            query: { ...query, value: query.assetQuery.relationships.isActiveAtTime },
+            handleRelationshipChange,
+            datasource,
+          }}
+        />
       )}
     </div>
   );
@@ -251,6 +320,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
 
 function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
+
   return (
     <div>
       <ResourceSelect
@@ -405,10 +475,78 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   );
 };
 
+const RelationshipsListTab = (
+  props: RelationshipSelectedProps & { datasource: CogniteDatasource }
+) => {
+  const {
+    query: { refId, value },
+    datasource,
+    handleRelationshipChange,
+  } = props;
+  const [options, setOptions] = useState<RelationshipsQuerySelector>({
+    dataSetIds: [],
+    labels: {
+      containsAny: [],
+    },
+  });
+  const [selectedOptions, setSelectedOptions] = useState<RelationshipsQuerySelector>({
+    dataSetIds: [],
+    labels: {
+      containsAny: [],
+    },
+  });
+  const handleChange = (values, target: string) => {
+    setSelectedOptions({ ...selectedOptions, [target]: values });
+    handleRelationshipChange(values, target);
+  };
+  const getDropdowns = async () => {
+    const { labels, dataSetIds } = await datasource.getRelationshipsDropdowns(refId);
+    setOptions({
+      dataSetIds,
+      labels,
+    });
+  };
+  useEffect(() => {
+    getDropdowns();
+  }, []);
+  return (
+    <div className="full-width-row">
+      <MultiSelect
+        options={options.dataSetIds}
+        value={selectedOptions.dataSetIds}
+        allowCustomValue
+        onChange={(value) => handleChange(value, 'dataSetIds')}
+        className="cognite-dropdown"
+        placeholder="Filter relations by dataset"
+        maxMenuHeight={150}
+      />
+      <MultiSelect
+        options={options.labels.containsAny}
+        value={selectedOptions.labels.containsAny}
+        allowCustomValue
+        onChange={(value) => handleChange(value, 'labels')}
+        className="cognite-dropdown"
+        placeholder="Filter relations by Label"
+        maxMenuHeight={150}
+      />
+      <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range" width={8}>
+        Active at Time
+      </InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          css=""
+          value={value}
+          onChange={({ currentTarget }) => handleRelationshipChange(currentTarget.checked)}
+        />
+      </div>
+    </div>
+  );
+};
+
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
-  const { refId: thisRefId, tab } = query;
+  const { refId: thisRefId, tab, relationsShipsQuery } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
@@ -447,7 +585,32 @@ export function QueryEditor(props: EditorProps) {
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
-
+  const handleRelationshipChange = (values, target: string) => {
+    if (target === 'labels') {
+      onQueryChange({
+        relationsShipsQuery: {
+          ...relationsShipsQuery,
+          labels: {
+            containsAny: values.map(({ value }) => ({ externalId: value })),
+          },
+        },
+      });
+    } else if (target === 'dataSetIds') {
+      onQueryChange({
+        relationsShipsQuery: {
+          ...relationsShipsQuery,
+          dataSetIds: values.map(({ value }) => ({ id: value })),
+        },
+      });
+    } else {
+      onQueryChange({
+        relationsShipsQuery: {
+          ...relationsShipsQuery,
+          isActiveAtTime: values,
+        },
+      });
+    }
+  };
   useEffect(() => {
     eventsSubscribe();
     return () => {
@@ -474,7 +637,13 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Relationships && (
-          <RelationshipsListTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+          <RelationshipsListTab
+            {...{
+              query: { ...query, value: relationsShipsQuery.isActiveAtTime },
+              handleRelationshipChange,
+              datasource,
+            }}
+          />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
