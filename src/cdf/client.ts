@@ -8,6 +8,7 @@ import {
   IdEither,
   TimeSeriesResponseItem,
   Resource,
+  CogniteRelationshipResponse,
 } from './types';
 import {
   Tab,
@@ -28,6 +29,7 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
+  RelationshipsQuery,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -189,7 +191,17 @@ export function fetchSingleAsset(id: IdEither, connector: Connector) {
     cacheTime: CacheTime.ResourceByIds,
   });
 }
-
+export function fetchRelationships(filter: RelationshipsQuery, connector: Connector) {
+  return connector.fetchItems<CogniteRelationshipResponse>({
+    method: HttpMethod.POST,
+    path: '/relationships/list',
+    data: {
+      fetchResources: true,
+      limit: 1000,
+      filter,
+    },
+  });
+}
 export function stringifyError(error: any) {
   const { data, status } = error;
   const errorMessage = data?.error?.message || error.message;

@@ -29,6 +29,7 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
+  fetchRelationships,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -395,28 +396,20 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<MutableDataFrame[]> => {
     return Promise.all(
       targets.map(async (target) => {
-        const { tab } = target;
+        const { tab, refId, relationsShipsQuery } = target;
         if (tab === Tab.Relationships) {
-          const {
-            refId,
-            relationsShipsQuery: { labels, dataSetIds, isActiveAtTime },
-          } = target;
+          const { labels, dataSetIds, isActiveAtTime } = relationsShipsQuery;
           const filterLabels = !isEmpty(labels.containsAny) && { labels };
           const filterdataSetIds = !isEmpty(dataSetIds) && { dataSetIds };
           const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-          const realtionshipsList = await this.connector.fetchItems<CogniteRelationshipResponse>({
-            method: HttpMethod.POST,
-            path: '/relationships/list',
-            data: {
-              fetchResources: true,
-              limit: 1000,
-              filter: {
-                ...filterLabels,
-                ...filterdataSetIds,
-                ...timeFrame,
-              },
+          const realtionshipsList = await fetchRelationships(
+            {
+              ...filterLabels,
+              ...filterdataSetIds,
+              ...timeFrame,
             },
-          });
+            this.connector
+          );
           return !isEmpty(realtionshipsList)
             ? this.createRelationshipsNode(realtionshipsList, refId)
             : [];
