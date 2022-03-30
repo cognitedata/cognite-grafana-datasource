@@ -37,6 +37,9 @@ const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
   relationships: defaultRelationshipsQuery,
+  assetExternalId: undefined,
+  withRelationship: false,
+  withDefaultCall: true,
 };
 
 const defaultEventQuery: EventQuery = {
@@ -56,7 +59,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   relationsShipsQuery: defaultRelationshipsQuery,
-  withRelationship: false,
 };
 
 /**
@@ -95,6 +97,11 @@ export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
   relationships?: RelationshipsQuery;
+  assetExternalId?: string;
+  value?: string;
+  label?: string;
+  withRelationship: boolean;
+  withDefaultCall: boolean;
 }
 
 export interface EventQuery {
@@ -123,8 +130,8 @@ export interface RelationshipsQuery {
     max: number;
     min: number;
   };
-  sourceExternalId?: string;
-  targetType?: string;
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
@@ -141,7 +148,6 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationsShipsQuery: RelationshipsQuery;
-  withRelationship: boolean;
 }
 
 export type CogniteTargetObj =

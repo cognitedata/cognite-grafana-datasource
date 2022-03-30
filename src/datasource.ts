@@ -155,7 +155,7 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
-        return await getDataQueryRequestItems(target, this.connector, options.intervalMs);
+        return await getDataQueryRequestItems(target, this.connector, options);
       } catch (e) {
         handleError(e, target.refId);
       }
@@ -423,19 +423,12 @@ export default class CogniteDatasource extends DataSourceApi<
         const { tab, refId, relationsShipsQuery } = target;
         if (tab === Tab.Relationships) {
           const { labels, dataSetIds, isActiveAtTime } = relationsShipsQuery;
-          const filterLabels = !isEmpty(labels.containsAny) && {
-            labels: {
-              containsAny: _.map(labels.containsAny, ({ value }) => ({ externalId: value })),
-            },
-          };
-          const filterdataSetIds = !isEmpty(dataSetIds) && {
-            dataSetIds: _.map(dataSetIds, ({ value }) => ({ id: Number(value) })),
-          };
+
           const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
           const realtionshipsList = await fetchRelationships(
             {
-              ...filterLabels,
-              ...filterdataSetIds,
+              ...filterLabels(labels),
+              ...filterdataSetIds(dataSetIds),
               ...timeFrame,
             },
             this.connector
@@ -713,9 +706,10 @@ async function findAssetTimeseries(
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
-  intervalMs: number
+  options: QueryOptions
 ): Promise<QueriesDataItem> {
   const { tab, expr } = target;
+  const { intervalMs } = options;
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
   switch (tab) {
@@ -726,8 +720,27 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findAssetTimeseries(target, connector);
-      items = timeseries.map(({ id }) => ({ id }));
+      const { withRelationship, assetExternalId, withDefaultCall, relationships } =
+        target.assetQuery;
+      if (withDefaultCall) {
+        const timeseries = await findAssetTimeseries(target, connector);
+        items = timeseries.map(({ id }) => ({ id }));
+      } else if (withRelationship) {
+        const { dataSetIds, labels, isActiveAtTime } = relationships;
+        const [min, max] = getRange(options.range);
+        const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+        const relationship = await fetchRelationships(
+          {
+            targetTypes: ['timeSeries'],
+            sourceExternalIds: [assetExternalId],
+            ...filterLabels(labels),
+            ...filterdataSetIds(dataSetIds),
+            ...timeFrame,
+          },
+          connector
+        );
+        items = relationship.map(({ target }) => ({ id: target?.id }));
+      }
       break;
     }
     case Tab.Custom: {
@@ -746,3 +759,14 @@ function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
   return { eventTargets, tsTargets };
 }
+
+const filterLabels = (labels) =>
+  !isEmpty(labels.containsAny) && {
+    labels: {
+      containsAny: _.map(labels.containsAny, ({ value }) => ({ externalId: value })),
+    },
+  };
+const filterdataSetIds = (dataSetIds) =>
+  !isEmpty(dataSetIds) && {
+    dataSetIds: _.map(dataSetIds, ({ value }) => ({ id: Number(value) })),
+  };

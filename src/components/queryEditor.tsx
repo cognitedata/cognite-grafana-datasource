@@ -14,11 +14,11 @@ import {
   Button,
   AsyncMultiSelect,
 } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { QueryEditorProps } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
 import { get, set } from 'lodash';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
-import CogniteDatasource, { resource2DropdownOption } from '../datasource';
+import CogniteDatasource from '../datasource';
 import {
   defaultQuery,
   CogniteDataSourceOptions,
@@ -152,14 +152,19 @@ const RelationshipCheckbox = (props: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
       <InlineFormLabel tooltip="Fetch the realationship" width={7}>
-        Relationship
+        Relationships
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
           css=""
-          value={query.withRelationship}
+          value={query.assetQuery.withRelationship}
           onChange={({ currentTarget }) =>
-            onQueryChange({ withRelationship: currentTarget.checked })
+            onQueryChange({
+              assetQuery: {
+                ...query.assetQuery,
+                withRelationship: currentTarget.checked,
+              },
+            })
           }
         />
       </div>
@@ -232,34 +237,6 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
 
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
-  const [current, setCurrent] = useState<SelectableValue<string>>({
-    value: query.assetQuery.target,
-  });
-
-  const fetchAndSetDropdownLabel = async (idInput: string) => {
-    const id = Number(idInput);
-    if (Number.isNaN(id)) {
-      setCurrent({ label: idInput, value: idInput });
-    } else {
-      const [res] = await datasource.fetchSingleAsset({ id });
-      setCurrent(resource2DropdownOption(res));
-    }
-  };
-
-  useEffect(() => {
-    onQueryChange({
-      assetQuery: {
-        ...query.assetQuery,
-        target: current.value,
-      },
-    });
-  }, [current.value]);
-
-  useEffect(() => {
-    if (current.value && !current.label) {
-      fetchAndSetDropdownLabel(current.value);
-    }
-  }, [current.value]);
 
   return (
     <div className="gf-form-inline">
@@ -267,40 +244,74 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         <InlineFormLabel width={6}>Asset Tag</InlineFormLabel>
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
-          value={current}
+          value={query.assetQuery}
           defaultOptions
           placeholder="Search asset by name/description"
           className="cognite-dropdown width-20"
           allowCustomValue
-          onChange={setCurrent}
+          onChange={({ value, label, externalId }) => {
+            onQueryChange({
+              assetQuery: {
+                ...query.assetQuery,
+                target: value,
+                assetExternalId: externalId,
+                label,
+                value,
+              },
+            });
+          }}
         />
       </div>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
-      <RelationshipCheckbox {...{ query, onQueryChange }} />
+      <div className="gf-form">
+        <InlineFormLabel width={9}>Child timeseries</InlineFormLabel>
+        <div className="gf-form-switch">
+          <Switch
+            value={query.assetQuery.withDefaultCall}
+            onChange={({ currentTarget }) =>
+              onQueryChange({
+                assetQuery: {
+                  ...query.assetQuery,
+                  withDefaultCall: currentTarget.checked,
+                },
+              })
+            }
+            css=""
+          />
+        </div>
+      </div>
+
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
       )}
-      {query.withRelationship && (
-        <RelationshipsListTab
-          {...{
-            query,
-            onQueryChange,
-            datasource,
-            selectors: [
-              { rout: 'assetQuery.relationships.dataSetIds', type: 'datasets', keyPropName: 'id' },
-              {
-                rout: 'assetQuery.relationships.labels.containsAny',
-                type: 'labels',
-                keyPropName: 'externalId',
-              },
-              'assetQuery.relationships.isActiveAtTime',
-            ],
-          }}
-        />
-      )}
+      <div>
+        <RelationshipCheckbox {...{ query, onQueryChange }} />
+        {query.assetQuery.withRelationship && (
+          <RelationshipsListTab
+            {...{
+              query,
+              onQueryChange,
+              datasource,
+              selectors: [
+                {
+                  rout: 'assetQuery.relationships.dataSetIds',
+                  type: 'datasets',
+                  keyPropName: 'id',
+                },
+                {
+                  rout: 'assetQuery.relationships.labels.containsAny',
+                  type: 'labels',
+                  keyPropName: 'externalId',
+                },
+                'assetQuery.relationships.isActiveAtTime',
+              ],
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -467,7 +478,7 @@ const RelationshipsListTab = (
 ) => {
   const { datasource, query, onQueryChange, selectors } = props;
   return (
-    <div className="full-width-row">
+    <div className={query.tab === Tabs.Relationships ? 'full-width-row' : ''}>
       <MultiSelectAsync
         query={query}
         datasource={datasource}
@@ -482,17 +493,19 @@ const RelationshipsListTab = (
         placeholder="Filter relations by Label"
         onQueryChange={onQueryChange}
       />
-      <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range" width={8}>
-        Active at Time
-      </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          css=""
-          value={get(query, selectors[2])}
-          onChange={({ currentTarget }) =>
-            onQueryChange(set(query, selectors[2], currentTarget.checked))
-          }
-        />
+      <div style={{ display: 'flex' }}>
+        <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range">
+          Active at Time
+        </InlineFormLabel>
+        <div className="gf-form-switch">
+          <Switch
+            css=""
+            value={get(query, selectors[2])}
+            onChange={({ currentTarget }) =>
+              onQueryChange(set(query, selectors[2], currentTarget.checked))
+            }
+          />
+        </div>
       </div>
     </div>
   );
