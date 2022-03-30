@@ -14,7 +14,7 @@ import {
   FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import _, { get, isEmpty, partition } from 'lodash';
+import _, { get, isEmpty, partition, uniqBy } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -722,25 +722,30 @@ export async function getDataQueryRequestItems(
     case Tab.Asset: {
       const { withRelationship, assetExternalId, withDefaultCall, relationships } =
         target.assetQuery;
-      if (withDefaultCall) {
-        const timeseries = await findAssetTimeseries(target, connector);
-        items = timeseries.map(({ id }) => ({ id }));
+      const timeseries = await findAssetTimeseries(target, connector);
+      const { dataSetIds, labels, isActiveAtTime } = relationships;
+      const [min, max] = getRange(options.range);
+      const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+      const mapedTs = timeseries.map(({ id }) => ({ id }));
+      const relationship = await fetchRelationships(
+        {
+          targetTypes: ['timeSeries'],
+          sourceExternalIds: [assetExternalId],
+          ...filterLabels(labels),
+          ...filterdataSetIds(dataSetIds),
+          ...timeFrame,
+        },
+        connector
+      );
+      const mapedRelationships = relationship.map(({ target }) => ({ id: target?.id }));
+      if (withRelationship && withDefaultCall) {
+        items = uniqBy([...mapedTs, ...mapedRelationships], 'id');
+      } else if (withDefaultCall) {
+        items = mapedTs;
       } else if (withRelationship) {
-        const { dataSetIds, labels, isActiveAtTime } = relationships;
-        const [min, max] = getRange(options.range);
-        const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-        const relationship = await fetchRelationships(
-          {
-            targetTypes: ['timeSeries'],
-            sourceExternalIds: [assetExternalId],
-            ...filterLabels(labels),
-            ...filterdataSetIds(dataSetIds),
-            ...timeFrame,
-          },
-          connector
-        );
-        items = relationship.map(({ target }) => ({ id: target?.id }));
+        items = mapedRelationships;
       }
+
       break;
     }
     case Tab.Custom: {
