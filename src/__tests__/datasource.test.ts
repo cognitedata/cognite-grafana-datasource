@@ -217,6 +217,8 @@ describe('Datasource Query', () => {
     const assetQuery = {
       target: '789',
       includeSubtrees: false,
+      withRelationship: false,
+      withDefaultCall: true,
     };
     const targetC: QueryTargetLike = {
       assetQuery,
@@ -235,6 +237,8 @@ describe('Datasource Query', () => {
       assetQuery: {
         target: '[[AssetVariable]]',
         includeSubtrees: false,
+        withRelationship: false,
+        withDefaultCall: true,
       },
     };
     const targetError1: QueryTargetLike = {
@@ -583,6 +587,8 @@ describe('Datasource Query', () => {
         assetQuery: {
           target: '',
           includeSubtrees: false,
+          withRelationship: false,
+          withDefaultCall: true,
         },
       };
       const emptyAsset: Partial<CogniteQuery> = {
