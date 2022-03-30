@@ -16,7 +16,7 @@ import {
 } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
-import { get, set } from 'lodash';
+import { get, set, update } from 'lodash';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource from '../datasource';
 import {
@@ -63,13 +63,14 @@ const aggregateOptions = [
 const MultiSelectAsync = (props) => {
   const { datasource, query, onQueryChange, selector, placeholder } = props;
   const { refId } = query;
+  const s = selector.rout.split('.');
   return (
     <AsyncMultiSelect
       loadOptions={() => datasource.getRelationshipsDropdowns(refId, selector)}
-      value={[...get(query, selector.rout)]}
+      value={[...get(query, s)]}
       defaultOptions
       allowCustomValue
-      onChange={(values) => onQueryChange(set(query, selector.rout, values))}
+      onChange={(values) => onQueryChange(set(query, s, values))}
       placeholder={placeholder}
       maxMenuHeight={150}
     />
