@@ -96,7 +96,7 @@ export interface MetricDescription {
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
-  relationships?: RelationshipsQuery;
+  relationships: RelationshipsQuery;
   assetExternalId?: string;
   value?: string;
   label?: string;

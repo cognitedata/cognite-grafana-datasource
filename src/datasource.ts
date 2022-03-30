@@ -722,28 +722,41 @@ export async function getDataQueryRequestItems(
     case Tab.Asset: {
       const { withRelationship, assetExternalId, withDefaultCall, relationships } =
         target.assetQuery;
-      const timeseries = await findAssetTimeseries(target, connector);
       const { dataSetIds, labels, isActiveAtTime } = relationships;
       const [min, max] = getRange(options.range);
       const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-      const mapedTs = timeseries.map(({ id }) => ({ id }));
-      const relationship = await fetchRelationships(
-        {
-          targetTypes: ['timeSeries'],
-          sourceExternalIds: [assetExternalId],
-          ...filterLabels(labels),
-          ...filterdataSetIds(dataSetIds),
-          ...timeFrame,
-        },
-        connector
-      );
-      const mapedRelationships = relationship.map(({ target }) => ({ id: target?.id }));
-      if (withRelationship && withDefaultCall) {
-        items = uniqBy([...mapedTs, ...mapedRelationships], 'id');
-      } else if (withDefaultCall) {
+      if (withDefaultCall && !withRelationship) {
+        const timeseries = await findAssetTimeseries(target, connector);
+        const mapedTs = timeseries.map(({ id }) => ({ id }));
         items = mapedTs;
       } else if (withRelationship) {
+        const relationship = await fetchRelationships(
+          {
+            targetTypes: ['timeSeries'],
+            sourceExternalIds: [assetExternalId],
+            ...filterLabels(labels),
+            ...filterdataSetIds(dataSetIds),
+            ...timeFrame,
+          },
+          connector
+        );
+        const mapedRelationships = relationship.map(({ target }) => ({ id: target?.id }));
         items = mapedRelationships;
+      } else if (withDefaultCall && withRelationship) {
+        const timeseries = await findAssetTimeseries(target, connector);
+        const mapedTs = timeseries.map(({ id }) => ({ id }));
+        const relationship = await fetchRelationships(
+          {
+            targetTypes: ['timeSeries'],
+            sourceExternalIds: [assetExternalId],
+            ...filterLabels(labels),
+            ...filterdataSetIds(dataSetIds),
+            ...timeFrame,
+          },
+          connector
+        );
+        const mapedRelationships = relationship.map(({ target }) => ({ id: target?.id }));
+        items = uniqBy([...mapedTs, ...mapedRelationships], 'id');
       }
 
       break;

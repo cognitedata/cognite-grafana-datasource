@@ -219,6 +219,13 @@ describe('Datasource Query', () => {
       includeSubtrees: false,
       withRelationship: false,
       withDefaultCall: true,
+      relationships: {
+        dataSetIds: [],
+        labels: {
+          containsAny: [],
+        },
+        isActiveAtTime: false,
+      },
     };
     const targetC: QueryTargetLike = {
       assetQuery,
@@ -239,6 +246,13 @@ describe('Datasource Query', () => {
         includeSubtrees: false,
         withRelationship: false,
         withDefaultCall: true,
+        relationships: {
+          dataSetIds: [],
+          labels: {
+            containsAny: [],
+          },
+          isActiveAtTime: false,
+        },
       },
     };
     const targetError1: QueryTargetLike = {
@@ -589,6 +603,13 @@ describe('Datasource Query', () => {
           includeSubtrees: false,
           withRelationship: false,
           withDefaultCall: true,
+          relationships: {
+            dataSetIds: [],
+            labels: {
+              containsAny: [],
+            },
+            isActiveAtTime: false,
+          },
         },
       };
       const emptyAsset: Partial<CogniteQuery> = {
