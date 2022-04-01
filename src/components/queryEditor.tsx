@@ -34,6 +34,7 @@ import { failedResponseEvent, EventFields, responseWarningEvent } from '../const
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
+import { Relationships } from './relationships';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -450,7 +451,9 @@ export function QueryEditor(props: EditorProps) {
 
   useEffect(() => {
     eventsSubscribe();
-    return () => eventsUnsubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
   }, [tab]);
 
   return (
@@ -471,6 +474,29 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Relationships && (
+          <Relationships
+            {...{
+              query,
+              datasource,
+              onQueryChange,
+              className: 'full-width-row',
+              selectors: [
+                {
+                  rout: 'relationsShipsQuery.dataSetIds',
+                  type: 'datasets',
+                  keyPropName: 'id',
+                },
+                {
+                  rout: 'relationsShipsQuery.labels.containsAny',
+                  type: 'labels',
+                  keyPropName: 'externalId',
+                },
+                'relationsShipsQuery.isActiveAtTime',
+              ],
+            }}
+          />
+        )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
       {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}
