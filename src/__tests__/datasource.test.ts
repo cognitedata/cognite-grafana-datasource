@@ -301,8 +301,7 @@ describe('Datasource Query', () => {
       refId: 'B',
       target: 123,
       tab: Custom,
-      expr:
-        "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
+      expr: "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
     };
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetB),
@@ -393,8 +392,7 @@ describe('Datasource Query', () => {
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'D',
-      expr:
-        'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
+      expr: 'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
       label: '',
     };
 
@@ -654,5 +652,20 @@ describe('custom query granularity less then a second', () => {
     expect(
       (backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');
+  });
+});
+
+describe('Relationships', () => {
+  beforeAll(async () => {
+    jest.clearAllMocks();
+  });
+  describe('Test labels and datasets', () => {
+    it('drop error on ', async () => {
+      const result = await ds.getRelationshipsDropdowns('A', [{}]);
+
+      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect(appEvents.emit).toHaveBeenCalledTimes(1);
+      expect(result).toMatchSnapshot();
+    });
   });
 });
