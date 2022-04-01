@@ -1,6 +1,6 @@
 import React from 'react';
-import { AsyncMultiSelect, InlineFormLabel, Switch } from "@grafana/ui";
-import { get, set } from "lodash";
+import { AsyncMultiSelect, InlineFormLabel, Switch } from '@grafana/ui';
+import { get, set } from 'lodash';
 import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
 
@@ -21,7 +21,7 @@ const MultiSelectAsync = (props) => {
   );
 };
 export const Relationships = (
-  props: SelectedProps & { datasource: CogniteDatasource } & { selectors, className }
+  props: SelectedProps & { datasource: CogniteDatasource } & { selectors } & { className }
 ) => {
   const { datasource, query, onQueryChange, selectors, className } = props;
   return (
