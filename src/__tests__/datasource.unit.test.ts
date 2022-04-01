@@ -7,11 +7,11 @@ import { getDataQueryRequestItems } from '../datasource';
 const defaultCogniteQuery = defaultQuery as CogniteQuery;
 
 describe('getDataQueryRequestItems: generate cdf data points request items', () => {
-  const connector: Connector = ({
+  const connector: Connector = {
     fetchData: jest.fn(),
     fetchItems: jest.fn(),
     fetchAndPaginate: jest.fn(),
-  } as unknown) as Connector;
+  } as unknown as Connector;
 
   beforeEach(() => {
     jest.resetAllMocks();

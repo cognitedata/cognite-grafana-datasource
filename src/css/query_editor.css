@@ -28,11 +28,13 @@
   font-family: monospace;
 }
 
-pre code, .help-panel {
+pre code,
+.help-panel {
   line-height: 2;
 }
 
-.cognite-dropdown, .gf-form-switch {
+.cognite-dropdown,
+.gf-form-switch {
   margin-right: 4px;
 }
 
