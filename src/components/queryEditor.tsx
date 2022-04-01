@@ -42,7 +42,7 @@ type OnQueryChange = (
   patch: Partial<CogniteQueryBase> | CogniteTargetObj,
   shouldRunQuery?: boolean
 ) => void;
-type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
+export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
