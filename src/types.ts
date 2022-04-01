@@ -35,6 +35,10 @@ const defaultEventQuery: EventQuery = {
   activeAtTimeRange: true,
 };
 
+export interface RelationshipsSelectableValue {
+  value?: string | number;
+  label?: string;
+}
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
