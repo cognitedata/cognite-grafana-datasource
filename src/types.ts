@@ -59,9 +59,36 @@ query {
   groupBy: 'name',
 };
 
+export const defaultRelationshipsQuery: RelationshipsQuery = {
+  dataSetIds: [],
+  labels: {
+    containsAny: [],
+  },
+  isActiveAtTime: false,
+};
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
+}
+
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
 }
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
@@ -74,6 +101,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   templateQuery: defaultTemplateQuery,
+  relationsShipsQuery: defaultRelationshipsQuery,
 };
 
 /**
@@ -136,6 +164,7 @@ export interface CogniteQueryBase extends DataQuery {
   templateQuery: TemplateQuery;
   expr: string;
   warning: string;
+  relationsShipsQuery: RelationshipsQuery;
 }
 
 export type TemplateQuery = {
