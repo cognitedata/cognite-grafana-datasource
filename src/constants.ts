@@ -1,4 +1,4 @@
-import { eventFactory } from '@grafana/data';
+import { eventFactory, FieldType } from '@grafana/data';
 import { QueryWarning, QueryRequestError } from './types';
 
 export const API_V1 = 'api/v1/projects';
@@ -49,3 +49,30 @@ export const EVENTS_PAGE_LIMIT = 1000;
 
 export const DOCS_URL =
   'https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html';
+
+export const edgeField: any = {
+  id: {
+    type: FieldType.string,
+  },
+  source: {
+    type: FieldType.string,
+  },
+  target: {
+    type: FieldType.string,
+  },
+  mainStat: {
+    type: FieldType.string,
+  },
+};
+
+export const nodeField: any = {
+  id: {
+    type: FieldType.string,
+  },
+  title: {
+    type: FieldType.string,
+  },
+  mainStat: {
+    type: FieldType.string,
+  },
+};
