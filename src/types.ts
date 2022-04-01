@@ -13,6 +13,7 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
+  Relationships = 'Relationships',
 }
 
 export const TabTitles = {
@@ -20,6 +21,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.Relationships]: 'Relationships',
 };
 
 const defaultAssetQuery: AssetQuery = {
