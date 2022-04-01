@@ -35,9 +35,36 @@ const defaultEventQuery: EventQuery = {
   activeAtTimeRange: true,
 };
 
+export const defaultRelationshipsQuery: RelationshipsQuery = {
+  dataSetIds: [],
+  labels: {
+    containsAny: [],
+  },
+  isActiveAtTime: false,
+};
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
+}
+
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
 }
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
@@ -49,6 +76,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
+  relationsShipsQuery: defaultRelationshipsQuery,
 };
 
 /**
@@ -109,6 +137,7 @@ export interface CogniteQueryBase extends DataQuery {
   eventQuery: EventQuery;
   expr: string;
   warning: string;
+  relationsShipsQuery: RelationshipsQuery;
 }
 
 export type CogniteTargetObj =
