@@ -59,6 +59,10 @@ query {
   groupBy: 'name',
 };
 
+export interface RelationshipsSelectableValue {
+  value?: string | number;
+  label?: string;
+}
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
