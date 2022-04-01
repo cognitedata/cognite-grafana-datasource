@@ -35,6 +35,7 @@ import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
+import { Relationships } from './relationships';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -448,7 +449,9 @@ export function QueryEditor(props: EditorProps) {
 
   useEffect(() => {
     eventsSubscribe();
-    return () => eventsUnsubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
   }, [tab]);
 
   return (
@@ -472,6 +475,29 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
+        {tab === Tabs.Relationships && (
+          <Relationships
+            {...{
+              query,
+              datasource,
+              onQueryChange,
+              className: 'full-width-row',
+              selectors: [
+                {
+                  rout: 'relationsShipsQuery.dataSetIds',
+                  type: 'datasets',
+                  keyPropName: 'id',
+                },
+                {
+                  rout: 'relationsShipsQuery.labels.containsAny',
+                  type: 'labels',
+                  keyPropName: 'externalId',
+                },
+                'relationsShipsQuery.isActiveAtTime',
+              ],
+            }}
+          />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
