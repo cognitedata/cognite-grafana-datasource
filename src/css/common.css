@@ -6,7 +6,8 @@ pre.gf-formatted-warning {
   color: #ff6060;
 }
 
-pre.gf-formatted-warning, span.gf-formatted-warning {
+pre.gf-formatted-warning,
+span.gf-formatted-warning {
   color: #f79520;
 }
 
