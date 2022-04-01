@@ -11,6 +11,7 @@
     "noUnusedLocals": false,
     "jsx": "react",
     "allowSyntheticDefaultImports": true,
+    "target": "es6"
     // "esModuleInterop": true,
   }
 }
