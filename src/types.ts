@@ -5,6 +5,7 @@ import {
   DataQuery,
   DataSourceJsonData,
   TableData,
+  MutableDataFrame,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
@@ -106,7 +107,7 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<(TimeSeries | TableData)[]>;
+export type QueryResponse = DataResponse<(TimeSeries | TableData | MutableDataFrame)[]>;
 
 export interface MetricDescription {
   readonly text: string;
