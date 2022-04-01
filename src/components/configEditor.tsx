@@ -55,24 +55,23 @@ export function ConfigEditor(props: ConfigEditorProps) {
     });
   };
 
-  const onJsonStringValueChange = (key: keyof CogniteDataSourceOptions) => (
-    event: ChangeEvent<HTMLInputElement>
-  ) => onJsonDataChange({ [key]: event.target.value });
+  const onJsonStringValueChange =
+    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
+      onJsonDataChange({ [key]: event.target.value });
 
-  const onJsonBoolValueChange = (key: keyof CogniteDataSourceOptions) => (
-    event: ChangeEvent<HTMLInputElement>
-  ) => onJsonDataChange({ [key]: event.currentTarget.checked });
+  const onJsonBoolValueChange =
+    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
+      onJsonDataChange({ [key]: event.currentTarget.checked });
 
   // Secure field (only sent to the backend)
-  const onChangeSecretValue = (secretKey: keyof CogniteSecureJsonData) => (
-    event: ChangeEvent<HTMLInputElement>
-  ) =>
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        [secretKey]: event.target.value,
-      },
-    });
+  const onChangeSecretValue =
+    (secretKey: keyof CogniteSecureJsonData) => (event: ChangeEvent<HTMLInputElement>) =>
+      onOptionsChange({
+        ...options,
+        secureJsonData: {
+          [secretKey]: event.target.value,
+        },
+      });
 
   const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) => () =>
     onOptionsChange({

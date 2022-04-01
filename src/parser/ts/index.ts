@@ -32,7 +32,7 @@ export const formQueriesForExpression = async (
     return [{ expression: composeSTSQuery(parsed) }];
   }
   const timeseries = await Promise.all(
-    serverFilters.map(async filter => {
+    serverFilters.map(async (filter) => {
       const tsResult = await getTimeseries({ filter }, connector, false);
       if (!tsResult.length) {
         throw NoTimeseriesFound(expression, filter);
@@ -47,16 +47,16 @@ export const formQueriesForExpression = async (
     clientFilteredTimeseries,
     multiaryFuncTsIndices
   );
-  const queryExpressions = permutations.map(series => injectTSIdsInExpression(parsed, series));
+  const queryExpressions = permutations.map((series) => injectTSIdsInExpression(parsed, series));
   if (!queryExpressions.length) {
     throw NoTimeseriesFound(expression);
   }
-  return queryExpressions.map(expression => ({ expression }));
+  return queryExpressions.map((expression) => ({ expression }));
 };
 
 const NoTimeseriesFound = (expr: string, filter?: StringMap) => {
-  const where = filter ? ` ${JSON.stringify(filter)}` : 's'
-  return new Error(`No timeseries found for filter${where} in expression ${expr}`)
+  const where = filter ? ` ${JSON.stringify(filter)}` : 's';
+  return new Error(`No timeseries found for filter${where} in expression ${expr}`);
 };
 
 /**
@@ -80,9 +80,9 @@ export const enrichWithDefaultAggregates = (
     aggregate,
     granularity: granularity || defaultInterval,
   };
-  walk(result, obj => {
+  walk(result, (obj) => {
     if (isSTSReference(obj)) {
-      Object.keys(defaultValues).forEach(key => {
+      Object.keys(defaultValues).forEach((key) => {
         if (findIndex(obj.query, ['path', key]) === -1) {
           obj.query.push(STSFilter(key, defaultValues[key]));
         }
@@ -98,14 +98,14 @@ export const injectTSIdsInExpression = (
   timeseries: TimeSeriesResponseItem[][]
 ) => {
   let i = 0;
-  const exprWithSum = composeSTSQuery(parsedData, item => {
+  const exprWithSum = composeSTSQuery(parsedData, (item) => {
     if (isSTSReference(item) && !hasIdsFilter(item)) {
       const syntheticFilters = item.query.filter(isSTSAggregateFilter);
       const paramTSIds = timeseries[i++].map(({ id }) => id);
-      const pseudoParsedSTS = paramTSIds.map(id =>
+      const pseudoParsedSTS = paramTSIds.map((id) =>
         STSReference([STSFilter('id', id), ...syntheticFilters])
       );
-      return pseudoParsedSTS.map(ts => composeSTSQuery(ts)).join(', ');
+      return pseudoParsedSTS.map((ts) => composeSTSQuery(ts)).join(', ');
     }
   });
   return flattenSumFunctions(exprWithSum);
@@ -140,7 +140,7 @@ export const generateAllPossiblePermutations = <T>(
       if (locked) {
         res = [[array]];
       } else {
-        res = array.map(i => [[i]]);
+        res = array.map((i) => [[i]]);
       }
     }
   }
@@ -152,7 +152,7 @@ export const convertExpressionToLabel = (
   labelSrc: string,
   tsMap: TSResponseMap
 ) => {
-  return composeSTSQuery(parse(expression), item => {
+  return composeSTSQuery(parse(expression), (item) => {
     if (isSTSReference(item)) {
       const [{ value }] = getIdFilters(item);
       const serie = tsMap[String(value)];
@@ -173,12 +173,12 @@ export const getLabelsForExpression = async (
   const tsUniqueIds = uniqBy(tsIds, unwrapId);
   const referencedTS = await getTimeseries({ items: tsUniqueIds }, connector, false);
   const tsMap = reduceTsToMap(referencedTS);
-  return expressions.map(expr => convertExpressionToLabel(expr, labelSrc, tsMap));
+  return expressions.map((expr) => convertExpressionToLabel(expr, labelSrc, tsMap));
 };
 
 export const getReferencedTimeseries = (route: STSQuery): StringMap[] => {
   let idFilters: STSServerFilter[] = [];
-  walk(route, obj => {
+  walk(route, (obj) => {
     if (isSTSReference(obj)) {
       const ids = getIdFilters(obj);
       idFilters = [...idFilters, ...ids];
@@ -193,7 +193,7 @@ export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
   return items.filter(isSTSFilter).reduce((res, filter) => {
     let value: any;
     if (isByIdsQuery(filter.value)) {
-      value = filter.value.map(item => flattenServerQueryFilters([item]));
+      value = filter.value.map((item) => flattenServerQueryFilters([item]));
     } else if (isSTSFilterArr(filter.value)) {
       value = { ...res[filter.path], ...flattenServerQueryFilters(filter.value) };
     } else if (isSTSFilterArr2d(filter.value)) {
@@ -208,7 +208,7 @@ export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
 
 export const walk = (route: STSQuery, iterator: (item: STSQueryItem | STSFunction) => void) => {
   if (isArray(route)) {
-    route.forEach(r => walk(r, iterator));
+    route.forEach((r) => walk(r, iterator));
   } else {
     iterator(route);
     if (isSTSFunction(route)) {
@@ -221,7 +221,7 @@ export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
   const responseArr = [];
   const argsIndices = [];
   let index = 0;
-  walk(route, obj => {
+  walk(route, (obj) => {
     if (isMultiaryFunction(obj) && obj.args.length === 1) {
       argsIndices.push(...obj.args);
     } else if (isSTSReference(obj) && !hasIdsFilter(obj)) {
@@ -239,7 +239,7 @@ export const extractFilters = (
   condition: (_, __, parent) => boolean
 ): unknown[][] => {
   const extracted: unknown[][] = [];
-  walk(route, obj => {
+  walk(route, (obj) => {
     if (isSTSReference(obj) && !hasIdsFilter(obj)) {
       extracted.push(filterDeep(obj.query, condition));
     }
@@ -249,14 +249,14 @@ export const extractFilters = (
 
 export const getServerFilters = (route: STSQuery): StringMap[] => {
   const filter = (_, __, parent) => isServerFilter(parent) || !isSTSFilter(parent);
-  return extractFilters(route, filter).map(filters =>
+  return extractFilters(route, filter).map((filters) =>
     flattenServerQueryFilters(filters || [])
   ) as StringMap[];
 };
 
 export const flattenClientQueryFilters = (filters: unknown[], path = []): STSClientFilter[] => {
   const res: STSClientFilter[] = [];
-  filters.filter(isSTSFilter).forEach(filter => {
+  filters.filter(isSTSFilter).forEach((filter) => {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
       res.push(...flattenClientQueryFilters(filter.value, [...path, filter.path]));
     } else {
@@ -272,7 +272,7 @@ export const flattenClientQueryFilters = (filters: unknown[], path = []): STSCli
 
 export const getClientFilters = (route: STSQuery): STSClientFilter[][] => {
   const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
-  return extractFilters(route, filter).map(filters =>
+  return extractFilters(route, filter).map((filters) =>
     flattenClientQueryFilters(filters || [])
   ) as STSClientFilter[][];
 };
@@ -283,7 +283,7 @@ const reverseSTSFilter = ({ path, filter, value }: STSFilter) => {
 
 const stringifyValue = (val: STSValue, wrap: boolean = true) => {
   if (isArray(val)) {
-    const items = (val as any).map(item => {
+    const items = (val as any).map((item) => {
       return isSTSFilter(item) ? reverseSTSFilter(item) : stringifyValue(item);
     });
     const joinedStr = items.join(', ');
@@ -307,7 +307,7 @@ export const composeSTSQuery = (
     }
   }
   if (isArray(target)) {
-    return target.map(i => composeSTSQuery(i, custom)).join(separateWith);
+    return target.map((i) => composeSTSQuery(i, custom)).join(separateWith);
   }
   if (isSTSReference(target)) {
     return `${target.type}{${stringifyValue(target.query, false)}}`;
@@ -323,7 +323,7 @@ export const composeSTSQuery = (
   if (isMapFunction(target)) {
     const [arg0, ...args] = target.args;
     stringArgs = `${composeSTSQuery(arg0, custom)}, ${args
-      .map(arg => stringifyValue(arg))
+      .map((arg) => stringifyValue(arg))
       .join(', ')}`;
   } else {
     stringArgs = composeSTSQuery(target.args, custom, separator);
@@ -332,7 +332,7 @@ export const composeSTSQuery = (
 };
 
 const flattenSumFunctions = (expression: string): string => {
-  return composeSTSQuery(parse(expression), item => {
+  return composeSTSQuery(parse(expression), (item) => {
     if (isSumFunction(item)) {
       return `(${composeSTSQuery(item.args, null, ' + ')})`;
     }
