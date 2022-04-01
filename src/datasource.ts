@@ -10,9 +10,11 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
+  MutableDataFrame,
+  FieldType,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { partition } from 'lodash';
+import { get, isEmpty, partition, reduce, uniq } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -27,6 +29,7 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
+  fetchRelationships,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -46,6 +49,8 @@ import {
   EVENTS_PAGE_LIMIT,
   responseWarningEvent,
   EVENTS_LIMIT_WARNING,
+  nodeField,
+  edgeField,
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -123,14 +128,19 @@ export default class CogniteDatasource extends DataSourceApi<
     const { eventTargets, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
-    let responseData: (TimeSeries | TableData)[] = [];
+    let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets, timeRange);
         handleFailedTargets(failed);
         showWarnings(succeded);
-        responseData = [...reduceTimeseries(succeded, timeRange), ...eventResults];
+        responseData = [
+          ...reduceTimeseries(succeded, timeRange),
+          ...eventResults,
+          ...relationshipsResults,
+        ];
       } catch (error) {
         /* eslint-disable-next-line no-console  */
         console.error(error); // TODO: use app-events or something
@@ -408,6 +418,124 @@ export default class CogniteDatasource extends DataSourceApi<
     }
   }
 
+  fetchRelationshipsTargets = async (
+    targets: CogniteQuery[],
+    [min, max]
+  ): Promise<MutableDataFrame[]> => {
+    return Promise.all(
+      targets.map(async (target) => {
+        const { tab, refId, relationsShipsQuery } = target;
+        if (tab === Tab.Relationships) {
+          const { labels, dataSetIds, isActiveAtTime } = relationsShipsQuery;
+
+          const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+          const realtionshipsList = await fetchRelationships(
+            {
+              ...filterLabels(labels),
+              ...filterdataSetIds(dataSetIds),
+              ...timeFrame,
+            },
+            this.connector
+          );
+          return !isEmpty(realtionshipsList)
+            ? this.createRelationshipsNode(realtionshipsList, refId)
+            : [];
+        }
+        return [];
+      })
+    ).then((res) => res[0]);
+  };
+
+  createRelationshipsNode = (realtionshipsList, refId): Promise<MutableDataFrame[]> => {
+    const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
+
+    const allMetaKeysFromSourceAndTarget = reduce(
+      realtionshipsList,
+      (previousValue, currentValue) => {
+        if (currentValue.source?.metadata) {
+          Object.keys(currentValue.source.metadata).map((key) => previousValue.push(key));
+        }
+        if (currentValue.target?.metadata) {
+          Object.keys(currentValue.target.metadata).map((key) => previousValue.push(key));
+        }
+        return uniq(previousValue);
+      },
+      []
+    );
+    const extendedFields = allMetaKeysFromSourceAndTarget.reduce((previousValue, currentValue) => {
+      return {
+        ...previousValue,
+        [generateDetailKey(currentValue)]: {
+          type: FieldType.string,
+          config: {
+            displayName: currentValue,
+          },
+        },
+      };
+    }, nodeField);
+    const edges = new MutableDataFrame({
+      name: 'edges',
+      fields: Object.keys(edgeField).map((key) => ({
+        ...edgeField[key],
+        name: key,
+      })),
+      meta: {
+        preferredVisualisationType: 'nodeGraph',
+      },
+      refId,
+    });
+    const nodes = new MutableDataFrame({
+      name: 'nodes',
+      fields: Object.keys(extendedFields).map((key) => ({
+        ...extendedFields[key],
+        name: key,
+      })),
+      meta: {
+        preferredVisualisationType: 'nodeGraph',
+      },
+      refId,
+    });
+    return realtionshipsList.map(
+      ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
+        const { sourceMeta, targetMeta } = allMetaKeysFromSourceAndTarget.reduce((a, key) => {
+          const selector = generateDetailKey(key);
+          return {
+            sourceMeta: {
+              ...a.sourceMeta,
+              [selector]: get(source, `metadata.${key}`),
+            },
+            targetMeta: {
+              ...a.targetMeta,
+              [selector]: get(target, `metadata.${key}`),
+            },
+          };
+        }, {});
+        nodes.add({
+          id: sourceExternalId,
+          title: get(source, 'description'),
+          mainStat: get(source, 'name'),
+          ...sourceMeta,
+        });
+        nodes.add({
+          id: targetExternalId,
+          title: get(target, 'description'),
+          mainStat: get(target, 'name'),
+          ...targetMeta,
+        });
+        edges.add({
+          id: externalId,
+          source: sourceExternalId,
+          target: targetExternalId,
+          mainStat: labels
+            .map(({ externalId }) => externalId)
+            .join(', ')
+            .trim(),
+        });
+        return [nodes, edges];
+      }
+    )[realtionshipsList.length - 1];
+  };
+
   async checkLoginStatusApiKey() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
@@ -484,6 +612,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return assetQuery?.target;
         case Tab.Custom:
           return target.expr;
+        case Tab.Relationships:
+          return true;
         case Tab.Timeseries:
         default:
           return target.target;
@@ -605,6 +735,9 @@ export async function getDataQueryRequestItems(
       items = await formQueriesForExpression(expr, target, connector, defaultInterval);
       break;
     }
+    case Tab.Relationships: {
+      break;
+    }
   }
   return { type, items, target };
 }
@@ -613,3 +746,14 @@ function groupTargets(targets: CogniteQuery[]) {
   const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
   return { eventTargets, tsTargets };
 }
+
+const filterLabels = (labels) =>
+  !isEmpty(labels.containsAny) && {
+    labels: {
+      containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
+    },
+  };
+const filterdataSetIds = (dataSetIds) =>
+  !isEmpty(dataSetIds) && {
+    dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
+  };
