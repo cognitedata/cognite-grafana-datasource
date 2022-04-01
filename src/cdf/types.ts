@@ -151,3 +151,51 @@ export interface Range<T> {
   min?: T;
   max?: T;
 }
+
+export interface CogniteLabelsResponse {
+  externalId: string;
+  name: string;
+  description: string;
+  dataSetId: number;
+  createdTime: number;
+}
+interface CogniteRelationshipAsset {
+  createdTime?: number;
+  lastUpdatedTime?: number;
+  rootId?: number;
+  aggregates?: {
+    childCount: number;
+    depth: number;
+    path?: [
+      {
+        id: string | number;
+      }
+    ];
+  };
+  parentId?: number;
+  parentExternalId?: string;
+  externalId: string;
+  name?: string;
+  description?: string;
+  dataSetId: number;
+  metadata?: { [s: string]: string };
+  source?: string;
+  labels?: CogniteLabelsResponse[];
+  id: number;
+}
+export interface CogniteRelationshipResponse {
+  externalId: string;
+  sourceExternalId: string;
+  sourceType?: string;
+  targetExternalId: string;
+  targetType?: string;
+  startTime?: number;
+  endTime?: number;
+  confidence?: number;
+  dataSetId?: number;
+  labels?: CogniteLabelsResponse[];
+  createdTime?: number;
+  lastUpdatedTime?: number;
+  source?: CogniteRelationshipAsset;
+  target?: CogniteRelationshipAsset;
+}
