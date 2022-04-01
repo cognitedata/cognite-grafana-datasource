@@ -73,6 +73,7 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
+  RelationshipsSelectableValue,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 
@@ -202,12 +203,8 @@ export default class CogniteDatasource extends DataSourceApi<
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label, eventQuery } = target;
 
-    const [
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-      eventExprTemplated,
-    ] = this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
+    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] =
+      this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -385,6 +382,31 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
+  async getRelationshipsDropdowns(
+    refId: string,
+    selector
+  ): Promise<RelationshipsSelectableValue[]> {
+    const settings = {
+      method: HttpMethod.POST,
+      data: {
+        filter: {},
+        limit: 1000,
+      },
+    };
+    try {
+      const response = await this.connector.fetchItems({
+        ...settings,
+        path: `/${selector.type}/list`,
+      });
+      return response.map(({ name, ...rest }) => ({
+        value: rest[selector.keyPropName],
+        label: name,
+      }));
+    } catch (error) {
+      handleError(error, refId);
+      return [];
+    }
+  }
 
   async checkLoginStatusApiKey() {
     let hasAccessToProject = false;
