@@ -19,8 +19,9 @@ export class Connector {
     private apiUrl: string,
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
-    private oauthClientCredentials?: boolean
-  ) {}
+    private oauthClientCredentials?: boolean,
+    private enableTemplates?: boolean
+  ) { }
 
   cachedRequests = new Map<string, Promise<any>>();
 
@@ -126,6 +127,10 @@ export class Connector {
     return this.oauthPassThru || this.oauthClientCredentials;
   }
 
+  public isTemplatesEnabled() {
+    return this.enableTemplates;
+  }
+
   public cachedRequest = async (
     query: DataSourceRequestOptions,
     cacheTime: string = CacheTime.Default
@@ -160,7 +165,7 @@ export class Connector {
 const chunkedReqId = (requestId: string, chunk: number) => {
   return requestId
     ? {
-        requestId: chunk ? `${requestId}${chunk}` : requestId,
-      }
+      requestId: chunk ? `${requestId}${chunk}` : requestId,
+    }
     : undefined;
 };

@@ -603,7 +603,7 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
-          <Tab label={TabTitles[t]} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
+          <Tab hidden={t == Tabs.Templates && !datasource.connector.isTemplatesEnabled()} label={TabTitles[t]} key={t} active={tab === t} onChangeTab={onSelectTab(t)} />
         ))}
       </TabsBar>
       <TabContent>

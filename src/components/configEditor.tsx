@@ -30,6 +30,8 @@ const oAuthClientSecretTooltip = `A secret string that the application uses to p
 
 const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. E.g. https://api.cognitedata.com/.default.`;
 
+const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`
+
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
@@ -43,6 +45,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     oauthClientId,
     oauthTokenUrl,
     oauthScope,
+    enableTemplates,
   } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
@@ -214,6 +217,19 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="gf-form-group">
+        <h3 className="page-heading">Opt-in features</h3>
+        <div className="gf-form-inline">
+          <Switch
+            label="Cognite Templates"
+            labelClass="width-11"
+            checked={enableTemplates}
+            onChange={onJsonBoolValueChange('enableTemplates')}
+            tooltip={enableTemplatesTooltip}
+          />
+        </div>
       </div>
     </>
   );

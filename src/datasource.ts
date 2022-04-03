@@ -99,7 +99,7 @@ export default class CogniteDatasource extends DataSourceApi<
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
-    const { cogniteProject, oauthPassThru, oauthClientCreds } = jsonData;
+    const { cogniteProject, oauthPassThru, oauthClientCreds, enableTemplates } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
@@ -108,7 +108,8 @@ export default class CogniteDatasource extends DataSourceApi<
       url,
       this.backendSrv,
       oauthPassThru,
-      oauthClientCreds
+      oauthClientCreds,
+      enableTemplates
     );
     this.project = cogniteProject;
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
@@ -566,8 +567,8 @@ async function findAssetTimeseries(
         assetSubtreeIds: [{ id: Number(assetId) }],
       }
     : {
-        assetIds: [assetId],
-      };
+      assetIds: [assetId],
+    };
 
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
