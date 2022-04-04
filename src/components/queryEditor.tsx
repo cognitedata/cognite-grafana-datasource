@@ -1,5 +1,4 @@
 import defaults from 'lodash/defaults';
-
 import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
@@ -31,10 +30,10 @@ import {
   TabTitles,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
-import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
-import '../css/common.css';
 import { Relationships } from './relationships';
+import '../css/query_editor.css';
+import '../css/common.css';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
