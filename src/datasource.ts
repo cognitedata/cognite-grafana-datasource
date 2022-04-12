@@ -612,7 +612,7 @@ export async function getDataQueryRequestItems(
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const groupedByTab = groupBy(targets, ({ tab }) => tab);
+  const groupedByTab = groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
