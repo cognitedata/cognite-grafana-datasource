@@ -567,8 +567,8 @@ async function findAssetTimeseries(
         assetSubtreeIds: [{ id: Number(assetId) }],
       }
     : {
-      assetIds: [assetId],
-    };
+        assetIds: [assetId],
+      };
 
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries

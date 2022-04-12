@@ -30,7 +30,7 @@ const oAuthClientSecretTooltip = `A secret string that the application uses to p
 
 const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. E.g. https://api.cognitedata.com/.default.`;
 
-const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`
+const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`;
 
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
