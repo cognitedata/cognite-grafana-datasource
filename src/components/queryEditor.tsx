@@ -33,7 +33,7 @@ import { failedResponseEvent, EventFields, responseWarningEvent } from '../const
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
-import { Relationships } from './relationships';
+import { RelationshipsTab } from './relationships';
 import '../css/query_editor.css';
 
 const { FormField } = LegacyForms;
@@ -476,7 +476,7 @@ export function QueryEditor(props: EditorProps) {
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {tab === Tabs.Relationships && (
-          <Relationships
+          <RelationshipsTab
             {...{
               query,
               datasource,
@@ -484,12 +484,12 @@ export function QueryEditor(props: EditorProps) {
               className: 'full-width-row',
               selectors: [
                 {
-                  rout: 'relationsShipsQuery.dataSetIds',
+                  route: 'relationsShipsQuery.dataSetIds',
                   type: 'datasets',
                   keyPropName: 'id',
                 },
                 {
-                  rout: 'relationsShipsQuery.labels.containsAny',
+                  route: 'relationsShipsQuery.labels.containsAny',
                   type: 'labels',
                   keyPropName: 'externalId',
                 },
