@@ -13,7 +13,6 @@ import {
   AsyncSelect,
   Segment,
   Button,
-  Badge,
 } from '@grafana/ui';
 import { FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
