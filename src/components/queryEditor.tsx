@@ -31,7 +31,7 @@ import {
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
-import { Relationships } from './relationships';
+import { RelationshipsTab } from './relationships';
 import '../css/query_editor.css';
 import '../css/common.css';
 
@@ -474,7 +474,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Relationships && (
-          <Relationships
+          <RelationshipsTab
             {...{
               query,
               datasource,
@@ -482,12 +482,12 @@ export function QueryEditor(props: EditorProps) {
               className: 'full-width-row',
               selectors: [
                 {
-                  rout: 'relationsShipsQuery.dataSetIds',
+                  route: 'relationsShipsQuery.dataSetIds',
                   type: 'datasets',
                   keyPropName: 'id',
                 },
                 {
-                  rout: 'relationsShipsQuery.labels.containsAny',
+                  route: 'relationsShipsQuery.labels.containsAny',
                   type: 'labels',
                   keyPropName: 'externalId',
                 },
