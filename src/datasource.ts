@@ -424,12 +424,12 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<MutableDataFrame[]> => {
     return Promise.all(
       targets.map(async (target) => {
-        const { tab, refId, relationsShipsQuery } = target;
+        const { tab, refId, relationshipsQuery } = target;
         if (tab === Tab.Relationships) {
-          const { labels, dataSetIds, isActiveAtTime } = relationsShipsQuery;
+          const { labels, dataSetIds, isActiveAtTime } = relationshipsQuery;
 
           const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-          const realtionshipsList = await fetchRelationships(
+          const relationshipsList = await fetchRelationships(
             {
               ...filterLabels(labels),
               ...filterdataSetIds(dataSetIds),
@@ -437,8 +437,8 @@ export default class CogniteDatasource extends DataSourceApi<
             },
             this.connector
           );
-          return !isEmpty(realtionshipsList)
-            ? this.createRelationshipsNode(realtionshipsList, refId)
+          return !isEmpty(relationshipsList)
+            ? this.createRelationshipsNode(relationshipsList, refId)
             : [];
         }
         return [];
@@ -446,11 +446,11 @@ export default class CogniteDatasource extends DataSourceApi<
     ).then((res) => res[0]);
   };
 
-  createRelationshipsNode = (realtionshipsList, refId): Promise<MutableDataFrame[]> => {
+  createRelationshipsNode = (relationshipsList, refId): Promise<MutableDataFrame[]> => {
     const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
 
     const allMetaKeysFromSourceAndTarget = reduce(
-      realtionshipsList,
+      relationshipsList,
       (previousValue, currentValue) => {
         if (currentValue.source?.metadata) {
           Object.keys(currentValue.source.metadata).map((key) => previousValue.push(key));
@@ -495,7 +495,7 @@ export default class CogniteDatasource extends DataSourceApi<
       },
       refId,
     });
-    return realtionshipsList.map(
+    return relationshipsList.map(
       ({ externalId, labels, sourceExternalId, targetExternalId, source, target }) => {
         const { sourceMeta, targetMeta } = allMetaKeysFromSourceAndTarget.reduce((a, key) => {
           const selector = generateDetailKey(key);
@@ -533,7 +533,7 @@ export default class CogniteDatasource extends DataSourceApi<
         });
         return [nodes, edges];
       }
-    )[realtionshipsList.length - 1];
+    )[relationshipsList.length - 1];
   };
 
   async checkLoginStatusApiKey() {
