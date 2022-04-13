@@ -7,7 +7,7 @@ import { SelectedProps } from './queryEditor';
 const MultiSelectAsync = (props) => {
   const { datasource, query, onQueryChange, selector, placeholder } = props;
   const { refId } = query;
-  const s = selector.rout.split('.');
+  const s = selector.route.split('.');
   return (
     <AsyncMultiSelect
       loadOptions={() => datasource.getRelationshipsDropdowns(refId, selector)}
@@ -20,7 +20,7 @@ const MultiSelectAsync = (props) => {
     />
   );
 };
-export const Relationships = (
+export const RelationshipsTab = (
   props: SelectedProps & { datasource: CogniteDatasource } & { selectors } & { className }
 ) => {
   const { datasource, query, onQueryChange, selectors, className } = props;
