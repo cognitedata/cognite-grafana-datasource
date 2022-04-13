@@ -102,7 +102,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   templateQuery: defaultTemplateQuery,
-  relationsShipsQuery: defaultRelationshipsQuery,
+  relationshipsQuery: defaultRelationshipsQuery,
 };
 
 /**
@@ -165,7 +165,7 @@ export interface CogniteQueryBase extends DataQuery {
   templateQuery: TemplateQuery;
   expr: string;
   warning: string;
-  relationsShipsQuery: RelationshipsQuery;
+  relationshipsQuery: RelationshipsQuery;
 }
 
 export type TemplateQuery = {
