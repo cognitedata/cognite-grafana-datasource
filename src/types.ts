@@ -77,7 +77,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
-  relationsShipsQuery: defaultRelationshipsQuery,
+  relationshipsQuery: defaultRelationshipsQuery,
 };
 
 /**
@@ -138,7 +138,7 @@ export interface CogniteQueryBase extends DataQuery {
   eventQuery: EventQuery;
   expr: string;
   warning: string;
-  relationsShipsQuery: RelationshipsQuery;
+  relationshipsQuery: RelationshipsQuery;
 }
 
 export type CogniteTargetObj =
