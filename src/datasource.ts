@@ -643,9 +643,6 @@ export async function getDataQueryRequestItems(
       items = await formQueriesForExpression(expr, target, connector, defaultInterval);
       break;
     }
-    case Tab.Relationships: {
-      break;
-    }
   }
   return { type, items, target };
 }
