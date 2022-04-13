@@ -484,16 +484,16 @@ export function QueryEditor(props: EditorProps) {
               className: 'full-width-row',
               selectors: [
                 {
-                  route: 'relationsShipsQuery.dataSetIds',
+                  route: 'relationshipsQuery.dataSetIds',
                   type: 'datasets',
                   keyPropName: 'id',
                 },
                 {
-                  route: 'relationsShipsQuery.labels.containsAny',
+                  route: 'relationshipsQuery.labels.containsAny',
                   type: 'labels',
                   keyPropName: 'externalId',
                 },
-                'relationsShipsQuery.isActiveAtTime',
+                'relationshipsQuery.isActiveAtTime',
               ],
             }}
           />
