@@ -14,7 +14,7 @@ import {
   Segment,
   Button,
 } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
@@ -34,6 +34,7 @@ import { failedResponseEvent, EventFields, responseWarningEvent } from '../const
 import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
 import '../css/common.css';
+import { TemplatesTab } from './templatesTab';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -120,7 +121,6 @@ const LatestValueCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={query.latestValue}
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
         />
@@ -141,7 +141,6 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={query.eventQuery.activeAtTimeRange}
           onChange={({ currentTarget }) =>
             onQueryChange({
@@ -183,7 +182,6 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
       <InlineFormLabel width={9}>Include sub-assets</InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          css=""
           value={includeSubtrees}
           onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
         />
@@ -458,11 +456,12 @@ export function QueryEditor(props: EditorProps) {
       <TabsBar>
         {Object.values(Tabs).map((t) => (
           <Tab
-            css=""
+            hidden={t === Tabs.Templates && !datasource.connector.isTemplatesEnabled()}
             label={TabTitles[t]}
             key={t}
             active={tab === t}
             onChangeTab={onSelectTab(t)}
+            id={t === Tabs.Templates ? 'templates-tab-label' : ''}
           />
         ))}
       </TabsBar>
@@ -471,6 +470,9 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Templates && (
+          <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
       {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}

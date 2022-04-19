@@ -1,3 +1,4 @@
+import { isArray } from 'lodash';
 import { applyFilters } from '../utils';
 import { FilterTypes, ParsedFilter } from '../parser/types';
 
