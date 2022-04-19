@@ -13,7 +13,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { isEmpty, partition } from 'lodash';
+import { groupBy, isEmpty, partition } from 'lodash';
 import {
   concurrent,
   datapointsPath,
@@ -123,7 +123,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets } = groupTargets(queryTargets);
+    const { eventTargets, relationshipsQuery, tsTargets } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
@@ -131,7 +131,10 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets, timeRange);
+        const relationshipsResults = await this.fetchRelationshipsTargets(
+          relationshipsQuery,
+          timeRange
+        );
         handleFailedTargets(failed);
         showWarnings(succeded);
         responseData = [
@@ -390,6 +393,7 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
+
   async getRelationshipsDropdowns(
     refId: string,
     selector
@@ -441,7 +445,7 @@ export default class CogniteDatasource extends DataSourceApi<
         }
         return [];
       })
-    ).then((res) => res[0]);
+    ).then((res) => res[0] || []);
   };
 
   async checkLoginStatusApiKey() {
@@ -648,8 +652,17 @@ export async function getDataQueryRequestItems(
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const [eventTargets, tsTargets] = partition(targets, ({ tab }) => tab === Tab.Event);
-  return { eventTargets, tsTargets };
+  const groupedByTab = groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
+  console.log(groupedByTab);
+  return {
+    eventTargets: groupedByTab[Tab.Event] ?? [],
+    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
+    tsTargets: [
+      ...(groupedByTab[Tab.Timeseries] ?? []),
+      ...(groupedByTab[Tab.Asset] ?? []),
+      ...(groupedByTab[Tab.Custom] ?? []),
+    ],
+  };
 }
 
 const filterLabels = (labels) =>
