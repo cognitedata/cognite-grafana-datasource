@@ -127,7 +127,7 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets, templatesTargets } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
 
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
@@ -140,7 +140,10 @@ export default class CogniteDatasource extends DataSourceApi<
           targets: templatesTargets,
         });
 
-        const relationshipsResults = await this.fetchRelationshipsTargets(queryTargets, timeRange);
+        const relationshipsResults = await this.fetchRelationshipsTargets(
+          relationshipsQuery,
+          timeRange
+        );
         handleFailedTargets(failed);
         showWarnings(succeded);
         responseData = [
@@ -404,6 +407,7 @@ export default class CogniteDatasource extends DataSourceApi<
   fetchSingleAsset = (id: IdEither) => {
     return fetchSingleAsset(id, this.connector);
   };
+
   async getRelationshipsDropdowns(
     refId: string,
     selector
@@ -455,7 +459,7 @@ export default class CogniteDatasource extends DataSourceApi<
         }
         return [];
       })
-    ).then((res) => res[0]);
+    ).then((res) => res[0] || []);
   };
 
   async checkLoginStatusApiKey() {
@@ -673,6 +677,7 @@ function groupTargets(targets: CogniteQuery[]) {
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
+    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
