@@ -15,6 +15,7 @@ export enum Tab {
   Custom = 'Custom',
   Event = 'Event',
   Relationships = 'Relationships',
+  Templates = 'Templates',
 }
 
 export const TabTitles = {
@@ -23,6 +24,7 @@ export const TabTitles = {
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
   [Tab.Relationships]: 'Relationships',
+  [Tab.Templates]: 'Templates',
 };
 
 const defaultAssetQuery: AssetQuery = {
@@ -67,6 +69,28 @@ export interface RelationshipsQuery {
   sourceExternalIds?: string[];
   targetTypes?: string[];
 }
+export const defaultTemplateQuery: TemplateQuery = {
+  groupExternalId: undefined,
+  version: undefined,
+  graphQlQuery: `
+query {
+  wellQuery {
+    items {
+      name,
+      pressure {
+        datapoints(start: $__from, end: $__to, limit: 50) {
+          timestamp,
+          value
+        }
+      }
+    }
+  }
+}`,
+  dataPath: 'wellQuery.items',
+  datapointsPath: 'pressure.datapoints',
+  groupBy: 'name',
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -78,6 +102,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
+  templateQuery: defaultTemplateQuery,
 };
 
 /**
@@ -92,6 +117,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthTokenUrl?: string;
   oauthClientId?: string;
   oauthScope?: string;
+  enableTemplates?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -136,10 +162,20 @@ export interface CogniteQueryBase extends DataQuery {
   tab: Tab;
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
+  templateQuery: TemplateQuery;
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
 }
+
+export type TemplateQuery = {
+  groupExternalId: string;
+  version: number;
+  graphQlQuery: string;
+  groupBy: string;
+  datapointsPath: string;
+  dataPath: string;
+};
 
 export type CogniteTargetObj =
   | {
