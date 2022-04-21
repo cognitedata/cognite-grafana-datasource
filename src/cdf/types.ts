@@ -199,3 +199,22 @@ export interface CogniteRelationshipResponse {
   source?: CogniteRelationshipAsset;
   target?: CogniteRelationshipAsset;
 }
+export interface RelationshipsFilter {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
+}
