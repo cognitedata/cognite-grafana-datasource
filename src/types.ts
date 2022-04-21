@@ -66,6 +66,7 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
     containsAny: [],
   },
   isActiveAtTime: false,
+  limit: 1000,
 };
 export interface RelationshipsSelectableValue {
   value?: string | number;
@@ -90,6 +91,7 @@ export interface RelationshipsQuery {
   };
   sourceExternalIds?: string[];
   targetTypes?: string[];
+  limit: number;
 }
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
