@@ -1,59 +1,78 @@
 import React from 'react';
-import { AsyncMultiSelect, InlineFormLabel, Switch } from '@grafana/ui';
+import { AsyncMultiSelect, Field, HorizontalGroup, Input, Switch } from '@grafana/ui';
 import { get, set } from 'lodash';
 import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
 
+const dataSetIds = {
+  route: 'dataSetIds',
+  type: 'datasets',
+  keyPropName: 'id',
+};
+const labels = {
+  type: 'labels',
+  keyPropName: 'externalId',
+  route: 'labels.containsAny',
+};
+
 const MultiSelectAsync = (props) => {
-  const { datasource, query, onQueryChange, selector, placeholder } = props;
-  const { refId } = query;
-  const s = selector.route.split('.');
+  const { datasource, query, onQueryChange, selector, placeholder, queryTypeSelector } = props;
+  const s = `${queryTypeSelector}.${selector.route}`.split('.');
   return (
-    <AsyncMultiSelect
-      loadOptions={() => datasource.getRelationshipsDropdowns(refId, selector)}
-      value={[...get(query, s)]}
-      defaultOptions
-      allowCustomValue
-      onChange={(values) => onQueryChange(set(query, s, values))}
-      placeholder={placeholder}
-      maxMenuHeight={150}
-    />
+    <Field label={`Filter relations by ${selector.type}`}>
+      <AsyncMultiSelect
+        loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
+        value={[...get(query, s)]}
+        defaultOptions
+        allowCustomValue
+        onChange={(values) => onQueryChange(set(query, s, values))}
+        placeholder={placeholder}
+        maxMenuHeight={150}
+      />
+    </Field>
   );
 };
 export const RelationshipsTab = (
-  props: SelectedProps & { datasource: CogniteDatasource } & { selectors } & { className }
+  props: SelectedProps & { datasource: CogniteDatasource } & { queryTypeSelector }
 ) => {
-  const { datasource, query, onQueryChange, selectors, className } = props;
+  const { datasource, query, onQueryChange, queryTypeSelector } = props;
+
   return (
-    <div className={className}>
+    <HorizontalGroup>
       <MultiSelectAsync
         query={query}
         datasource={datasource}
-        selector={selectors[0]}
-        placeholder="Filter relations by dataset"
+        selector={dataSetIds}
+        placeholder="Filter relations by datasets"
         onQueryChange={onQueryChange}
+        queryTypeSelector={queryTypeSelector}
       />
       <MultiSelectAsync
         query={query}
         datasource={datasource}
-        selector={selectors[1]}
-        placeholder="Filter relations by Label"
+        selector={labels}
+        placeholder="Filter relations by Labels"
         onQueryChange={onQueryChange}
+        queryTypeSelector={queryTypeSelector}
       />
-      <div style={{ display: 'flex' }}>
-        <InlineFormLabel tooltip="Fetch the latest relationship in the provided time range">
-          Active at Time
-        </InlineFormLabel>
-        <div className="gf-form-switch">
-          <Switch
-            css=""
-            value={get(query, selectors[2])}
-            onChange={({ currentTarget }) =>
-              onQueryChange(set(query, selectors[2], currentTarget.checked))
-            }
-          />
-        </div>
-      </div>
-    </div>
+      <Field label="Active at Time">
+        <Switch
+          value={get(query, `${queryTypeSelector}.isActiveAtTime`)}
+          onChange={({ currentTarget }) =>
+            onQueryChange(set(query, `${queryTypeSelector}.isActiveAtTime`, currentTarget.checked))
+          }
+        />
+      </Field>
+      <Field label="Limit">
+        <Input
+          type="number"
+          value={get(query, `${queryTypeSelector}.limit`)}
+          onChange={(value) =>
+            onQueryChange(set(query, `${queryTypeSelector}.limit`, (value.target as any).value))
+          }
+          defaultValue={1000}
+        />
+      </Field>
+    </HorizontalGroup>
   );
 };
