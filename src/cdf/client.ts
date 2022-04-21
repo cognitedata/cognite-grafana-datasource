@@ -9,6 +9,7 @@ import {
   TimeSeriesResponseItem,
   Resource,
   CogniteRelationshipResponse,
+  RelationshipsFilter,
 } from './types';
 import {
   Tab,
@@ -328,13 +329,18 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     columns: columns.map((text) => ({ text })),
   };
 };
-export function fetchRelationships(filter: RelationshipsQuery, connector: Connector) {
+
+export function fetchRelationships(
+  filter: RelationshipsFilter,
+  limit: number,
+  connector: Connector
+) {
   return connector.fetchItems<CogniteRelationshipResponse>({
     method: HttpMethod.POST,
     path: '/relationships/list',
     data: {
       fetchResources: true,
-      limit: 1000,
+      limit,
       filter,
     },
   });
