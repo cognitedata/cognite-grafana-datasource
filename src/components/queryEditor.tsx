@@ -13,7 +13,7 @@ import {
   Segment,
   Button,
 } from '@grafana/ui';
-import { FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
@@ -478,20 +478,7 @@ export function QueryEditor(props: EditorProps) {
               query,
               datasource,
               onQueryChange,
-              className: 'full-width-row',
-              selectors: [
-                {
-                  route: 'relationshipsQuery.dataSetIds',
-                  type: 'datasets',
-                  keyPropName: 'id',
-                },
-                {
-                  route: 'relationshipsQuery.labels.containsAny',
-                  type: 'labels',
-                  keyPropName: 'externalId',
-                },
-                'relationshipsQuery.isActiveAtTime',
-              ],
+              queryTypeSelector: 'relationshipsQuery',
             }}
           />
         )}
