@@ -1,8 +1,9 @@
 import React from 'react';
-import { AsyncMultiSelect, Field, HorizontalGroup, Input, Switch } from '@grafana/ui';
+import { AsyncMultiSelect, Field, Input, Switch } from '@grafana/ui';
 import { get, set } from 'lodash';
 import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
+import '../css/relationships.css';
 
 const dataSetIds = {
   route: 'dataSetIds',
@@ -28,17 +29,18 @@ const MultiSelectAsync = (props) => {
         onChange={(values) => onQueryChange(set(query, s, values))}
         placeholder={placeholder}
         maxMenuHeight={150}
+        className="relationships-select"
       />
     </Field>
   );
 };
 export const RelationshipsTab = (
-  props: SelectedProps & { datasource: CogniteDatasource } & { queryTypeSelector }
+  props: SelectedProps & { datasource: CogniteDatasource } & { queryTypeSelector: string }
 ) => {
   const { datasource, query, onQueryChange, queryTypeSelector } = props;
 
   return (
-    <HorizontalGroup>
+    <div className="relationships-row">
       <MultiSelectAsync
         query={query}
         datasource={datasource}
@@ -55,14 +57,6 @@ export const RelationshipsTab = (
         onQueryChange={onQueryChange}
         queryTypeSelector={queryTypeSelector}
       />
-      <Field label="Active at Time">
-        <Switch
-          value={get(query, `${queryTypeSelector}.isActiveAtTime`)}
-          onChange={({ currentTarget }) =>
-            onQueryChange(set(query, `${queryTypeSelector}.isActiveAtTime`, currentTarget.checked))
-          }
-        />
-      </Field>
       <Field label="Limit">
         <Input
           type="number"
@@ -73,6 +67,14 @@ export const RelationshipsTab = (
           defaultValue={1000}
         />
       </Field>
-    </HorizontalGroup>
+      <Field label="Active at Time">
+        <Switch
+          value={get(query, `${queryTypeSelector}.isActiveAtTime`)}
+          onChange={({ currentTarget }) =>
+            onQueryChange(set(query, `${queryTypeSelector}.isActiveAtTime`, currentTarget.checked))
+          }
+        />
+      </Field>
+    </div>
   );
 };
