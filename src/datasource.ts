@@ -14,7 +14,7 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { groupBy, isEmpty, partition } from 'lodash';
+import { groupBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -30,9 +30,7 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
-  fetchRelationships,
 } from './cdf/client';
-import { createRelationshipsNode } from './cdf/relationships';
 import {
   AssetsFilterRequestParams,
   EventsFilterRequestParams,
@@ -77,12 +75,11 @@ import {
   Tuple,
   VariableQueryData,
   QueriesDataItem,
-  RelationshipsSelectableValue,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
+import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
-
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
   CogniteDataSourceOptions
@@ -98,6 +95,7 @@ export default class CogniteDatasource extends DataSourceApi<
   templateSrv: TemplateSrv;
   backendSrv: BackendSrv;
   templatesDatasource: TemplatesDatasource;
+  relationshipsDatasource: RelationshipsDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -117,6 +115,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.project = cogniteProject;
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
+    this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
   }
 
   /**
@@ -130,16 +129,15 @@ export default class CogniteDatasource extends DataSourceApi<
     const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } =
       groupTargets(queryTargets);
     const timeRange = getRange(options.range);
-
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = await this.fetchRelationshipsTargets(
-          relationshipsQuery,
-          timeRange
-        );
+        const relationshipsResults = await this.relationshipsDatasource.query({
+          ...options,
+          targets: relationshipsQuery,
+        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
@@ -150,7 +148,7 @@ export default class CogniteDatasource extends DataSourceApi<
         responseData = [
           ...reduceTimeseries(succeded, timeRange),
           ...eventResults,
-          ...relationshipsResults,
+          ...relationshipsResults.data,
           ...templatesResults.data,
         ];
       } catch (error) {
@@ -409,60 +407,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  async getRelationshipsDropdowns(
-    refId: string,
-    selector
-  ): Promise<RelationshipsSelectableValue[]> {
-    const settings = {
-      method: HttpMethod.POST,
-      data: {
-        filter: {},
-        limit: 1000,
-      },
-    };
-    try {
-      const response = await this.connector.fetchItems({
-        ...settings,
-        path: `/${selector.type}/list`,
-      });
-      return response.map(({ name, ...rest }) => ({
-        value: rest[selector.keyPropName],
-        label: name,
-      }));
-    } catch (error) {
-      handleError(error, refId);
-      return [];
-    }
-  }
-
-  fetchRelationshipsTargets = async (
-    targets: CogniteQuery[],
-    [min, max]
-  ): Promise<MutableDataFrame[]> => {
-    return Promise.all(
-      targets.map(async (target) => {
-        const { tab, refId, relationshipsQuery } = target;
-        if (tab === Tab.Relationships) {
-          const { labels, dataSetIds, isActiveAtTime } = relationshipsQuery;
-
-          const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-          const relationshipsList = await fetchRelationships(
-            {
-              ...filterLabels(labels),
-              ...filterdataSetIds(dataSetIds),
-              ...timeFrame,
-            },
-            this.connector
-          );
-          return !isEmpty(relationshipsList)
-            ? createRelationshipsNode(relationshipsList, refId)
-            : [];
-        }
-        return [];
-      })
-    ).then((res) => res[0] || []);
-  };
-
   async checkLoginStatusApiKey() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
@@ -531,7 +475,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery } = target;
+      const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
@@ -547,7 +491,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         case Tab.Custom:
           return target.expr;
         case Tab.Relationships:
-          return true;
+          return (
+            !!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length
+          );
         case Tab.Timeseries:
         default:
           return target.target;
@@ -686,14 +632,3 @@ function groupTargets(targets: CogniteQuery[]) {
     ],
   };
 }
-
-const filterLabels = (labels) =>
-  !isEmpty(labels.containsAny) && {
-    labels: {
-      containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
-    },
-  };
-const filterdataSetIds = (dataSetIds) =>
-  !isEmpty(dataSetIds) && {
-    dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
-  };
