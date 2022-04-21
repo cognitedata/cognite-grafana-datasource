@@ -41,13 +41,3 @@ pre code,
 .gf-dropdown-wrapper {
   min-width: 200px;
 }
-
-.full-width-row {
-  width: 100%;
-  display: flex;
-  margin: 6px;
-}
-
-.longInputFild > input {
-  width: 38.5em !important;
-}
