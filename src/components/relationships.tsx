@@ -20,7 +20,7 @@ const MultiSelectAsync = (props) => {
   const { datasource, query, onQueryChange, selector, placeholder, queryTypeSelector } = props;
   const s = `${queryTypeSelector}.${selector.route}`.split('.');
   return (
-    <Field label={`Filter relations by ${selector.type}`}>
+    <Field label={`Filter relations by ${selector.type}`} className="relationships-select">
       <AsyncMultiSelect
         loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
         value={[...get(query, s)]}
@@ -29,7 +29,6 @@ const MultiSelectAsync = (props) => {
         onChange={(values) => onQueryChange(set(query, s, values))}
         placeholder={placeholder}
         maxMenuHeight={150}
-        className="relationships-select"
       />
     </Field>
   );
@@ -57,7 +56,7 @@ export const RelationshipsTab = (
         onQueryChange={onQueryChange}
         queryTypeSelector={queryTypeSelector}
       />
-      <Field label="Limit">
+      <Field label="Limit" className="relationships-item">
         <Input
           type="number"
           value={get(query, `${queryTypeSelector}.limit`)}
@@ -67,7 +66,7 @@ export const RelationshipsTab = (
           defaultValue={1000}
         />
       </Field>
-      <Field label="Active at Time">
+      <Field label="Active at Time" className="relationships-item">
         <Switch
           value={get(query, `${queryTypeSelector}.isActiveAtTime`)}
           onChange={({ currentTarget }) =>
