@@ -1,0 +1,11 @@
+.relationships-row {
+  width: 100%;
+  margin-top: 1em;
+  display: flex;
+  gap: 10px;
+}
+
+.relationships-select {
+  width: 38.5em !important;
+}
+
