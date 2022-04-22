@@ -191,7 +191,7 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
 };
 const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
-  const { includeSubtrees } = query.assetQuery;
+  const { withRelationships } = query.assetQuery;
 
   const onIncludeRelationshipsChange = (checked: boolean) => {
     onQueryChange({
@@ -207,7 +207,7 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
       <InlineFormLabel width={9}>Include relationships</InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          value={includeSubtrees}
+          value={withRelationships}
           onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
         />
       </div>
