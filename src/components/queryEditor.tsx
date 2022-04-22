@@ -189,7 +189,31 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
     </div>
   );
 };
+const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  const { includeSubtrees } = query.assetQuery;
 
+  const onIncludeRelationshipsChange = (checked: boolean) => {
+    onQueryChange({
+      assetQuery: {
+        ...query.assetQuery,
+        withRelationships: checked,
+      },
+    });
+  };
+
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Include relationships</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          value={includeSubtrees}
+          onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
+        />
+      </div>
+    </div>
+  );
+};
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
 
@@ -242,6 +266,17 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
+      )}
+      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+      {query.assetQuery.withRelationships && (
+        <RelationshipsTab
+          {...{
+            query,
+            datasource,
+            onQueryChange,
+            queryTypeSelector: 'assetQuery.relationshipsQuery',
+          }}
+        />
       )}
     </div>
   );
