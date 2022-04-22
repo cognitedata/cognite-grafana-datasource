@@ -27,9 +27,19 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
 };
 
+export const defaultRelationshipsQuery: RelationshipsQuery = {
+  dataSetIds: [],
+  labels: {
+    containsAny: [],
+  },
+  isActiveAtTime: false,
+  limit: 1000,
+};
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
+  withRelationships: false,
+  relationshipsQuery: defaultRelationshipsQuery,
 };
 
 const defaultEventQuery: EventQuery = {
@@ -60,14 +70,6 @@ query {
   groupBy: 'name',
 };
 
-export const defaultRelationshipsQuery: RelationshipsQuery = {
-  dataSetIds: [],
-  labels: {
-    containsAny: [],
-  },
-  isActiveAtTime: false,
-  limit: 1000,
-};
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
@@ -145,6 +147,8 @@ export interface MetricDescription {
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
+  withRelationships: boolean;
+  relationshipsQuery: RelationshipsQuery;
 }
 
 export interface EventQuery {
