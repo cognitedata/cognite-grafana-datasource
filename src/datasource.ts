@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { groupBy } from 'lodash';
+import { filter, groupBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -131,7 +131,6 @@ export default class CogniteDatasource extends DataSourceApi<
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
-        console.log('relationshipsQuery', relationshipsQuery);
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
         const templatesResults = await this.templatesDatasource.query({
@@ -492,9 +491,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return target.expr;
         case Tab.Relationships:
           return (
-            !!relationshipsQuery.dataSetIds.length ||
-            !!relationshipsQuery.labels.containsAny.length ||
-            !!relationshipsQuery.sourceExternalIds.length
+            !!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length
           );
         case Tab.Timeseries:
         default:
@@ -623,10 +620,16 @@ export async function getDataQueryRequestItems(
 
 function groupTargets(targets: CogniteQuery[]) {
   const groupedByTab = groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
+  // eslint-disable-next-line no-nested-ternary
+  const relationshipsQuery = groupedByTab[Tab.Asset]
+    ? filter(groupedByTab[Tab.Asset], (target) => target.assetQuery.withRelationships)
+    : groupedByTab[Tab.Relationships]
+    ? groupedByTab[Tab.Relationships]
+    : [];
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
-    relationshipsQuery: groupedByTab[(Tab.Relationships, Tab.Asset)] ?? [],
+    relationshipsQuery,
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
