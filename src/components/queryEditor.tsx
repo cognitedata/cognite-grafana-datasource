@@ -232,31 +232,22 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   };
 
   useEffect(() => {
-    onQueryChange({
-      assetQuery: {
-        ...query.assetQuery,
-        target: current.value,
-      },
-    });
-  }, [current.value]);
-
-  useEffect(() => {
     if (current.value && !current.label) {
       fetchAndSetDropdownLabel(current.value);
     }
   }, [current.value]);
 
   useEffect(() => {
-    if (query.assetQuery.withRelationships) {
-      onQueryChange({
-        relationshipsQuery: current.externalId
-          ? {
-              ...query.relationshipsQuery,
-              sourceExternalIds: [current.externalId],
-            }
-          : query.relationshipsQuery,
-      });
-    }
+    onQueryChange({
+      assetQuery: {
+        ...query.assetQuery,
+        target: current.value,
+      },
+      relationshipsQuery: {
+        ...query.relationshipsQuery,
+        sourceExternalIds: [current.externalId],
+      },
+    });
   }, [current.externalId]);
 
   return (
