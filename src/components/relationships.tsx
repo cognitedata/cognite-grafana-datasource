@@ -62,6 +62,7 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
             onQueryChange(set(query, `${queryTypeSelector}.limit`, (value.target as any).value))
           }
           defaultValue={1000}
+          max={1000}
         />
       </Field>
       <Field label="Active at Time" className="relationships-item">
