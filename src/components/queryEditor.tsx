@@ -521,13 +521,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Relationships && (
-          <RelationshipsTab
-            {...{
-              query,
-              datasource,
-              onQueryChange,
-            }}
-          />
+          <RelationshipsTab {...{ query, datasource, onQueryChange }} />
         )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />

@@ -5,6 +5,8 @@ import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
 import '../css/relationships.css';
 
+const queryTypeSelector = 'relationshipsQuery';
+
 const dataSetIds = {
   route: 'dataSetIds',
   type: 'datasets',
@@ -17,7 +19,7 @@ const labels = {
 };
 
 const MultiSelectAsync = (props) => {
-  const { datasource, query, onQueryChange, selector, placeholder, queryTypeSelector } = props;
+  const { datasource, query, onQueryChange, selector, placeholder } = props;
   const s = `${queryTypeSelector}.${selector.route}`.split('.');
   return (
     <Field label={`Filter relations by ${selector.type}`} className="relationships-select">
@@ -35,7 +37,6 @@ const MultiSelectAsync = (props) => {
 };
 export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
   const { datasource, query, onQueryChange } = props;
-  const queryTypeSelector = 'relationshipsQuery';
 
   return (
     <div className="relationships-row">
@@ -45,7 +46,6 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
         selector={dataSetIds}
         placeholder="Filter relations by datasets"
         onQueryChange={onQueryChange}
-        queryTypeSelector={queryTypeSelector}
       />
       <MultiSelectAsync
         query={query}
@@ -53,7 +53,6 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
         selector={labels}
         placeholder="Filter relations by Labels"
         onQueryChange={onQueryChange}
-        queryTypeSelector={queryTypeSelector}
       />
       <Field label="Limit" className="relationships-item">
         <Input
