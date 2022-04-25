@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { filter, groupBy } from 'lodash';
+import { filter, groupBy, map } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -624,7 +624,14 @@ function groupTargets(targets: CogniteQuery[]) {
   const relationshipsQuery = groupedByTab[Tab.Asset]
     ? filter(groupedByTab[Tab.Asset], (target) => target.assetQuery.withRelationships)
     : groupedByTab[Tab.Relationships]
-    ? groupedByTab[Tab.Relationships]
+    ? map(groupedByTab[Tab.Relationships], (target) => ({
+        ...target,
+        relationshipsQuery: {
+          labels: { containsAny: target.relationshipsQuery.labels.containsAny },
+          dataSetIds: target.relationshipsQuery.dataSetIds,
+          limit: target.relationshipsQuery.limit,
+        },
+      }))
     : [];
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
