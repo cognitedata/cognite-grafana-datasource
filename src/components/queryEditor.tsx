@@ -524,13 +524,7 @@ export function QueryEditor(props: EditorProps) {
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {tab === Tabs.Relationships && (
-          <RelationshipsTab
-            {...{
-              query,
-              datasource,
-              onQueryChange,
-            }}
-          />
+          <RelationshipsTab {...{ query, datasource, onQueryChange }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

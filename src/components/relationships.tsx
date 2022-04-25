@@ -34,8 +34,8 @@ const MultiSelectAsync = (props) => {
   );
 };
 export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
-  const { datasource, query, onQueryChange } = props;
   const queryTypeSelector = 'relationshipsQuery';
+  const { datasource, query, onQueryChange } = props;
 
   return (
     <div className="relationships-row">
