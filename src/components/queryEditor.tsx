@@ -253,7 +253,6 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           ? {
               ...query.relationshipsQuery,
               sourceExternalIds: [current.externalId],
-              targetTypes: ['timeSeries'],
             }
           : query.relationshipsQuery,
       });

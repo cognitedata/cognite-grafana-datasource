@@ -19,6 +19,11 @@ const filterLabels = (labels) =>
       containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
     },
   };
+const filterExternalId = (sourceExternalIds) =>
+  !_.isEmpty(sourceExternalIds) && {
+    targetTypes: ['timeSeries'],
+    sourceExternalIds,
+  };
 const filterdataSetIds = (dataSetIds) =>
   !_.isEmpty(dataSetIds) && {
     dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
@@ -117,12 +122,13 @@ export class RelationshipsDatasource {
   public constructor(private connector: Connector) {}
 
   private postQuery(query: RelationshipsQuery & { refId: string }, [min, max]) {
-    const { labels, dataSetIds, isActiveAtTime, limit = 1000 } = query;
+    const { labels, dataSetIds, isActiveAtTime, limit = 1000, sourceExternalIds } = query;
     const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
     return fetchRelationships(
       {
         ...filterLabels(labels),
         ...filterdataSetIds(dataSetIds),
+        ...filterExternalId(sourceExternalIds),
         ...timeFrame,
       },
       limit,
@@ -147,7 +153,13 @@ export class RelationshipsDatasource {
     const timeRange = getRange(options.range);
     const results = await Promise.all(
       options.targets.map((target) =>
-        this.postQuery({ refId: target.refId, ...target.relationshipsQuery }, timeRange)
+        this.postQuery(
+          {
+            refId: target.refId,
+            ...target.relationshipsQuery,
+          },
+          timeRange
+        )
       )
     );
     return {
