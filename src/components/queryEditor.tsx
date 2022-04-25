@@ -246,6 +246,20 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     }
   }, [current.value]);
 
+  useEffect(() => {
+    if (query.assetQuery.withRelationships) {
+      onQueryChange({
+        relationshipsQuery: current.externalId
+          ? {
+              ...query.relationshipsQuery,
+              sourceExternalIds: [current.externalId],
+              targetTypes: ['timeSeries'],
+            }
+          : query.relationshipsQuery,
+      });
+    }
+  }, [current.externalId]);
+
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
@@ -274,7 +288,6 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
             query,
             datasource,
             onQueryChange,
-            queryTypeSelector: 'assetQuery.relationshipsQuery',
           }}
         />
       )}
@@ -516,7 +529,6 @@ export function QueryEditor(props: EditorProps) {
               query,
               datasource,
               onQueryChange,
-              queryTypeSelector: 'relationshipsQuery',
             }}
           />
         )}

@@ -131,6 +131,7 @@ export default class CogniteDatasource extends DataSourceApi<
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
+        console.log('relationshipsQuery', relationshipsQuery);
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
         const templatesResults = await this.templatesDatasource.query({
@@ -491,7 +492,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return target.expr;
         case Tab.Relationships:
           return (
-            !!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length
+            !!relationshipsQuery.dataSetIds.length ||
+            !!relationshipsQuery.labels.containsAny.length ||
+            !!relationshipsQuery.sourceExternalIds.length
           );
         case Tab.Timeseries:
         default:
@@ -623,7 +626,7 @@ function groupTargets(targets: CogniteQuery[]) {
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
-    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
+    relationshipsQuery: groupedByTab[(Tab.Relationships, Tab.Asset)] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
