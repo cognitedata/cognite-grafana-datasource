@@ -13,18 +13,18 @@ import { nodeField, edgeField } from '../constants';
 
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
 
-const filterLabels = (labels) =>
+export const filterLabels = (labels) =>
   !_.isEmpty(labels.containsAny) && {
     labels: {
       containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
     },
   };
-const filterExternalId = (sourceExternalIds) =>
+export const filterExternalId = (sourceExternalIds) =>
   !_.isEmpty(sourceExternalIds) && {
     targetTypes: ['timeSeries'],
     sourceExternalIds,
   };
-const filterdataSetIds = (dataSetIds) =>
+export const filterdataSetIds = (dataSetIds) =>
   !_.isEmpty(dataSetIds) && {
     dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
   };
@@ -151,15 +151,17 @@ export class RelationshipsDatasource {
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
     const results = await Promise.all(
-      options.targets.map((target) =>
-        this.postQuery(
-          {
-            refId: target.refId,
-            ...target.relationshipsQuery,
-          },
-          timeRange
-        )
-      )
+      options.targets.map((target) => {
+        return target.assetQuery.withRelationships
+          ? []
+          : this.postQuery(
+              {
+                refId: target.refId,
+                ...target.relationshipsQuery,
+              },
+              timeRange
+            );
+      })
     );
     return {
       data: _.reduce(
