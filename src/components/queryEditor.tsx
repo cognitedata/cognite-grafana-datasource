@@ -163,7 +163,29 @@ const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
     <LabelEditor {...{ onQueryChange, query }} />
   </div>
 );
-
+const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  const { includeSubTiemseries } = query.assetQuery;
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Include sub-timeseries</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          value={includeSubTiemseries}
+          onChange={({ currentTarget }) => {
+            const { checked } = currentTarget;
+            onQueryChange({
+              assetQuery: {
+                ...query.assetQuery,
+                includeSubTiemseries: checked,
+              },
+            });
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   const { includeSubtrees } = query.assetQuery;
@@ -238,16 +260,18 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   }, [current.value]);
 
   useEffect(() => {
-    onQueryChange({
-      assetQuery: {
-        ...query.assetQuery,
-        target: current.value,
-      },
-      relationshipsQuery: {
-        ...query.relationshipsQuery,
-        sourceExternalIds: [current.externalId],
-      },
-    });
+    if (current.externalId) {
+      onQueryChange({
+        assetQuery: {
+          ...query.assetQuery,
+          target: current.value,
+        },
+        relationshipsQuery: {
+          ...query.relationshipsQuery,
+          sourceExternalIds: [current.externalId],
+        },
+      });
+    }
   }, [current.externalId]);
 
   return (
@@ -265,6 +289,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         />
       </div>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
+      <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
