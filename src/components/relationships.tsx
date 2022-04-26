@@ -58,9 +58,13 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
         <Input
           type="number"
           value={get(query, `${queryTypeSelector}.limit`)}
-          onChange={(value) =>
-            onQueryChange(set(query, `${queryTypeSelector}.limit`, (value.target as any).value))
-          }
+          onChange={(targetValue) => {
+            const { value } = targetValue.target as any;
+            if (value < 1001 && value > 0) {
+              onQueryChange(set(query, `${queryTypeSelector}.limit`, (value.target as any).value));
+            }
+            throw new Error('Limit must been between 1 and 1000');
+          }}
           defaultValue={1000}
           max={1000}
         />
