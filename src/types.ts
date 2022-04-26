@@ -39,6 +39,7 @@ const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
   withRelationships: false,
+  includeSubTiemseries: true,
 };
 
 const defaultEventQuery: EventQuery = {
@@ -147,6 +148,7 @@ export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
   withRelationships: boolean;
+  includeSubTiemseries: boolean;
 }
 
 export interface EventQuery {
