@@ -14,7 +14,7 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { filter, groupBy, map } from 'lodash';
+import { filter, groupBy, map, split } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -30,6 +30,7 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
+  fetchRelationships,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -77,7 +78,12 @@ import {
   QueriesDataItem,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
-import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
+import {
+  filterdataSetIds,
+  filterExternalId,
+  filterLabels,
+  RelationshipsDatasource,
+} from './datasources/RelationshipsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
@@ -572,10 +578,12 @@ async function findAssetTimeseries(
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
-        assetSubtreeIds: [{ id: Number(assetId) }],
+        assetSubtreeIds: assetQuery.withRelationships
+          ? map(split(assetId, ','), (id) => ({ id: Number(id) }))
+          : [{ id: Number(assetId) }],
       }
     : {
-        assetIds: [assetId],
+        assetIds: assetQuery.withRelationships ? split(assetId, ',') : [assetId],
       };
 
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
@@ -606,6 +614,33 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
+      const timeseriesIds = target.assetQuery.includeSubTiemseries
+        ? [target.assetQuery.target]
+        : [];
+      if (target.assetQuery.withRelationships) {
+        const {
+          labels,
+          dataSetIds,
+          isActiveAtTime,
+          limit = 1000,
+          sourceExternalIds,
+        } = target.relationshipsQuery;
+        // const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+        const relationshipsRespone = await fetchRelationships(
+          {
+            ...filterLabels(labels),
+            ...filterdataSetIds(dataSetIds),
+            ...filterExternalId(sourceExternalIds),
+          },
+          limit,
+          connector
+        );
+        map(relationshipsRespone, ({ target: { id } }) => {
+          timeseriesIds.push(`${id}`);
+        });
+      }
+      // eslint-disable-next-line no-param-reassign
+      target.assetQuery.target = timeseriesIds.join(',');
       const timeseries = await findAssetTimeseries(target, connector);
       items = timeseries.map(({ id }) => ({ id }));
       break;
