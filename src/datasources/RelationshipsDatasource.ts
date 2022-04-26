@@ -28,7 +28,7 @@ const filterdataSetIds = (dataSetIds) =>
   !_.isEmpty(dataSetIds) && {
     dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
   };
-export const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
+const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
   const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
 
   const allMetaKeysFromSourceAndTarget = _.reduce(
@@ -108,7 +108,8 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
       id: externalId,
       source: sourceExternalId,
       target: targetExternalId,
-      mainStat: _.map(labels, ({ externalId }) => externalId)
+      mainStat: labels
+        .map(({ externalId }) => externalId)
         .join(', ')
         .trim(),
     });
