@@ -19,8 +19,11 @@ const labels = {
 };
 
 const MultiSelectAsync = (props) => {
-  const { datasource, query, onQueryChange, selector, placeholder } = props;
-  const s = `${queryTypeSelector}.${selector.route}`.split('.');
+  const { datasource, query, onQueryChange, selector, placeholder, queryBinder } = props;
+  const route = queryBinder
+    ? `${queryBinder}.${queryTypeSelector}.${selector.route}`
+    : `${queryTypeSelector}.${selector.route}`;
+  const s = route.split('.');
   return (
     <Field label={`Filter relations by ${selector.type}`} className="relationships-select">
       <AsyncMultiSelect
@@ -35,8 +38,11 @@ const MultiSelectAsync = (props) => {
     </Field>
   );
 };
-export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
-  const { datasource, query, onQueryChange } = props;
+export const RelationshipsTab = (
+  props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null }
+) => {
+  const { datasource, query, onQueryChange, queryBinder } = props;
+  const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
 
   return (
     <div className="relationships-row">
@@ -46,6 +52,7 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
         selector={dataSetIds}
         placeholder="Filter relations by datasets"
         onQueryChange={onQueryChange}
+        queryBinder={queryBinder}
       />
       <MultiSelectAsync
         query={query}
@@ -53,6 +60,7 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
         selector={labels}
         placeholder="Filter relations by Labels"
         onQueryChange={onQueryChange}
+        queryBinder={queryBinder}
       />
       <Field label="Limit" className="relationships-item">
         <Input
@@ -61,7 +69,7 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
           onChange={(targetValue) => {
             const { value } = targetValue.target as any;
             if (value < 1001 && value > 0) {
-              onQueryChange(set(query, `${queryTypeSelector}.limit`, (value.target as any).value));
+              return onQueryChange(set(query, `${route}.limit`, value));
             }
             throw new Error('Limit must been between 1 and 1000');
           }}
@@ -71,9 +79,9 @@ export const RelationshipsTab = (props: SelectedProps & { datasource: CogniteDat
       </Field>
       <Field label="Active at Time" className="relationships-item">
         <Switch
-          value={get(query, `${queryTypeSelector}.isActiveAtTime`)}
+          value={get(query, `${route}.isActiveAtTime`)}
           onChange={({ currentTarget }) =>
-            onQueryChange(set(query, `${queryTypeSelector}.isActiveAtTime`, currentTarget.checked))
+            onQueryChange(set(query, `${route}.isActiveAtTime`, currentTarget.checked))
           }
         />
       </Field>
