@@ -28,7 +28,7 @@ const MultiSelectAsync = (props) => {
     <Field label={`Filter relations by ${selector.type}`} className="relationships-select">
       <AsyncMultiSelect
         loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
-        value={[...get(query, s)]}
+        value={get(query, s)}
         defaultOptions
         allowCustomValue
         onChange={(values) => onQueryChange(set(query, s, values))}
@@ -65,7 +65,7 @@ export const RelationshipsTab = (
       <Field label="Limit" className="relationships-item">
         <Input
           type="number"
-          value={get(query, `${queryTypeSelector}.limit`)}
+          value={get(query, `${route}.limit`)}
           onChange={(targetValue) => {
             const { value } = targetValue.target as any;
             if (value < 1001 && value > 0) {
