@@ -199,11 +199,14 @@ describe('Datasource Query', () => {
     });
   });
 
+  //
   describe('Given "Select Timeseries from Asset" queries', () => {
     let result;
     const assetQuery = {
       target: '789',
       includeSubtrees: false,
+      withRelationships: false,
+      includeSubTiemseries: true,
     };
     const targetC: QueryTargetLike = {
       assetQuery,
@@ -222,6 +225,8 @@ describe('Datasource Query', () => {
       assetQuery: {
         target: '[[AssetVariable]]',
         includeSubtrees: false,
+        includeSubTiemseries: true,
+        withRelationships: false,
       },
     };
     const targetError1: QueryTargetLike = {
@@ -570,6 +575,8 @@ describe('Datasource Query', () => {
         assetQuery: {
           target: '',
           includeSubtrees: false,
+          includeSubTiemseries: true,
+          withRelationships: false,
         },
       };
       const emptyAsset: Partial<CogniteQuery> = {

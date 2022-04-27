@@ -549,5 +549,3 @@ Object {
   ],
 }
 `;
-
-exports[`Relationships Test labels and datasets drop error on  1`] = `Array []`;
