@@ -265,10 +265,10 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         assetQuery: {
           ...query.assetQuery,
           target: current.value,
-        },
-        relationshipsQuery: {
-          ...query.relationshipsQuery,
-          sourceExternalIds: [current.externalId],
+          relationshipsQuery: {
+            ...query.assetQuery.relationshipsQuery,
+            sourceExternalIds: [current.externalId],
+          },
         },
       });
     }
@@ -303,6 +303,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
             query,
             datasource,
             onQueryChange,
+            queryBinder: 'assetQuery',
           }}
         />
       )}
@@ -535,11 +536,11 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Relationships && (
+          <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
+        )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
-        )}
-        {tab === Tabs.Relationships && (
-          <RelationshipsTab {...{ query, datasource, onQueryChange }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
