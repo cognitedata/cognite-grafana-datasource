@@ -116,7 +116,6 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
   relationshipsList.map(addValuesToFields);
   return { nodes, edges };
 };
-
 export class RelationshipsDatasource {
   public constructor(private connector: Connector) {}
 
@@ -152,15 +151,13 @@ export class RelationshipsDatasource {
     const timeRange = getRange(options.range);
     const results = await Promise.all(
       options.targets.map((target) => {
-        return target.assetQuery.withRelationships
-          ? []
-          : this.postQuery(
-              {
-                refId: target.refId,
-                ...target.relationshipsQuery,
-              },
-              timeRange
-            );
+        return this.postQuery(
+          {
+            refId: target.refId,
+            ...target.relationshipsQuery,
+          },
+          timeRange
+        );
       })
     );
     return {
