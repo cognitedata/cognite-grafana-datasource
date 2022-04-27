@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { find, groupBy, isEmpty } from 'lodash';
+import { find, groupBy, isEmpty, uniqBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -584,16 +584,13 @@ async function findAssetTimeseries(
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
-  const ts = [];
+  let ts = [];
   if (assetQuery.includeSubTiemseries) {
     const tS = await getTimeseries({ filter, limit }, connector);
-    if (!isEmpty(tS)) {
-      tS.map(
-        ({ id, isStep, createdTime, lastUpdatedTime }) =>
-          isEmpty(find(ts, id)) &&
-          ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+    if (!isEmpty(tS))
+      tS.map(({ id, isStep, createdTime, lastUpdatedTime }) =>
+        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
       );
-    }
   }
   if (assetQuery.withRelationships) {
     const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
@@ -607,14 +604,12 @@ async function findAssetTimeseries(
       limit,
       connector
     );
-    if (!isEmpty(relationshipsList)) {
-      relationshipsList.map(
-        ({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
-          isEmpty(find(ts, id)) &&
-          ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+    if (!isEmpty(relationshipsList))
+      relationshipsList.map(({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
+        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
       );
-    }
   }
+  ts = uniqBy(ts, 'id');
   if (ts.length === limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
 
