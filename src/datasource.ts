@@ -14,7 +14,7 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { filter, groupBy, map, split } from 'lodash';
+import { find, groupBy, isEmpty } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -570,7 +570,6 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
     }
   }
 }
-
 async function findAssetTimeseries(
   { refId, assetQuery }: QueryTarget,
   connector: Connector
@@ -578,18 +577,45 @@ async function findAssetTimeseries(
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
-        assetSubtreeIds: assetQuery.withRelationships
-          ? map(split(assetId, ','), (id) => ({ id: Number(id) }))
-          : [{ id: Number(assetId) }],
+        assetSubtreeIds: [{ id: Number(assetId) }],
       }
     : {
-        assetIds: assetQuery.withRelationships ? split(assetId, ',') : [assetId],
+        assetIds: [assetId],
       };
-
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
-  const ts = await getTimeseries({ filter, limit }, connector);
+  const ts = [];
+  if (assetQuery.includeSubTiemseries) {
+    const tS = await getTimeseries({ filter, limit }, connector);
+    if (!isEmpty(tS)) {
+      tS.map(
+        ({ id, isStep, createdTime, lastUpdatedTime }) =>
+          isEmpty(find(ts, id)) &&
+          ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+      );
+    }
+  }
+  if (assetQuery.withRelationships) {
+    const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
+    const relationshipsList = await fetchRelationships(
+      {
+        ...filterLabels(labels),
+        ...filterdataSetIds(dataSetIds),
+        ...filterExternalId(sourceExternalIds),
+        // ...timeFrame,
+      },
+      limit,
+      connector
+    );
+    if (!isEmpty(relationshipsList)) {
+      relationshipsList.map(
+        ({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
+          isEmpty(find(ts, id)) &&
+          ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+      );
+    }
+  }
   if (ts.length === limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
 
@@ -614,33 +640,6 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseriesIds = target.assetQuery.includeSubTiemseries
-        ? [target.assetQuery.target]
-        : [];
-      if (target.assetQuery.withRelationships) {
-        const {
-          labels,
-          dataSetIds,
-          isActiveAtTime,
-          limit = 1000,
-          sourceExternalIds,
-        } = target.relationshipsQuery;
-        // const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-        const relationshipsRespone = await fetchRelationships(
-          {
-            ...filterLabels(labels),
-            ...filterdataSetIds(dataSetIds),
-            ...filterExternalId(sourceExternalIds),
-          },
-          limit,
-          connector
-        );
-        map(relationshipsRespone, ({ target: { id } }) => {
-          timeseriesIds.push(`${id}`);
-        });
-      }
-      // eslint-disable-next-line no-param-reassign
-      target.assetQuery.target = timeseriesIds.join(',');
       const timeseries = await findAssetTimeseries(target, connector);
       items = timeseries.map(({ id }) => ({ id }));
       break;
@@ -656,23 +655,10 @@ export async function getDataQueryRequestItems(
 
 function groupTargets(targets: CogniteQuery[]) {
   const groupedByTab = groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
-  // eslint-disable-next-line no-nested-ternary
-  const relationshipsQuery = groupedByTab[Tab.Asset]
-    ? filter(groupedByTab[Tab.Asset], (target) => target.assetQuery.withRelationships)
-    : groupedByTab[Tab.Relationships]
-    ? map(groupedByTab[Tab.Relationships], (target) => ({
-        ...target,
-        relationshipsQuery: {
-          labels: { containsAny: target.relationshipsQuery.labels.containsAny },
-          dataSetIds: target.relationshipsQuery.dataSetIds,
-          limit: target.relationshipsQuery.limit,
-        },
-      }))
-    : [];
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
-    relationshipsQuery,
+    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
