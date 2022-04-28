@@ -5,6 +5,7 @@ import {
   DataQuery,
   DataSourceJsonData,
   TableData,
+  MutableDataFrame,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
@@ -13,6 +14,7 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
+  Relationships = 'Relationships',
   Templates = 'Templates',
 }
 
@@ -21,6 +23,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
 };
 
@@ -35,6 +38,39 @@ const defaultEventQuery: EventQuery = {
   activeAtTimeRange: true,
 };
 
+export const defaultRelationshipsQuery: RelationshipsQuery = {
+  dataSetIds: [],
+  labels: {
+    containsAny: [],
+  },
+  isActiveAtTime: false,
+  limit: 1000,
+};
+export interface RelationshipsSelectableValue {
+  value?: string | number;
+  label?: string;
+}
+
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
+  limit: number;
+}
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -67,6 +103,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
+  relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
 };
 
@@ -98,7 +135,7 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (<DataQueryError>maybeError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<(TimeSeries | TableData)[]>;
+export type QueryResponse = DataResponse<(TimeSeries | TableData | MutableDataFrame)[]>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -130,6 +167,7 @@ export interface CogniteQueryBase extends DataQuery {
   templateQuery: TemplateQuery;
   expr: string;
   warning: string;
+  relationshipsQuery: RelationshipsQuery;
 }
 
 export type TemplateQuery = {

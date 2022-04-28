@@ -8,6 +8,8 @@ import {
   IdEither,
   TimeSeriesResponseItem,
   Resource,
+  CogniteRelationshipResponse,
+  RelationshipsFilter,
 } from './types';
 import {
   Tab,
@@ -30,6 +32,7 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
+  RelationshipsQuery,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
@@ -326,3 +329,19 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
     columns: columns.map((text) => ({ text })),
   };
 };
+
+export function fetchRelationships(
+  filter: RelationshipsFilter,
+  limit: number,
+  connector: Connector
+) {
+  return connector.fetchItems<CogniteRelationshipResponse>({
+    method: HttpMethod.POST,
+    path: '/relationships/list',
+    data: {
+      fetchResources: true,
+      limit,
+      filter,
+    },
+  });
+}

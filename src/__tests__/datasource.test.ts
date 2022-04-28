@@ -301,8 +301,7 @@ describe('Datasource Query', () => {
       refId: 'B',
       target: 123,
       tab: Custom,
-      expr:
-        "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
+      expr: "ts{description!='test timeseriesC', metadata={key1='value1', key2!~'.*2'}, aggregate='discreteVariance', granularity='10d'}",
     };
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetB),
@@ -393,8 +392,7 @@ describe('Datasource Query', () => {
     const targetD: QueryTargetLike = {
       ...cloneDeep(targetA),
       refId: 'D',
-      expr:
-        'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
+      expr: 'ts{} * ts{externalId="[[TimeseriesVariable]]", aggregate="average"} - ts{externalId="[[TimeseriesVariable]]", aggregate="average", granularity="10m"}',
       label: '',
     };
 

@@ -1,5 +1,4 @@
 import defaults from 'lodash/defaults';
-
 import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
@@ -14,7 +13,7 @@ import {
   Segment,
   Button,
 } from '@grafana/ui';
-import { FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
 import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
@@ -31,8 +30,9 @@ import {
   TabTitles,
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
-import '../css/query_editor.css';
 import { ResourceSelect } from './resourceSelect';
+import { RelationshipsTab } from './relationships';
+import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 
@@ -42,7 +42,7 @@ type OnQueryChange = (
   patch: Partial<CogniteQueryBase> | CogniteTargetObj,
   shouldRunQuery?: boolean
 ) => void;
-type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
+export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
@@ -448,7 +448,9 @@ export function QueryEditor(props: EditorProps) {
 
   useEffect(() => {
     eventsSubscribe();
-    return () => eventsUnsubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
   }, [tab]);
 
   return (
@@ -470,6 +472,9 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Relationships && (
+          <RelationshipsTab {...{ query, datasource, onQueryChange }} />
+        )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}

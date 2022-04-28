@@ -10,6 +10,7 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
+  MutableDataFrame,
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
@@ -76,9 +77,9 @@ import {
   QueriesDataItem,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
+import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
-
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
   CogniteDataSourceOptions
@@ -94,6 +95,7 @@ export default class CogniteDatasource extends DataSourceApi<
   templateSrv: TemplateSrv;
   backendSrv: BackendSrv;
   templatesDatasource: TemplatesDatasource;
+  relationshipsDatasource: RelationshipsDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -113,6 +115,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.project = cogniteProject;
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
+    this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
   }
 
   /**
@@ -123,14 +126,18 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets, templatesTargets } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } =
+      groupTargets(queryTargets);
     const timeRange = getRange(options.range);
-
-    let responseData: (TimeSeries | TableData)[] = [];
+    let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const relationshipsResults = await this.relationshipsDatasource.query({
+          ...options,
+          targets: relationshipsQuery,
+        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
@@ -141,6 +148,7 @@ export default class CogniteDatasource extends DataSourceApi<
         responseData = [
           ...reduceTimeseries(succeded, timeRange),
           ...eventResults,
+          ...relationshipsResults.data,
           ...templatesResults.data,
         ];
       } catch (error) {
@@ -219,12 +227,8 @@ export default class CogniteDatasource extends DataSourceApi<
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, assetQuery, label, eventQuery } = target;
 
-    const [
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-      eventExprTemplated,
-    ] = this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
+    const [exprTemplated, labelTemplated, assetTargetTemplated, eventExprTemplated] =
+      this.replaceVariablesArr([expr, label, assetQuery?.target, eventQuery?.expr], scopedVars);
 
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -471,7 +475,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery } = target;
+      const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr;
@@ -486,6 +490,10 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           );
         case Tab.Custom:
           return target.expr;
+        case Tab.Relationships:
+          return (
+            !!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length
+          );
         case Tab.Timeseries:
         default:
           return target.target;
@@ -616,6 +624,7 @@ function groupTargets(targets: CogniteQuery[]) {
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
+    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
