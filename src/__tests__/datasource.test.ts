@@ -3,7 +3,7 @@ import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
-import { CogniteQuery, defaultQuery, QueryTarget, Tab } from '../types';
+import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
 
@@ -296,6 +296,59 @@ describe('Datasource Query', () => {
         refId: 'F',
         error: 'Unknown error',
       });
+    });
+  });
+
+  describe('Give "Select Timeseries of Relationships target from Asset" queries', () => {
+    let result;
+    const assetQuery = {
+      target: '789',
+      includeSubtrees: false,
+      withRelationships: true,
+      includeSubTiemseries: true,
+      relationshipsQuery: defaultRelationshipsQuery,
+    };
+    const targetA: QueryTargetLike = {
+      tab: Asset,
+      aggregation: 'max',
+      refId: 'C',
+      target: '',
+      label: '{{description}}-{{externalId}}',
+      assetQuery,
+    };
+    const targetB: QueryTargetLike = {
+      ...targetA,
+      assetQuery: {
+        ...assetQuery,
+        includeSubTiemseries: false,
+      },
+    };
+    const targetC: QueryTargetLike = {
+      ...targetA,
+      assetQuery: {
+        ...assetQuery,
+        includeSubTiemseries: false,
+        withRelationships: false,
+      },
+    };
+    const tsResponseA = getItemsResponseObject([
+      { id: 123, externalId: 'Timeseries123', description: 'test timeseries' },
+    ]);
+    beforeAll(async () => {
+      jest.clearAllMocks();
+      options.intervalMs = ms('6m');
+      options.targets = [targetA, targetB, targetC];
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(tsResponseA))
+        .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
+      result = await ds.query(options);
+    });
+    it('should generate the correct queries', () => {
+      expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(2);
+      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
+        expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
+      }
     });
   });
 
