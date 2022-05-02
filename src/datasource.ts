@@ -14,7 +14,7 @@ import {
   DataQueryResponse,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { find, groupBy, isEmpty, uniqBy } from 'lodash';
+import { groupBy, isEmpty, uniqBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -176,7 +176,12 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
-        return await getDataQueryRequestItems(target, this.connector, options.intervalMs);
+        return await getDataQueryRequestItems(
+          target,
+          this.connector,
+          options.intervalMs,
+          getRange(options.range)
+        );
       } catch (e) {
         handleError(e, target.refId);
       }
@@ -572,8 +577,10 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
 }
 async function findAssetTimeseries(
   { refId, assetQuery }: QueryTarget,
-  connector: Connector
+  connector: Connector,
+  [min, max]
 ): Promise<TimeSeriesResponseItem[]> {
+  const timeFrame = assetQuery.relationshipsQuery.isActiveAtTime && { activeAtTime: { max, min } };
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -600,7 +607,7 @@ async function findAssetTimeseries(
         ...filterLabels(labels),
         ...filterdataSetIds(dataSetIds),
         ...filterExternalId(sourceExternalIds),
-        // ...timeFrame,
+        ...timeFrame,
       },
       limit,
       connector
@@ -622,7 +629,8 @@ async function findAssetTimeseries(
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
-  intervalMs: number
+  intervalMs: number,
+  timeRange
 ): Promise<QueriesDataItem> {
   const { tab, expr } = target;
   const type = getDataQueryRequestType(target);
@@ -635,7 +643,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findAssetTimeseries(target, connector);
+      const timeseries = await findAssetTimeseries(target, connector, timeRange);
       items = timeseries.map(({ id }) => ({ id }));
       break;
     }

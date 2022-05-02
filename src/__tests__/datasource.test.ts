@@ -1,11 +1,12 @@
 import ms from 'ms';
 import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
-import { TimeSeries } from '@grafana/data';
+import { dateTime, TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
+import { TimeRange } from '../cdf/types';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
@@ -257,6 +258,7 @@ describe('Datasource Query', () => {
 
     beforeAll(async () => {
       options.intervalMs = ms('6m');
+      // options.range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
       options.targets = [targetC, targetD, targetError1, targetError2];
       backendSrv.datasourceRequest = jest
         .fn()
