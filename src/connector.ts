@@ -20,8 +20,7 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
-    private enableTemplates?: boolean,
-    private enableRealtionships?: boolean
+    private enableTemplates?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -130,10 +129,6 @@ export class Connector {
 
   public isTemplatesEnabled() {
     return this.enableTemplates;
-  }
-
-  public isRelationshipsEnabled() {
-    return this.enableRealtionships;
   }
 
   public cachedRequest = async (
