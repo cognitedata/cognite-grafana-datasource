@@ -107,7 +107,13 @@ export default class CogniteDatasource extends DataSourceApi<
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
-    const { cogniteProject, oauthPassThru, oauthClientCreds, enableTemplates } = jsonData;
+    const {
+      cogniteProject,
+      oauthPassThru,
+      oauthClientCreds,
+      enableTemplates,
+      enableRealtionships,
+    } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
@@ -117,7 +123,8 @@ export default class CogniteDatasource extends DataSourceApi<
       this.backendSrv,
       oauthPassThru,
       oauthClientCreds,
-      enableTemplates
+      enableTemplates,
+      enableRealtionships
     );
     this.project = cogniteProject;
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
