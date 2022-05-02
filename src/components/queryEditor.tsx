@@ -296,9 +296,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
       )}
-      {datasource.connector.isRelationshipsEnabled() && (
-        <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
-      )}
+      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
       {query.assetQuery.withRelationships && (
         <RelationshipsTab
           {...{
@@ -523,17 +521,11 @@ export function QueryEditor(props: EditorProps) {
     if (t === Tabs.Templates) {
       return 'templates-tab-label';
     }
-    if (t === Tabs.Relationships) {
-      return 'relationships-tab-label';
-    }
     return '';
   };
   const hiddenTab = (t) => {
     if (t === Tabs.Templates) {
       return !datasource.connector.isTemplatesEnabled();
-    }
-    if (t === Tabs.Relationships) {
-      return !datasource.connector.isRelationshipsEnabled();
     }
     return false;
   };

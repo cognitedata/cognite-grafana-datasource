@@ -32,8 +32,6 @@ const oAuthScopeTooltip = `The value passed for the scope parameter should be th
 
 const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`;
 
-const enableRealtionshipsTooltip = `Enable the relationships tab for use with the Cognite relationships preview feature`;
-
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
@@ -48,7 +46,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
     oauthTokenUrl,
     oauthScope,
     enableTemplates,
-    enableRealtionships,
   } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
@@ -230,15 +227,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
             checked={enableTemplates}
             onChange={onJsonBoolValueChange('enableTemplates')}
             tooltip={enableTemplatesTooltip}
-          />
-        </div>
-        <div className="gf-form-inline">
-          <Switch
-            label="Cognite Relationships"
-            labelClass="width-11"
-            checked={enableRealtionships}
-            onChange={onJsonBoolValueChange('enableRealtionships')}
-            tooltip={enableRealtionshipsTooltip}
           />
         </div>
       </div>
