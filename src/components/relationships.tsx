@@ -25,7 +25,7 @@ const MultiSelectAsync = (props) => {
     : `${queryTypeSelector}.${selector.route}`;
   const s = route.split('.');
   return (
-    <Field label={`Filter relations by ${selector.type}`} className="relationships-select">
+    <Field label={`Filter relationships by ${selector.type}`} className="relationships-select">
       <AsyncMultiSelect
         loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
         value={get(query, s)}
@@ -50,7 +50,7 @@ export const RelationshipsTab = (
         query={query}
         datasource={datasource}
         selector={dataSetIds}
-        placeholder="Filter relations by datasets"
+        placeholder="Filter relationships by datasets"
         onQueryChange={onQueryChange}
         queryBinder={queryBinder}
       />
@@ -58,7 +58,7 @@ export const RelationshipsTab = (
         query={query}
         datasource={datasource}
         selector={labels}
-        placeholder="Filter relations by Labels"
+        placeholder="Filter relationships by labels"
         onQueryChange={onQueryChange}
         queryBinder={queryBinder}
       />
