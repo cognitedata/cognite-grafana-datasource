@@ -296,7 +296,9 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
       )}
-      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+      {datasource.connector.isRelationshipsEnabled() && (
+        <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+      )}
       {query.assetQuery.withRelationships && (
         <RelationshipsTab
           {...{
@@ -517,17 +519,35 @@ export function QueryEditor(props: EditorProps) {
     };
   }, [tab]);
 
+  const tabId = (t) => {
+    if (t === Tabs.Templates) {
+      return 'templates-tab-label';
+    }
+    if (t === Tabs.Relationships) {
+      return 'relationships-tab-label';
+    }
+    return '';
+  };
+  const hiddenTab = (t) => {
+    if (t === Tabs.Templates) {
+      return !datasource.connector.isTemplatesEnabled();
+    }
+    if (t === Tabs.Relationships) {
+      return !datasource.connector.isRelationshipsEnabled();
+    }
+    return false;
+  };
   return (
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
           <Tab
-            hidden={t === Tabs.Templates && !datasource.connector.isTemplatesEnabled()}
+            hidden={hiddenTab(t)}
             label={TabTitles[t]}
             key={t}
             active={tab === t}
             onChangeTab={onSelectTab(t)}
-            id={t === Tabs.Templates ? 'templates-tab-label' : ''}
+            id={tabId(t)}
           />
         ))}
       </TabsBar>

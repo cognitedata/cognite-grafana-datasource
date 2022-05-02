@@ -13,3 +13,24 @@
   margin: 6px;
 }
 
+#relationships-tab-label:after  {
+  background: #ffdc7f;
+  border-radius: 3px;
+  color: #262626;
+  content: 'Preview';
+  margin-top: 0px;
+  margin-left: 5px;
+  min-width: 20px;
+  padding-left: 5px;
+  padding-bottom: 1px;
+  padding-top: 1px;
+  padding-right: 5px;
+  position: absolute;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#relationships-tab-label {
+  min-width: 11.5em;
+}
