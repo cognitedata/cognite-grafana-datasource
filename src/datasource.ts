@@ -132,7 +132,8 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } = groupTargets(queryTargets);
+    const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } =
+      groupTargets(queryTargets);
     const timeRange = getRange(options.range);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
@@ -144,17 +145,17 @@ export default class CogniteDatasource extends DataSourceApi<
           targets: templatesTargets,
         });
 
-        const relationshipsResults = await this.fetchRelationshipsTargets(
-          relationshipsQuery,
-          timeRange
-        );
+        const relationshipsResults = await this.relationshipsDatasource.query({
+          ...options,
+          targets: relationshipsQuery,
+        });
         handleFailedTargets(failed);
         showWarnings(succeded);
         responseData = [
           ...reduceTimeseries(succeded, timeRange),
           ...eventResults,
           ...templatesResults.data,
-          ...relationshipsResults,
+          ...relationshipsResults.data,
         ];
       } catch (error) {
         return {
