@@ -10,7 +10,6 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
-  MutableDataFrame,
   DataQueryResponse,
   MutableDataFrame,
 } from '@grafana/data';
@@ -141,10 +140,6 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = await this.relationshipsDatasource.query({
-          ...options,
-          targets: relationshipsQuery,
-        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
