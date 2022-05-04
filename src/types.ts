@@ -96,31 +96,6 @@ query {
   groupBy: 'name',
 };
 
-export interface RelationshipsSelectableValue {
-  value?: string | number;
-  label?: string;
-}
-
-export interface RelationshipsQuery {
-  dataSetIds?: {
-    id: number;
-    value?: string;
-  }[];
-  labels?: {
-    containsAny: {
-      externalId: string;
-      value?: string;
-    }[];
-  };
-  isActiveAtTime?: boolean;
-  activeAtTime?: {
-    max: number;
-    min: number;
-  };
-  sourceExternalIds?: string[];
-  targetTypes?: string[];
-  limit: number;
-}
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -133,7 +108,6 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
-  relationshipsQuery: defaultRelationshipsQuery,
 };
 
 /**
