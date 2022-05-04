@@ -18,6 +18,7 @@ const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
 let appEvents;
 
+const exampleRange = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
 SystemJS.load('app/core/app_events').then((module) => {
   appEvents = module;
 });
@@ -259,7 +260,6 @@ describe('Datasource Query', () => {
 
     beforeAll(async () => {
       options.intervalMs = ms('6m');
-      options.range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
       options.targets = [targetC, targetD, targetError1, targetError2];
       backendSrv.datasourceRequest = jest
         .fn()
