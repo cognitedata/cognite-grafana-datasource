@@ -49,6 +49,31 @@ const defaultEventQuery: EventQuery = {
   activeAtTimeRange: true,
 };
 
+export interface RelationshipsSelectableValue {
+  value?: string | number;
+  label?: string;
+}
+
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
+  limit: number;
+}
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -106,6 +131,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   expr: '',
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
+  relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
   relationshipsQuery: defaultRelationshipsQuery,
 };

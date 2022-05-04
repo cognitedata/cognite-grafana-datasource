@@ -208,6 +208,7 @@ describe('Datasource Query', () => {
       includeSubtrees: false,
       withRelationships: false,
       includeSubTiemseries: true,
+      relationshipsQuery: defaultRelationshipsQuery,
     };
     const targetC: QueryTargetLike = {
       assetQuery,
@@ -258,7 +259,7 @@ describe('Datasource Query', () => {
 
     beforeAll(async () => {
       options.intervalMs = ms('6m');
-      // options.range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
+      options.range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
       options.targets = [targetC, targetD, targetError1, targetError2];
       backendSrv.datasourceRequest = jest
         .fn()
