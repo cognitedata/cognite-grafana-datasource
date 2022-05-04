@@ -31,12 +31,10 @@ import {
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
-import { RelationshipsTab } from './relationships';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
-import '../css/query_editor.css';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
