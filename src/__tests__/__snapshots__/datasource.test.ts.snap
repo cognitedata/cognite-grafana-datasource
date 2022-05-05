@@ -27,12 +27,238 @@ Object {
 }
 `;
 
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "789",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "1",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "2",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+      Object {
+        "id": 456,
+      },
+      Object {
+        "id": 789,
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "max",
+    ],
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+      Object {
+        "id": 456,
+      },
+      Object {
+        "id": 789,
+      },
+    ],
+    "limit": 3333,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "requestId": "1_7_C",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "tv",
+    ],
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "method": "POST",
+  "requestId": "1_7_D",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
 Object {
-  "data": Array [],
-  "error": Object {
-    "message": "Cannot read property 'length' of undefined",
-  },
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesA-Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB-Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC-Timeseries789",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseries",
+    },
+  ],
 }
 `;
 

@@ -18,7 +18,7 @@ const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
 let appEvents;
 
-const exampleRange = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
+const range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
 SystemJS.load('app/core/app_events').then((module) => {
   appEvents = module;
 });
@@ -226,10 +226,8 @@ describe('Datasource Query', () => {
       target: '',
       label: '{{description}}',
       assetQuery: {
+        ...assetQuery,
         target: '[[AssetVariable]]',
-        includeSubtrees: false,
-        includeSubTiemseries: true,
-        withRelationships: false,
       },
     };
     const targetError1: QueryTargetLike = {
