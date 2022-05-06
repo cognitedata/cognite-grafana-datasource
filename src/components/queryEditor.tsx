@@ -31,10 +31,10 @@ import {
 } from '../types';
 import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
-import { RelationshipsTab } from './relationships';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
+import { RelationshipsTab } from './relationships';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -163,7 +163,29 @@ const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
     <LabelEditor {...{ onQueryChange, query }} />
   </div>
 );
-
+const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  const { includeSubTiemseries } = query.assetQuery;
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Include sub-timeseries</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          value={includeSubTiemseries}
+          onChange={({ currentTarget }) => {
+            const { checked } = currentTarget;
+            onQueryChange({
+              assetQuery: {
+                ...query.assetQuery,
+                includeSubTiemseries: checked,
+              },
+            });
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   const { includeSubtrees } = query.assetQuery;
@@ -189,7 +211,31 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
     </div>
   );
 };
+const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
+  const { withRelationships } = query.assetQuery;
 
+  const onIncludeRelationshipsChange = (checked: boolean) => {
+    onQueryChange({
+      assetQuery: {
+        ...query.assetQuery,
+        withRelationships: checked,
+      },
+    });
+  };
+
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={9}>Include relationships</InlineFormLabel>
+      <div className="gf-form-switch">
+        <Switch
+          value={withRelationships}
+          onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
+        />
+      </div>
+    </div>
+  );
+};
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
 
@@ -208,19 +254,25 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   };
 
   useEffect(() => {
-    onQueryChange({
-      assetQuery: {
-        ...query.assetQuery,
-        target: current.value,
-      },
-    });
-  }, [current.value]);
-
-  useEffect(() => {
     if (current.value && !current.label) {
       fetchAndSetDropdownLabel(current.value);
     }
   }, [current.value]);
+
+  useEffect(() => {
+    if (current.externalId) {
+      onQueryChange({
+        assetQuery: {
+          ...query.assetQuery,
+          target: current.value,
+          relationshipsQuery: {
+            ...query.assetQuery.relationshipsQuery,
+            sourceExternalIds: [current.externalId],
+          },
+        },
+      });
+    }
+  }, [current.externalId]);
 
   return (
     <div className="gf-form-inline">
@@ -237,11 +289,23 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         />
       </div>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
+      <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
         <CommonEditors {...{ query, onQueryChange }} />
+      )}
+      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+      {query.assetQuery.withRelationships && (
+        <RelationshipsTab
+          {...{
+            query,
+            datasource,
+            onQueryChange,
+            queryBinder: 'assetQuery',
+          }}
+        />
       )}
     </div>
   );
@@ -453,17 +517,29 @@ export function QueryEditor(props: EditorProps) {
     };
   }, [tab]);
 
+  const tabId = (t) => {
+    if (t === Tabs.Templates) {
+      return 'templates-tab-label';
+    }
+    return '';
+  };
+  const hiddenTab = (t) => {
+    if (t === Tabs.Templates) {
+      return !datasource.connector.isTemplatesEnabled();
+    }
+    return false;
+  };
   return (
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => (
           <Tab
-            hidden={t === Tabs.Templates && !datasource.connector.isTemplatesEnabled()}
+            hidden={hiddenTab(t)}
             label={TabTitles[t]}
             key={t}
             active={tab === t}
             onChangeTab={onSelectTab(t)}
-            id={t === Tabs.Templates ? 'templates-tab-label' : ''}
+            id={tabId(t)}
           />
         ))}
       </TabsBar>
@@ -473,7 +549,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Relationships && (
-          <RelationshipsTab {...{ query, datasource, onQueryChange }} />
+          <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
