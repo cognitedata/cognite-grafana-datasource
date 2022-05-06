@@ -35,6 +35,7 @@ import { RelationshipsTab } from './relationships';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
+import { AdvancedEventFilter } from './advancedEventFilter';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -297,8 +298,10 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 
-function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange } = props;
+function EventsTab(
+  props: SelectedProps & { datasource: CogniteDatasource } & Pick<EditorProps, 'onRunQuery'>
+) {
+  const { query, onQueryChange, datasource } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.eventQuery.expr);
 
@@ -327,6 +330,9 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
       </div>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
+      {datasource.connector.isEventsAdvancedFilteringEnabled() && (
+        <AdvancedEventFilter {...{ query, onQueryChange }} />
+      )}
       {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
@@ -471,7 +477,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {tab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange }} />
         )}
