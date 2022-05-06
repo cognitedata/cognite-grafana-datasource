@@ -27,6 +27,61 @@ export const TabTitles = {
   [Tab.Templates]: 'Templates',
 };
 
+const defaultEventQuery: EventQuery = {
+  expr: '',
+  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+  activeAtTimeRange: true,
+  eventQuery: `
+{
+  "and": [
+    {
+      "or": [
+        {
+          "equals": {
+            "property": [
+              "type"
+            ],
+            "value": "foobar"
+          }
+        },
+        {
+          "prefix": {
+            "property": [
+              "externalId"
+            ],
+            "value": "hello"
+          }
+        }
+      ]
+    },
+    {
+      "not": {
+        "range": {
+          "property": [
+            "startTime"
+          ],
+          "gte": 0,
+          "lte": 100
+        }
+      }
+    },
+    {
+      "in": {
+        "property": [
+          "metadata",
+          "metadata_D"
+        ],
+        "values": [
+          "hello",
+          "world"
+        ]
+      }
+    }
+  ]
+}
+  `,
+};
+
 export const defaultRelationshipsQuery: RelationshipsQuery = {
   dataSetIds: [],
   labels: {
@@ -42,13 +97,6 @@ const defaultAssetQuery: AssetQuery = {
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
-
-const defaultEventQuery: EventQuery = {
-  expr: '',
-  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
-  activeAtTimeRange: true,
-};
-
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
@@ -157,6 +205,7 @@ export interface EventQuery {
   expr: string;
   activeAtTimeRange: boolean;
   columns: string[];
+  eventQuery: string;
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
