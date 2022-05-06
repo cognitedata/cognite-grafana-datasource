@@ -1,5 +1,32 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "789",
+      ],
+    },
+    "limit": 101,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "fetchResources": true,
+    "filter": Object {},
+    "limit": 1000,
+  },
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",
+}
+`;
+
 exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
 Object {
   "data": Object {
@@ -367,7 +394,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_11_B",
+  "requestId": "1_12_B",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -385,7 +412,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_11_D",
+  "requestId": "1_12_D",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -484,7 +511,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_14_A",
+  "requestId": "1_15_A",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -514,7 +541,7 @@ Object {
     ],
   },
   "method": "POST",
-  "requestId": "1_14_D",
+  "requestId": "1_15_D",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -549,5 +576,3 @@ Object {
   ],
 }
 `;
-
-exports[`Relationships Test labels and datasets drop error on  1`] = `Array []`;
