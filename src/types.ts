@@ -169,6 +169,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthClientId?: string;
   oauthScope?: string;
   enableTemplates?: boolean;
+  enableEventsAdvancedFiltering?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
