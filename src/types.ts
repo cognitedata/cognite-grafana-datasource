@@ -34,42 +34,52 @@ const defaultEventQuery: EventQuery = {
   eventQuery: `
 {
   "and": [
-      {
-          "or": [
-              {
-                  "equals": {
-                      "property": ["type"],
-                      "value": "foobar"
-                  }
-              },
-              {
-                  "prefix": {
-                      "property": ["externalId"],
-                      "value": "hello"
-                  }
-              }
-          ]
-      },
-      {
-          "not": {
-              "range": {
-                  "property": ["startTime"],
-                  "gte": 0,
-                  "lte": 100
-              }
+    {
+      "or": [
+        {
+          "equals": {
+            "property": [
+              "type"
+            ],
+            "value": "foobar"
           }
-      },
-      {
-          "in": {
-              "property": ["metadata", "metadata_D"],
-              "values": [
-                  "hello",
-                  "world"
-              ]
+        },
+        {
+          "prefix": {
+            "property": [
+              "externalId"
+            ],
+            "value": "hello"
           }
+        }
+      ]
+    },
+    {
+      "not": {
+        "range": {
+          "property": [
+            "startTime"
+          ],
+          "gte": 0,
+          "lte": 100
+        }
       }
+    },
+    {
+      "in": {
+        "property": [
+          "metadata",
+          "metadata_D"
+        ],
+        "values": [
+          "hello",
+          "world"
+        ]
+      }
+    }
   ]
-}`,
+}
+`,
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
