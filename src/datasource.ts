@@ -10,11 +10,11 @@ import {
   TableData,
   TimeSeries,
   AppEvent,
-  MutableDataFrame,
   DataQueryResponse,
+  MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { groupBy } from 'lodash';
+import { groupBy, isEmpty, uniqBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -30,6 +30,7 @@ import {
   fetchSingleTimeseries,
   targetToIdEither,
   convertItemsToTable,
+  fetchRelationships,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
@@ -77,7 +78,12 @@ import {
   QueriesDataItem,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
-import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
+import {
+  filterdataSetIds,
+  filterExternalId,
+  filterLabels,
+  RelationshipsDatasource,
+} from './datasources/RelationshipsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
@@ -134,15 +140,15 @@ export default class CogniteDatasource extends DataSourceApi<
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
         const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
-        const relationshipsResults = await this.relationshipsDatasource.query({
-          ...options,
-          targets: relationshipsQuery,
-        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
         });
 
+        const relationshipsResults = await this.relationshipsDatasource.query({
+          ...options,
+          targets: relationshipsQuery,
+        });
         handleFailedTargets(failed);
         showWarnings(succeded);
         responseData = [
@@ -150,6 +156,7 @@ export default class CogniteDatasource extends DataSourceApi<
           ...eventResults,
           ...relationshipsResults.data,
           ...templatesResults.data,
+          ...relationshipsResults.data,
         ];
       } catch (error) {
         return {
@@ -170,7 +177,12 @@ export default class CogniteDatasource extends DataSourceApi<
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
-        return await getDataQueryRequestItems(target, this.connector, options.intervalMs);
+        return await getDataQueryRequestItems(
+          target,
+          this.connector,
+          options.intervalMs,
+          getRange(options.range)
+        );
       } catch (e) {
         handleError(e, target.refId);
       }
@@ -564,11 +576,12 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
     }
   }
 }
-
 async function findAssetTimeseries(
   { refId, assetQuery }: QueryTarget,
-  connector: Connector
+  connector: Connector,
+  [min, max]
 ): Promise<TimeSeriesResponseItem[]> {
+  const timeFrame = assetQuery.relationshipsQuery.isActiveAtTime && { activeAtTime: { max, min } };
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -577,11 +590,35 @@ async function findAssetTimeseries(
     : {
         assetIds: [assetId],
       };
-
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
-  const ts = await getTimeseries({ filter, limit }, connector);
+  let ts = [];
+  if (assetQuery.includeSubTiemseries) {
+    const tS = await getTimeseries({ filter, limit }, connector);
+    if (!isEmpty(tS))
+      tS.map(({ id, isStep, createdTime, lastUpdatedTime }) =>
+        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+      );
+  }
+  if (assetQuery.withRelationships) {
+    const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
+    const relationshipsList = await fetchRelationships(
+      {
+        ...filterLabels(labels),
+        ...filterdataSetIds(dataSetIds),
+        ...filterExternalId(sourceExternalIds),
+        ...timeFrame,
+      },
+      limit,
+      connector
+    );
+    if (!isEmpty(relationshipsList))
+      relationshipsList.map(({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
+        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+      );
+  }
+  ts = uniqBy(ts, 'id');
   if (ts.length === limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
 
@@ -593,7 +630,8 @@ async function findAssetTimeseries(
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
-  intervalMs: number
+  intervalMs: number,
+  timeRange
 ): Promise<QueriesDataItem> {
   const { tab, expr } = target;
   const type = getDataQueryRequestType(target);
@@ -606,7 +644,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findAssetTimeseries(target, connector);
+      const timeseries = await findAssetTimeseries(target, connector, timeRange);
       items = timeseries.map(({ id }) => ({ id }));
       break;
     }
