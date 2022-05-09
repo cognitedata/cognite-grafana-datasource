@@ -38,7 +38,7 @@ export const AdvancedEventFilter = (props) => {
         }, */
       });
       setEditor(editor);
-      editor.getDoc().setValue(query.eventQuery.graphQlQuery);
+      editor.getDoc().setValue(query.eventQuery.eventQuery);
     }
   }, [textAreaRef]);
 
