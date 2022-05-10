@@ -156,7 +156,6 @@ export default class CogniteDatasource extends DataSourceApi<
           ...eventResults,
           ...relationshipsResults.data,
           ...templatesResults.data,
-          ...relationshipsResults.data,
         ];
       } catch (error) {
         return {
