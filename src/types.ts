@@ -333,6 +333,7 @@ export interface RequestParams<DataType = any> {
   params?: { [s: string]: any };
   requestId?: string;
   cacheTime?: string;
+  headers?: { [s: string]: string };
 }
 
 export type DataQueryError = {
