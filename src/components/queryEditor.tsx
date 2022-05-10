@@ -173,7 +173,7 @@ const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          value={includeSubTimeseries}
+          value={includeSubTimeseries !== false}
           onChange={({ currentTarget }) => {
             const { checked } = currentTarget;
             onQueryChange({

@@ -594,7 +594,7 @@ async function findAssetTimeseries(
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
   let ts = [];
-  if (assetQuery.includeSubTimeseries) {
+  if (assetQuery.includeSubTimeseries !== false) {
     const timeseries = await getTimeseries({ filter, limit }, connector);
     if (!isEmpty(timeseries)) {
       ts = concat(ts, ...timeseries);
