@@ -18,7 +18,6 @@ const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
 let appEvents;
 
-const range = { from: dateTime(0), to: dateTime(3000) } as TimeRange;
 SystemJS.load('app/core/app_events').then((module) => {
   appEvents = module;
 });
