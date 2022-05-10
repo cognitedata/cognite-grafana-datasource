@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { get, groupBy, isEmpty, uniqBy } from 'lodash';
+import { concat, get, groupBy, isEmpty, map, uniqBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -596,10 +596,9 @@ async function findAssetTimeseries(
   let ts = [];
   if (assetQuery.includeSubTimeseries) {
     const timeseries = await getTimeseries({ filter, limit }, connector);
-    if (!isEmpty(timeseries))
-      timeseries.map(({ id, isStep, createdTime, lastUpdatedTime }) =>
-        ts.push({ id, isStep, createdTime, lastUpdatedTime })
-      );
+    if (!isEmpty(timeseries)) {
+      ts = concat(ts, ...timeseries);
+    }
   }
   if (assetQuery.withRelationships) {
     const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
@@ -613,10 +612,9 @@ async function findAssetTimeseries(
       limit,
       connector
     );
-    if (!isEmpty(relationshipsList))
-      relationshipsList.map(({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
-        ts.push({ id, isStep, createdTime, lastUpdatedTime })
-      );
+    if (!isEmpty(relationshipsList)) {
+      ts = concat(ts, ...map(relationshipsList, 'target'));
+    }
   }
   ts = uniqBy(ts, 'id');
   if (ts.length === limit) {
