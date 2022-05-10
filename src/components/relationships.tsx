@@ -3,6 +3,7 @@ import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
 import { get, set } from 'lodash';
 import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
+import { EVENTS_PAGE_LIMIT } from '../constants';
 import '../css/relationships.css';
 
 const queryTypeSelector = 'relationshipsQuery';
@@ -69,13 +70,13 @@ export const RelationshipsTab = (
             value={get(query, `${route}.limit`)}
             onChange={(targetValue) => {
               const { value } = targetValue.target as any;
-              if (value < 1001 && value > 0) {
+              if (value <= EVENTS_PAGE_LIMIT && value > 0) {
                 return onQueryChange(set(query, `${route}.limit`, value));
               }
               return null;
             }}
-            defaultValue={1000}
-            max={1000}
+            defaultValue={EVENTS_PAGE_LIMIT}
+            max={EVENTS_PAGE_LIMIT}
           />
         </Tooltip>
       </Field>
