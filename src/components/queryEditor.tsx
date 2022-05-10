@@ -168,7 +168,9 @@ const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { includeSubTimeseries } = query.assetQuery;
   return (
     <div className="gf-form">
-      <InlineFormLabel width={9}>Include sub-timeseries</InlineFormLabel>
+      <InlineFormLabel width={11} tooltip="include timeseries">
+        Include sub-timeseries
+      </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
           value={includeSubTimeseries}
