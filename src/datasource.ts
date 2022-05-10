@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { groupBy, isEmpty, uniqBy } from 'lodash';
+import { get, groupBy, isEmpty, uniqBy } from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -503,7 +503,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return target.expr;
         case Tab.Relationships:
           return (
-            !!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length
+            !!relationshipsQuery.dataSetIds.length ||
+            !!get(relationshipsQuery.labels, 'containsAny').length
           );
         case Tab.Timeseries:
         default:
@@ -594,10 +595,10 @@ async function findAssetTimeseries(
   const limit = 101;
   let ts = [];
   if (assetQuery.includeSubTimeseries) {
-    const tS = await getTimeseries({ filter, limit }, connector);
-    if (!isEmpty(tS))
-      tS.map(({ id, isStep, createdTime, lastUpdatedTime }) =>
-        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+    const timeseries = await getTimeseries({ filter, limit }, connector);
+    if (!isEmpty(timeseries))
+      timeseries.map(({ id, isStep, createdTime, lastUpdatedTime }) =>
+        ts.push({ id, isStep, createdTime, lastUpdatedTime })
       );
   }
   if (assetQuery.withRelationships) {
@@ -614,7 +615,7 @@ async function findAssetTimeseries(
     );
     if (!isEmpty(relationshipsList))
       relationshipsList.map(({ target: { id, isStep, createdTime, lastUpdatedTime } }) =>
-        ts.push({ id, isStep, createdTime, lastUpdatedTime, selected: true })
+        ts.push({ id, isStep, createdTime, lastUpdatedTime })
       );
   }
   ts = uniqBy(ts, 'id');
