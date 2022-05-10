@@ -39,7 +39,7 @@ const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
   target: '',
   withRelationships: false,
-  includeSubTiemseries: true,
+  includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
 
@@ -149,7 +149,7 @@ export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
   withRelationships: boolean;
-  includeSubTiemseries: boolean;
+  includeSubTimeseries: boolean;
   relationshipsQuery?: RelationshipsQuery;
 }
 

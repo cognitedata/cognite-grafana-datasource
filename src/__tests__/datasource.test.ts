@@ -208,7 +208,7 @@ describe('Datasource Query', () => {
       target: '789',
       includeSubtrees: false,
       withRelationships: false,
-      includeSubTiemseries: true,
+      includeSubTimeseries: true,
       relationshipsQuery: defaultRelationshipsQuery,
     };
     const targetC: QueryTargetLike = {
@@ -306,7 +306,7 @@ describe('Datasource Query', () => {
       target: '789',
       includeSubtrees: false,
       withRelationships: true,
-      includeSubTiemseries: true,
+      includeSubTimeseries: true,
       relationshipsQuery: defaultRelationshipsQuery,
     };
     const targetA: QueryTargetLike = {
@@ -321,14 +321,14 @@ describe('Datasource Query', () => {
       ...targetA,
       assetQuery: {
         ...assetQuery,
-        includeSubTiemseries: false,
+        includeSubTimeseries: false,
       },
     };
     const targetC: QueryTargetLike = {
       ...targetA,
       assetQuery: {
         ...assetQuery,
-        includeSubTiemseries: false,
+        includeSubTimeseries: false,
         withRelationships: false,
       },
     };
@@ -629,7 +629,7 @@ describe('Datasource Query', () => {
         assetQuery: {
           target: '',
           includeSubtrees: false,
-          includeSubTiemseries: true,
+          includeSubTimeseries: true,
           withRelationships: false,
         },
       };

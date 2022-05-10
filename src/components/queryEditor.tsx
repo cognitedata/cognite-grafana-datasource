@@ -165,19 +165,19 @@ const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
 );
 const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
-  const { includeSubTiemseries } = query.assetQuery;
+  const { includeSubTimeseries } = query.assetQuery;
   return (
     <div className="gf-form">
       <InlineFormLabel width={9}>Include sub-timeseries</InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          value={includeSubTiemseries}
+          value={includeSubTimeseries}
           onChange={({ currentTarget }) => {
             const { checked } = currentTarget;
             onQueryChange({
               assetQuery: {
                 ...query.assetQuery,
-                includeSubTiemseries: checked,
+                includeSubTimeseries: checked,
               },
             });
           }}
