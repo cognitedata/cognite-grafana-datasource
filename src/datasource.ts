@@ -485,7 +485,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
       switch (tab) {
         case Tab.Event:
-          return eventQuery?.expr;
+          return eventQuery?.expr || eventQuery.eventQuery;
         case Tab.Asset:
           return assetQuery?.target;
         case Tab.Templates:
