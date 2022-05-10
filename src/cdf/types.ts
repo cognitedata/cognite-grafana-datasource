@@ -182,7 +182,6 @@ interface CogniteRelationshipAsset {
   source?: string;
   labels?: CogniteLabelsResponse[];
   id: number;
-  isStep?: boolean;
 }
 export interface CogniteRelationshipResponse {
   externalId: string;
