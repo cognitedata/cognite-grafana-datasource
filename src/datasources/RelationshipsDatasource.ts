@@ -1,5 +1,5 @@
 import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
-import _ from 'lodash';
+import _, { get } from 'lodash';
 import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
 import { getRange } from '../datasource';
@@ -14,7 +14,7 @@ import { nodeField, edgeField } from '../constants';
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
 
 export const filterLabels = (labels) =>
-  !_.isEmpty(labels.containsAny) && {
+  !_.isEmpty(get(labels, 'containsAny')) && {
     labels: {
       containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
     },
