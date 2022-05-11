@@ -610,7 +610,7 @@ async function findTsByAssetAndRelationships(
       limit,
       connector
     );
-    timeseriesFromRelationships = relationshipsList.length ? map(relationshipsList, 'target') : [];
+    timeseriesFromRelationships = map(relationshipsList, 'target');
   }
   const ts = uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
   if (ts.length === limit) {
