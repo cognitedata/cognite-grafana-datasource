@@ -576,7 +576,7 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
     }
   }
 }
-async function findAssetTimeseries(
+async function findTsByAssetAndRelationships(
   { refId, assetQuery }: QueryTarget,
   connector: Connector,
   [min, max]
@@ -642,7 +642,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findAssetTimeseries(target, connector, timeRange);
+      const timeseries = await findTsByAssetAndRelationships(target, connector, timeRange);
       items = timeseries.map(({ id }) => ({ id }));
       break;
     }
