@@ -612,12 +612,15 @@ async function findTsByAssetAndRelationships(
     );
     timeseriesFromRelationships = map(relationshipsList, 'target');
   }
-  const ts = uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
-  if (ts.length === limit) {
+  if (timeseriesFromAssets.length >= limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
-
-    ts.splice(-1);
+    timeseriesFromAssets.splice(-1);
   }
+  if (timeseriesFromRelationships.length >= limit) {
+    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+    timeseriesFromRelationships.splice(-1);
+  }
+  const ts = uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
   return ts;
 }
 
