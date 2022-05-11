@@ -593,13 +593,11 @@ async function findTsByAssetAndRelationships(
   // since /dataquery can only have 100 items and checkboxes become difficult to use past 100 items,
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
-  let ts = [];
-  if (assetQuery.includeSubTimeseries !== false) {
-    const timeseries = await getTimeseries({ filter, limit }, connector);
-    if (!isEmpty(timeseries)) {
-      ts = concat(ts, ...timeseries);
-    }
-  }
+  let timeseriesFromRelationships = [];
+  const timeseriesFromAssets =
+    assetQuery.includeSubTimeseries !== false
+      ? await getTimeseries({ filter, limit }, connector)
+      : [];
   if (assetQuery.withRelationships) {
     const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
     const relationshipsList = await fetchRelationships(
@@ -612,11 +610,9 @@ async function findTsByAssetAndRelationships(
       limit,
       connector
     );
-    if (!isEmpty(relationshipsList)) {
-      ts = concat(ts, ...map(relationshipsList, 'target'));
-    }
+    timeseriesFromRelationships = relationshipsList.length ? map(relationshipsList, 'target') : [];
   }
-  ts = uniqBy(ts, 'id');
+  const ts = uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
   if (ts.length === limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
 
