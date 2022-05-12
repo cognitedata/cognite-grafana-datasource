@@ -620,8 +620,7 @@ async function findTsByAssetAndRelationships(
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
     timeseriesFromRelationships.splice(-1);
   }
-  const ts = uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
-  return ts;
+  return uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
 }
 
 export async function getDataQueryRequestItems(
