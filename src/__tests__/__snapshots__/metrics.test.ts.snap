@@ -6,6 +6,7 @@ Object {
     "filter": Object {},
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
 }
@@ -17,6 +18,7 @@ Object {
     "filter": Object {},
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
 }
@@ -28,6 +30,7 @@ Object {
     "filter": Object {},
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
 }
@@ -43,6 +46,7 @@ Object {
     },
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
 }
@@ -56,6 +60,7 @@ Object {
     },
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
 }

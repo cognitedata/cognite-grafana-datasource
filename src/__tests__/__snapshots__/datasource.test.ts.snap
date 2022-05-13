@@ -37,6 +37,7 @@ Object {
     },
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -52,6 +53,7 @@ Object {
     },
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -67,6 +69,7 @@ Object {
     },
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -82,6 +85,7 @@ Object {
     },
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -102,6 +106,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -116,6 +121,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -143,6 +149,7 @@ Object {
     "limit": 3333,
     "start": 1549336675000,
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_7_C",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
@@ -165,6 +172,7 @@ Object {
     "limit": 10000,
     "start": 1549336675000,
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_7_D",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
@@ -271,6 +279,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -288,6 +297,7 @@ Object {
     "limit": 100000,
     "start": 1549336675000,
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_3_A",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
@@ -310,6 +320,7 @@ Object {
     "limit": 10000,
     "start": 1549336675000,
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_3_B",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
@@ -332,6 +343,7 @@ Object {
     "limit": 10000,
     "start": 1549336675000,
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_3_C",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
@@ -348,6 +360,7 @@ Object {
     },
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -362,6 +375,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -376,6 +390,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -393,6 +408,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_12_B",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
@@ -411,6 +427,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_12_D",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
@@ -438,6 +455,7 @@ Object {
     "filter": Object {},
     "limit": 1000,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -458,6 +476,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -481,6 +500,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
 }
@@ -510,6 +530,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_15_A",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
@@ -540,6 +561,7 @@ Object {
       },
     ],
   },
+  "headers": undefined,
   "method": "POST",
   "requestId": "1_15_D",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
