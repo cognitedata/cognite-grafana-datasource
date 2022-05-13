@@ -280,7 +280,10 @@ export default class CogniteDatasource extends DataSourceApi<
   ) {
     const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
     try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery.expr, timeRange);
+      const { items, hasMore } = await this.fetchEvents(
+        this.connector.isEventsAdvancedFilteringEnabled() ? eventQuery.eventQuery : eventQuery.expr,
+        timeRange
+      );
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
@@ -304,17 +307,34 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 
   async fetchEvents(expr: string, timeRange: EventsFilterTimeParams) {
+    if (this.connector.isEventsAdvancedFilteringEnabled()) {
+      const data: FilterRequest<EventsFilterRequestParams> = {
+        advancedFilter: JSON.parse(expr),
+        limit: EVENTS_PAGE_LIMIT,
+      };
+      const items = await this.connector.fetchItems<CogniteEvent>({
+        data,
+        path: `/events/list`,
+        method: HttpMethod.POST,
+        headers: {
+          'cdf-version': 'alpha',
+        },
+      });
+      console.log('items', items);
+      return {
+        items,
+        hasMore: items.length === EVENTS_PAGE_LIMIT,
+      };
+    }
     const { filters, params } = parseQuery(expr);
     const data: FilterRequest<EventsFilterRequestParams> = {
       filter: { ...timeRange, ...params },
       limit: EVENTS_PAGE_LIMIT,
     };
-    const headers = this.connector.isEventsAdvancedFilteringEnabled() && { 'cdf-version': 'alpha' };
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/list`,
       method: HttpMethod.POST,
-      headers,
     });
 
     return {
