@@ -140,6 +140,7 @@ export class Connector {
     query: DataSourceRequestOptions,
     cacheTime: string = CacheTime.Default
   ): Promise<any> => {
+    console.log('query', query);
     const { requestId, ...queryWithoutId } = query;
     const hash = JSON.stringify(queryWithoutId);
     const timeout = ms(cacheTime);
