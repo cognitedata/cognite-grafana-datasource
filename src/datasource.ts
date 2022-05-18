@@ -304,38 +304,34 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 
   async fetchEvents({ expr, eventQuery }, timeRange: EventsFilterTimeParams) {
-    const items = [];
-    if (this.connector.isEventsAdvancedFilteringEnabled() && eventQuery.length) {
-      const data: FilterRequest<EventsFilterRequestParams> = {
-        advancedFilter: JSON.parse(eventQuery),
-        limit: EVENTS_PAGE_LIMIT,
-      };
-      const advancedIitems = await this.connector.fetchItems<CogniteEvent>({
-        data,
-        path: `/events/list`,
-        method: HttpMethod.POST,
-        headers: {
-          'cdf-version': 'alpha',
-        },
-      });
-      items.push(...advancedIitems);
-    }
+    let filter = [];
+    let params = {};
     if (expr) {
-      const { filters, params } = parseQuery(expr);
-      const data: FilterRequest<EventsFilterRequestParams> = {
-        filter: { ...timeRange, ...params },
-        limit: EVENTS_PAGE_LIMIT,
-      };
-      const newItems = await this.connector.fetchItems<CogniteEvent>({
-        data,
-        path: `/events/list`,
-        method: HttpMethod.POST,
-      });
-      items.push(...applyFilters(newItems, filters));
+      const parsedQuery = parseQuery(expr);
+      filter = parsedQuery.filters;
+      params = parsedQuery.params;
     }
+    const advancedFilter =
+      this.connector.isEventsAdvancedFilteringEnabled() && eventQuery.length
+        ? JSON.parse(eventQuery)
+        : undefined;
+    const data: FilterRequest<EventsFilterRequestParams> = {
+      advancedFilter,
+      filter: { ...timeRange, ...params },
+      limit: EVENTS_PAGE_LIMIT,
+    };
+
+    const items = await this.connector.fetchItems<CogniteEvent>({
+      data,
+      path: `/events/list`,
+      method: HttpMethod.POST,
+      headers: {
+        'cdf-version': 'alpha',
+      },
+    });
     console.log('events', items, expr, timeRange);
     return {
-      items,
+      items: applyFilters(items, filter),
       hasMore: items.length >= EVENTS_PAGE_LIMIT,
     };
   }
