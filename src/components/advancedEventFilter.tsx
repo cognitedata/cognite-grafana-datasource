@@ -27,7 +27,7 @@ export const AdvancedEventFilter = (props) => {
   useEffect(() => {
     if (textAreaRef.current) {
       const editor = CodeMirror.fromTextArea(textAreaRef.current, {
-        mode: { name: 'javascript', json: true },
+        mode: 'application/json',
         theme: 'dracula',
         /* lint: {
           schema: myGraphQLSchema,
