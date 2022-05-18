@@ -280,10 +280,7 @@ export default class CogniteDatasource extends DataSourceApi<
   ) {
     const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
     try {
-      const { items, hasMore } = await this.fetchEvents(
-        this.connector.isEventsAdvancedFilteringEnabled() ? eventQuery.eventQuery : eventQuery.expr,
-        timeRange
-      );
+      const { items, hasMore } = await this.fetchEvents(eventQuery, timeRange);
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
@@ -306,13 +303,14 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
-  async fetchEvents(expr: string, timeRange: EventsFilterTimeParams) {
-    if (this.connector.isEventsAdvancedFilteringEnabled()) {
+  async fetchEvents({ expr, eventQuery }, timeRange: EventsFilterTimeParams) {
+    const items = [];
+    if (this.connector.isEventsAdvancedFilteringEnabled() && eventQuery.length) {
       const data: FilterRequest<EventsFilterRequestParams> = {
-        advancedFilter: JSON.parse(expr),
+        advancedFilter: JSON.parse(eventQuery),
         limit: EVENTS_PAGE_LIMIT,
       };
-      const items = await this.connector.fetchItems<CogniteEvent>({
+      const advancedIitems = await this.connector.fetchItems<CogniteEvent>({
         data,
         path: `/events/list`,
         method: HttpMethod.POST,
@@ -320,26 +318,25 @@ export default class CogniteDatasource extends DataSourceApi<
           'cdf-version': 'alpha',
         },
       });
-      console.log('items', items);
-      return {
-        items,
-        hasMore: items.length === EVENTS_PAGE_LIMIT,
-      };
+      items.push(...advancedIitems);
     }
-    const { filters, params } = parseQuery(expr);
-    const data: FilterRequest<EventsFilterRequestParams> = {
-      filter: { ...timeRange, ...params },
-      limit: EVENTS_PAGE_LIMIT,
-    };
-    const items = await this.connector.fetchItems<CogniteEvent>({
-      data,
-      path: `/events/list`,
-      method: HttpMethod.POST,
-    });
-
+    if (expr) {
+      const { filters, params } = parseQuery(expr);
+      const data: FilterRequest<EventsFilterRequestParams> = {
+        filter: { ...timeRange, ...params },
+        limit: EVENTS_PAGE_LIMIT,
+      };
+      const newItems = await this.connector.fetchItems<CogniteEvent>({
+        data,
+        path: `/events/list`,
+        method: HttpMethod.POST,
+      });
+      items.push(...applyFilters(newItems, filters));
+    }
+    console.log('events', items, expr, timeRange);
     return {
-      items: applyFilters(items, filters),
-      hasMore: items.length === EVENTS_PAGE_LIMIT,
+      items,
+      hasMore: items.length >= EVENTS_PAGE_LIMIT,
     };
   }
 
@@ -361,7 +358,8 @@ export default class CogniteDatasource extends DataSourceApi<
       activeAtTime: { min: rangeStart, max: rangeEnd },
     };
     const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchEvents(evaluatedQuery, timeRange);
+    const { items } = await this.fetchEvents({ expr: evaluatedQuery, eventQuery: '' }, timeRange);
+    console.log('annotation', query, '\nevaluatedQuery', evaluatedQuery, '\nitems', items);
 
     return items.map(({ description, startTime, endTime, type }) => ({
       annotation,
