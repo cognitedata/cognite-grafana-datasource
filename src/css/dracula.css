@@ -27,7 +27,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
+.CodeMirror.cm-s-dracula {
+  min-width: 200px;
+}
 
 .cm-s-dracula.CodeMirror, .cm-s-dracula .CodeMirror-gutters {
   background-color: #0b0c0e !important;
