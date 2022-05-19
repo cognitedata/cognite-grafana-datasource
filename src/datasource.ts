@@ -320,7 +320,6 @@ export default class CogniteDatasource extends DataSourceApi<
       filter: { ...timeRange, ...params },
       limit: EVENTS_PAGE_LIMIT,
     };
-
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/list`,
@@ -329,7 +328,6 @@ export default class CogniteDatasource extends DataSourceApi<
         'cdf-version': 'alpha',
       },
     });
-    console.log('events', items, expr, timeRange);
     return {
       items: applyFilters(items, filter),
       hasMore: items.length >= EVENTS_PAGE_LIMIT,
@@ -355,8 +353,6 @@ export default class CogniteDatasource extends DataSourceApi<
     };
     const evaluatedQuery = this.replaceVariable(query);
     const { items } = await this.fetchEvents({ expr: evaluatedQuery, eventQuery: '' }, timeRange);
-    console.log('annotation', query, '\nevaluatedQuery', evaluatedQuery, '\nitems', items);
-
     return items.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,
