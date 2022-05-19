@@ -148,8 +148,8 @@ export interface MetricDescription {
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
-  withRelationships: boolean;
-  includeSubTimeseries: boolean;
+  withRelationships?: boolean;
+  includeSubTimeseries?: boolean;
   relationshipsQuery?: RelationshipsQuery;
 }
 

@@ -20,7 +20,7 @@ Object {
   "data": Object {
     "fetchResources": true,
     "filter": Object {},
-    "limit": 1000,
+    "limit": 101,
   },
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",

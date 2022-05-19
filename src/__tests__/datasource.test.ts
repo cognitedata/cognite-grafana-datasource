@@ -206,9 +206,6 @@ describe('Datasource Query', () => {
     const assetQuery = {
       target: '789',
       includeSubtrees: false,
-      withRelationships: false,
-      includeSubTimeseries: true,
-      relationshipsQuery: defaultRelationshipsQuery,
     };
     const targetC: QueryTargetLike = {
       assetQuery,

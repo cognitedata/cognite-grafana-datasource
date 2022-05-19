@@ -576,7 +576,7 @@ async function findTsByAssetAndRelationships(
   connector: Connector,
   [min, max]
 ): Promise<TimeSeriesResponseItem[]> {
-  const timeFrame = assetQuery.relationshipsQuery.isActiveAtTime && { activeAtTime: { max, min } };
+  const timeFrame = assetQuery.relationshipsQuery?.isActiveAtTime && { activeAtTime: { max, min } };
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -590,10 +590,10 @@ async function findTsByAssetAndRelationships(
   const limit = 101;
   let timeseriesFromRelationships = [];
   const timeseriesFromAssets =
-    assetQuery.includeSubTimeseries !== false
+    assetQuery?.includeSubTimeseries !== false
       ? await getTimeseries({ filter, limit }, connector)
       : [];
-  if (assetQuery.withRelationships) {
+  if (assetQuery?.withRelationships) {
     const relationshipsList = await fetchRelationships(
       assetQuery.relationshipsQuery,
       timeFrame,
