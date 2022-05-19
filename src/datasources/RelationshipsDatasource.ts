@@ -13,16 +13,6 @@ import { nodeField, edgeField } from '../constants';
 
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
 
-const filterLabels = (labels) =>
-  !_.isEmpty(labels.containsAny) && {
-    labels: {
-      containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
-    },
-  };
-const filterdataSetIds = (dataSetIds) =>
-  !_.isEmpty(dataSetIds) && {
-    dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
-  };
 export const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
   const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
 
@@ -111,19 +101,19 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
   relationshipsList.map(addValuesToFields);
   return { nodes, edges };
 };
-
 export class RelationshipsDatasource {
   public constructor(private connector: Connector) {}
 
   private postQuery(query: RelationshipsQuery & { refId: string }, [min, max]) {
-    const { labels, dataSetIds, isActiveAtTime, limit = 1000 } = query;
+    const { labels, dataSetIds, isActiveAtTime, limit = 1000, sourceExternalIds } = query;
     const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
     return fetchRelationships(
       {
-        ...filterLabels(labels),
-        ...filterdataSetIds(dataSetIds),
-        ...timeFrame,
+        labels,
+        dataSetIds,
+        sourceExternalIds,
       },
+      timeFrame,
       limit,
       this.connector
     )
@@ -145,9 +135,15 @@ export class RelationshipsDatasource {
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
     const results = await Promise.all(
-      options.targets.map((target) =>
-        this.postQuery({ refId: target.refId, ...target.relationshipsQuery }, timeRange)
-      )
+      options.targets.map((target) => {
+        return this.postQuery(
+          {
+            refId: target.refId,
+            ...target.relationshipsQuery,
+          },
+          timeRange
+        );
+      })
     );
     return {
       data: _.reduce(

@@ -27,17 +27,6 @@ export const TabTitles = {
   [Tab.Templates]: 'Templates',
 };
 
-const defaultAssetQuery: AssetQuery = {
-  includeSubtrees: false,
-  target: '',
-};
-
-const defaultEventQuery: EventQuery = {
-  expr: '',
-  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
-  activeAtTimeRange: true,
-};
-
 export const defaultRelationshipsQuery: RelationshipsQuery = {
   dataSetIds: [],
   labels: {
@@ -46,6 +35,20 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
   isActiveAtTime: false,
   limit: 1000,
 };
+const defaultAssetQuery: AssetQuery = {
+  includeSubtrees: false,
+  target: '',
+  withRelationships: false,
+  includeSubTimeseries: true,
+  relationshipsQuery: defaultRelationshipsQuery,
+};
+
+const defaultEventQuery: EventQuery = {
+  expr: '',
+  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+  activeAtTimeRange: true,
+};
+
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
@@ -145,6 +148,9 @@ export interface MetricDescription {
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
+  withRelationships?: boolean;
+  includeSubTimeseries?: boolean;
+  relationshipsQuery?: RelationshipsQuery;
 }
 
 export interface EventQuery {
