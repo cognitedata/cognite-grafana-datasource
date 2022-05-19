@@ -34,7 +34,10 @@ import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
+<<<<<<< HEAD
 import { RelationshipsTab } from './relationships';
+=======
+>>>>>>> 7a2453137f961ef95c0971ca352c6b5d9866882e
 import { AdvancedEventFilter } from './advancedEventFilter';
 
 const { FormField } = LegacyForms;
