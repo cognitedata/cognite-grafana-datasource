@@ -10,6 +10,7 @@ import {
   Resource,
   CogniteRelationshipResponse,
   RelationshipsFilter,
+  EventsFilterTimeParams,
 } from './types';
 import {
   Tab,
@@ -32,13 +33,13 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
-  RelationshipsQuery,
 } from '../types';
 import { toGranularityWithLowerBound } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
 import { getRange } from '../datasource';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
+import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
@@ -331,10 +332,17 @@ export const convertItemsToTable = (items: Resource[], columns: string[]): Table
 };
 
 export function fetchRelationships(
-  filter: RelationshipsFilter,
+  { labels, dataSetIds, sourceExternalIds }: RelationshipsFilter,
+  timeFrame: EventsFilterTimeParams,
   limit: number,
   connector: Connector
 ) {
+  const filter = {
+    ...filterLabels(labels),
+    ...filterdataSetIds(dataSetIds),
+    ...filterExternalId(sourceExternalIds),
+    ...timeFrame,
+  };
   return connector.fetchItems<CogniteRelationshipResponse>({
     method: HttpMethod.POST,
     path: '/relationships/list',

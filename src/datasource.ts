@@ -14,7 +14,7 @@ import {
   MutableDataFrame,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
-import { concat, get, groupBy, isEmpty, map, uniqBy } from 'lodash';
+import _ from 'lodash';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -78,12 +78,7 @@ import {
   QueriesDataItem,
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
-import {
-  filterdataSetIds,
-  filterExternalId,
-  filterLabels,
-  RelationshipsDatasource,
-} from './datasources/RelationshipsDatasource';
+import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
@@ -503,8 +498,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return target.expr;
         case Tab.Relationships:
           return (
-            !!relationshipsQuery.dataSetIds.length ||
-            !!get(relationshipsQuery.labels, 'containsAny').length
+            !!relationshipsQuery?.dataSetIds.length ||
+            !!relationshipsQuery?.labels?.containsAny?.length
           );
         case Tab.Timeseries:
         default:
@@ -599,18 +594,13 @@ async function findTsByAssetAndRelationships(
       ? await getTimeseries({ filter, limit }, connector)
       : [];
   if (assetQuery.withRelationships) {
-    const { labels, dataSetIds, sourceExternalIds, limit } = assetQuery.relationshipsQuery;
     const relationshipsList = await fetchRelationships(
-      {
-        ...filterLabels(labels),
-        ...filterdataSetIds(dataSetIds),
-        ...filterExternalId(sourceExternalIds),
-        ...timeFrame,
-      },
+      assetQuery.relationshipsQuery,
+      timeFrame,
       limit,
       connector
     );
-    timeseriesFromRelationships = map(relationshipsList, 'target');
+    timeseriesFromRelationships = relationshipsList.map(({ target }) => target);
   }
   if (timeseriesFromAssets.length >= limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
@@ -620,7 +610,7 @@ async function findTsByAssetAndRelationships(
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
     timeseriesFromRelationships.splice(-1);
   }
-  return uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
+  return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
 }
 
 export async function getDataQueryRequestItems(
@@ -654,7 +644,7 @@ export async function getDataQueryRequestItems(
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const groupedByTab = groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
+  const groupedByTab = _.groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],

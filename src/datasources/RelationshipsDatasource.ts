@@ -1,5 +1,5 @@
 import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
-import _, { get } from 'lodash';
+import _ from 'lodash';
 import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
 import { getRange } from '../datasource';
@@ -13,21 +13,6 @@ import { nodeField, edgeField } from '../constants';
 
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
 
-export const filterLabels = (labels) =>
-  !_.isEmpty(get(labels, 'containsAny')) && {
-    labels: {
-      containsAny: labels.containsAny.map(({ value }) => ({ externalId: value })),
-    },
-  };
-export const filterExternalId = (sourceExternalIds) =>
-  !_.isEmpty(sourceExternalIds) && {
-    targetTypes: ['timeSeries'],
-    sourceExternalIds,
-  };
-export const filterdataSetIds = (dataSetIds) =>
-  !_.isEmpty(dataSetIds) && {
-    dataSetIds: dataSetIds.map(({ value }) => ({ id: Number(value) })),
-  };
 export const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
   const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
 
@@ -124,11 +109,11 @@ export class RelationshipsDatasource {
     const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
     return fetchRelationships(
       {
-        ...filterLabels(labels),
-        ...filterdataSetIds(dataSetIds),
-        ...filterExternalId(sourceExternalIds),
-        ...timeFrame,
+        labels,
+        dataSetIds,
+        sourceExternalIds,
       },
+      timeFrame,
       limit,
       this.connector
     )
