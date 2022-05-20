@@ -10,6 +10,7 @@ Object {
     },
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
 }
@@ -22,6 +23,7 @@ Object {
     "filter": Object {},
     "limit": 101,
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",
 }
