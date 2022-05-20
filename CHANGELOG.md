@@ -13,7 +13,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 ### Templates support (preview)
 
 - A new templates tab has been added which support the CDF templates feature (preview). Enable this in the data source settings.
-- Using templates with grafana will allow you to dynamically scale your dashboards when adding equipment.
+- Using templates with Grafana will allow you to dynamically scale your dashboards when adding equipment.
 - Documentation: https://docs.cognite.com/dev/concepts/resource_types/templates
 
 
