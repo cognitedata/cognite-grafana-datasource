@@ -1,10 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CodeMirror from 'codemirror';
-import 'codemirror/lib/codemirror.css';
-import '../css/dracula.css';
+import jsonlint from 'jsonlint-mod';
 import 'codemirror/addon/hint/show-hint';
 import 'codemirror/addon/lint/lint';
+import 'codemirror/addon/lint/json-lint';
+import 'codemirror/addon/lint/javascript-lint';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/addon/hint/javascript-hint';
+import 'codemirror/addon/edit/closebrackets';
 import { EventQuery } from '../types';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/addon/lint/lint.css';
+import '../css/dracula.css';
+
+// eslint-disable-next-line @typescript-eslint/dot-notation
+window['jsonlint'] = jsonlint;
 
 export const AdvancedEventFilter = (props) => {
   const { query, onQueryChange } = props;
@@ -29,6 +39,11 @@ export const AdvancedEventFilter = (props) => {
       const editor = CodeMirror.fromTextArea(textAreaRef.current, {
         mode: 'application/json',
         theme: 'dracula',
+        lineNumbers: true,
+        lineWrapping: true,
+        autoCloseBrackets: true,
+        gutters: ['CodeMirror-lint-markers'],
+        lint: true,
         /* lint: {
           schema: myGraphQLSchema,
           validationRules: [ExampleRule],
@@ -38,6 +53,7 @@ export const AdvancedEventFilter = (props) => {
         }, */
       });
       setEditor(editor);
+      console.log(query.eventQuery.eventQuery);
       editor.getDoc().setValue(query.eventQuery.eventQuery);
     }
   }, [textAreaRef]);
