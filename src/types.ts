@@ -31,8 +31,7 @@ const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
-  eventQuery: `
-{
+  eventQuery: `{
   "and": [
       {
           "or": [
@@ -69,8 +68,7 @@ const defaultEventQuery: EventQuery = {
           }
       }
   ]
-}
-`,
+}`,
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
