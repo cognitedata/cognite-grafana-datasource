@@ -7,7 +7,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 ### Relationships support
 
 - The connector now supports the CDF relationships resource type. Read more about relationships at [Relationships documentation](https://docs.cognite.com/dev/concepts/resource_types/relationships).
-- With relationships support you can now fetch time series based on relationships in the "Time series from asset" tab. Relationships can be filtered on data set, labels and active relationships based on the time filter selected in grafana.
+- With relationships support you can now fetch time series based on relationships in the "Time series from asset" tab. Relationships can be filtered on data set, labels and active relationships based on the time filter selected in Grafana.
 - A new relationships tab has been added which can be used to utilize Grafana's Node Graph visualization plugin, or a new (alpha) custom visualization plugin which can be found at (cognite-grafana-relationships-visualization)[https://github.com/cognitedata/cognite-grafana-relationships-visualization]
 
 ### Templates support (preview)
