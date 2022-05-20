@@ -28,7 +28,7 @@
     THE SOFTWARE.
 */
 .CodeMirror.cm-s-dracula {
-  min-width: 200px;
+  width: 100%;
 }
 
 .cm-s-dracula.CodeMirror, .cm-s-dracula .CodeMirror-gutters {
