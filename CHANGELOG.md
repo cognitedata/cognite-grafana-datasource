@@ -4,11 +4,17 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ## 2.5.0 - June 1, 2022
 
-### Features
+### Relationships support
 
-- Ability to fetch time series based on relationships in the "Time series from asset" tab. Relationships can be filtered on data set, labels and active based on time
-- New relationships tab which can utilize the Node Graph visualization or a new custom visualization plugin which can be found at https://github.com/cognitedata/cognite-grafana-relationsships-visualization
-- New templates tab which support the CDF templates feature (preview). Enable this in the data source settings.
+- The connector now supports the CDF relationships resource type. Read more about relationships at [Relationships documentation](https://docs.cognite.com/dev/concepts/resource_types/relationships).
+- With relationships support you can now fetch time series based on relationships in the "Time series from asset" tab. Relationships can be filtered on data set, labels and active relationships based on the time filter selected in grafana.
+- A new relationships tab has been added which can be used to utilize the Node Graph visualization plugin, or a new (alpha) custom visualization plugin which can be found at (cognite-grafana-relationships-visualization)[https://github.com/cognitedata/cognite-grafana-relationships-visualization]
+
+### Templates support (preview)
+
+- A new templates tab has been added which support the CDF templates feature (preview). Enable this in the data source settings.
+- Using templates with grafana will allow you to dynamically scale your dashboards when adding equipment.
+- Documentation: https://docs.cognite.com/dev/concepts/resource_types/templates
 
 
 ## 2.4.0 - August 20, 2021
