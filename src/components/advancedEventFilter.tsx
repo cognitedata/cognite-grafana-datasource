@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Button, Tooltip } from '@grafana/ui';
 import CodeMirror from 'codemirror';
 import jsonlint from 'jsonlint-mod';
 import 'codemirror/addon/hint/show-hint';
@@ -12,6 +13,7 @@ import { EventQuery } from '../types';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/addon/lint/lint.css';
 import '../css/dracula.css';
+import { EventAdvancedFilterHelp } from './queryHelp';
 
 // eslint-disable-next-line @typescript-eslint/dot-notation
 window['jsonlint'] = jsonlint;
@@ -19,6 +21,7 @@ window['jsonlint'] = jsonlint;
 export const AdvancedEventFilter = (props) => {
   const { query, onQueryChange } = props;
   const textAreaRef = useRef(null);
+  const [showHelp, setShowHelp] = useState(false);
   const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
 
   const [eventQuery, setEventQuery] = useState(query.eventQuery);
@@ -73,9 +76,21 @@ export const AdvancedEventFilter = (props) => {
   }, [editor, patchEventQuery, triggerQuery]);
 
   return (
-    <div className="gf-form gf-form--grow">
-      <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
-      <textarea ref={textAreaRef} name="eventQuery" />
-    </div>
+    <>
+      <div className="gf-form gf-form--grow">
+        <Tooltip content="click here for more information">
+          <Button
+            variant="secondary"
+            icon="question-circle"
+            onClick={() => setShowHelp(!showHelp)}
+          />
+        </Tooltip>
+        <span className="gf-form-label query-keyword fix-query-keyword width-8">
+          Advanced Query
+        </span>
+        <textarea ref={textAreaRef} name="eventQuery" />
+      </div>
+      {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
+    </>
   );
 };
