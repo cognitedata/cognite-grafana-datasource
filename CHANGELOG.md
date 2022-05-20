@@ -6,7 +6,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ### Features
 
-- Ability to fetch time series based on relationships in the "Time series from asset" tab. Relationsships can be filtered on data set, labels and active based on time
+- Ability to fetch time series based on relationships in the "Time series from asset" tab. Relationships can be filtered on data set, labels and active based on time
 - New relationships tab which can utilize the Node Graph visualization or a new custom visualization plugin which can be found at https://github.com/cognitedata/cognite-grafana-relationsships-visualization
 - New templates tab which support the CDF templates feature (preview). Enable this in the data source settings.
 
