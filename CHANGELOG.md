@@ -2,7 +2,9 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
-## 2.5.0 - May 20, 2022
+## 2.5.0 - June 1, 2022
+
+### Features
 
 - Ability to fetch time series based on relationships in the "Time series from asset" tab. Relationsships can be filtered on data set, labels and active based on time
 - New relationships tab which can utilize the Node Graph visualization or a new custom visualization plugin which can be found at https://github.com/cognitedata/cognite-grafana-relationsships-visualization
