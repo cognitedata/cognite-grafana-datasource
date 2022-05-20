@@ -53,7 +53,6 @@ export const AdvancedEventFilter = (props) => {
         }, */
       });
       setEditor(editor);
-      console.log(query.eventQuery.eventQuery);
       editor.getDoc().setValue(query.eventQuery.eventQuery);
     }
   }, [textAreaRef]);
