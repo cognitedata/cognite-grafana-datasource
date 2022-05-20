@@ -44,13 +44,6 @@ export const AdvancedEventFilter = (props) => {
         autoCloseBrackets: true,
         gutters: ['CodeMirror-lint-markers'],
         lint: true,
-        /* lint: {
-          schema: myGraphQLSchema,
-          validationRules: [ExampleRule],
-        },
-        hintOptions: {
-          schema: myGraphQLSchema,
-        }, */
       });
       setEditor(editor);
       editor.getDoc().setValue(query.eventQuery.eventQuery);
@@ -59,6 +52,7 @@ export const AdvancedEventFilter = (props) => {
 
   useEffect(() => {
     if (editor != null) {
+      editor.setOption('lint', editor.getValue().trim());
       const handleChange = () => {
         patchEventQuery({ eventQuery: editor.getDoc().getValue() });
       };
