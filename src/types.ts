@@ -31,44 +31,7 @@ const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
-  eventQuery: `{
-  "and": [
-      {
-          "or": [
-              {
-                  "equals": {
-                      "property": ["type"],
-                      "value": "foobar"
-                  }
-              },
-              {
-                  "prefix": {
-                      "property": ["externalId"],
-                      "value": "hello"
-                  }
-              }
-          ]
-      },
-      {
-          "not": {
-              "range": {
-                  "property": ["startTime"],
-                  "gte": 0,
-                  "lte": 100
-              }
-          }
-      },
-      {
-          "in": {
-              "property": ["metadata", "metadata_D"],
-              "values": [
-                  "hello",
-                  "world"
-              ]
-          }
-      }
-  ]
-}`,
+  eventQuery: ``,
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
