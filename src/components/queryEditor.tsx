@@ -229,7 +229,7 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
 
   return (
     <div className="gf-form">
-      <InlineFormLabel tooltip="Fetch time series related to the asset" width={9}>
+      <InlineFormLabel tooltip="Fetch time series related to the asset" width={12}>
         Include relationships
       </InlineFormLabel>
       <div className="gf-form-switch">
