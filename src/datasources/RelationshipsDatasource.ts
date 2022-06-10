@@ -172,7 +172,7 @@ export class RelationshipsDatasource {
       return _.sortBy(
         response.map(({ name, ...rest }) => ({
           value: rest[selector.keyPropName],
-          label: name,
+          label: name.trim(),
         })),
         ['label']
       );
