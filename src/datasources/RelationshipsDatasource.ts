@@ -169,10 +169,13 @@ export class RelationshipsDatasource {
         ...settings,
         path: `/${selector.type}/list`,
       });
-      return response.map(({ name, ...rest }) => ({
-        value: rest[selector.keyPropName],
-        label: name,
-      }));
+      return _.sortBy(
+        response.map(({ name, ...rest }) => ({
+          value: rest[selector.keyPropName],
+          label: name,
+        })),
+        ['label']
+      );
     } catch (error) {
       return [];
     }
