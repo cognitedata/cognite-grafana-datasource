@@ -106,7 +106,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
-    this.project = this.project = cogniteProject ?? defaultProject;
+    this.project = cogniteProject ?? defaultProject;
     this.connector = new Connector(
       this.project,
       url,
