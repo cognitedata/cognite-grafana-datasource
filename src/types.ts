@@ -118,7 +118,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   cogniteApiUrl?: string;
   clusterUrl?: string;
   cogniteProject: string;
-  defaultProject: string;
+  defaultProject?: string;
   oauthPassThru?: boolean;
   oauthClientCreds?: boolean;
   oauthTokenUrl?: string;
