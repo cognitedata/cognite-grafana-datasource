@@ -107,7 +107,7 @@ export default class CogniteDatasource extends DataSourceApi<
       defaultProject,
       oauthPassThru,
       oauthClientCreds,
-      enableTemplates,
+      enableTemplates
     } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
