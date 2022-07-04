@@ -11,8 +11,8 @@ This article documents the ongoing improvements we're making to the **Cognite Da
       editable: false
       isDefault: true
       jsonData:
-        clusterUrl: westeurope-1.cognitedata.com
-        defaultProject: leroy-dev
+        clusterUrl: westeurope-1.cognitedata.com # other examples are api.cognitedata.com, az-eastus-1.cognitedata.com etc
+        defaultProject: <cdf-project>
         oauthPassThru: true
       name: CDF
       type: cognitedata-datasource
