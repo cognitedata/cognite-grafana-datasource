@@ -4,7 +4,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ## 2.6.0 - July 4, 2022
 
-- The connector now supports being used with the Kubernetes [Grafana operator](https://github.com/grafana-operator/grafana-operator) as the [GrafanaDataSource CRD](https://github.com/grafana-operator/grafana-operator/blob/master/documentation/datasources.md). In the operator you specify the cognite project in `defaultProject` parameter and the api url as the `clusterUrl` parameter. In the operator you can specify a data source using the syntax below:
+- The connector now supports being used with the Kubernetes [Grafana operator](https://github.com/grafana-operator/grafana-operator) as the [GrafanaDataSource CRD](https://github.com/grafana-operator/grafana-operator/blob/master/documentation/datasources.md). In the operator you specify the Cognite project in `defaultProject` parameter and the API URL as the `clusterUrl` parameter. In the operator you can specify a data source using the syntax below:
 ```
   datasources:
     - access: proxy
