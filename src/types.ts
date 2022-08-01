@@ -31,7 +31,7 @@ const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
-  eventQuery: ``,
+  advancedFilter: ``,
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
@@ -158,7 +158,7 @@ export interface EventQuery {
   expr: string;
   activeAtTimeRange: boolean;
   columns: string[];
-  eventQuery: string;
+  advancedFilter: string;
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
