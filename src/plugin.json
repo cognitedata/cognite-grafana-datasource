@@ -36,7 +36,7 @@
   "routes": [
     {
       "path": "cdf-oauth",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}{{if .JsonData.clusterUrl}}{{.JsonData.clusterUrl}}{{else}}api.cognitedata.com{{end}}{{end}}",
       "headers": [
         {
           "name": "x-cdp-sdk",
@@ -46,7 +46,7 @@
     },
     {
       "path": "cdf-cc-oauth",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}{{if .JsonData.clusterUrl}}{{.JsonData.clusterUrl}}{{else}}api.cognitedata.com{{end}}{{end}}",
       "tokenAuth": {
         "url": "{{ .JsonData.oauthTokenUrl }}",
         "params": {
@@ -59,7 +59,7 @@
     },
     {
       "path": "cdf-api-key",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}api.cognitedata.com{{end}}",
+      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}{{if .JsonData.clusterUrl}}{{.JsonData.clusterUrl}}{{else}}api.cognitedata.com{{end}}{{end}}",
       "headers": [
         {
           "name": "api-key",

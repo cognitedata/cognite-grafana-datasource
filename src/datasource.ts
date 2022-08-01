@@ -102,18 +102,14 @@ export default class CogniteDatasource extends DataSourceApi<
     super(instanceSettings);
 
     const { url, jsonData } = instanceSettings;
-    const {
-      cogniteProject,
-      oauthPassThru,
-      oauthClientCreds,
-      enableTemplates,
-      enableEventsAdvancedFiltering,
-    } = jsonData;
+    const { cogniteProject, defaultProject, oauthPassThru, oauthClientCreds, enableTemplates, enableEventsAdvancedFiltering } =
+      jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
+    this.project = cogniteProject ?? defaultProject;
     this.connector = new Connector(
-      cogniteProject,
+      this.project,
       url,
       this.backendSrv,
       oauthPassThru,
@@ -121,7 +117,6 @@ export default class CogniteDatasource extends DataSourceApi<
       enableTemplates,
       enableEventsAdvancedFiltering
     );
-    this.project = cogniteProject;
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
   }
