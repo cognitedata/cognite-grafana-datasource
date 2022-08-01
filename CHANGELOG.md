@@ -2,6 +2,23 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 2.6.0 - July 4, 2022
+
+- The connector now supports being used with the Kubernetes [Grafana operator](https://github.com/grafana-operator/grafana-operator) as the [GrafanaDataSource CRD](https://github.com/grafana-operator/grafana-operator/blob/master/documentation/datasources.md). In the operator you specify the Cognite project in `defaultProject` parameter and the API URL as the `clusterUrl` parameter. In the operator you can specify a data source using the syntax below:
+```
+  datasources:
+    - access: proxy
+      editable: false
+      isDefault: true
+      jsonData:
+        clusterUrl: westeurope-1.cognitedata.com # other examples are api.cognitedata.com, az-eastus-1.cognitedata.com etc
+        defaultProject: <cdf-project>
+        oauthPassThru: true
+      name: CDF
+      type: cognitedata-datasource
+  name: cdf.yaml
+```  
+
 ## 2.5.0 - June 1, 2022
 
 ### Relationships support
