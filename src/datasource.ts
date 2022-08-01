@@ -320,18 +320,14 @@ export default class CogniteDatasource extends DataSourceApi<
       filter: { ...timeRange, ...params },
       limit: EVENTS_PAGE_LIMIT,
     };
-    const advancedOnly = advancedFilterQuery
-      ? {
-          headers: {
-            'cdf-version': 'alpha',
-          },
-        }
-      : {};
+
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/list`,
       method: HttpMethod.POST,
-      ...advancedOnly,
+      headers: advancedFilterQuery && {
+        'cdf-version': 'alpha',
+      },
     });
     return {
       items: applyFilters(items, filter),
