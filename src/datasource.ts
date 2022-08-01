@@ -303,7 +303,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
-  async fetchEvents({ expr, eventQuery }, timeRange: EventsFilterTimeParams) {
+  async fetchEvents({ expr, advancedFilter }, timeRange: EventsFilterTimeParams) {
     let filter = [];
     let params = {};
     if (expr) {
@@ -311,12 +311,12 @@ export default class CogniteDatasource extends DataSourceApi<
       filter = parsedQuery.filters;
       params = parsedQuery.params;
     }
-    const advancedFilter =
-      this.connector.isEventsAdvancedFilteringEnabled() && eventQuery.length
-        ? JSON.parse(eventQuery)
+    const advancedFilterQuery =
+      this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
+        ? JSON.parse(advancedFilter)
         : undefined;
     const data: FilterRequest<EventsFilterRequestParams> = {
-      advancedFilter,
+      advancedFilter: advancedFilterQuery,
       filter: { ...timeRange, ...params },
       limit: EVENTS_PAGE_LIMIT,
     };
@@ -352,7 +352,10 @@ export default class CogniteDatasource extends DataSourceApi<
       activeAtTime: { min: rangeStart, max: rangeEnd },
     };
     const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchEvents({ expr: evaluatedQuery, eventQuery: '' }, timeRange);
+    const { items } = await this.fetchEvents(
+      { expr: evaluatedQuery, advancedFilter: '' },
+      timeRange
+    );
     return items.map(({ description, startTime, endTime, type }) => ({
       annotation,
       isRegion: true,
@@ -502,7 +505,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
       switch (tab) {
         case Tab.Event:
-          return eventQuery?.expr || eventQuery.eventQuery;
+          return eventQuery?.expr || eventQuery?.advancedFilter;
         case Tab.Asset:
           return assetQuery?.target;
         case Tab.Templates:
