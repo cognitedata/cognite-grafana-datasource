@@ -507,8 +507,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr || eventQuery?.advancedFilter;
-        case Tab.Asset:
+        case Tab.Asset: {
           return assetQuery?.target;
+        }
         case Tab.Templates:
           return (
             templateQuery &&

@@ -265,7 +265,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   }, [current.value]);
 
   useEffect(() => {
-    if (current.externalId) {
+    if (current.externalId || current.value) {
       onQueryChange({
         assetQuery: {
           ...query.assetQuery,
@@ -277,7 +277,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         },
       });
     }
-  }, [current.externalId]);
+  }, [current]);
 
   return (
     <div className="gf-form-inline">

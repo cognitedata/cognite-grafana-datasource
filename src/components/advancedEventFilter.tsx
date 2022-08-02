@@ -49,7 +49,7 @@ export const AdvancedEventFilter = (props) => {
         lint: true,
       });
       setEditor(editor);
-      editor.getDoc().setValue(query.eventQuery.eventQuery);
+      editor.getDoc().setValue(query.eventQuery.advancedFilter);
     }
   }, [textAreaRef]);
 
@@ -57,7 +57,7 @@ export const AdvancedEventFilter = (props) => {
     if (editor != null) {
       editor.setOption('lint', editor.getValue().trim());
       const handleChange = () => {
-        patchEventQuery({ eventQuery: editor.getDoc().getValue() });
+        patchEventQuery({ advancedFilter: editor.getDoc().getValue() });
       };
 
       const handleBlur = () => {
