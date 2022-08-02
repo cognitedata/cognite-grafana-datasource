@@ -41,7 +41,9 @@ export function ConfigEditor(props: ConfigEditorProps) {
   const { cogniteDataPlatformApiKey = '', oauthClientSecret = '' } = secureJsonData;
   const {
     cogniteProject = '',
+    defaultProject,
     cogniteApiUrl = '',
+    clusterUrl,
     oauthPassThru,
     oauthClientCreds,
     oauthClientId,
@@ -103,7 +105,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             inputWidth={21}
             onChange={onJsonStringValueChange('cogniteProject')}
             value={cogniteProject}
-            placeholder="Cognite Data Fusion project"
+            placeholder={defaultProject ?? 'Cognite Data Fusion project'}
             tooltip="Cognite Data Fusion project name."
           />
         </div>
@@ -115,7 +117,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             inputWidth={21}
             onChange={onJsonStringValueChange('cogniteApiUrl')}
             value={cogniteApiUrl}
-            placeholder="api.cognitedata.com"
+            placeholder={clusterUrl ?? 'api.cognitedata.com'}
             tooltip={apiUrlTooltip}
           />
         </div>
