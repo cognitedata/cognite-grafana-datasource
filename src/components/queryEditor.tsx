@@ -265,19 +265,20 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   }, [current.value]);
 
   useEffect(() => {
-    if (current.externalId || current.value) {
-      onQueryChange({
-        assetQuery: {
-          ...query.assetQuery,
-          target: current.value,
-          relationshipsQuery: {
-            ...query.assetQuery.relationshipsQuery,
-            sourceExternalIds: [current.externalId],
-          },
-        },
-      });
-    }
-  }, [current]);
+    const relationshipsQuery = current.externalId
+      ? {
+          ...query.assetQuery.relationshipsQuery,
+          sourceExternalIds: [current.externalId],
+        }
+      : null;
+    onQueryChange({
+      assetQuery: {
+        ...query.assetQuery,
+        relationshipsQuery,
+        target: current.value,
+      },
+    });
+  }, [current.value, current.externalId]);
 
   return (
     <div className="gf-form-inline">
