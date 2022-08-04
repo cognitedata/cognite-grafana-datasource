@@ -35,6 +35,7 @@ import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
+import { AdvancedEventFilter } from './advancedEventFilter';
 
 const { FormField } = LegacyForms;
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
@@ -228,7 +229,7 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
 
   return (
     <div className="gf-form">
-      <InlineFormLabel tooltip="Fetch time series related to the asset" width={9}>
+      <InlineFormLabel tooltip="Fetch time series related to the asset" width={12}>
         Include relationships
       </InlineFormLabel>
       <div className="gf-form-switch">
@@ -264,19 +265,20 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   }, [current.value]);
 
   useEffect(() => {
-    if (current.externalId) {
-      onQueryChange({
-        assetQuery: {
-          ...query.assetQuery,
-          target: current.value,
-          relationshipsQuery: {
-            ...query.assetQuery.relationshipsQuery,
-            sourceExternalIds: [current.externalId],
-          },
-        },
-      });
-    }
-  }, [current.externalId]);
+    const relationshipsQuery = current.externalId
+      ? {
+          ...query.assetQuery.relationshipsQuery,
+          sourceExternalIds: [current.externalId],
+        }
+      : null;
+    onQueryChange({
+      assetQuery: {
+        ...query.assetQuery,
+        relationshipsQuery,
+        target: current.value,
+      },
+    });
+  }, [current.value, current.externalId]);
 
   return (
     <div className="gf-form-inline">
@@ -365,8 +367,10 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 
-function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange } = props;
+function EventsTab(
+  props: SelectedProps & { datasource: CogniteDatasource } & Pick<EditorProps, 'onRunQuery'>
+) {
+  const { query, onQueryChange, datasource } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.eventQuery.expr);
 
@@ -395,6 +399,9 @@ function EventsTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
       </div>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
+      {datasource.connector.isEventsAdvancedFilteringEnabled() && (
+        <AdvancedEventFilter {...{ query, onQueryChange }} />
+      )}
       {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
@@ -551,7 +558,7 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery }} />}
+        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {tab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}

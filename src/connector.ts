@@ -20,16 +20,17 @@ export class Connector {
     private backendSrv: BackendSrv,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
-    private enableTemplates?: boolean
+    private enableTemplates?: boolean,
+    private enableEventsAdvancedFiltering?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
 
   public fetchData<T>(request: RequestParams): Promise<T> {
-    const { path, data, method, params, requestId, cacheTime } = request;
+    const { path, data, method, params, requestId, cacheTime, headers } = request;
     const queryString = params ? `?${getQueryString(params)}` : '';
     const url = `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;
-    const body: DataSourceRequestOptions = { url, data, method };
+    const body: DataSourceRequestOptions = { url, data, method, headers };
     if (requestId) {
       body.requestId = requestId;
     }
@@ -129,6 +130,10 @@ export class Connector {
 
   public isTemplatesEnabled() {
     return this.enableTemplates;
+  }
+
+  public isEventsAdvancedFilteringEnabled() {
+    return this.enableEventsAdvancedFiltering;
   }
 
   public cachedRequest = async (

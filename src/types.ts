@@ -27,6 +27,13 @@ export const TabTitles = {
   [Tab.Templates]: 'Templates',
 };
 
+const defaultEventQuery: EventQuery = {
+  expr: '',
+  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+  activeAtTimeRange: true,
+  advancedFilter: ``,
+};
+
 export const defaultRelationshipsQuery: RelationshipsQuery = {
   dataSetIds: [],
   labels: {
@@ -42,13 +49,6 @@ const defaultAssetQuery: AssetQuery = {
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
-
-const defaultEventQuery: EventQuery = {
-  expr: '',
-  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
-  activeAtTimeRange: true,
-};
-
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
@@ -125,6 +125,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthClientId?: string;
   oauthScope?: string;
   enableTemplates?: boolean;
+  enableEventsAdvancedFiltering?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -159,6 +160,7 @@ export interface EventQuery {
   expr: string;
   activeAtTimeRange: boolean;
   columns: string[];
+  advancedFilter: string;
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
@@ -285,6 +287,7 @@ export interface RequestParams<DataType = any> {
   params?: { [s: string]: any };
   requestId?: string;
   cacheTime?: string;
+  headers?: { [s: string]: string };
 }
 
 export type DataQueryError = {

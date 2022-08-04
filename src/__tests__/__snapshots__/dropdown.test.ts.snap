@@ -7,6 +7,7 @@ Object {
       "query": "asset",
     },
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search",
 }
@@ -45,6 +46,7 @@ Object {
       "query": "asset",
     },
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
 }
@@ -69,6 +71,7 @@ Object {
       "query": "Timeseries",
     },
   },
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/search",
 }
@@ -117,6 +120,7 @@ Array [
 exports[`Dropdown Options Query Given an empty request for asset options should generate the correct request 1`] = `
 Object {
   "data": Object {},
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search",
 }
@@ -158,6 +162,7 @@ Array [
 exports[`Dropdown Options Query Given an empty request for timeseries options should generate the correct request 1`] = `
 Object {
   "data": Object {},
+  "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/search",
 }

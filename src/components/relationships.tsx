@@ -1,6 +1,6 @@
 import React from 'react';
 import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
-import { get, set } from 'lodash';
+import _ from 'lodash';
 import CogniteDatasource from '../datasource';
 import { SelectedProps } from './queryEditor';
 import { EVENTS_PAGE_LIMIT } from '../constants';
@@ -29,12 +29,15 @@ const MultiSelectAsync = (props) => {
     <Field label={`Filter relationships by ${selector.type}`} className="relationships-select">
       <AsyncMultiSelect
         loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
-        value={get(query, s)}
+        value={_.get(query, s)}
         defaultOptions
         allowCustomValue
-        onChange={(values) => onQueryChange(set(query, s, values))}
+        onChange={(values) => onQueryChange(_.set(query, s, values))}
         placeholder={placeholder}
         maxMenuHeight={150}
+        filterOption={(option, searchQuery) =>
+          _.includes(_.toLower(option.label), _.toLower(searchQuery))
+        }
       />
     </Field>
   );
@@ -67,11 +70,11 @@ export const RelationshipsTab = (
         <Tooltip content="Limit must been between 1 and 1000">
           <Input
             type="number"
-            value={get(query, `${route}.limit`)}
+            value={_.get(query, `${route}.limit`)}
             onChange={(targetValue) => {
               const { value } = targetValue.target as any;
               if (value <= EVENTS_PAGE_LIMIT && value > 0) {
-                return onQueryChange(set(query, `${route}.limit`, value));
+                return onQueryChange(_.set(query, `${route}.limit`, value));
               }
               return null;
             }}
@@ -82,9 +85,9 @@ export const RelationshipsTab = (
       </Field>
       <Field label="Active at Time" className="relationships-item">
         <Switch
-          value={get(query, `${route}.isActiveAtTime`)}
+          value={_.get(query, `${route}.isActiveAtTime`)}
           onChange={({ currentTarget }) =>
-            onQueryChange(set(query, `${route}.isActiveAtTime`, currentTarget.checked))
+            onQueryChange(_.set(query, `${route}.isActiveAtTime`, currentTarget.checked))
           }
         />
       </Field>

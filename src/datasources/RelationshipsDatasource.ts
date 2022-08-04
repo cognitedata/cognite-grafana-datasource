@@ -12,6 +12,9 @@ import {
 import { nodeField, edgeField } from '../constants';
 
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
+type RelationshipsResponse = {
+  [x: string]: any;
+};
 
 export const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
   const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');
@@ -118,7 +121,10 @@ export class RelationshipsDatasource {
       this.connector
     )
       .then((relationshipsList) => {
-        return createRelationshipsNode(relationshipsList, query.refId);
+        return [
+          _.map(createRelationshipsNode(relationshipsList, query.refId)),
+          [relationshipsList],
+        ];
       })
       .catch((err: any) => {
         if (err.data && err.data.error) {
@@ -134,8 +140,8 @@ export class RelationshipsDatasource {
 
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
-    const results = await Promise.all(
-      options.targets.map((target) => {
+    const data = await Promise.all(
+      _.map(options.targets, (target) => {
         return this.postQuery(
           {
             refId: target.refId,
@@ -146,13 +152,7 @@ export class RelationshipsDatasource {
       })
     );
     return {
-      data: _.reduce(
-        results,
-        (total, current) => {
-          return _.concat(total, _.values(current));
-        },
-        []
-      ),
+      data: _.flattenDepth(data, 2),
     };
   }
 
@@ -165,14 +165,17 @@ export class RelationshipsDatasource {
       },
     };
     try {
-      const response = await this.connector.fetchItems({
+      const response: RelationshipsResponse[] = await this.connector.fetchItems({
         ...settings,
         path: `/${selector.type}/list`,
       });
-      return response.map(({ name, ...rest }) => ({
-        value: rest[selector.keyPropName],
-        label: name,
-      }));
+      return _.sortBy(
+        _.map(response, ({ name, ...rest }) => ({
+          value: rest[selector.keyPropName],
+          label: name.trim(),
+        })),
+        ['label']
+      );
     } catch (error) {
       return [];
     }

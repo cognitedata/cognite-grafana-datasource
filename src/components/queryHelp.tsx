@@ -161,3 +161,11 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     Example: <Code>{`{events{type='WORKORDER', subtype=$variable}`}</Code>
   </HelpPanel>
 );
+
+export const EventAdvancedFilterHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
+  <HelpPanel title="Event advanced filter query syntax help" onDismiss={onDismiss}>
+    <a href="https://pr-ark-codegen-1444.specs.preview.cogniteapp.com/v1.json.html#operation/advancedListEvents">
+      Click here for Advanced filter documentation
+    </a>
+  </HelpPanel>
+);

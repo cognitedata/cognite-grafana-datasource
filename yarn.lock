@@ -3831,6 +3831,11 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
+JSV@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/JSV/-/JSV-4.0.2.tgz#d077f6825571f82132f9dffaed587b4029feff57"
+  integrity sha512-ZJ6wx9xaKJ3yFUhq5/sk82PJMuUyLk277I8mQeyDgCTjGdjWJIvPfaU5LIXaMuaN2UO1X3kZH4+lgphublZUHw==
+
 abab@^2.0.0, abab@^2.0.3, abab@^2.0.5:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.6.tgz#41b80f2c871d19686216b82309231cfd3cb3d291"
@@ -9712,6 +9717,15 @@ jsonfile@^4.0.0:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
+jsonlint-mod@^1.7.6:
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/jsonlint-mod/-/jsonlint-mod-1.7.6.tgz#6f1c4c51fdb5c2002489a0665e3e19a316743319"
+  integrity sha512-oGuk6E1ehmIpw0w9ttgb2KsDQQgGXBzZczREW8OfxEm9eCQYL9/LCexSnh++0z3AiYGcXpBgqDSx9AAgzl/Bvg==
+  dependencies:
+    JSV "^4.0.2"
+    chalk "^2.4.2"
+    underscore "^1.9.1"
+
 jsprim@^1.2.2:
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/jsprim/-/jsprim-1.4.2.tgz#712c65533a15c878ba59e9ed5f0e26d5b77c5feb"
@@ -15104,6 +15118,11 @@ unbox-primitive@^1.0.1:
     has-bigints "^1.0.1"
     has-symbols "^1.0.2"
     which-boxed-primitive "^1.0.2"
+
+underscore@^1.9.1:
+  version "1.13.3"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.13.3.tgz#54bc95f7648c5557897e5e968d0f76bc062c34ee"
+  integrity sha512-QvjkYpiD+dJJraRA8+dGAU4i7aBbb2s0S3jA45TFOvg2VgqvdCDd/3N6CqA8gluk1W91GLoXg5enMUx560QzuA==
 
 unicode-canonical-property-names-ecmascript@^2.0.0:
   version "2.0.0"

@@ -90,7 +90,8 @@ export type EventsFilterTimeParams =
   | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
 
 export interface FilterRequest<Filter> extends Limit, Cursor {
-  filter: Filter;
+  filter?: Filter;
+  advancedFilter?: any;
 }
 
 export interface Resource {
