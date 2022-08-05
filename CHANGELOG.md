@@ -20,7 +20,7 @@ This article documents the ongoing improvements we're making to the **Cognite Da
   name: cdf.yaml
 ```  
 
-### Advanced filter support for events (preview)
+### Advanced filter support for events (alpha)
 - Advanced filtering support for events have been added as separate input box in the events tab. Enable this in the data source settings.
 - [API documentation](https://pr-ark-codegen-1444.specs.preview.cogniteapp.com/v1.json.html#operation/advancedListEvents)
 
