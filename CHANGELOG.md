@@ -2,8 +2,9 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
-## 2.6.0 - July 4, 2022
+## 2.6.0 - August 4th, 2022
 
+### Kubernetes grafana operator support
 - The connector now supports being used with the Kubernetes [Grafana operator](https://github.com/grafana-operator/grafana-operator) as the [GrafanaDataSource CRD](https://github.com/grafana-operator/grafana-operator/blob/master/documentation/datasources.md). In the operator you specify the Cognite project in `defaultProject` parameter and the API URL as the `clusterUrl` parameter. In the operator you can specify a data source using the syntax below:
 ```
   datasources:
@@ -18,6 +19,14 @@ This article documents the ongoing improvements we're making to the **Cognite Da
       type: cognitedata-datasource
   name: cdf.yaml
 ```  
+
+### Advanced filter support for events (alpha)
+- Advanced filtering support for events have been added as separate input box in the events tab. Enable this in the data source settings.
+- [API documentation](https://pr-ark-codegen-1444.specs.preview.cogniteapp.com/v1.json.html#operation/advancedListEvents)
+
+### Relationships updates
+- All drop downs in the relationships tab are now sorted and searchable
+
 
 ## 2.5.0 - June 1, 2022
 
