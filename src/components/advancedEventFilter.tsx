@@ -49,7 +49,7 @@ export const AdvancedEventFilter = (props) => {
         lint: true,
       });
       setEditor(editor);
-      editor.getDoc().setValue(query.eventQuery.advancedFilter);
+      editor.getDoc().setValue(query.eventQuery.advancedFilter || '');
     }
   }, [textAreaRef]);
 
