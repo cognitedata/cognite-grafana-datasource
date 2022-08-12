@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { InfoBox } from '@grafana/ui';
+import { Alert } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 
@@ -8,15 +8,15 @@ type HelpParams = { onDismiss: () => void; title: string; children: React.ReactN
 const Code = ({ children }) => <code className="query-keyword">{children}</code>;
 
 const HelpPanel = ({ onDismiss, title, children }: HelpParams) => (
-  <InfoBox
+  <Alert
     style={{ marginTop: '10px' }}
     title={title}
     severity="info"
-    url={DOCS_URL}
-    onDismiss={onDismiss}
+    // url={DOCS_URL}
+    onRemove={onDismiss}
   >
     <div className="gf-form--grow help-panel">{children}</div>
-  </InfoBox>
+  </Alert>
 );
 
 export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
