@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Alert } from '@grafana/ui';
+import { Alert, InfoBox } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 
@@ -8,15 +8,15 @@ type HelpParams = { onDismiss: () => void; title: string; children: React.ReactN
 const Code = ({ children }) => <code className="query-keyword">{children}</code>;
 
 const HelpPanel = ({ onDismiss, title, children }: HelpParams) => (
-  <Alert
+  <InfoBox
     style={{ marginTop: '10px' }}
     title={title}
     severity="info"
-    // url={DOCS_URL}
-    onRemove={onDismiss}
+    url={DOCS_URL}
+    onDismiss={onDismiss}
   >
     <div className="gf-form--grow help-panel">{children}</div>
-  </Alert>
+  </InfoBox>
 );
 
 export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
@@ -162,10 +162,22 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
   </HelpPanel>
 );
 
+const HelpAlertPanel = ({ onDismiss, title, children }: HelpParams) => (
+  <Alert
+    style={{ marginTop: '10px' }}
+    title={title}
+    severity="info"
+    // url={DOCS_URL}
+    onRemove={onDismiss}
+  >
+    <div className="gf-form--grow help-panel">{children}</div>
+  </Alert>
+);
+
 export const EventAdvancedFilterHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
-  <HelpPanel title="Event advanced filter query syntax help" onDismiss={onDismiss}>
+  <HelpAlertPanel title="Event advanced filter query syntax help" onDismiss={onDismiss}>
     <a href="https://pr-ark-codegen-1444.specs.preview.cogniteapp.com/v1.json.html#operation/advancedListEvents">
       Click here for Advanced filter documentation
     </a>
-  </HelpPanel>
+  </HelpAlertPanel>
 );
