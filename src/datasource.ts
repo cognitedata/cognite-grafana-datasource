@@ -15,6 +15,7 @@ import {
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
+import jsonlint from 'jsonlint-mod';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -314,7 +315,7 @@ export default class CogniteDatasource extends DataSourceApi<
     }
     const advancedFilterQuery =
       this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
-        ? JSON.parse(advancedFilter)
+        ? jsonlint.parse(advancedFilter)
         : undefined;
     const data: FilterRequest<EventsFilterRequestParams> = {
       advancedFilter: advancedFilterQuery,
