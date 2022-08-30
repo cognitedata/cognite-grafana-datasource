@@ -646,7 +646,7 @@ describe('Datasource Query', () => {
           expr: '',
           activeAtTimeRange: false,
           columns: [''],
-          eventQuery: '',
+          advancedFilter: '',
         },
       };
       const result = await filterEmptyQueryTargets([

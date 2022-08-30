@@ -25,7 +25,8 @@ describe('getDataQueryRequestItems: generate cdf data points request items', () 
         target: 'ext',
       },
       connector,
-      1000
+      1000,
+      []
     );
 
     expect(res.items).toEqual([
@@ -44,7 +45,8 @@ describe('getDataQueryRequestItems: generate cdf data points request items', () 
         target: 1,
       },
       connector,
-      1000
+      1000,
+      []
     );
 
     expect(res.items).toEqual([
