@@ -77,8 +77,7 @@ export interface RelationshipsQuery {
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
-  graphQlQuery: `
-query {
+  graphQlQuery: `query {
   wellQuery {
     items {
       name,

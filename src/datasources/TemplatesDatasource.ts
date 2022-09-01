@@ -45,13 +45,15 @@ export class TemplatesDatasource {
 
   private postQuery(query: Partial<TemplateQuery>, payload: string) {
     const { groupExternalId, version } = query;
+    const q = payload.replace(/[\n]+/gm, '');
+    console.log(q);
     return this.connector
       .fetchData({
         path: `/templategroups/${encodeURIComponent(groupExternalId)}/versions/${version}/graphql`,
         cacheTime: '1s',
         method: HttpMethod.POST,
         data: {
-          query: payload,
+          query: q,
         },
       })
       .then((results: any) => {
@@ -75,7 +77,6 @@ export class TemplatesDatasource {
   ) {
     let payload = query.graphQlQuery;
     payload = this.templateSrv.replace(payload, scopedVars);
-
     return this.postQuery(query, payload) as Promise<QueryResult>;
   }
 
