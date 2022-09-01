@@ -55,10 +55,6 @@ export function TemplatesTab(
     },
     [patchTemplateQuery, datasource]
   );
-  const valid = (value) => true;
-  const onChange = (graphQlQuery) => {
-    if (valid(graphQlQuery)) patchTemplateQuery({ graphQlQuery });
-  };
   const loadTemplateGroupsOptions = useCallback(() => {
     return datasource.templatesDatasource
       .listTemplatesGroups()
@@ -96,8 +92,8 @@ export function TemplatesTab(
           value={templateQuery.graphQlQuery ?? ''}
           language="graphql"
           height={400}
-          onBlur={onChange}
-          onSave={onChange}
+          onBlur={(graphQlQuery) => patchTemplateQuery({ graphQlQuery })}
+          onSave={(graphQlQuery) => patchTemplateQuery({ graphQlQuery })}
           showMiniMap={false}
           showLineNumbers
         />
