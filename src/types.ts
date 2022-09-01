@@ -77,22 +77,23 @@ export interface RelationshipsQuery {
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
-  graphQlQuery: `query {
-  wellQuery {
-    items {
-      name,
-      pressure {
-        datapoints(start: $__from, end: $__to, limit: 50) {
-          timestamp,
-          value
+  graphQlQuery: `{
+    oEE_MachinesQuery {
+      items {
+        Facility
+        Line
+        GoodQuantity {
+          datapoints (start: $__from, end: $__to, , limit: 100){
+              value
+              timestamp
+          }
         }
       }
     }
-  }
-}`,
-  dataPath: 'wellQuery.items',
-  datapointsPath: 'pressure.datapoints',
-  groupBy: 'name',
+  }`,
+  dataPath: 'oEE_MachinesQuery.items',
+  datapointsPath: 'GoodQuantity.datapoints',
+  groupBy: 'Facility',
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
