@@ -3,7 +3,6 @@
 exports[`Annotations Query Given an annotation query should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -14,6 +13,7 @@ Object {
       ],
       "type": "type 1",
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -24,7 +24,6 @@ Object {
 exports[`Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -32,6 +31,7 @@ Object {
       },
       "type": "non-existant type",
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -42,7 +42,6 @@ Object {
 exports[`Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -53,6 +52,7 @@ Object {
         "key2": "value2",
       },
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -63,7 +63,6 @@ Object {
 exports[`Annotations Query Given an annotation query with additional time filters should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -76,6 +75,7 @@ Object {
         "min": 123,
       },
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -98,13 +98,13 @@ events{ name=~event, foo}
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
         "min": 1549336675000,
       },
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -115,7 +115,6 @@ Object {
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -125,6 +124,7 @@ Object {
         123,
       ],
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
@@ -135,7 +135,6 @@ Object {
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 2`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -146,6 +145,7 @@ Object {
         456,
       ],
     },
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
