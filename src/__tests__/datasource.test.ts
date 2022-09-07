@@ -566,6 +566,9 @@ describe('Datasource Query', () => {
           expr: 'events{}',
           columns: [],
           activeAtTimeRange: false,
+          advancedFilter: '',
+          withAggregate: false,
+          property: [],
         },
       },
     ] as CogniteQuery[];
@@ -647,6 +650,8 @@ describe('Datasource Query', () => {
           activeAtTimeRange: false,
           columns: [''],
           advancedFilter: '',
+          withAggregate: false,
+          property: [],
         },
       };
       const result = await filterEmptyQueryTargets([
