@@ -29,7 +29,7 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
 };
 const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = [];
-  const property = useMemo(() => {
+  useEffect(() => {
     if (!query.eventQuery.property?.length) {
       onQueryChange({
         eventQuery: {
@@ -37,10 +37,9 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
           property: [],
         },
       });
-      return [];
     }
-    return query.eventQuery.property;
-  }, [query.eventQuery.property]);
+  }, []);
+  const property = query.eventQuery.property || [];
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
