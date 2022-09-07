@@ -407,7 +407,7 @@ function EventsTab(
   );
 }
 
-const InlineButton = ({ onClick, iconName }) => {
+export const InlineButton = ({ onClick, iconName }) => {
   return (
     <div
       role="button"
@@ -423,8 +423,18 @@ const InlineButton = ({ onClick, iconName }) => {
 
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = EventFields.map((value) => ({ value, label: value }));
-  const { columns } = query.eventQuery;
-
+  const { columns, withAggregate, advancedFilter } = query.eventQuery;
+  useEffect(() => {
+    onQueryChange({
+      eventQuery: {
+        ...query.eventQuery,
+        columns:
+          withAggregate && advancedFilter.length
+            ? ['count', 'value']
+            : ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+      },
+    });
+  }, [withAggregate]);
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
