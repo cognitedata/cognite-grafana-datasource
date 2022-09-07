@@ -40,7 +40,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
       return [];
     }
     return query.eventQuery.property;
-  }, []);
+  }, [query.eventQuery.property]);
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
@@ -80,7 +80,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
         <InlineButton
           onClick={() => {
             onEventQueryChange({
-              property: [...property, `property${property.length}`],
+              property: [...property, 'type'],
             });
           }}
           iconName="plus-circle"
