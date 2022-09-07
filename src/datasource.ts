@@ -15,7 +15,6 @@ import {
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, SystemJS, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import jsonlint from 'jsonlint-mod';
 import { TemplatesDatasource } from './datasources/TemplatesDatasource';
 import {
   concurrent,
@@ -30,27 +29,21 @@ import {
   fetchSingleAsset,
   fetchSingleTimeseries,
   targetToIdEither,
-  convertItemsToTable,
   fetchRelationships,
 } from './cdf/client';
 import {
   AssetsFilterRequestParams,
-  EventsFilterRequestParams,
   FilterRequest,
   TimeSeriesResponseItem,
   Resource,
   IdEither,
-  CogniteEvent,
-  EventsFilterTimeParams,
 } from './cdf/types';
 import { Connector } from './connector';
 import {
   CacheTime,
   failedResponseEvent,
   TIMESERIES_LIMIT_WARNING,
-  EVENTS_PAGE_LIMIT,
   responseWarningEvent,
-  EVENTS_LIMIT_WARNING,
 } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
@@ -80,6 +73,7 @@ import {
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
+import { EventsDatasource } from './datasources/EventsDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
@@ -96,6 +90,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
   templateSrv: TemplateSrv;
   backendSrv: BackendSrv;
+  eventsDatasource: EventsDatasource;
   templatesDatasource: TemplatesDatasource;
   relationshipsDatasource: RelationshipsDatasource;
 
@@ -124,6 +119,7 @@ export default class CogniteDatasource extends DataSourceApi<
       enableTemplates,
       enableEventsAdvancedFiltering
     );
+    this.eventsDatasource = new EventsDatasource(this.connector);
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
   }
@@ -143,7 +139,10 @@ export default class CogniteDatasource extends DataSourceApi<
     if (queryTargets.length) {
       try {
         const { failed, succeded } = await this.fetchTimeseriesForTargets(tsTargets, options);
-        const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const eventResults = await this.eventsDatasource.query({
+          ...options,
+          targets: eventTargets,
+        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
@@ -157,7 +156,7 @@ export default class CogniteDatasource extends DataSourceApi<
         showWarnings(succeded);
         responseData = [
           ...reduceTimeseries(succeded, timeRange),
-          ...eventResults,
+          ...eventResults.data,
           ...relationshipsResults.data,
           ...templatesResults.data,
         ];
@@ -276,67 +275,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
 
-  async fetchEventsForTarget(
-    { eventQuery, refId }: CogniteQuery,
-    timeFrame: EventsFilterTimeParams
-  ) {
-    const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
-    try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery, timeRange);
-      if (hasMore) {
-        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
-      }
-      return items;
-    } catch (e) {
-      handleError(e, refId);
-    }
-    return [];
-  }
-
-  async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
-    const timeFrame = {
-      activeAtTime: { min: start, max: end },
-    };
-    return Promise.all(
-      targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, timeFrame);
-        return convertItemsToTable(events, target.eventQuery.columns);
-      })
-    );
-  }
-
-  async fetchEvents({ expr, advancedFilter }, timeRange: EventsFilterTimeParams) {
-    let filter = [];
-    let params = {};
-    if (expr) {
-      const parsedQuery = parseQuery(expr);
-      filter = parsedQuery.filters;
-      params = parsedQuery.params;
-    }
-    const advancedFilterQuery =
-      this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
-        ? jsonlint.parse(advancedFilter)
-        : undefined;
-    const data: FilterRequest<EventsFilterRequestParams> = {
-      advancedFilter: advancedFilterQuery,
-      filter: { ...timeRange, ...params },
-      limit: EVENTS_PAGE_LIMIT,
-    };
-
-    const items = await this.connector.fetchItems<CogniteEvent>({
-      data,
-      path: `/events/list`,
-      method: HttpMethod.POST,
-      headers: advancedFilterQuery && {
-        'cdf-version': 'alpha',
-      },
-    });
-    return {
-      items: applyFilters(items, filter),
-      hasMore: items.length >= EVENTS_PAGE_LIMIT,
-    };
-  }
-
   /**
    * used by dashboards to get annotations (events)
    */
@@ -355,8 +293,8 @@ export default class CogniteDatasource extends DataSourceApi<
       activeAtTime: { min: rangeStart, max: rangeEnd },
     };
     const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchEvents(
-      { expr: evaluatedQuery, advancedFilter: '' },
+    const { items } = await this.eventsDatasource.fetchEvents(
+      { expr: evaluatedQuery, advancedFilter: '', withAggregate: false, property: [] },
       timeRange
     );
     return items.map(({ description, startTime, endTime, type }) => ({
@@ -561,12 +499,12 @@ export function getRange(range: TimeRange): Tuple<number> {
   return [timeFrom, timeTo];
 }
 
-async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
+export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
   const appEvents = await appEventsLoader;
   return appEvents.emit(event, payload);
 }
 
-function handleError(error: any, refId: string) {
+export function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
   emitEvent(failedResponseEvent, { refId, error: errMessage });
 }
