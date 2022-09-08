@@ -423,17 +423,12 @@ export const InlineButton = ({ onClick, iconName }) => {
 
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = EventFields.map((value) => ({ value, label: value }));
-  const { columns, withAggregate, advancedFilter } = query.eventQuery;
+  const { columns, withAggregate } = query.eventQuery;
   useEffect(() => {
-    onQueryChange({
-      eventQuery: {
-        ...query.eventQuery,
-        columns:
-          withAggregate && advancedFilter.length
-            ? ['count', 'value']
-            : ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
-      },
-    });
+    if (withAggregate) {
+      if (!columns.includes('count')) columns.push('count');
+      if (!columns.includes('value')) columns.push('value');
+    }
   }, [withAggregate]);
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
