@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Select, AsyncSelect, Field, Input, HorizontalGroup } from '@grafana/ui';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Select, AsyncSelect, Field, Input, HorizontalGroup, CodeEditor } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import CodeMirror from 'codemirror';
 import CogniteDatasource from '../datasource';
 import {
   CogniteDataSourceOptions,
@@ -12,14 +11,6 @@ import {
 } from '../types';
 import '../css/query_editor.css';
 import '../css/templates.css';
-import '../css/common.css';
-import 'codemirror/lib/codemirror.css';
-import '../css/dracula.css';
-import 'codemirror/addon/hint/show-hint';
-import 'codemirror/addon/lint/lint';
-import 'codemirror-graphql/hint';
-import 'codemirror-graphql/lint';
-import 'codemirror-graphql/mode';
 
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
 type OnQueryChange = (
@@ -34,8 +25,6 @@ export function TemplatesTab(
   const { query, onQueryChange, datasource } = props;
   const [templateQuery, setTemplateQuery] = useState(query.templateQuery);
   const [versionOptions, setVersionOptions] = useState([]);
-  const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
-  const textAreaRef = useRef(null);
 
   const patchTemplateQuery = useCallback(
     (templateQueryPatch: Partial<TemplateQuery>) => {
@@ -49,45 +38,6 @@ export function TemplatesTab(
       templateQuery,
     });
   }, [templateQuery, onQueryChange]);
-
-  useEffect(() => {
-    if (textAreaRef.current) {
-      const editor = CodeMirror.fromTextArea(textAreaRef.current, {
-        mode: 'graphql',
-        theme: 'dracula',
-        /* lint: {
-          schema: myGraphQLSchema,
-          validationRules: [ExampleRule],
-        },
-        hintOptions: {
-          schema: myGraphQLSchema,
-        }, */
-      });
-      setEditor(editor);
-      editor.getDoc().setValue(templateQuery.graphQlQuery);
-    }
-  }, [textAreaRef]);
-
-  useEffect(() => {
-    if (editor != null) {
-      const handleChange = () => {
-        patchTemplateQuery({ graphQlQuery: editor.getDoc().getValue() });
-      };
-
-      const handleBlur = () => {
-        triggerQuery();
-      };
-
-      editor.getDoc().on('change', handleChange);
-      editor.on('blur', handleBlur);
-      return () => {
-        editor.getDoc().off('change', handleChange);
-        editor.off('blur', handleBlur);
-      };
-    }
-
-    return undefined;
-  }, [editor, patchTemplateQuery, triggerQuery]);
 
   const updateTemplateGroup = useCallback(
     (selectableValue: SelectableValue<string>) => {
@@ -105,13 +55,17 @@ export function TemplatesTab(
     },
     [patchTemplateQuery, datasource]
   );
-
   const loadTemplateGroupsOptions = useCallback(() => {
     return datasource.templatesDatasource
       .listTemplatesGroups()
       .then((items) => items.map((item) => ({ label: item.externalId, value: item.externalId })));
   }, [datasource]);
 
+  useEffect(() => {
+    onQueryChange({
+      templateQuery,
+    });
+  }, [templateQuery]);
   return (
     <>
       <HorizontalGroup>
@@ -134,7 +88,15 @@ export function TemplatesTab(
         </Field>
       </HorizontalGroup>
       <Field label="Query" description="GraphQL query">
-        <textarea ref={textAreaRef} name="graphQlQuery" />
+        <CodeEditor
+          value={templateQuery.graphQlQuery ?? ''}
+          language="graphql"
+          height={400}
+          onBlur={(graphQlQuery) => patchTemplateQuery({ graphQlQuery })}
+          onSave={(graphQlQuery) => patchTemplateQuery({ graphQlQuery })}
+          showMiniMap={false}
+          showLineNumbers
+        />
       </Field>
       <HorizontalGroup>
         <Field label="Data Path" description="Path to the data">

@@ -75,7 +75,6 @@ export class TemplatesDatasource {
   ) {
     let payload = query.graphQlQuery;
     payload = this.templateSrv.replace(payload, scopedVars);
-
     return this.postQuery(query, payload) as Promise<QueryResult>;
   }
 
