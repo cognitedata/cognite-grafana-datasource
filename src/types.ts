@@ -6,8 +6,11 @@ import {
   DataSourceJsonData,
   TableData,
   MutableDataFrame,
+  QueryEditorProps,
+  SelectableValue,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
+import CogniteDatasource from './datasource';
 
 export enum Tab {
   Timeseries = 'Timeseries',
@@ -391,3 +394,14 @@ export interface QueryWarning {
   refId: string;
   warning: string;
 }
+
+export type EditorProps = QueryEditorProps<
+  CogniteDatasource,
+  CogniteQuery,
+  CogniteDataSourceOptions
+>;
+export type OnQueryChange = (
+  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  shouldRunQuery?: boolean
+) => void;
+export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };

@@ -7,43 +7,34 @@ import {
   TabContent,
   Select,
   InlineFormLabel,
-  Icon,
   Switch,
   AsyncSelect,
-  Segment,
   Button,
 } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
-import { EventQueryHelp, CustomQueryHelp } from './queryHelp';
+import { CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
   defaultQuery,
-  CogniteDataSourceOptions,
   CogniteQuery,
   Tab as Tabs,
   QueryRequestError,
   QueryWarning,
-  CogniteTargetObj,
-  CogniteQueryBase,
-  EventQuery,
   TabTitles,
+  EditorProps,
+  SelectedProps,
+  OnQueryChange,
 } from '../types';
-import { failedResponseEvent, EventFields, responseWarningEvent } from '../constants';
+import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
-import { AdvancedEventFilter } from './advancedEventFilter';
+import { EventsTab } from './eventsTab';
 
 const { FormField } = LegacyForms;
-type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (
-  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
-  shouldRunQuery?: boolean
-) => void;
-export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const aggregateOptions = [
@@ -79,7 +70,6 @@ const GranularityEditor = (props: SelectedProps) => {
     )
   );
 };
-
 const AggregationEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -95,7 +85,6 @@ const AggregationEditor = (props: SelectedProps) => {
     </div>
   );
 };
-
 const LabelEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -112,7 +101,6 @@ const LabelEditor = (props: SelectedProps) => {
     </div>
   );
 };
-
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -129,34 +117,6 @@ const LatestValueCheckbox = (props: SelectedProps) => {
     </div>
   );
 };
-
-const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
-  return (
-    <div className="gf-form gf-form-inline">
-      <InlineFormLabel
-        tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
-        width={7}
-      >
-        Active only
-      </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={query.eventQuery.activeAtTimeRange}
-          onChange={({ currentTarget }) =>
-            onQueryChange({
-              eventQuery: {
-                ...query.eventQuery,
-                activeAtTimeRange: currentTarget.checked,
-              },
-            })
-          }
-        />
-      </div>
-    </div>
-  );
-};
-
 const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
   <div className="gf-form-inline">
     <AggregationEditor {...{ onQueryChange, query }} />
@@ -316,7 +276,6 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     </div>
   );
 }
-
 function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   const { query, datasource, onQueryChange } = props;
   return (
@@ -339,7 +298,6 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
     </div>
   );
 }
-
 function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   const { query, onQueryChange } = props;
   const [showHelp, setShowHelp] = useState(false);
@@ -366,123 +324,6 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
     </>
   );
 }
-
-function EventsTab(
-  props: SelectedProps & { datasource: CogniteDatasource } & Pick<EditorProps, 'onRunQuery'>
-) {
-  const { query, onQueryChange, datasource } = props;
-  const [showHelp, setShowHelp] = useState(false);
-  const [value, setValue] = useState(query.eventQuery.expr);
-
-  return (
-    <>
-      <div className="gf-form">
-        <FormField
-          label="Query"
-          labelWidth={7}
-          inputWidth={30}
-          className="custom-query"
-          onChange={({ target }) => setValue(target.value)}
-          placeholder="events{}"
-          onBlur={() =>
-            onQueryChange({
-              eventQuery: {
-                ...query.eventQuery,
-                expr: value,
-              },
-            })
-          }
-          value={value}
-          tooltip="Click [?] button for help."
-        />
-        <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
-      </div>
-      <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
-      <ColumnsPicker {...{ query, onQueryChange }} />
-      {datasource.connector.isEventsAdvancedFilteringEnabled() && (
-        <AdvancedEventFilter {...{ query, onQueryChange }} />
-      )}
-      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
-    </>
-  );
-}
-
-export const InlineButton = ({ onClick, iconName }) => {
-  return (
-    <div
-      role="button"
-      className="gf-form-label query-part"
-      onClick={onClick}
-      onKeyPress={onClick}
-      tabIndex={0}
-    >
-      <Icon name={iconName} />
-    </div>
-  );
-};
-
-const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
-  const options = EventFields.map((value) => ({ value, label: value }));
-  const { columns, withAggregate } = query.eventQuery;
-  useEffect(() => {
-    if (withAggregate) {
-      if (!columns.includes('count')) columns.push('count');
-      if (!columns.includes('value')) columns.push('value');
-    }
-  }, [withAggregate]);
-  const onEventQueryChange = (e: Partial<EventQuery>) => {
-    onQueryChange({
-      eventQuery: {
-        ...query.eventQuery,
-        ...e,
-      },
-    });
-  };
-
-  return (
-    <div className="gf-form">
-      <InlineFormLabel
-        tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
-        width={7}
-      >
-        Columns
-      </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
-        {columns.map((val, key) => (
-          <>
-            <Segment
-              value={val}
-              options={options}
-              onChange={({ value }) => {
-                onEventQueryChange({
-                  columns: columns.map((old, i) => (i === key ? value : old)),
-                });
-              }}
-              allowCustomValue
-            />
-            <InlineButton
-              onClick={() => {
-                onEventQueryChange({
-                  columns: columns.filter((_, i) => i !== key),
-                });
-              }}
-              iconName="times"
-            />
-          </>
-        ))}
-        <InlineButton
-          onClick={() => {
-            onEventQueryChange({
-              columns: [...columns, `column${columns.length}`],
-            });
-          }}
-          iconName="plus-circle"
-        />
-      </div>
-    </div>
-  );
-};
-
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
