@@ -647,6 +647,8 @@ describe('Datasource Query', () => {
           activeAtTimeRange: false,
           columns: [''],
           advancedFilter: '',
+          withAggregate: false,
+          property: [],
         },
       };
       const result = await filterEmptyQueryTargets([
