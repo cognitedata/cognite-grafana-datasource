@@ -2,7 +2,7 @@ import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from
 import _ from 'lodash';
 import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
-import { getRange } from '../datasource';
+import { getRange } from '../utils';
 import {
   CogniteQuery,
   HttpMethod,

@@ -4,12 +4,10 @@ import {
   DataQueryRequest,
   DataSourceApi,
   DataSourceInstanceSettings,
-  TimeRange,
   SelectableValue,
   ScopedVars,
   TableData,
   TimeSeries,
-  AppEvent,
   DataQueryResponse,
   MutableDataFrame,
 } from '@grafana/data';
@@ -20,12 +18,9 @@ import {
   concurrent,
   datapointsPath,
   formQueriesForTargets,
-  getCalculationWarnings,
   getLabelsForTarget,
-  getLimitsWarnings,
   getTimeseries,
   reduceTimeseries,
-  stringifyError,
   fetchSingleAsset,
   fetchSingleTimeseries,
   targetToIdEither,
@@ -39,12 +34,7 @@ import {
   IdEither,
 } from './cdf/types';
 import { Connector } from './connector';
-import {
-  CacheTime,
-  failedResponseEvent,
-  TIMESERIES_LIMIT_WARNING,
-  responseWarningEvent,
-} from './constants';
+import { CacheTime, TIMESERIES_LIMIT_WARNING, responseWarningEvent } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { formQueriesForExpression } from './parser/ts';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -67,15 +57,21 @@ import {
   Responses,
   SuccessResponse,
   Tab,
-  Tuple,
   VariableQueryData,
   QueriesDataItem,
 } from './types';
-import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
+import {
+  applyFilters,
+  getRequestId,
+  toGranularityWithLowerBound,
+  getRange,
+  showWarnings,
+  handleError,
+  emitEvent,
+} from './utils';
 import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
 import { EventsDatasource } from './datasources/EventsDatasource';
 
-const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
   CogniteDataSourceOptions
@@ -147,7 +143,6 @@ export default class CogniteDatasource extends DataSourceApi<
           ...options,
           targets: templatesTargets,
         });
-
         const relationshipsResults = await this.relationshipsDatasource.query({
           ...options,
           targets: relationshipsQuery,
@@ -491,37 +486,6 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
     externalId,
     id,
   };
-}
-
-export function getRange(range: TimeRange): Tuple<number> {
-  const timeFrom = range.from.valueOf();
-  const timeTo = range.to.valueOf();
-  return [timeFrom, timeTo];
-}
-
-export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
-  const appEvents = await appEventsLoader;
-  return appEvents.emit(event, payload);
-}
-
-export function handleError(error: any, refId: string) {
-  const errMessage = stringifyError(error);
-  emitEvent(failedResponseEvent, { refId, error: errMessage });
-}
-
-function showWarnings(responses: SuccessResponse[]) {
-  responses.forEach(({ result, metadata }) => {
-    const { items } = result.data;
-    const { limit } = result.config.data;
-    const { refId } = metadata.target;
-    const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
-      .filter(Boolean)
-      .join('\n\n');
-
-    if (warning) {
-      emitEvent(responseWarningEvent, { refId, warning });
-    }
-  });
 }
 
 function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {

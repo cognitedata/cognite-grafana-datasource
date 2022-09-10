@@ -2,7 +2,7 @@ import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
 import { CogniteQuery, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
-import { applyFilters } from '../utils';
+import { applyFilters, emitEvent, getRange, handleError } from '../utils';
 import { parse as parseQuery } from '../parser/events-assets';
 import {
   CogniteEvent,
@@ -12,7 +12,6 @@ import {
 } from '../cdf/types';
 import { convertItemsToTable } from '../cdf/client';
 import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '../constants';
-import { emitEvent, getRange, handleError } from '../datasource';
 
 export class EventsDatasource {
   public constructor(private connector: Connector) {}
