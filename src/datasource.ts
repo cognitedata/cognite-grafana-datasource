@@ -305,7 +305,10 @@ export default class CogniteDatasource extends DataSourceApi<
     );
   }
 
-  async fetchEvents({ expr, advancedFilter }, timeRange: EventsFilterTimeParams) {
+  async fetchEvents(
+    { expr, advancedFilter, withAggregate, property },
+    timeRange: EventsFilterTimeParams
+  ) {
     let filter = [];
     let params = {};
     if (expr) {
@@ -317,12 +320,34 @@ export default class CogniteDatasource extends DataSourceApi<
       this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
         ? jsonlint.parse(advancedFilter)
         : undefined;
-    const data: FilterRequest<EventsFilterRequestParams> = {
-      advancedFilter: advancedFilterQuery,
-      filter: { ...timeRange, ...params },
-      limit: EVENTS_PAGE_LIMIT,
+    const getData = () => {
+      if (advancedFilterQuery) {
+        if (withAggregate && property?.length) {
+          return {
+            advancedFilter: advancedFilterQuery,
+            filter: { ...timeRange, ...params },
+            aggregate: 'uniqueValues',
+            properties: [{ property }],
+          };
+        }
+        if (withAggregate) {
+          return {
+            advancedFilter: advancedFilterQuery,
+            filter: { ...timeRange, ...params },
+          };
+        }
+        return {
+          advancedFilter: advancedFilterQuery,
+          filter: { ...timeRange, ...params },
+          limit: EVENTS_PAGE_LIMIT,
+        };
+      }
+      return {
+        filter: { ...timeRange, ...params },
+        limit: EVENTS_PAGE_LIMIT,
+      };
     };
-
+    const data: FilterRequest<EventsFilterRequestParams> = getData();
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/list`,
@@ -356,7 +381,7 @@ export default class CogniteDatasource extends DataSourceApi<
     };
     const evaluatedQuery = this.replaceVariable(query);
     const { items } = await this.fetchEvents(
-      { expr: evaluatedQuery, advancedFilter: '' },
+      { expr: evaluatedQuery, advancedFilter: '', withAggregate: false, property: [] },
       timeRange
     );
     return items.map(({ description, startTime, endTime, type }) => ({
