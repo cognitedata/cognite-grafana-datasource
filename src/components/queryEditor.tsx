@@ -407,7 +407,7 @@ function EventsTab(
   );
 }
 
-const InlineButton = ({ onClick, iconName }) => {
+export const InlineButton = ({ onClick, iconName }) => {
   return (
     <div
       role="button"
