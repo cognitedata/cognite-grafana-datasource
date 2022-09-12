@@ -34,10 +34,9 @@ import {
   QueriesDataItem,
   DataQueryRequestType,
 } from '../types';
-import { toGranularityWithLowerBound } from '../utils';
+import { toGranularityWithLowerBound, getRange } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
-import { getRange } from '../datasource';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 
