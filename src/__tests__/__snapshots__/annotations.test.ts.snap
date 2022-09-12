@@ -3,7 +3,6 @@
 exports[`Annotations Query Given an annotation query should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -25,7 +24,6 @@ Object {
 exports[`Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -44,7 +42,6 @@ Object {
 exports[`Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -66,7 +63,6 @@ Object {
 exports[`Annotations Query Given an annotation query with additional time filters should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -102,7 +98,6 @@ events{ name=~event, foo}
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -120,7 +115,6 @@ Object {
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
@@ -141,7 +135,6 @@ Object {
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 2`] = `
 Object {
   "data": Object {
-    "advancedFilter": undefined,
     "filter": Object {
       "activeAtTime": Object {
         "max": 1549338475000,
