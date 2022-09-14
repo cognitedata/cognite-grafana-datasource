@@ -21,7 +21,8 @@ export class Connector {
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
     private enableTemplates?: boolean,
-    private enableEventsAdvancedFiltering?: boolean
+    private enableEventsAdvancedFiltering?: boolean,
+    private enableFlexibleDataModelling?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -68,6 +69,11 @@ export class Connector {
   public async fetchItems<T>(params: RequestParams): Promise<T[]> {
     const { data } = await this.fetchData<Response<T>>(params);
     return data.items;
+  }
+
+  public async fetchQuery<T>(params: RequestParams, selector: string): Promise<any> {
+    const { data } = await this.fetchData<Response<T>>(params);
+    return data.data[selector];
   }
 
   public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
@@ -134,6 +140,10 @@ export class Connector {
 
   public isEventsAdvancedFilteringEnabled() {
     return this.enableEventsAdvancedFiltering;
+  }
+
+  public isFlexibleDataModellingEnabled() {
+    return this.enableFlexibleDataModelling;
   }
 
   public cachedRequest = async (

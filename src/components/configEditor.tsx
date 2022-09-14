@@ -34,6 +34,8 @@ const enableTemplatesTooltip = `Enable the templates tab for use with the Cognit
 
 const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering`;
 
+const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling';
+
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
@@ -51,6 +53,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     oauthScope,
     enableTemplates,
     enableEventsAdvancedFiltering,
+    enableFlexibleDataModelling,
   } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
@@ -241,6 +244,15 @@ export function ConfigEditor(props: ConfigEditorProps) {
             checked={enableEventsAdvancedFiltering}
             onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
             tooltip={enableEventsAdvancedFilteringTooltip}
+          />
+        </div>
+        <div className="gf-form-inline">
+          <Switch
+            label="Flexible Data Modelling"
+            labelClass="width-11"
+            checked={enableFlexibleDataModelling}
+            onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
+            tooltip={enableFlexibleDataModellingTooltip}
           />
         </div>
       </div>

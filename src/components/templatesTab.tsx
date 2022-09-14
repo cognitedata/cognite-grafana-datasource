@@ -10,7 +10,6 @@ import {
   TemplateQuery,
 } from '../types';
 import '../css/query_editor.css';
-import '../css/templates.css';
 
 type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
 type OnQueryChange = (

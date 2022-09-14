@@ -16,6 +16,7 @@ export enum Tab {
   Event = 'Event',
   Relationships = 'Relationships',
   Templates = 'Templates',
+  FlexibleDataModelling = 'Flexible Data Modelling',
 }
 
 export const TabTitles = {
@@ -25,8 +26,35 @@ export const TabTitles = {
   [Tab.Event]: 'Events',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
+  [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
 };
-
+const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
+  externalId: '',
+  graphQlQuery: `{
+    listMachine {
+      edges {
+        node {
+          __typename
+          MachineWeight
+          Model
+          Anomalies {
+            externalId
+            id
+            name
+            __typename
+          }
+          Availability {
+            id
+            name
+            externalId
+            __typename
+          }
+        }
+      }
+    }
+  }`,
+  tsKeys: [],
+};
 const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
@@ -52,6 +80,12 @@ const defaultAssetQuery: AssetQuery = {
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
+}
+export interface FlexibleDataModellingQuery {
+  externalId: string;
+  version?: number;
+  graphQlQuery: string;
+  tsKeys: string[];
 }
 
 export interface RelationshipsQuery {
@@ -108,6 +142,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
+  flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
 };
 
 /**
@@ -126,6 +161,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthScope?: string;
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
+  enableFlexibleDataModelling?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -171,6 +207,7 @@ export interface CogniteQueryBase extends DataQuery {
   latestValue: boolean;
   error: string;
   label: string;
+  labels?: string[];
   tab: Tab;
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
@@ -178,6 +215,7 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
+  flexibleDataModellingQuery: FlexibleDataModellingQuery;
 }
 
 export type TemplateQuery = {
@@ -192,11 +230,18 @@ export type TemplateQuery = {
 export type CogniteTargetObj =
   | {
       target?: number;
+      targets?: string[];
       targetRefType?: 'id';
     }
   | {
       target?: string;
+      targets?: string[];
       targetRefType?: 'externalId';
+    }
+  | {
+      target: undefined;
+      targets?: string[];
+      targetRefType?: 'FDMexternalId';
     };
 
 export type QueryTarget = CogniteQuery;
@@ -353,6 +398,7 @@ export interface DataResponse<T> {
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
 export type Response<T = any> = DataResponse<{
+  data?: any;
   items: T[];
 }>;
 

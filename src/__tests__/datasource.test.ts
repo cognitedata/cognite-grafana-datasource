@@ -1,12 +1,11 @@
 import ms from 'ms';
 import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
-import { dateTime, TimeSeries } from '@grafana/data';
+import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
-import { TimeRange } from '../cdf/types';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
@@ -74,7 +73,10 @@ describe('Datasource Query', () => {
       backendSrv.datasourceRequest = jest
         .fn()
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data)));
-      results = await ds.fetchTimeseriesForTargets([oldTarget] as any, options);
+      results = await ds.timeseriesDatasource.fetchTimeseriesForTargets(
+        [oldTarget] as any,
+        options
+      );
 
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
       expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0].data).toEqual({
@@ -706,7 +708,10 @@ describe('custom query granularity less then a second', () => {
   });
 
   it('defaults to one second', async () => {
-    await ds.fetchTimeseriesForTargets([targetA], { ...options, intervalMs: 99 });
+    await ds.timeseriesDatasource.fetchTimeseriesForTargets([targetA], {
+      ...options,
+      intervalMs: 99,
+    });
     expect(
       (backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');

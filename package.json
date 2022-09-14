@@ -81,6 +81,8 @@
     "@grafana/runtime": "^8.5.0",
     "@grafana/ui": "^8.5.0",
     "deepdash": "^4.5.4",
+    "graphql": "^16.6.0",
+    "graphql-tag": "^2.12.6",
     "jsonlint-mod": "^1.7.6",
     "lodash": "^4.17.21",
     "ms": "^2.1.2",

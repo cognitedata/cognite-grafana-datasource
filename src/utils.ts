@@ -1,7 +1,8 @@
 import { isNil, omitBy, get } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
-import { QueryOptions, QueryTarget } from './types';
+import { TimeRange } from '@grafana/data';
+import { QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 
 export function getQueryString(obj: any) {
@@ -40,3 +41,8 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
       return false;
   }
 };
+export function getRange(range: TimeRange): Tuple<number> {
+  const timeFrom = range.from.valueOf();
+  const timeTo = range.to.valueOf();
+  return [timeFrom, timeTo];
+}
