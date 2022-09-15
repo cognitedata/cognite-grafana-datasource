@@ -292,11 +292,6 @@ export default class CogniteDatasource extends DataSourceApi<
       {
         expr: evaluatedQuery,
         advancedFilter: '',
-        aggregate: {
-          name: 'uniqueValues',
-          properties: [],
-          withAggregate: false,
-        },
       },
       timeRange
     );

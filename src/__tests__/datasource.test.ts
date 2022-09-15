@@ -567,8 +567,6 @@ describe('Datasource Query', () => {
           columns: [],
           activeAtTimeRange: false,
           advancedFilter: '',
-          withAggregate: false,
-          property: [],
         },
       },
     ] as CogniteQuery[];
@@ -650,11 +648,6 @@ describe('Datasource Query', () => {
           activeAtTimeRange: false,
           columns: [''],
           advancedFilter: '',
-          aggregate: {
-            name: 'uniqueValues',
-            properties: [],
-            withAggregate: false,
-          },
         },
       };
       const result = await filterEmptyQueryTargets([
