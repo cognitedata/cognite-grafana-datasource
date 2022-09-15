@@ -35,8 +35,11 @@ const defaultEventQuery: EventQuery = {
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
   advancedFilter: ``,
-  withAggregate: false,
-  property: [],
+  aggregate: {
+    name: 'uniqueValues',
+    properties: [],
+    withAggregate: false,
+  },
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
@@ -166,8 +169,11 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
   advancedFilter: string;
-  withAggregate: boolean;
-  property: string[];
+  aggregate: {
+    name: 'uniqueValues' | 'count';
+    properties: { property?: string }[];
+    withAggregate: boolean;
+  };
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;

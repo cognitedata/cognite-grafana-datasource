@@ -289,7 +289,15 @@ export default class CogniteDatasource extends DataSourceApi<
     };
     const evaluatedQuery = this.replaceVariable(query);
     const { items } = await this.eventsDatasource.fetchEvents(
-      { expr: evaluatedQuery, advancedFilter: '', withAggregate: false, property: [] },
+      {
+        expr: evaluatedQuery,
+        advancedFilter: '',
+        aggregate: {
+          name: 'uniqueValues',
+          properties: [],
+          withAggregate: false,
+        },
+      },
       timeRange
     );
     return items.map(({ description, startTime, endTime, type }) => ({

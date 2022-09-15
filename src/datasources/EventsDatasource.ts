@@ -49,10 +49,7 @@ export class EventsDatasource {
     );
   }
 
-  async fetchEvents(
-    { expr, advancedFilter, withAggregate, property },
-    timeRange: EventsFilterTimeParams
-  ) {
+  async fetchEvents({ expr, advancedFilter, aggregate }, timeRange: EventsFilterTimeParams) {
     let filter = [];
     let params = {};
     if (expr) {
@@ -64,37 +61,39 @@ export class EventsDatasource {
       this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
         ? jsonlint.parse(advancedFilter)
         : undefined;
-    const getData = () => {
+    const getRequestBody = () => {
+      const filter = { ...timeRange, ...params };
       if (advancedFilterQuery) {
-        if (withAggregate && property?.length) {
+        const { name, properties, withAggregate } = aggregate;
+        if (withAggregate && properties.property?.length) {
           return {
             advancedFilter: advancedFilterQuery,
-            filter: { ...timeRange, ...params },
-            aggregate: 'uniqueValues',
-            properties: [{ property }],
+            filter,
+            aggregate: name,
+            properties,
           };
         }
         if (withAggregate) {
           return {
             advancedFilter: advancedFilterQuery,
-            filter: { ...timeRange, ...params },
+            filter,
           };
         }
         return {
           advancedFilter: advancedFilterQuery,
-          filter: { ...timeRange, ...params },
+          filter,
           limit: EVENTS_PAGE_LIMIT,
         };
       }
       return {
-        filter: { ...timeRange, ...params },
+        filter,
         limit: EVENTS_PAGE_LIMIT,
       };
     };
-    const data: FilterRequest<EventsFilterRequestParams> = getData();
+    const data: FilterRequest<EventsFilterRequestParams> = getRequestBody();
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
-      path: `/events/${withAggregate && advancedFilterQuery ? 'aggregate' : 'list'}`,
+      path: `/events/${aggregate?.withAggregate && advancedFilterQuery ? 'aggregate' : 'list'}`,
       method: HttpMethod.POST,
       headers: advancedFilterQuery && {
         'cdf-version': 'alpha',

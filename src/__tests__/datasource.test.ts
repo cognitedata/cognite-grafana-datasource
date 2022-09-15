@@ -650,8 +650,11 @@ describe('Datasource Query', () => {
           activeAtTimeRange: false,
           columns: [''],
           advancedFilter: '',
-          withAggregate: false,
-          property: [],
+          aggregate: {
+            name: 'uniqueValues',
+            properties: [],
+            withAggregate: false,
+          },
         },
       };
       const result = await filterEmptyQueryTargets([

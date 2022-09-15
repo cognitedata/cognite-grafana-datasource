@@ -57,13 +57,12 @@ const InlineButton = ({ onClick, iconName }) => {
 };
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = EventFields.map((value) => ({ value, label: value }));
-  const { columns, withAggregate } = query.eventQuery;
+  const { columns, aggregate } = query.eventQuery;
   useEffect(() => {
-    if (withAggregate) {
-      if (!columns.includes('count')) columns.push('count');
-      if (!columns.includes('value')) columns.push('value');
+    if (aggregate?.withAggregate) {
+      ['count', 'map'].map((v) => !columns.includes(v) && columns.push(v));
     }
-  }, [withAggregate]);
+  }, [aggregate]);
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
@@ -124,12 +123,15 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          value={query.eventQuery.withAggregate}
+          value={query.eventQuery.aggregate.withAggregate}
           onChange={({ currentTarget }) =>
             onQueryChange({
               eventQuery: {
                 ...query.eventQuery,
-                withAggregate: currentTarget.checked,
+                aggregate: {
+                  ...query.eventQuery.aggregate,
+                  withAggregate: currentTarget.checked,
+                },
               },
             })
           }
@@ -141,16 +143,19 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
 const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = [];
   useEffect(() => {
-    if (!query.eventQuery.property?.length) {
+    if (!query.eventQuery.aggregate?.properties?.length) {
       onQueryChange({
         eventQuery: {
           ...query.eventQuery,
-          property: [],
+          aggregate: {
+            ...query.eventQuery.aggregate,
+            properties: [],
+          },
         },
       });
     }
   }, []);
-  const property = query.eventQuery.property || [];
+  const properties = query.eventQuery.aggregate?.properties || [];
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
       eventQuery: {
@@ -165,14 +170,17 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
         Field properties
       </InlineFormLabel>
       <div className="gf-form" style={{ flexWrap: 'wrap' }}>
-        {property.map((val, key) => (
+        {properties.map(({ property }, key) => (
           <>
             <Segment
-              value={val}
+              value={property}
               options={options}
               onChange={({ value }) => {
                 onEventQueryChange({
-                  property: property.map((old, i) => (i === key ? value : old)),
+                  aggregate: {
+                    ...query.eventQuery.aggregate,
+                    properties: properties.map((old, i) => (i === key ? { property: value } : old)),
+                  },
                 });
               }}
               allowCustomValue
@@ -180,7 +188,10 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
             <InlineButton
               onClick={() => {
                 onEventQueryChange({
-                  property: property.filter((_, i) => i !== key),
+                  aggregate: {
+                    ...query.eventQuery.aggregate,
+                    properties: properties.filter((_, i) => i !== key),
+                  },
                 });
               }}
               iconName="times"
@@ -190,7 +201,10 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
         <InlineButton
           onClick={() => {
             onEventQueryChange({
-              property: [...property, 'type'],
+              aggregate: {
+                ...query.eventQuery.aggregate,
+                properties: [...properties, { property: 'type' }],
+              },
             });
           }}
           iconName="plus-circle"
@@ -246,7 +260,9 @@ const AdvancedEventFilter = (props) => {
         />
       </div>
       <ActiveAggregateCheckbox {...{ query, onQueryChange }} />
-      {query.eventQuery.withAggregate && <FieldsTypeColumnsPicker {...{ query, onQueryChange }} />}
+      {query.eventQuery.aggregate?.withAggregate && (
+        <FieldsTypeColumnsPicker {...{ query, onQueryChange }} />
+      )}
       {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
