@@ -1,25 +1,24 @@
 import React from 'react';
 import { Field, Input, Tooltip } from '@grafana/ui';
 import { SelectedProps } from './queryEditor';
-import CogniteDatasource from '../datasource';
 
-export const ExtractionPipelineTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
-  const { datasource, query, onQueryChange } = props;
+export const ExtractionPipelineTab = (props: SelectedProps) => {
+  const { query, onQueryChange } = props;
   return (
-    <div className="gf-form-inline">
+    <div className="gf-form-inline" style={{ marginTop: 8 }}>
       <Field label="ExternalId" className="">
         <Tooltip content="Enter externalId">
           <Input
             type="text"
             value={query.extractionPipelineQuery?.externalId || ''}
             placeholder="externalId"
-            onChange={({ target }) => {
-              console.log(target);
-              /* return onQueryChange({
+            onChange={(e) => {
+              const target = e.target as HTMLInputElement;
+              return onQueryChange({
                 extractionPipelineQuery: {
-                  externalId: target,
+                  externalId: target.value,
                 },
-              }); */
+              });
             }}
           />
         </Tooltip>

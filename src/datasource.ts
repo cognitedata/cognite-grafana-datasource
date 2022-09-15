@@ -80,6 +80,7 @@ import {
 } from './types';
 import { applyFilters, getRequestId, toGranularityWithLowerBound } from './utils';
 import { RelationshipsDatasource } from './datasources/RelationshipsDatasource';
+import { ExtractionPipelineDatasource } from './datasources/ExtractionPipelineDatasource';
 
 const appEventsLoader = SystemJS.load('app/core/app_events');
 export default class CogniteDatasource extends DataSourceApi<
@@ -98,6 +99,7 @@ export default class CogniteDatasource extends DataSourceApi<
   backendSrv: BackendSrv;
   templatesDatasource: TemplatesDatasource;
   relationshipsDatasource: RelationshipsDatasource;
+  extractionPipelineDatasource: ExtractionPipelineDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -126,6 +128,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.templatesDatasource = new TemplatesDatasource(this.templateSrv, this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
+    this.extractionPipelineDatasource = new ExtractionPipelineDatasource(this.connector);
   }
 
   /**
@@ -136,8 +139,13 @@ export default class CogniteDatasource extends DataSourceApi<
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
 
-    const { eventTargets, tsTargets, templatesTargets, relationshipsQuery } =
-      groupTargets(queryTargets);
+    const {
+      eventTargets,
+      tsTargets,
+      templatesTargets,
+      relationshipsTargets,
+      extractionPipelineTargets,
+    } = groupTargets(queryTargets);
     const timeRange = getRange(options.range);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
@@ -148,10 +156,13 @@ export default class CogniteDatasource extends DataSourceApi<
           ...options,
           targets: templatesTargets,
         });
-
         const relationshipsResults = await this.relationshipsDatasource.query({
           ...options,
-          targets: relationshipsQuery,
+          targets: relationshipsTargets,
+        });
+        const extractionPipelineResult = await this.extractionPipelineDatasource.query({
+          ...options,
+          targets: extractionPipelineTargets,
         });
         handleFailedTargets(failed);
         showWarnings(succeded);
@@ -160,6 +171,7 @@ export default class CogniteDatasource extends DataSourceApi<
           ...eventResults,
           ...relationshipsResults.data,
           ...templatesResults.data,
+          ...extractionPipelineResult.data,
         ];
       } catch (error) {
         return {
@@ -505,7 +517,14 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
+      const {
+        tab,
+        assetQuery,
+        eventQuery,
+        templateQuery,
+        relationshipsQuery,
+        extractionPipelineQuery,
+      } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr || eventQuery?.advancedFilter;
@@ -526,6 +545,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!relationshipsQuery?.dataSetIds.length ||
             !!relationshipsQuery?.labels?.containsAny?.length
           );
+        case Tab.ExtractionPipeline:
+          return extractionPipelineQuery?.externalId;
         case Tab.Timeseries:
         default:
           return target.target;
@@ -673,7 +694,8 @@ function groupTargets(targets: CogniteQuery[]) {
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
-    relationshipsQuery: groupedByTab[Tab.Relationships] ?? [],
+    relationshipsTargets: groupedByTab[Tab.Relationships] ?? [],
+    extractionPipelineTargets: groupedByTab[Tab.ExtractionPipeline] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
