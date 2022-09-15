@@ -5,15 +5,20 @@ import { Connector } from '../connector';
 export class ExtractionPipelineDatasource {
   public constructor(private connector: Connector) {}
 
-  async runQuery(query: ExtractionPipelineQuery & { refId: string }) {
-    const { externalId } = query;
+  getExtractionPipelinesDropdowns() {
     return this.connector.fetchItems({
-      path: '/extpipes/runs/list',
+      path: '/extpipes',
+      method: HttpMethod.GET,
+      data: undefined,
+    });
+  }
+  async runQuery(query: ExtractionPipelineQuery & { refId: string }) {
+    const { selection, getRuns } = query;
+    return this.connector.fetchItems({
+      path: `/extpipes${getRuns ? '/runs/' : '/'}list`,
       method: HttpMethod.POST,
       data: {
-        filter: {
-          externalId,
-        },
+        filter: getRuns ? { externalId: selection.value } : { id: selection.id },
       },
     });
   }

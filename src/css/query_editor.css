@@ -41,3 +41,11 @@ pre code,
 .gf-dropdown-wrapper {
   min-width: 200px;
 }
+
+.gf-field-switch {
+  margin: 0 0 0 8px;
+}
+
+.gf-field-switch > div:last-child {
+  margin: 8px 0 0 16px;
+}
