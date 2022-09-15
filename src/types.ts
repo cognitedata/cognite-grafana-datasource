@@ -6,8 +6,11 @@ import {
   DataSourceJsonData,
   TableData,
   MutableDataFrame,
+  QueryEditorProps,
+  SelectableValue,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
+import CogniteDatasource from './datasource';
 
 export enum Tab {
   Timeseries = 'Timeseries',
@@ -32,6 +35,11 @@ const defaultEventQuery: EventQuery = {
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
   advancedFilter: ``,
+  aggregate: {
+    name: 'uniqueValues',
+    properties: [],
+    withAggregate: false,
+  },
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
@@ -161,6 +169,11 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
   advancedFilter: string;
+  aggregate?: {
+    name: 'uniqueValues' | 'count';
+    properties: { property?: string }[];
+    withAggregate: boolean;
+  };
 }
 
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
@@ -387,3 +400,14 @@ export interface QueryWarning {
   refId: string;
   warning: string;
 }
+
+export type EditorProps = QueryEditorProps<
+  CogniteDatasource,
+  CogniteQuery,
+  CogniteDataSourceOptions
+>;
+export type OnQueryChange = (
+  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  shouldRunQuery?: boolean
+) => void;
+export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
