@@ -16,6 +16,7 @@ export enum Tab {
   Event = 'Event',
   Relationships = 'Relationships',
   Templates = 'Templates',
+  ExtractionPipeline = 'Extraction Pipeline',
 }
 
 export const TabTitles = {
@@ -23,6 +24,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.ExtractionPipeline]: 'Extraction Pipeline',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
 };
@@ -54,26 +56,6 @@ export interface RelationshipsSelectableValue {
   label?: string;
 }
 
-export interface RelationshipsQuery {
-  dataSetIds?: {
-    id: number;
-    value?: string;
-  }[];
-  labels?: {
-    containsAny: {
-      externalId: string;
-      value?: string;
-    }[];
-  };
-  isActiveAtTime?: boolean;
-  activeAtTime?: {
-    max: number;
-    min: number;
-  };
-  sourceExternalIds?: string[];
-  targetTypes?: string[];
-  limit: number;
-}
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -96,6 +78,10 @@ export const defaultTemplateQuery: TemplateQuery = {
   groupBy: 'Facility',
 };
 
+export const defaultExtractionPipelineQuery: ExtractionPipelineQuery = {
+  externalId: '',
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -108,6 +94,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
+  extractionPipelineQuery: defaultExtractionPipelineQuery,
 };
 
 /**
@@ -148,6 +135,26 @@ export interface MetricDescription {
   readonly value: number | string;
 }
 
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
+  limit: number;
+}
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
@@ -162,7 +169,9 @@ export interface EventQuery {
   columns: string[];
   advancedFilter: string;
 }
-
+export interface ExtractionPipelineQuery {
+  externalId: string;
+}
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 
 export interface CogniteQueryBase extends DataQuery {
@@ -178,6 +187,7 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
+  extractionPipelineQuery: ExtractionPipelineQuery;
 }
 
 export type TemplateQuery = {
