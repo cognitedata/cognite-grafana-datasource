@@ -49,9 +49,10 @@ export class EventsDatasource {
     );
   }
 
-  async fetchEvents({ expr, advancedFilter, aggregate }, timeRange: EventsFilterTimeParams) {
+  async fetchEvents({ expr, advancedFilter, ...rest }, timeRange: EventsFilterTimeParams) {
     let filter = [];
     let params = {};
+    let path = 'list';
     if (expr) {
       const parsedQuery = parseQuery(expr);
       filter = parsedQuery.filters;
@@ -64,20 +65,25 @@ export class EventsDatasource {
     const getRequestBody = () => {
       const filter = { ...timeRange, ...params };
       if (advancedFilterQuery) {
-        const { name, properties, withAggregate } = aggregate;
-        if (withAggregate && properties.property?.length) {
-          return {
-            advancedFilter: advancedFilterQuery,
-            filter,
-            aggregate: name,
-            properties,
-          };
-        }
-        if (withAggregate) {
-          return {
-            advancedFilter: advancedFilterQuery,
-            filter,
-          };
+        if (rest.aggregate) {
+          const {
+            aggregate: { name, properties, withAggregate },
+          } = rest;
+          if (withAggregate) {
+            path = 'aggregate';
+            if (properties.property?.length) {
+              return {
+                advancedFilter: advancedFilterQuery,
+                filter,
+                aggregate: name,
+                properties,
+              };
+            }
+            return {
+              advancedFilter: advancedFilterQuery,
+              filter,
+            };
+          }
         }
         return {
           advancedFilter: advancedFilterQuery,
@@ -93,7 +99,7 @@ export class EventsDatasource {
     const data: FilterRequest<EventsFilterRequestParams> = getRequestBody();
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
-      path: `/events/${aggregate?.withAggregate && advancedFilterQuery ? 'aggregate' : 'list'}`,
+      path: `/events/${path}`,
       method: HttpMethod.POST,
       headers: advancedFilterQuery && {
         'cdf-version': 'alpha',

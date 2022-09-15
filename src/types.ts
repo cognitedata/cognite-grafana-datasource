@@ -169,7 +169,7 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
   advancedFilter: string;
-  aggregate: {
+  aggregate?: {
     name: 'uniqueValues' | 'count';
     properties: { property?: string }[];
     withAggregate: boolean;
