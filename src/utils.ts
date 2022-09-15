@@ -2,6 +2,8 @@ import { isNil, omitBy, get } from 'lodash';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { TimeRange } from '@grafana/data';
+import { ExecutableDefinitionNode } from 'graphql';
+import gql from 'graphql-tag';
 import { QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 
@@ -46,3 +48,14 @@ export function getRange(range: TimeRange): Tuple<number> {
   const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
+const getIsrt = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
+export const getFirstSelection = (graphQuery) => {
+  try {
+    const { definitions } = gql`
+      ${graphQuery}
+    `;
+    return getIsrt(definitions[0] as ExecutableDefinitionNode);
+  } catch (e) {
+    return e;
+  }
+};

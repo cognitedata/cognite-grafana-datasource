@@ -99,7 +99,7 @@ export async function getDataQueryRequestItems(
   intervalMs: number,
   timeRange
 ): Promise<QueriesDataItem> {
-  const { tab, expr, targets } = target;
+  const { tab, expr, flexibleDataModellingQuery } = target;
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
 
@@ -121,7 +121,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.FlexibleDataModelling: {
-      items = _.map(targets, (externalId) => ({ externalId }));
+      items = _.map(flexibleDataModellingQuery.targets, (externalId) => ({ externalId }));
       break;
     }
   }
@@ -155,8 +155,8 @@ export class TimeseriesDatasource {
       queryData.map(async ({ target, items, type }) => {
         let labels = [];
         try {
-          labels = target.labels?.length
-            ? target.labels
+          labels = target.flexibleDataModellingQuery?.labels?.length
+            ? target.flexibleDataModellingQuery.labels
             : await getLabelsForTarget(target, items, this.connector);
         } catch (err) {
           handleError(err, target.refId);

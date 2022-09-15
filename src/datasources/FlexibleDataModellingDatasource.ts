@@ -1,10 +1,11 @@
 import { DataQueryRequest, TableData, TimeSeries, DataQueryResponse } from '@grafana/data';
 import _, { Many } from 'lodash';
-import { CogniteQuery, FlexibleDataModellingQuery, HttpMethod } from '../types';
+import { CogniteQuery, FDMQueryResponse, FlexibleDataModellingQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { TimeseriesDatasource } from './TimeseriesDatasource';
 import { convertItemsToTable } from '../cdf/client';
+import { getFirstSelection } from '../utils';
 
 const getData = (edges): TableData => {
   const columns = ['node'];
@@ -34,12 +35,11 @@ export class FlexibleDataModellingDatasource {
     private timeseriesDatasource: TimeseriesDatasource
   ) {}
 
-  async listFlexibleDataModelling(): Promise<any> {
-    return this.connector.fetchQuery(
-      {
-        path: '/schema/graphql',
-        method: HttpMethod.POST,
-        data: `{
+  async listFlexibleDataModelling(): Promise<FDMQueryResponse> {
+    return this.connector.fetchQuery({
+      path: '/schema/graphql',
+      method: HttpMethod.POST,
+      data: `{
             "query": "query {
               listApis {
                 edges {
@@ -57,9 +57,7 @@ export class FlexibleDataModellingDatasource {
               }
             }"
           }`,
-      },
-      'listApis'
-    );
+    });
   }
   async postQuery(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
     try {
@@ -78,9 +76,11 @@ export class FlexibleDataModellingDatasource {
           targets: [
             {
               ...target,
-              targetRefType: 'FDMexternalId',
-              targets,
-              labels,
+              flexibleDataModellingQuery: {
+                ...target.flexibleDataModellingQuery,
+                targets,
+                labels,
+              },
             },
           ],
         });
@@ -97,17 +97,19 @@ export class FlexibleDataModellingDatasource {
     options,
     target
   ): Promise<Many<TimeSeries | TableData>> {
-    const first = query.graphQlQuery.split('{')[1].trim();
+    const firstSelection = getFirstSelection(query.graphQlQuery);
+    const first = firstSelection[0]?.name.value;
     try {
-      const { edges } = await this.connector.fetchQuery(
-        {
-          path: `/schema/api/${query.externalId}/${query.version}/graphql`,
-          method: HttpMethod.POST,
-          data: `{"query": "${query.graphQlQuery}"}`,
-        },
-        first
-      );
-      return this.postQuery(edges, query, options, target);
+      const response = await this.connector.fetchQuery({
+        path: `/schema/api/${query.externalId}/${query.version}/graphql`,
+        method: HttpMethod.POST,
+        data: `{"query": "${query.graphQlQuery}"}`,
+      });
+      if (response[first]) {
+        const { edges } = response[first];
+        return this.postQuery(edges, query, options, target);
+      }
+      return [];
     } catch (error) {
       handleError(error, target.refId);
       return [];

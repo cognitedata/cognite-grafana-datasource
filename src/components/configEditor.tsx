@@ -34,7 +34,7 @@ const enableTemplatesTooltip = `Enable the templates tab for use with the Cognit
 
 const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering`;
 
-const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling';
+const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling (preview)';
 
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);

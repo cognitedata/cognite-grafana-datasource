@@ -31,28 +31,28 @@ export const TabTitles = {
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
   graphQlQuery: `{
-    listMachine {
-      edges {
-        node {
+  listMachine {
+    edges {
+      node {
+        __typename
+        MachineWeight
+        Model
+        Anomalies {
+          externalId
+          id
+          name
           __typename
-          MachineWeight
-          Model
-          Anomalies {
-            externalId
-            id
-            name
-            __typename
-          }
-          Availability {
-            id
-            name
-            externalId
-            __typename
-          }
+        }
+        Availability {
+          id
+          name
+          externalId
+          __typename
         }
       }
     }
-  }`,
+  }
+}`,
   tsKeys: [],
 };
 const defaultEventQuery: EventQuery = {
@@ -86,6 +86,8 @@ export interface FlexibleDataModellingQuery {
   version?: number;
   graphQlQuery: string;
   tsKeys: string[];
+  labels?: string[];
+  targets?: string[];
 }
 
 export interface RelationshipsQuery {
@@ -112,19 +114,19 @@ export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
   graphQlQuery: `{
-    oEE_MachinesQuery {
-      items {
-        Facility
-        Line
-        GoodQuantity {
-          datapoints (start: $__from, end: $__to, , limit: 100){
-              value
-              timestamp
-          }
+  oEE_MachinesQuery {
+    items {
+      Facility
+      Line
+      GoodQuantity {
+        datapoints (start: $__from, end: $__to, , limit: 100){
+            value
+            timestamp
         }
       }
     }
-  }`,
+  }
+}`,
   dataPath: 'oEE_MachinesQuery.items',
   datapointsPath: 'GoodQuantity.datapoints',
   groupBy: 'Facility',
@@ -230,18 +232,11 @@ export type TemplateQuery = {
 export type CogniteTargetObj =
   | {
       target?: number;
-      targets?: string[];
       targetRefType?: 'id';
     }
   | {
       target?: string;
-      targets?: string[];
       targetRefType?: 'externalId';
-    }
-  | {
-      target: undefined;
-      targets?: string[];
-      targetRefType?: 'FDMexternalId';
     };
 
 export type QueryTarget = CogniteQuery;
@@ -398,7 +393,7 @@ export interface DataResponse<T> {
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
 export type Response<T = any> = DataResponse<{
-  data?: any;
+  data?: T;
   items: T[];
 }>;
 
@@ -432,4 +427,10 @@ export interface QueryRequestError {
 export interface QueryWarning {
   refId: string;
   warning: string;
+}
+
+export interface FDMQueryResponse {
+  [x: string]: {
+    edges?: { node?: { [x: string]: any } }[];
+  };
 }
