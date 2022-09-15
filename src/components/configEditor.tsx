@@ -32,7 +32,7 @@ const oAuthScopeTooltip = `The value passed for the scope parameter should be th
 
 const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`;
 
-const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering`;
+const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering (preview)`;
 
 const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling (preview)';
 
