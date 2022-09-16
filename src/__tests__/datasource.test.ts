@@ -568,6 +568,7 @@ describe('Datasource Query', () => {
           expr: 'events{}',
           columns: [],
           activeAtTimeRange: false,
+          advancedFilter: '',
         },
       },
     ] as CogniteQuery[];

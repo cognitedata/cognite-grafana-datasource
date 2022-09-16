@@ -13,25 +13,16 @@ import {
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import jsonlint from 'jsonlint-mod';
-import { fetchSingleAsset, fetchSingleTimeseries, convertItemsToTable } from './cdf/client';
+import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
 import {
   AssetsFilterRequestParams,
-  EventsFilterRequestParams,
   FilterRequest,
   TimeSeriesResponseItem,
   Resource,
   IdEither,
-  CogniteEvent,
-  EventsFilterTimeParams,
 } from './cdf/types';
 import { Connector } from './connector';
-import {
-  CacheTime,
-  EVENTS_PAGE_LIMIT,
-  responseWarningEvent,
-  EVENTS_LIMIT_WARNING,
-} from './constants';
+import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import {
@@ -42,7 +33,6 @@ import {
   MetricDescription,
   QueryTarget,
   Tab,
-  Tuple,
   VariableQueryData,
 } from './types';
 import { applyFilters, getRange } from './utils';
@@ -51,8 +41,8 @@ import {
   RelationshipsDatasource,
   TemplatesDatasource,
   TimeseriesDatasource,
+  EventsDatasource,
 } from './datasources';
-import { emitEvent, handleError } from './appEventHandler';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
@@ -68,6 +58,7 @@ export default class CogniteDatasource extends DataSourceApi<
 
   templateSrv: TemplateSrv;
   backendSrv: BackendSrv;
+  eventsDatasource: EventsDatasource;
   templatesDatasource: TemplatesDatasource;
   relationshipsDatasource: RelationshipsDatasource;
   timeseriesDatasource: TimeseriesDatasource;
@@ -102,6 +93,7 @@ export default class CogniteDatasource extends DataSourceApi<
     );
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
+    this.eventsDatasource = new EventsDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
       this.connector,
@@ -124,7 +116,6 @@ export default class CogniteDatasource extends DataSourceApi<
       flexibleDataModellingTargets,
       tsTargets,
     } = groupTargets(queryTargets);
-    const timeRange = getRange(options.range);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
     if (queryTargets.length) {
       try {
@@ -132,7 +123,10 @@ export default class CogniteDatasource extends DataSourceApi<
           ...options,
           targets: tsTargets,
         });
-        const eventResults = await this.fetchEventTargets(eventTargets, timeRange);
+        const eventResults = await this.eventsDatasource.query({
+          ...options,
+          targets: eventTargets,
+        });
         const templatesResults = await this.templatesDatasource.query({
           ...options,
           targets: templatesTargets,
@@ -147,7 +141,7 @@ export default class CogniteDatasource extends DataSourceApi<
         });
         responseData = [
           ...timeseriesResults.data,
-          ...eventResults,
+          ...eventResults.data,
           ...relationshipsResults.data,
           ...templatesResults.data,
           ...flexibleDataModellingResult.data,
@@ -163,125 +157,6 @@ export default class CogniteDatasource extends DataSourceApi<
     }
 
     return { data: responseData };
-  }
-
-  async fetchEventsForTarget(
-    { eventQuery, refId }: CogniteQuery,
-    timeFrame: EventsFilterTimeParams
-  ) {
-    const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
-    try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery, timeRange);
-      if (hasMore) {
-        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
-      }
-      return items;
-    } catch (e) {
-      handleError(e, refId);
-    }
-    return [];
-  }
-
-  async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
-    const timeFrame = {
-      activeAtTime: { min: start, max: end },
-    };
-    return Promise.all(
-      targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, timeFrame);
-        return convertItemsToTable(events, target.eventQuery.columns);
-      })
-    );
-  }
-
-  async fetchEvents({ expr, advancedFilter }, timeRange: EventsFilterTimeParams) {
-    let filter = [];
-    let params = {};
-    if (expr) {
-      const parsedQuery = parseQuery(expr);
-      filter = parsedQuery.filters;
-      params = parsedQuery.params;
-    }
-    const advancedFilterQuery =
-      this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
-        ? jsonlint.parse(advancedFilter)
-        : undefined;
-    const data: FilterRequest<EventsFilterRequestParams> = {
-      advancedFilter: advancedFilterQuery,
-      filter: { ...timeRange, ...params },
-      limit: EVENTS_PAGE_LIMIT,
-    };
-
-    const items = await this.connector.fetchItems<CogniteEvent>({
-      data,
-      path: `/events/list`,
-      method: HttpMethod.POST,
-      headers: advancedFilterQuery && {
-        'cdf-version': 'alpha',
-      },
-    });
-    return {
-      items: applyFilters(items, filter),
-      hasMore: items.length >= EVENTS_PAGE_LIMIT,
-    };
-  }
-
-  private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
-      target;
-
-    const [
-      exprTemplated,
-      labelTemplated,
-      assetTargetTemplated,
-      eventExprTemplated,
-      templategraphQlQueryTemplated,
-      flexibleDataModellinggraphQlQueryTemplated,
-    ] = this.replaceVariablesArr(
-      [
-        expr,
-        label,
-        assetQuery?.target,
-        eventQuery?.expr,
-        templateQuery?.graphQlQuery,
-        flexibleDataModellingQuery?.graphQlQuery,
-      ],
-      scopedVars
-    );
-    const templatedAssetQuery = assetQuery && {
-      assetQuery: {
-        ...assetQuery,
-        target: assetTargetTemplated,
-      },
-    };
-
-    const templatedEventQuery = eventQuery && {
-      eventQuery: {
-        ...eventQuery,
-        expr: eventExprTemplated,
-      },
-    };
-    const templatedTemplateQuery = templateQuery && {
-      templateQuery: {
-        ...templateQuery,
-        graphQlQuery: templategraphQlQueryTemplated,
-      },
-    };
-    const templatedflexibleDataModellingQuery = flexibleDataModellingQuery && {
-      flexibleDataModellingQuery: {
-        ...flexibleDataModellingQuery,
-        graphQlQuery: flexibleDataModellinggraphQlQueryTemplated,
-      },
-    };
-    return {
-      ...target,
-      ...templatedAssetQuery,
-      ...templatedEventQuery,
-      ...templatedTemplateQuery,
-      ...templatedflexibleDataModellingQuery,
-      expr: exprTemplated,
-      label: labelTemplated,
-    };
   }
 
   replaceVariable(query: string, scopedVars?): string {
@@ -309,8 +184,11 @@ export default class CogniteDatasource extends DataSourceApi<
       activeAtTime: { min: rangeStart, max: rangeEnd },
     };
     const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.fetchEvents(
-      { expr: evaluatedQuery, advancedFilter: '' },
+    const { items } = await this.eventsDatasource.fetchEvents(
+      {
+        expr: evaluatedQuery,
+        advancedFilter: '',
+      },
       timeRange
     );
     return items.map(({ description, startTime, endTime, type }) => ({
