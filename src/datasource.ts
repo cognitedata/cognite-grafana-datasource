@@ -517,14 +517,7 @@ export default class CogniteDatasource extends DataSourceApi<
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
-      const {
-        tab,
-        assetQuery,
-        eventQuery,
-        templateQuery,
-        relationshipsQuery,
-        extractionPipelineQuery,
-      } = target;
+      const { tab, assetQuery, eventQuery, templateQuery, relationshipsQuery } = target;
       switch (tab) {
         case Tab.Event:
           return eventQuery?.expr || eventQuery?.advancedFilter;
@@ -546,7 +539,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!relationshipsQuery?.labels?.containsAny?.length
           );
         case Tab.ExtractionPipeline:
-          return extractionPipelineQuery?.selection?.value;
+          return true;
         case Tab.Timeseries:
         default:
           return target.target;

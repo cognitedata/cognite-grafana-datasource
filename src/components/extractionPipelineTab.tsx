@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AsyncSelect, Field, Switch, Tooltip } from '@grafana/ui';
+import React from 'react';
+import { AsyncMultiSelect, Field, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { SelectedProps } from './queryEditor';
 import CogniteDatasource from '../datasource';
@@ -10,7 +10,7 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
     <div className="gf-form-inline" style={{ marginTop: 8 }}>
       <Field label="Extraction Pipeline ExternalId" className="">
         <Tooltip content="Enter or select Extraction Pipeline externalId">
-          <AsyncSelect
+          <AsyncMultiSelect
             loadOptions={() => {
               return datasource.extractionPipelineDatasource
                 .getExtractionPipelinesDropdowns()
@@ -19,6 +19,7 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
                     _.map(response, ({ name, externalId, id }) => ({
                       value: externalId,
                       label: name.trim(),
+                      id,
                     })),
                     ['label']
                   );

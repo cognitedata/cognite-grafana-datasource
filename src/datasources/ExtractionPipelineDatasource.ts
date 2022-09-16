@@ -6,6 +6,22 @@ import { handleError } from '../datasource';
 export class ExtractionPipelineDatasource {
   public constructor(private connector: Connector) {}
 
+  fetchExtractionPipelinesRuns = (filter) =>
+    this.connector.fetchItems({
+      path: '/extpipes/runs/list',
+      method: HttpMethod.POST,
+      data: {
+        filter,
+      },
+    });
+  fetchExtractionPipelines = (items) =>
+    this.connector.fetchItems({
+      path: `/extpipes/byids`,
+      method: HttpMethod.POST,
+      data: {
+        items,
+      },
+    });
   getExtractionPipelinesDropdowns() {
     return this.connector.fetchItems({
       path: '/extpipes',
@@ -14,13 +30,38 @@ export class ExtractionPipelineDatasource {
     });
   }
   async runQuery(query: ExtractionPipelineQuery & { refId: string }) {
-    const { selection, getRuns } = query;
+    const { selection, getRuns, refId } = query;
     try {
+      if (getRuns) {
+        if (!selection.length) {
+          handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
+          return [];
+        }
+        if (selection.length > 1) {
+          const items = await Promise.all(
+            selection.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
+          );
+          console.log(items);
+          return items;
+        }
+        const items = await this.connector.fetchItems({
+          path: '/extpipes/runs/list',
+          method: HttpMethod.POST,
+          data: {
+            filter: { externalId: selection[0].value },
+          },
+        });
+        return items;
+      }
+      if (selection.length) {
+        const items = await this.fetchExtractionPipelines(selection.map(({ id }) => ({ id })));
+        return items;
+      }
       const items = await this.connector.fetchItems({
-        path: `/extpipes${getRuns ? '/runs/' : '/'}list`,
+        path: `/extpipes/list`,
         method: HttpMethod.POST,
         data: {
-          filter: getRuns ? { externalId: selection.value } : { name: selection.label },
+          filter: {},
         },
       });
       return items;

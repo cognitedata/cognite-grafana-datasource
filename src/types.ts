@@ -54,6 +54,7 @@ const defaultAssetQuery: AssetQuery = {
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
+  id?: number;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
@@ -79,7 +80,7 @@ export const defaultTemplateQuery: TemplateQuery = {
 };
 
 export const defaultExtractionPipelineQuery: ExtractionPipelineQuery = {
-  selection: {},
+  selection: [],
   getRuns: false,
 };
 
@@ -171,7 +172,7 @@ export interface EventQuery {
   advancedFilter: string;
 }
 export interface ExtractionPipelineQuery {
-  selection: RelationshipsSelectableValue;
+  selection: RelationshipsSelectableValue[];
   getRuns: boolean;
 }
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
