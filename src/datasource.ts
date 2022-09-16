@@ -158,7 +158,64 @@ export default class CogniteDatasource extends DataSourceApi<
 
     return { data: responseData };
   }
+  private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
+    const { expr, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
+      target;
 
+    const [
+      exprTemplated,
+      labelTemplated,
+      assetTargetTemplated,
+      eventExprTemplated,
+      templategraphQlQueryTemplated,
+      flexibleDataModellinggraphQlQueryTemplated,
+    ] = this.replaceVariablesArr(
+      [
+        expr,
+        label,
+        assetQuery?.target,
+        eventQuery?.expr,
+        templateQuery?.graphQlQuery,
+        flexibleDataModellingQuery?.graphQlQuery,
+      ],
+      scopedVars
+    );
+    const templatedAssetQuery = assetQuery && {
+      assetQuery: {
+        ...assetQuery,
+        target: assetTargetTemplated,
+      },
+    };
+
+    const templatedEventQuery = eventQuery && {
+      eventQuery: {
+        ...eventQuery,
+        expr: eventExprTemplated,
+      },
+    };
+
+    const templatedTemplateQuery = templateQuery && {
+      templateQuery: {
+        ...templateQuery,
+        graphQlQuery: templategraphQlQueryTemplated,
+      },
+    };
+    const templatedflexibleDataModellingQuery = flexibleDataModellingQuery && {
+      flexibleDataModellingQuery: {
+        ...flexibleDataModellingQuery,
+        graphQlQuery: flexibleDataModellinggraphQlQueryTemplated,
+      },
+    };
+    return {
+      ...target,
+      ...templatedAssetQuery,
+      ...templatedEventQuery,
+      ...templatedTemplateQuery,
+      ...templatedflexibleDataModellingQuery,
+      expr: exprTemplated,
+      label: labelTemplated,
+    };
+  }
   replaceVariable(query: string, scopedVars?): string {
     return this.templateSrv.replace(query.trim(), scopedVars);
   }
