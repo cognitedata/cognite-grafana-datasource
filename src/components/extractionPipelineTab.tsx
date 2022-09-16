@@ -6,7 +6,6 @@ import CogniteDatasource from '../datasource';
 
 export const ExtractionPipelineTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
   const { query, onQueryChange, datasource } = props;
-  const [error, setError] = useState(undefined);
   return (
     <div className="gf-form-inline" style={{ marginTop: 8 }}>
       <Field label="Extraction Pipeline ExternalId" className="">
@@ -16,19 +15,13 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
               return datasource.extractionPipelineDatasource
                 .getExtractionPipelinesDropdowns()
                 .then((response) => {
-                  setError(undefined);
                   return _.sortBy(
                     _.map(response, ({ name, externalId, id }) => ({
                       value: externalId,
                       label: name.trim(),
-                      id,
                     })),
                     ['label']
                   );
-                })
-                .catch((e) => {
-                  setError(e.toString());
-                  return [];
                 });
             }}
             value={query.extractionPipelineQuery.selection}
@@ -65,7 +58,6 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
           />
         </Tooltip>
       </Field>
-      {error && <pre className="gf-formatted-error">{error}</pre>}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import { CogniteQuery, ExtractionPipelineQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
+import { handleError } from '../datasource';
 
 export class ExtractionPipelineDatasource {
   public constructor(private connector: Connector) {}
@@ -14,13 +15,19 @@ export class ExtractionPipelineDatasource {
   }
   async runQuery(query: ExtractionPipelineQuery & { refId: string }) {
     const { selection, getRuns } = query;
-    return this.connector.fetchItems({
-      path: `/extpipes${getRuns ? '/runs/' : '/'}list`,
-      method: HttpMethod.POST,
-      data: {
-        filter: getRuns ? { externalId: selection.value } : { id: selection.id },
-      },
-    });
+    try {
+      const items = await this.connector.fetchItems({
+        path: `/extpipes${getRuns ? '/runs/' : '/'}list`,
+        method: HttpMethod.POST,
+        data: {
+          filter: getRuns ? { externalId: selection.value } : { name: selection.label },
+        },
+      });
+      return items;
+    } catch (error) {
+      handleError(error, query.refId);
+      return [];
+    }
   }
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const results = await Promise.all(

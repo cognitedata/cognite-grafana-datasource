@@ -587,7 +587,7 @@ async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
   return appEvents.emit(event, payload);
 }
 
-function handleError(error: any, refId: string) {
+export function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
   emitEvent(failedResponseEvent, { refId, error: errMessage });
 }

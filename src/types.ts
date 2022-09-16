@@ -54,7 +54,6 @@ const defaultAssetQuery: AssetQuery = {
 export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
-  id?: string | number;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
