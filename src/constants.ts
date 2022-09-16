@@ -44,6 +44,17 @@ export const EventFields = [
   'metadata',
   ...DateFields,
 ];
+export const ExtractionPipelineFields = [
+  'name',
+  'externalId',
+  'lastFailure',
+  'lastSeen',
+  'lastSuccess',
+  'lastUpdatedTime',
+  'createdTime',
+  'description',
+];
+export const PipelineRunsFields = ['status', 'message', 'createdTime'];
 
 export const EVENTS_PAGE_LIMIT = 1000;
 
