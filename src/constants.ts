@@ -30,7 +30,7 @@ export const AuthType = {
   ApiKey: 'cdf-api-key',
 };
 
-export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
+export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime', 'lastSeen'];
 
 export const EventFields = [
   'id',
