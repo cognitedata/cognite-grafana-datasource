@@ -1,8 +1,8 @@
 import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
-
 import _ from 'lodash';
 import { Connector } from '../connector';
 import { TemplateQuery, CogniteQuery, HttpMethod } from '../types';
+import { handleError } from '../appEventHandler';
 
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
 
@@ -36,7 +36,7 @@ export class TemplatesDatasource {
     });
   }
 
-  private postQuery(query: Partial<TemplateQuery>, payload: string) {
+  private postQuery(query: Partial<TemplateQuery & { refId: string }>, payload: string) {
     const { groupExternalId, version } = query;
     return this.connector
       .fetchData({
@@ -51,14 +51,8 @@ export class TemplatesDatasource {
         return { query, results };
       })
       .catch((err: any) => {
-        if (err.data && err.data.error) {
-          throw {
-            message: `GraphQL error: ${err.data.error.message}`,
-            error: err.data.error,
-          };
-        }
-
-        throw err;
+        handleError(err, query.refId);
+        return [];
       });
   }
 

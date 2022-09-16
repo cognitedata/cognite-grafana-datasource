@@ -3,13 +3,7 @@ import { AsyncSelect, CodeEditor, Field, HorizontalGroup, Select } from '@grafan
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import _, { assignIn, get, map } from 'lodash';
 import { getFirstSelection } from '../utils';
-import {
-  CogniteDataSourceOptions,
-  CogniteQuery,
-  CogniteTargetObj,
-  CogniteQueryBase,
-  FlexibleDataModellingQuery,
-} from '../types';
+import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { CommonEditors } from './commonEditors';
 
@@ -24,13 +18,6 @@ const getNodeSelection = (selection) => {
   }
   return [];
 };
-type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (
-  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
-  shouldRunQuery?: boolean
-) => void;
-type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
-
 export const FlexibleDataModellingTab = (
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }
 ) => {

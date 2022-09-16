@@ -1,22 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Select, AsyncSelect, Field, Input, HorizontalGroup, CodeEditor } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
-import {
-  CogniteDataSourceOptions,
-  CogniteQuery,
-  CogniteTargetObj,
-  CogniteQueryBase,
-  TemplateQuery,
-} from '../types';
+import { EditorProps, SelectedProps, TemplateQuery } from '../types';
 import '../css/query_editor.css';
-
-type EditorProps = QueryEditorProps<CogniteDatasource, CogniteQuery, CogniteDataSourceOptions>;
-type OnQueryChange = (
-  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
-  shouldRunQuery?: boolean
-) => void;
-type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
 
 export function TemplatesTab(
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }

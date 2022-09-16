@@ -1,6 +1,6 @@
 import React from 'react';
 import { InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
-import { SelectedProps } from './queryEditor';
+import { SelectedProps } from '../types';
 
 const aggregateOptions = [
   { value: 'none', label: 'None' },
