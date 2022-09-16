@@ -9,6 +9,8 @@ import {
   CursorResponse,
   isError,
   FDMQueryResponse,
+  DataResponse,
+  FDMResponse,
 } from './types';
 import { Items, Limit } from './cdf/types';
 import { getQueryString } from './utils';
@@ -72,10 +74,8 @@ export class Connector {
     return data.items;
   }
 
-  public async fetchQuery<T extends FDMQueryResponse>(
-    params: RequestParams
-  ): Promise<FDMQueryResponse> {
-    const { data } = await this.fetchData<Response<T>>(params);
+  public async fetchQuery<T>(params: RequestParams): Promise<FDMQueryResponse> {
+    const { data } = await this.fetchData<DataResponse<FDMResponse>>(params);
     return data.data;
   }
 

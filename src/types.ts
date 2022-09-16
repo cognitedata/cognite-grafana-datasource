@@ -445,6 +445,9 @@ export interface FDMQueryResponse {
     edges?: { node?: { [x: string]: any } }[];
   };
 }
+export interface FDMResponse {
+  data: FDMQueryResponse;
+}
 export type EditorProps = QueryEditorProps<
   CogniteDatasource,
   CogniteQuery,
