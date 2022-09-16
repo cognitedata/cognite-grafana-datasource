@@ -6,6 +6,7 @@ import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
 import { QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
+import { handleError } from './appEventHandler';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
@@ -49,14 +50,15 @@ export function getRange(range: TimeRange): Tuple<number> {
   const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
-const getIsrt = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
-export const getFirstSelection = (graphQuery) => {
+const getFirstSelectionArr = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
+export const getFirstSelection = (graphQuery, refId) => {
   try {
     const { definitions } = gql`
       ${graphQuery}
     `;
-    return getIsrt(definitions[0] as ExecutableDefinitionNode);
+    return getFirstSelectionArr(definitions[0] as ExecutableDefinitionNode);
   } catch (e) {
-    return e;
+    handleError(e, refId);
+    return [];
   }
 };

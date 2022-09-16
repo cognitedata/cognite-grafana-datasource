@@ -1,4 +1,3 @@
-import { QueryEditorProps } from '@grafana/data';
 import { AsyncSelect, CodeEditor, Field, HorizontalGroup, Select } from '@grafana/ui';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import _, { assignIn, get, map } from 'lodash';
@@ -31,7 +30,6 @@ export const FlexibleDataModellingTab = (
     () => get(allOptions, flexibleDataModellingQuery.externalId),
     [flexibleDataModellingQuery.externalId, allOptions]
   );
-  const [error, setError] = useState(undefined);
   const patchFlexibleDataModellingQuery = useCallback(
     (flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>) => {
       setflexibleDataModellingQuery({
@@ -49,7 +47,7 @@ export const FlexibleDataModellingTab = (
 
   const loadFlexibleDataModellingOptions = useCallback(() => {
     return datasource.flexibleDataModellingDatasource
-      .listFlexibleDataModelling()
+      .listFlexibleDataModelling(query.refId)
       .then((items) => {
         const values = [];
         const all = {};
@@ -68,12 +66,7 @@ export const FlexibleDataModellingTab = (
         });
         setAllOptions(all);
         setNames(names);
-        setError(undefined);
         return _.sortBy(values, ['label']);
-      })
-      .catch((e) => {
-        setError(e.data.error.message);
-        return [];
       });
   }, [datasource]);
   useEffect(() => {
@@ -82,36 +75,39 @@ export const FlexibleDataModellingTab = (
     });
   }, [flexibleDataModellingQuery]);
   const firstSelection = useMemo(
-    (graphQlQuery = flexibleDataModellingQuery.graphQlQuery) => getFirstSelection(graphQlQuery),
+    (graphQlQuery = flexibleDataModellingQuery.graphQlQuery) =>
+      getFirstSelection(graphQlQuery, query.refId),
     [flexibleDataModellingQuery.graphQlQuery]
   );
   useEffect(() => {
-    const tsKeys = [];
-    if (!_.isError(firstSelection) && firstSelection) {
-      _.map(getNodeSelection(firstSelection), ({ selectionSet, name: { value } }) => {
-        if (selectionSet) {
-          const i = _.find(
-            selectionSet.selections,
-            ({ name: { value } }) => value === '__typename'
-          );
-          if (i && !tsKeys.includes(value)) {
-            tsKeys.push(value);
-          }
-        }
-        return tsKeys;
-      });
-    }
-    patchFlexibleDataModellingQuery({ tsKeys });
+    patchFlexibleDataModellingQuery({
+      tsKeys: firstSelection.length
+        ? _.uniq(
+            _.filter(
+              _.map(getNodeSelection(firstSelection), ({ selectionSet, name: { value } }) => {
+                if (selectionSet) {
+                  const i = _.find(
+                    selectionSet.selections,
+                    ({ name: { value } }) => value === '__typename'
+                  );
+                  if (i) {
+                    return value;
+                  }
+                }
+                return undefined;
+              })
+            )
+          )
+        : [],
+    });
   }, [flexibleDataModellingQuery.graphQlQuery, firstSelection]);
   const updateGraphQuery = useCallback(
     (graphQlQuery) => {
-      const patchedFirstSelection = getFirstSelection(graphQlQuery);
-      if (!_.isError(patchedFirstSelection)) {
-        setError(undefined);
+      if (firstSelection.length) {
         patchFlexibleDataModellingQuery({ graphQlQuery });
-      } else setError(_.toString(patchedFirstSelection));
+      }
     },
-    [getFirstSelection]
+    [firstSelection]
   );
   return (
     <>
@@ -158,7 +154,6 @@ export const FlexibleDataModellingTab = (
       {flexibleDataModellingQuery.tsKeys?.length > 0 && (
         <CommonEditors {...{ onQueryChange, query, visible: true }} />
       )}
-      {error && <pre className="gf-formatted-error">{error}</pre>}
     </>
   );
 };

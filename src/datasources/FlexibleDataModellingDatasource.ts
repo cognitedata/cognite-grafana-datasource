@@ -28,36 +28,46 @@ const getData = (edges): TableData => {
   });
   return convertItemsToTable(td, _.uniq(columns));
 };
-
+const getFirstNameValue = (arr) => arr?.name?.value;
 export class FlexibleDataModellingDatasource {
   public constructor(
     private connector: Connector,
     private timeseriesDatasource: TimeseriesDatasource
   ) {}
 
-  async listFlexibleDataModelling(): Promise<FDMQueryResponse> {
-    return this.connector.fetchQuery({
-      path: '/schema/graphql',
-      method: HttpMethod.POST,
-      data: `{
-            "query": "query {
-              listApis {
-                edges {
-                  node {
-                    externalId
-                    name
-                    description
-                    createdTime
-                    versions {
-                      version
-                      createdTime
-                    }
-                  }
-                }
-              }
-            }"
-          }`,
-    });
+  async listFlexibleDataModelling(refId: string): Promise<FDMQueryResponse> {
+    try {
+      const response = await this.connector.fetchQuery({
+        path: '/schema/graphql',
+        method: HttpMethod.POST,
+        data: `{
+             "query": "query {
+               listApis {
+                 edges {
+                   node {
+                     externalId
+                     name
+                     description
+                     createdTime
+                     versions {
+                       version
+                       createdTime
+                     }
+                   }
+                 }
+               }
+             }"
+           }`,
+      });
+      return response;
+    } catch (error) {
+      handleError(error, refId);
+      return {
+        listApis: {
+          edges: [],
+        },
+      };
+    }
   }
   async postQuery(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
     try {
@@ -97,18 +107,22 @@ export class FlexibleDataModellingDatasource {
     options,
     target
   ): Promise<Many<TimeSeries | TableData>> {
-    const firstSelection = getFirstSelection(query.graphQlQuery);
-    const first = firstSelection[0]?.name.value;
     try {
       const response = await this.connector.fetchQuery({
         path: `/schema/api/${query.externalId}/${query.version}/graphql`,
         method: HttpMethod.POST,
         data: `{"query": "${query.graphQlQuery}"}`,
       });
+      if (!response) {
+        handleError(new Error('Error on the fetch call'), target.refId);
+        return [];
+      }
+      const first = getFirstNameValue(getFirstSelection(query.graphQlQuery, target.refId)[0]);
       if (response[first]) {
         const { edges } = response[first];
         return this.postQuery(edges, query, options, target);
       }
+      handleError(new Error('Some other error happend'), target.refId);
       return [];
     } catch (error) {
       handleError(error, target.refId);

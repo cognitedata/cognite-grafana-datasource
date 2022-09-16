@@ -221,7 +221,6 @@ export interface CogniteQueryBase extends DataQuery {
   latestValue: boolean;
   error: string;
   label: string;
-  labels?: string[];
   tab: Tab;
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
