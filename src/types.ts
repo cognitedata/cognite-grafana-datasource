@@ -7,7 +7,6 @@ import {
   TableData,
   MutableDataFrame,
 } from '@grafana/data';
-import { ExtractionPipelineFields } from './constants';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 
 export enum Tab {
@@ -83,7 +82,18 @@ export const defaultTemplateQuery: TemplateQuery = {
 export const defaultExtractionPipelineQuery: ExtractionPipelineQuery = {
   selection: [],
   getRuns: false,
-  columns: ExtractionPipelineFields,
+  columns: [
+    'name',
+    'externalId',
+    'lastFailure',
+    'lastSeen',
+    'lastSuccess',
+    'lastUpdatedTime',
+    'createdTime',
+    'description',
+    'status',
+    'message',
+  ],
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {

@@ -30,7 +30,15 @@ export const AuthType = {
   ApiKey: 'cdf-api-key',
 };
 
-export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime', 'lastSeen'];
+export const DateFields = [
+  'lastUpdatedTime',
+  'createdTime',
+  'startTime',
+  'endTime',
+  'lastSeen',
+  'lastFailure',
+  'lastSuccess',
+];
 
 export const EventFields = [
   'id',
@@ -42,20 +50,11 @@ export const EventFields = [
   'source',
   'sourceId',
   'metadata',
+  'name',
+  'status',
+  'message',
   ...DateFields,
 ];
-export const ExtractionPipelineFields = [
-  'name',
-  'externalId',
-  'lastFailure',
-  'lastSeen',
-  'lastSuccess',
-  'lastUpdatedTime',
-  'createdTime',
-  'description',
-];
-export const PipelineRunsFields = ['status', 'message', 'createdTime'];
-
 export const EVENTS_PAGE_LIMIT = 1000;
 
 export const DOCS_URL =

@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AsyncMultiSelect, Field, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { ExtractionPipelineQuery } from '../types';
 import { InlineButton, SelectedProps } from './queryEditor';
 import CogniteDatasource from '../datasource';
-import { EventFields, ExtractionPipelineFields, PipelineRunsFields } from '../constants';
+import { EventFields } from '../constants';
 
 export const ExtractionPipelineTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
   const options = EventFields.map((value) => ({ value, label: value }));
@@ -12,22 +12,17 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
   const [extractionPipelineQuery, setExtractionPipelineQuery] = useState(
     query.extractionPipelineQuery
   );
-  const { columns } = extractionPipelineQuery;
   const onExtractionPipelinesQueryChange = useCallback(
     (extractionPipelineQueryPatch: Partial<ExtractionPipelineQuery>) =>
       setExtractionPipelineQuery({ ...extractionPipelineQuery, ...extractionPipelineQueryPatch }),
     [extractionPipelineQuery]
   );
   useEffect(() => {
-    onExtractionPipelinesQueryChange({
-      columns: extractionPipelineQuery.getRuns ? PipelineRunsFields : ExtractionPipelineFields,
-    });
-  }, [extractionPipelineQuery.getRuns]);
-  useEffect(() => {
     onQueryChange({
       extractionPipelineQuery,
     });
   }, [extractionPipelineQuery]);
+  const { columns, selection, getRuns } = extractionPipelineQuery;
   return (
     <div style={{ marginTop: 8 }}>
       <div className="gf-form-inline">
@@ -86,7 +81,7 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
                     );
                   });
               }}
-              value={extractionPipelineQuery.selection}
+              value={selection}
               defaultOptions
               allowCustomValue
               onChange={(values) => {
@@ -105,10 +100,10 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
         <Field label="Show Extraction Pipeline Runs" className="gf-field-switch">
           <Tooltip content="Enable for Extraction Pipeline runs">
             <Switch
-              value={extractionPipelineQuery?.getRuns}
+              value={getRuns}
               onChange={() =>
                 onExtractionPipelinesQueryChange({
-                  getRuns: !extractionPipelineQuery?.getRuns,
+                  getRuns: !getRuns,
                 })
               }
             />

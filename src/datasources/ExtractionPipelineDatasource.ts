@@ -11,9 +11,6 @@ const exctractValuesToTable = (list, columns) => {
   }
   return convertItemsToTable(list, columns);
 };
-const getTableData = (results) =>
-  _.map(results, ({ response, columns }) => exctractValuesToTable(response, columns));
-
 export class ExtractionPipelineDatasource {
   public constructor(private connector: Connector) {}
 
@@ -81,27 +78,20 @@ export class ExtractionPipelineDatasource {
     }
   }
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
-    const results = await Promise.all(
+    const data = await Promise.all(
       options.targets.map(async (target) => {
         try {
           const response = await this.runQuery({
             refId: target.refId,
             ...target.extractionPipelineQuery,
           });
-          return {
-            columns: target.extractionPipelineQuery.columns,
-            response,
-          };
+          return exctractValuesToTable(response, target.extractionPipelineQuery.columns);
         } catch (error) {
           handleError(error, target.refId);
-          return {
-            columns: target.extractionPipelineQuery.columns,
-            response: [],
-          };
+          return [];
         }
       })
     );
-    const data = getTableData(results);
     return {
       data: _.flatten(data),
     };
