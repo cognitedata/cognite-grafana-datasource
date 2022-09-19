@@ -35,7 +35,7 @@ import {
   Tab,
   VariableQueryData,
 } from './types';
-import { applyFilters, getRange, toGranularityWithLowerBound } from './utils';
+import { applyFilters, getRange } from './utils';
 import {
   FlexibleDataModellingDatasource,
   RelationshipsDatasource,
@@ -164,7 +164,6 @@ export default class CogniteDatasource extends DataSourceApi<
         };
       }
     }
-
     return { data: responseData };
   }
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
@@ -436,6 +435,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.version &&
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
+        case Tab.ExtractionPipeline:
+          return true;
         case Tab.Timeseries:
         default:
           return target.target;
