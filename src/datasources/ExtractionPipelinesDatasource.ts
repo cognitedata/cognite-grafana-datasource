@@ -1,6 +1,6 @@
 import { DataQueryRequest, DataQueryResponse, TableData } from '@grafana/data';
 import _ from 'lodash';
-import { CogniteQuery, ExtractionPipelineQuery, HttpMethod } from '../types';
+import { CogniteQuery, ExtractionPipelinesQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { convertItemsToTable } from '../cdf/client';
@@ -16,7 +16,7 @@ const exctractValuesToTable = (list, columns) => {
   }
   return convertItemsToTable(list, columns);
 };
-export class ExtractionPipelineDatasource {
+export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
 
   fetchExtractionPipelinesRuns = (filter, limit = 100) =>
@@ -95,7 +95,7 @@ export class ExtractionPipelineDatasource {
     if (selection.length > 1) return this.resolveManyEPRuns(selection);
     return this.fetchExtractionPipelinesRuns({ externalId: selection[0].value });
   }
-  async runQuery(query: ExtractionPipelineQuery & { refId: string }) {
+  async runQuery(query: ExtractionPipelinesQuery & { refId: string }) {
     const { selection, getRuns, refId } = query;
     try {
       if (getRuns && !selection.length) {
@@ -122,9 +122,9 @@ export class ExtractionPipelineDatasource {
         try {
           const response = await this.runQuery({
             refId: target.refId,
-            ...target.extractionPipelineQuery,
+            ...target.extractionPipelinesQuery,
           });
-          return exctractValuesToTable(response, target.extractionPipelineQuery.columns);
+          return exctractValuesToTable(response, target.extractionPipelinesQuery.columns);
         } catch (error) {
           handleError(error, target.refId);
           return [];

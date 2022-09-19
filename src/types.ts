@@ -7,6 +7,7 @@ import {
   TableData,
   MutableDataFrame,
   QueryEditorProps,
+  SelectableValue,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 import CogniteDatasource from './datasource';
@@ -18,7 +19,7 @@ export enum Tab {
   Event = 'Event',
   Relationships = 'Relationships',
   Templates = 'Templates',
-  ExtractionPipeline = 'Extraction Pipeline',
+  ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Flexible Data Modelling',
 }
 
@@ -27,7 +28,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
-  [Tab.ExtractionPipeline]: 'Extraction Pipeline',
+  [Tab.ExtractionPipelines]: 'Extraction Pipelines',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
@@ -86,11 +87,6 @@ const defaultAssetQuery: AssetQuery = {
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
-export interface RelationshipsSelectableValue {
-  value?: string | number;
-  label?: string;
-  id?: number;
-}
 export interface FlexibleDataModellingQuery {
   externalId: string;
   version?: number;
@@ -122,7 +118,7 @@ export const defaultTemplateQuery: TemplateQuery = {
   groupBy: 'Facility',
 };
 
-export const defaultExtractionPipelineQuery: ExtractionPipelineQuery = {
+export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   selection: [],
   getRuns: false,
   columns: [
@@ -151,7 +147,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
-  extractionPipelineQuery: defaultExtractionPipelineQuery,
+  extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
 };
 
@@ -233,8 +229,8 @@ export interface EventQuery {
     withAggregate: boolean;
   };
 }
-export interface ExtractionPipelineQuery {
-  selection: RelationshipsSelectableValue[];
+export interface ExtractionPipelinesQuery {
+  selection: SelectableValue[];
   getRuns: boolean;
   columns?: string[];
 }
@@ -253,7 +249,7 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
-  extractionPipelineQuery: ExtractionPipelineQuery;
+  extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
 }
 

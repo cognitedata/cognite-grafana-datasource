@@ -1,28 +1,33 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AsyncMultiSelect, Field, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
-import { ExtractionPipelineQuery, SelectedProps } from '../types';
+import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
-import { EventFields } from '../constants';
+import { ExtractionPipelinesFields } from '../constants';
 import { InlineButton } from './inlineButton';
 
-export const ExtractionPipelineTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
-  const options = EventFields.map((value) => ({ value, label: value }));
+export const ExtractionPipelinesTab = (
+  props: SelectedProps & { datasource: CogniteDatasource }
+) => {
+  const options = ExtractionPipelinesFields.map((value) => ({ value, label: value }));
   const { query, onQueryChange, datasource } = props;
-  const [extractionPipelineQuery, setExtractionPipelineQuery] = useState(
-    query.extractionPipelineQuery
+  const [extractionPipelinesQuery, setExtractionPipelinesQuery] = useState(
+    query.extractionPipelinesQuery
   );
   const onExtractionPipelinesQueryChange = useCallback(
-    (extractionPipelineQueryPatch: Partial<ExtractionPipelineQuery>) =>
-      setExtractionPipelineQuery({ ...extractionPipelineQuery, ...extractionPipelineQueryPatch }),
-    [extractionPipelineQuery]
+    (extractionPipelinesQueryPatch: Partial<ExtractionPipelinesQuery>) =>
+      setExtractionPipelinesQuery({
+        ...extractionPipelinesQuery,
+        ...extractionPipelinesQueryPatch,
+      }),
+    [extractionPipelinesQuery]
   );
   useEffect(() => {
     onQueryChange({
-      extractionPipelineQuery,
+      extractionPipelinesQuery,
     });
-  }, [extractionPipelineQuery]);
-  const { columns, selection, getRuns } = extractionPipelineQuery;
+  }, [extractionPipelinesQuery]);
+  const { columns, selection, getRuns } = extractionPipelinesQuery;
   return (
     <div style={{ marginTop: 8 }}>
       <div className="gf-form-inline">
@@ -68,7 +73,7 @@ export const ExtractionPipelineTab = (props: SelectedProps & { datasource: Cogni
           <Tooltip content="Enter or select Extraction Pipeline externalId">
             <AsyncMultiSelect
               loadOptions={() => {
-                return datasource.extractionPipelineDatasource
+                return datasource.extractionPipelinesDatasource
                   .getExtractionPipelinesDropdowns(query.refId)
                   .then((response) => {
                     return _.sortBy(

@@ -39,22 +39,28 @@ export const DateFields = [
   'lastFailure',
   'lastSuccess',
 ];
-
+const commonFields = ['id', 'externalId', 'dataSetId', 'metadata'];
 export const EventFields = [
-  'id',
-  'externalId',
+  ...commonFields,
   'type',
   'subtype',
-  'dataSetId',
   'assetIds',
   'source',
   'sourceId',
-  'metadata',
+  ...DateFields,
+];
+export const ExtractionPipelinesFields = [
+  ...commonFields,
   'name',
+  'description',
   'status',
   'message',
   'schedule',
   'runId',
+  'contacts',
+  'createdBy',
+  'documentation',
+  'rawTables',
   ...DateFields,
 ];
 export const EVENTS_PAGE_LIMIT = 1000;

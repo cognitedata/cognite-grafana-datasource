@@ -42,7 +42,7 @@ import {
   TemplatesDatasource,
   TimeseriesDatasource,
   EventsDatasource,
-  ExtractionPipelineDatasource,
+  ExtractionPipelinesDatasource,
 } from './datasources';
 
 export default class CogniteDatasource extends DataSourceApi<
@@ -62,7 +62,7 @@ export default class CogniteDatasource extends DataSourceApi<
   eventsDatasource: EventsDatasource;
   templatesDatasource: TemplatesDatasource;
   relationshipsDatasource: RelationshipsDatasource;
-  extractionPipelineDatasource: ExtractionPipelineDatasource;
+  extractionPipelinesDatasource: ExtractionPipelinesDatasource;
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
 
@@ -97,7 +97,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
-    this.extractionPipelineDatasource = new ExtractionPipelineDatasource(this.connector);
+    this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(this.connector);
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
       this.connector,
       this.timeseriesDatasource
@@ -117,7 +117,7 @@ export default class CogniteDatasource extends DataSourceApi<
       tsTargets,
       templatesTargets,
       relationshipsTargets,
-      extractionPipelineTargets,
+      extractionPipelinesTargets,
       flexibleDataModellingTargets,
     } = groupTargets(queryTargets);
     let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
@@ -139,9 +139,9 @@ export default class CogniteDatasource extends DataSourceApi<
           ...options,
           targets: relationshipsTargets,
         });
-        const extractionPipelineResult = await this.extractionPipelineDatasource.query({
+        const extractionPipelinesResult = await this.extractionPipelinesDatasource.query({
           ...options,
-          targets: extractionPipelineTargets,
+          targets: extractionPipelinesTargets,
         });
         const flexibleDataModellingResult = await this.flexibleDataModellingDatasource.query({
           ...options,
@@ -152,7 +152,7 @@ export default class CogniteDatasource extends DataSourceApi<
           ...eventResults.data,
           ...relationshipsResults.data,
           ...templatesResults.data,
-          ...extractionPipelineResult.data,
+          ...extractionPipelinesResult.data,
           ...flexibleDataModellingResult.data,
         ];
       } catch (error) {
@@ -435,7 +435,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.version &&
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
-        case Tab.ExtractionPipeline:
+        case Tab.ExtractionPipelines:
           return true;
         case Tab.Timeseries:
         default:
@@ -465,7 +465,7 @@ function groupTargets(targets: CogniteQuery[]) {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
     relationshipsTargets: groupedByTab[Tab.Relationships] ?? [],
-    extractionPipelineTargets: groupedByTab[Tab.ExtractionPipeline] ?? [],
+    extractionPipelinesTargets: groupedByTab[Tab.ExtractionPipelines] ?? [],
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),

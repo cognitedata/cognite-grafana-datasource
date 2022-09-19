@@ -31,7 +31,7 @@ import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
-import { ExtractionPipelineTab } from './extractionPipelineTab';
+import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
@@ -348,8 +348,8 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}
-        {tab === Tabs.ExtractionPipeline && (
-          <ExtractionPipelineTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        {tab === Tabs.ExtractionPipelines && (
+          <ExtractionPipelinesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
