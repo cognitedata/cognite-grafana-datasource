@@ -5,6 +5,11 @@ import { Connector } from '../connector';
 import { handleError } from '../datasource';
 import { convertItemsToTable } from '../cdf/client';
 
+type EPR = {
+  id?: number;
+  status?: string;
+  message?: string;
+};
 const exctractValuesToTable = (list, columns) => {
   if (list[0]?.length) {
     return _.map(list, (result) => exctractValuesToTable(result, columns));
@@ -14,22 +19,54 @@ const exctractValuesToTable = (list, columns) => {
 export class ExtractionPipelineDatasource {
   public constructor(private connector: Connector) {}
 
-  fetchExtractionPipelinesRuns = (filter) =>
+  fetchExtractionPipelinesRuns = (filter, limit = 100) =>
     this.connector.fetchItems({
       path: '/extpipes/runs/list',
       method: HttpMethod.POST,
       data: {
         filter,
+        limit,
       },
     });
-  fetchExtractionPipelines = (items) =>
-    this.connector.fetchItems({
-      path: `/extpipes/byids`,
-      method: HttpMethod.POST,
-      data: {
-        items,
-      },
-    });
+  fetchExtractionPipelines = async (items, refId) => {
+    try {
+      const pipelines = await this.connector.fetchItems({
+        path: `/extpipes/byids`,
+        method: HttpMethod.POST,
+        data: {
+          items,
+        },
+      });
+      return this.withLastRun(pipelines, refId);
+    } catch (error) {
+      handleError(error, refId);
+      return [];
+    }
+  };
+  withLastRun = (items, refId) => {
+    return Promise.all(
+      items.map(async ({ externalId, ...rest }) => {
+        try {
+          const run: EPR[] = await this.fetchExtractionPipelinesRuns(
+            {
+              externalId,
+            },
+            1
+          );
+          return {
+            externalId,
+            ...rest,
+            status: run[0]?.status,
+            message: run[0]?.message,
+            runId: run[0]?.id,
+          };
+        } catch (error) {
+          handleError(error, refId);
+          return [];
+        }
+      })
+    );
+  };
   async getExtractionPipelinesDropdowns(refId) {
     try {
       const response = await this.connector.fetchItems({
@@ -48,9 +85,13 @@ export class ExtractionPipelineDatasource {
       selection.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
     );
   }
-  postQuery(query) {
+  postQuery(query, refId) {
     const { selection, getRuns } = query;
-    if (!getRuns) return this.fetchExtractionPipelines(selection.map(({ id }) => ({ id })));
+    if (!getRuns)
+      return this.fetchExtractionPipelines(
+        selection.map(({ id }) => ({ id })),
+        refId
+      );
     if (selection.length > 1) return this.resolveManyEPRuns(selection);
     return this.fetchExtractionPipelinesRuns({ externalId: selection[0].value });
   }
@@ -61,9 +102,7 @@ export class ExtractionPipelineDatasource {
         handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
         return [];
       }
-      if (selection.length) {
-        return this.postQuery(query);
-      }
+      if (selection.length) return this.postQuery(query, refId);
       const items = await this.connector.fetchItems({
         path: `/extpipes/list`,
         method: HttpMethod.POST,
@@ -71,9 +110,9 @@ export class ExtractionPipelineDatasource {
           filter: {},
         },
       });
-      return items;
+      return this.withLastRun(items, refId);
     } catch (error) {
-      handleError(error, query.refId);
+      handleError(error, refId);
       return [];
     }
   }
