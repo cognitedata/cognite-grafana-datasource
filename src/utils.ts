@@ -1,8 +1,12 @@
 import { isNil, omitBy, get } from 'lodash';
+import { TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
-import { QueryOptions, QueryTarget } from './types';
+import { ExecutableDefinitionNode } from 'graphql';
+import gql from 'graphql-tag';
+import { QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
+import { handleError } from './appEventHandler';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
@@ -38,5 +42,23 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
       return value !== valueToFilter;
     default:
       return false;
+  }
+};
+
+export function getRange(range: TimeRange): Tuple<number> {
+  const timeFrom = range.from.valueOf();
+  const timeTo = range.to.valueOf();
+  return [timeFrom, timeTo];
+}
+const getFirstSelectionArr = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
+export const getFirstSelection = (graphQuery, refId) => {
+  try {
+    const { definitions } = gql`
+      ${graphQuery}
+    `;
+    return getFirstSelectionArr(definitions[0] as ExecutableDefinitionNode);
+  } catch (e) {
+    handleError(e, refId);
+    return [];
   }
 };

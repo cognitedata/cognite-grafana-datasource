@@ -2,9 +2,9 @@ import React from 'react';
 import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
-import { SelectedProps } from './queryEditor';
 import { EVENTS_PAGE_LIMIT } from '../constants';
 import '../css/relationships.css';
+import { SelectedProps } from '../types';
 
 const queryTypeSelector = 'relationshipsQuery';
 

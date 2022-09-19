@@ -2,7 +2,7 @@ import { dateTime } from '@grafana/data';
 import { formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
 import { defaultQuery, CogniteQuery, QueryOptions } from '../types';
-import { getDataQueryRequestItems } from '../datasource';
+import { getDataQueryRequestItems } from '../datasources/TimeseriesDatasource';
 
 const defaultCogniteQuery = defaultQuery as CogniteQuery;
 

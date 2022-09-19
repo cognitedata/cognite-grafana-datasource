@@ -6,8 +6,10 @@ import {
   DataSourceJsonData,
   TableData,
   MutableDataFrame,
+  QueryEditorProps,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
+import CogniteDatasource from './datasource';
 
 export enum Tab {
   Timeseries = 'Timeseries',
@@ -17,6 +19,7 @@ export enum Tab {
   Relationships = 'Relationships',
   Templates = 'Templates',
   ExtractionPipeline = 'Extraction Pipeline',
+  FlexibleDataModelling = 'Flexible Data Modelling',
 }
 
 export const TabTitles = {
@@ -27,13 +30,45 @@ export const TabTitles = {
   [Tab.ExtractionPipeline]: 'Extraction Pipeline',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
+  [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
 };
-
+const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
+  externalId: '',
+  graphQlQuery: `{
+  listMachine {
+    edges {
+      node {
+        __typename
+        MachineWeight
+        Model
+        Anomalies {
+          externalId
+          id
+          name
+          __typename
+        }
+        Availability {
+          id
+          name
+          externalId
+          __typename
+        }
+      }
+    }
+  }
+}`,
+  tsKeys: [],
+};
 const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
   activeAtTimeRange: true,
   advancedFilter: ``,
+  aggregate: {
+    name: 'uniqueValues',
+    properties: [],
+    withAggregate: false,
+  },
 };
 
 export const defaultRelationshipsQuery: RelationshipsQuery = {
@@ -56,24 +91,32 @@ export interface RelationshipsSelectableValue {
   label?: string;
   id?: number;
 }
+export interface FlexibleDataModellingQuery {
+  externalId: string;
+  version?: number;
+  graphQlQuery: string;
+  tsKeys: string[];
+  labels?: string[];
+  targets?: string[];
+}
 
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
   graphQlQuery: `{
-    oEE_MachinesQuery {
-      items {
-        Facility
-        Line
-        GoodQuantity {
-          datapoints (start: $__from, end: $__to, , limit: 100){
-              value
-              timestamp
-          }
+  oEE_MachinesQuery {
+    items {
+      Facility
+      Line
+      GoodQuantity {
+        datapoints (start: $__from, end: $__to, , limit: 100){
+            value
+            timestamp
         }
       }
     }
-  }`,
+  }
+}`,
   dataPath: 'oEE_MachinesQuery.items',
   datapointsPath: 'GoodQuantity.datapoints',
   groupBy: 'Facility',
@@ -109,6 +152,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
   extractionPipelineQuery: defaultExtractionPipelineQuery,
+  flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
 };
 
 /**
@@ -127,6 +171,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthScope?: string;
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
+  enableFlexibleDataModelling?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -182,6 +227,11 @@ export interface EventQuery {
   activeAtTimeRange: boolean;
   columns: string[];
   advancedFilter: string;
+  aggregate?: {
+    name: 'uniqueValues' | 'count';
+    properties: { property?: string }[];
+    withAggregate: boolean;
+  };
 }
 export interface ExtractionPipelineQuery {
   selection: RelationshipsSelectableValue[];
@@ -204,6 +254,7 @@ export interface CogniteQueryBase extends DataQuery {
   warning: string;
   relationshipsQuery: RelationshipsQuery;
   extractionPipelineQuery: ExtractionPipelineQuery;
+  flexibleDataModellingQuery: FlexibleDataModellingQuery;
 }
 
 export type TemplateQuery = {
@@ -413,3 +464,22 @@ export interface QueryWarning {
   refId: string;
   warning: string;
 }
+
+export interface FDMQueryResponse {
+  [x: string]: {
+    edges?: { node?: { [x: string]: any } }[];
+  };
+}
+export interface FDMResponse {
+  data: FDMQueryResponse;
+}
+export type EditorProps = QueryEditorProps<
+  CogniteDatasource,
+  CogniteQuery,
+  CogniteDataSourceOptions
+>;
+export type OnQueryChange = (
+  patch: Partial<CogniteQueryBase> | CogniteTargetObj,
+  shouldRunQuery?: boolean
+) => void;
+export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
