@@ -5,7 +5,6 @@ import {
   Tab,
   TabsBar,
   TabContent,
-  Select,
   InlineFormLabel,
   Switch,
   AsyncSelect,
@@ -32,75 +31,13 @@ import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
+import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
+import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 
 const { FormField } = LegacyForms;
 const appEventsLoader = SystemJS.load('app/core/app_events');
 
-const aggregateOptions = [
-  { value: 'none', label: 'None' },
-  { value: 'average', label: 'Average' },
-  { value: 'max', label: 'Max' },
-  { value: 'min', label: 'Min' },
-  { value: 'count', label: 'Count' },
-  { value: 'sum', label: 'Sum' },
-  { value: 'interpolation', label: 'Interpolation' },
-  { value: 'stepInterpolation', label: 'Step Interpolation' },
-  { value: 'continuousVariance', label: 'Continuous Variance' },
-  { value: 'discreteVariance', label: 'Discrete Variance' },
-  { value: 'totalVariation', label: 'Total Variation' },
-];
-
-const GranularityEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
-  return (
-    query.aggregation &&
-    query.aggregation !== 'none' && (
-      <div className="gf-form">
-        <FormField
-          label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
-          onChange={({ target }) => onQueryChange({ granularity: target.value })}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
-    )
-  );
-};
-const AggregationEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
-  return (
-    <div className="gf-form">
-      <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
-      <Select
-        onChange={({ value }) => onQueryChange({ aggregation: value })}
-        options={aggregateOptions}
-        menuPosition="fixed"
-        value={query.aggregation}
-        className="cognite-dropdown width-10"
-      />
-    </div>
-  );
-};
-const LabelEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
-  return (
-    <div className="gf-form gf-form--grow">
-      <FormField
-        label="Label"
-        labelWidth={6}
-        inputWidth={10}
-        onChange={({ target }) => onQueryChange({ label: target.value })}
-        value={query.label}
-        placeholder="default"
-        tooltip="Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
-      />
-    </div>
-  );
-};
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -117,13 +54,6 @@ const LatestValueCheckbox = (props: SelectedProps) => {
     </div>
   );
 };
-const CommonEditors = ({ onQueryChange, query }: SelectedProps) => (
-  <div className="gf-form-inline">
-    <AggregationEditor {...{ onQueryChange, query }} />
-    <GranularityEditor {...{ onQueryChange, query }} />
-    <LabelEditor {...{ onQueryChange, query }} />
-  </div>
-);
 const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   const { includeSubTimeseries } = query.assetQuery;
@@ -375,8 +305,8 @@ export function QueryEditor(props: EditorProps) {
   }, [tab]);
 
   const tabId = (t) => {
-    if (t === Tabs.Templates) {
-      return 'templates-tab-label';
+    if (t === Tabs.Templates || t === Tabs.FlexibleDataModelling) {
+      return 'preview-tab-label';
     }
     return '';
   };
@@ -384,7 +314,15 @@ export function QueryEditor(props: EditorProps) {
     if (t === Tabs.Templates) {
       return !datasource.connector.isTemplatesEnabled();
     }
+    if (t === Tabs.FlexibleDataModelling) {
+      return !datasource.connector.isFlexibleDataModellingEnabled();
+    }
     return false;
+  };
+  const tabClass = (t) => {
+    if (t === Tabs.FlexibleDataModelling) return { minWidth: '14em' };
+    if (t === Tabs.Templates) return { minWidth: '10em' };
+    return {};
   };
   return (
     <div>
@@ -397,6 +335,7 @@ export function QueryEditor(props: EditorProps) {
             active={tab === t}
             onChangeTab={onSelectTab(t)}
             id={tabId(t)}
+            style={tabClass(t)}
           />
         ))}
       </TabsBar>
@@ -410,6 +349,9 @@ export function QueryEditor(props: EditorProps) {
         )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
+        {tab === Tabs.FlexibleDataModelling && (
+          <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

@@ -10,6 +10,7 @@ import {
   RelationshipsSelectableValue,
 } from '../types';
 import { nodeField, edgeField } from '../constants';
+import { handleError } from '../appEventHandler';
 
 type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
 type RelationshipsResponse = {
@@ -127,14 +128,8 @@ export class RelationshipsDatasource {
         ];
       })
       .catch((err: any) => {
-        if (err.data && err.data.error) {
-          throw {
-            message: `Relationships error: ${err.data.error.message}`,
-            error: err.data.error,
-          };
-        }
-
-        throw err;
+        handleError(err, query.refId);
+        return [];
       });
   }
 

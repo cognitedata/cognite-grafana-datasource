@@ -1,20 +1,13 @@
-import {
-  DataQueryRequest,
-  DataQueryResponse,
-  ScopedVars,
-  MutableDataFrame,
-  FieldType,
-} from '@grafana/data';
-
-import { TemplateSrv } from '@grafana/runtime';
+import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
 import _ from 'lodash';
 import { Connector } from '../connector';
 import { TemplateQuery, CogniteQuery, HttpMethod } from '../types';
+import { handleError } from '../appEventHandler';
 
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
 
 export class TemplatesDatasource {
-  public constructor(private templateSrv: TemplateSrv, private connector: Connector) {}
+  public constructor(private connector: Connector) {}
 
   cachedTemplateGroups = [];
 
@@ -43,7 +36,7 @@ export class TemplatesDatasource {
     });
   }
 
-  private postQuery(query: Partial<TemplateQuery>, payload: string) {
+  private postQuery(query: Partial<TemplateQuery & { refId: string }>, payload: string) {
     const { groupExternalId, version } = query;
     return this.connector
       .fetchData({
@@ -58,24 +51,13 @@ export class TemplatesDatasource {
         return { query, results };
       })
       .catch((err: any) => {
-        if (err.data && err.data.error) {
-          throw {
-            message: `GraphQL error: ${err.data.error.message}`,
-            error: err.data.error,
-          };
-        }
-
-        throw err;
+        handleError(err, query.refId);
+        return [];
       });
   }
 
-  private runQuery(
-    query: TemplateQuery & { refId: string },
-    scopedVars: ScopedVars | undefined = undefined
-  ) {
-    let payload = query.graphQlQuery;
-    payload = this.templateSrv.replace(payload, scopedVars);
-    return this.postQuery(query, payload) as Promise<QueryResult>;
+  private runQuery(query: TemplateQuery & { refId: string }) {
+    return this.postQuery(query, query.graphQlQuery) as Promise<QueryResult>;
   }
 
   private static getItems(resultsData: any, dataPath: string): any[] {
@@ -118,7 +100,7 @@ export class TemplatesDatasource {
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const results = await Promise.all(
       options.targets.map((target) => {
-        return this.runQuery({ refId: target.refId, ...target.templateQuery }, options.scopedVars);
+        return this.runQuery({ refId: target.refId, ...target.templateQuery });
       })
     );
 

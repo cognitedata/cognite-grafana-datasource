@@ -8,6 +8,9 @@ import {
   DataSourceRequestOptions,
   CursorResponse,
   isError,
+  FDMQueryResponse,
+  DataResponse,
+  FDMResponse,
 } from './types';
 import { Items, Limit } from './cdf/types';
 import { getQueryString } from './utils';
@@ -21,7 +24,8 @@ export class Connector {
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
     private enableTemplates?: boolean,
-    private enableEventsAdvancedFiltering?: boolean
+    private enableEventsAdvancedFiltering?: boolean,
+    private enableFlexibleDataModelling?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -68,6 +72,11 @@ export class Connector {
   public async fetchItems<T>(params: RequestParams): Promise<T[]> {
     const { data } = await this.fetchData<Response<T>>(params);
     return data.items;
+  }
+
+  public async fetchQuery<T>(params: RequestParams): Promise<FDMQueryResponse> {
+    const { data } = await this.fetchData<DataResponse<FDMResponse>>(params);
+    return data.data;
   }
 
   public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
@@ -134,6 +143,10 @@ export class Connector {
 
   public isEventsAdvancedFilteringEnabled() {
     return this.enableEventsAdvancedFiltering;
+  }
+
+  public isFlexibleDataModellingEnabled() {
+    return this.enableFlexibleDataModelling;
   }
 
   public cachedRequest = async (

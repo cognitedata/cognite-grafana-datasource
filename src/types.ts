@@ -7,7 +7,6 @@ import {
   TableData,
   MutableDataFrame,
   QueryEditorProps,
-  SelectableValue,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 import CogniteDatasource from './datasource';
@@ -19,6 +18,7 @@ export enum Tab {
   Event = 'Event',
   Relationships = 'Relationships',
   Templates = 'Templates',
+  FlexibleDataModelling = 'Flexible Data Modelling',
 }
 
 export const TabTitles = {
@@ -28,8 +28,35 @@ export const TabTitles = {
   [Tab.Event]: 'Events',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
+  [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
 };
-
+const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
+  externalId: '',
+  graphQlQuery: `{
+  listMachine {
+    edges {
+      node {
+        __typename
+        MachineWeight
+        Model
+        Anomalies {
+          externalId
+          id
+          name
+          __typename
+        }
+        Availability {
+          id
+          name
+          externalId
+          __typename
+        }
+      }
+    }
+  }
+}`,
+  tsKeys: [],
+};
 const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
@@ -61,6 +88,14 @@ export interface RelationshipsSelectableValue {
   value?: string | number;
   label?: string;
 }
+export interface FlexibleDataModellingQuery {
+  externalId: string;
+  version?: number;
+  graphQlQuery: string;
+  tsKeys: string[];
+  labels?: string[];
+  targets?: string[];
+}
 
 export interface RelationshipsQuery {
   dataSetIds?: {
@@ -86,19 +121,19 @@ export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
   graphQlQuery: `{
-    oEE_MachinesQuery {
-      items {
-        Facility
-        Line
-        GoodQuantity {
-          datapoints (start: $__from, end: $__to, , limit: 100){
-              value
-              timestamp
-          }
+  oEE_MachinesQuery {
+    items {
+      Facility
+      Line
+      GoodQuantity {
+        datapoints (start: $__from, end: $__to, , limit: 100){
+            value
+            timestamp
         }
       }
     }
-  }`,
+  }
+}`,
   dataPath: 'oEE_MachinesQuery.items',
   datapointsPath: 'GoodQuantity.datapoints',
   groupBy: 'Facility',
@@ -116,6 +151,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
+  flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
 };
 
 /**
@@ -134,6 +170,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthScope?: string;
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
+  enableFlexibleDataModelling?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -191,6 +228,7 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
+  flexibleDataModellingQuery: FlexibleDataModellingQuery;
 }
 
 export type TemplateQuery = {
@@ -401,6 +439,14 @@ export interface QueryWarning {
   warning: string;
 }
 
+export interface FDMQueryResponse {
+  [x: string]: {
+    edges?: { node?: { [x: string]: any } }[];
+  };
+}
+export interface FDMResponse {
+  data: FDMQueryResponse;
+}
 export type EditorProps = QueryEditorProps<
   CogniteDatasource,
   CogniteQuery,
