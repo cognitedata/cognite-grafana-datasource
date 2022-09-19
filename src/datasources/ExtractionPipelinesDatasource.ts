@@ -1,11 +1,12 @@
 import { DataQueryRequest, DataQueryResponse, TableData } from '@grafana/data';
-import _ from 'lodash';
+import _, { map } from 'lodash';
 import { CogniteQuery, ExtractionPipelinesQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { convertItemsToTable } from '../cdf/client';
+import { Resource } from '../cdf/types';
 
-type EPR = {
+type ExtractionPipelinesWithRun = {
   id?: number;
   status?: string;
   message?: string;
@@ -14,7 +15,18 @@ const exctractValuesToTable = (list, columns) => {
   if (list[0]?.length) {
     return _.map(list, (result) => exctractValuesToTable(result, columns));
   }
-  return convertItemsToTable(list, columns);
+  const deepList = _.map(list, (item) => {
+    const resource = {};
+    _.map(item, (value, key) => {
+      if (_.isArray(value)) {
+        _.map(value[0], (v, k) => _.assignIn(resource, { [`${key}-${k}`]: v }));
+      } else if (_.isObject(value)) {
+        _.map(value, (v, k) => _.assignIn(resource, { [`${key}-${k}`]: v }));
+      } else _.assignIn(resource, { [key]: value });
+    });
+    return resource as Resource;
+  });
+  return convertItemsToTable(deepList, columns);
 };
 export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
@@ -47,7 +59,7 @@ export class ExtractionPipelinesDatasource {
     return Promise.all(
       items.map(async ({ externalId, ...rest }) => {
         try {
-          const run: EPR[] = await this.fetchExtractionPipelinesRuns(
+          const run: ExtractionPipelinesWithRun[] = await this.fetchExtractionPipelinesRuns(
             {
               externalId,
             },

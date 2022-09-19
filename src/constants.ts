@@ -39,7 +39,7 @@ export const DateFields = [
   'lastFailure',
   'lastSuccess',
 ];
-const commonFields = ['id', 'externalId', 'dataSetId', 'metadata'];
+const commonFields = ['id', 'externalId', 'dataSetId'];
 export const EventFields = [
   ...commonFields,
   'type',
@@ -47,8 +47,26 @@ export const EventFields = [
   'assetIds',
   'source',
   'sourceId',
+  'metadata',
   ...DateFields,
 ];
+const createFields = (parent, field) => `${parent}-${field}`;
+const metaFields = [
+  'Dockerfile',
+  'Extractor config',
+  'branch',
+  'environment',
+  'extractor',
+  'site',
+  'source',
+].map((_) => createFields('metadata', _));
+const contactsFields = ['email', 'name', 'role', 'sendNotification'].map((_) =>
+  createFields('contacts', _)
+);
+const rawTablesFields = ['dbName', 'tableName'].map((_) => createFields('rawTables', _));
+const notificationConfigFields = ['allowedNotSeenRangeInMinutes'].map((_) =>
+  createFields('notificationConfig', _)
+);
 export const ExtractionPipelinesFields = [
   ...commonFields,
   'name',
@@ -57,10 +75,13 @@ export const ExtractionPipelinesFields = [
   'message',
   'schedule',
   'runId',
-  'contacts',
   'createdBy',
   'documentation',
-  'rawTables',
+  'lastMessage',
+  ...contactsFields,
+  ...metaFields,
+  ...rawTablesFields,
+  ...notificationConfigFields,
   ...DateFields,
 ];
 export const EVENTS_PAGE_LIMIT = 1000;
