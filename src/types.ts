@@ -404,7 +404,6 @@ export interface DataResponse<T> {
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
 export type Response<T = any> = DataResponse<{
-  data?: T;
   items: T[];
 }>;
 
