@@ -2,7 +2,7 @@ import { DataQueryRequest, DataQueryResponse, TableData } from '@grafana/data';
 import _ from 'lodash';
 import { CogniteQuery, ExtractionPipelineQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
-import { handleError } from '../datasource';
+import { handleError } from '../appEventHandler';
 import { convertItemsToTable } from '../cdf/client';
 
 type EPR = {

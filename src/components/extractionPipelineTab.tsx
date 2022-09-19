@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AsyncMultiSelect, Field, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
-import { ExtractionPipelineQuery } from '../types';
-import { InlineButton, SelectedProps } from './queryEditor';
+import { ExtractionPipelineQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { EventFields } from '../constants';
+import { InlineButton } from './inlineButton';
 
 export const ExtractionPipelineTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
   const options = EventFields.map((value) => ({ value, label: value }));

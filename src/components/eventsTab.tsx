@@ -3,7 +3,6 @@ import {
   Button,
   CodeEditor,
   InlineFormLabel,
-  Icon,
   LegacyForms,
   Switch,
   Segment,
@@ -14,6 +13,7 @@ import { EventQuery, SelectedProps, EditorProps } from '../types';
 import { EventFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
+import { InlineButton } from './inlineButton';
 
 const { FormField } = LegacyForms;
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
@@ -39,19 +39,6 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
           }
         />
       </div>
-    </div>
-  );
-};
-const InlineButton = ({ onClick, iconName }) => {
-  return (
-    <div
-      role="button"
-      className="gf-form-label query-part"
-      onClick={onClick}
-      onKeyPress={onClick}
-      tabIndex={0}
-    >
-      <Icon name={iconName} />
     </div>
   );
 };
