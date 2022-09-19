@@ -53,6 +53,7 @@ export const EventFields = [
   'name',
   'status',
   'message',
+  'schedule',
   ...DateFields,
 ];
 export const EVENTS_PAGE_LIMIT = 1000;
