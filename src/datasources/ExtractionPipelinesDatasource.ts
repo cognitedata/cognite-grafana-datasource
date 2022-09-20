@@ -1,17 +1,19 @@
-import { DataQueryRequest, DataQueryResponse, TableData } from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse, SelectableValue } from '@grafana/data';
 import _ from 'lodash';
 import { CogniteQuery, ExtractionPipelinesQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { convertItemsToTable } from '../cdf/client';
-import { Resource } from '../cdf/types';
+import {
+  ExtractionPipelineRunsParams,
+  ExtractionPipelineRunsResponse,
+  ExtractionPipelinesResponse,
+  ExtractionPipelinesWithRun,
+  FilterRequest,
+  Resource,
+} from '../cdf/types';
 
-type ExtractionPipelinesWithRun = {
-  id?: number;
-  status?: string;
-  message?: string;
-};
-const exctractValuesToTable = (list, columns, names = undefined) => {
+const exctractValuesToTable = (list, columns, names: SelectableValue | SelectableValue[]) => {
   if (list[0]?.length) {
     return _.map(list, (result, index) =>
       exctractValuesToTable(result, columns, names[index].value)
@@ -33,8 +35,11 @@ const exctractValuesToTable = (list, columns, names = undefined) => {
 export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
 
-  private fetchExtractionPipelinesRuns = (filter, limit = 100) =>
-    this.connector.fetchItems({
+  private fetchExtractionPipelinesRuns = (
+    filter: ExtractionPipelineRunsParams,
+    limit = 100
+  ): Promise<ExtractionPipelineRunsResponse[]> =>
+    this.connector.fetchItems<ExtractionPipelineRunsResponse>({
       path: '/extpipes/runs/list',
       method: HttpMethod.POST,
       data: {
@@ -42,9 +47,12 @@ export class ExtractionPipelinesDatasource {
         limit,
       },
     });
-  private fetchExtractionPipelines = async (items, refId) => {
+  private fetchExtractionPipelines = async (
+    items: FilterRequest<SelectableValue>,
+    refId: string
+  ): Promise<ExtractionPipelinesWithRun[]> => {
     try {
-      const pipelines = await this.connector.fetchItems({
+      const pipelines = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: `/extpipes/byids`,
         method: HttpMethod.POST,
         data: {
@@ -57,44 +65,39 @@ export class ExtractionPipelinesDatasource {
       return [];
     }
   };
-  private withLastRun = (items, refId) => {
+  private withLastRun = async (
+    items: ExtractionPipelinesResponse[],
+    refId: string
+  ): Promise<ExtractionPipelinesWithRun[]> => {
     return Promise.all(
-      items.map(async ({ externalId, ...rest }) => {
-        try {
-          const run: ExtractionPipelinesWithRun[] = await this.fetchExtractionPipelinesRuns(
-            {
+      items.map(
+        async ({
+          externalId,
+          ...rest
+        }: ExtractionPipelinesResponse): Promise<ExtractionPipelinesWithRun> => {
+          try {
+            const run = await this.fetchExtractionPipelinesRuns(
+              {
+                externalId,
+              },
+              1
+            );
+            return {
               externalId,
-            },
-            1
-          );
-          return {
-            externalId,
-            ...rest,
-            status: run[0]?.status,
-            message: run[0]?.message,
-            runId: run[0]?.id,
-          };
-        } catch (error) {
-          handleError(error, refId);
-          return [];
+              ...rest,
+              status: run[0]?.status,
+              message: run[0]?.message,
+              runId: run[0]?.id,
+            };
+          } catch (error) {
+            handleError(error, refId);
+            return undefined;
+          }
         }
-      })
+      )
     );
   };
-  async getExtractionPipelinesDropdowns(refId) {
-    try {
-      const response = await this.connector.fetchItems({
-        path: '/extpipes',
-        method: HttpMethod.GET,
-        data: undefined,
-      });
-      return response;
-    } catch (error) {
-      handleError(error, refId);
-      return [];
-    }
-  }
-  postQuery(query, refId) {
+  postQuery(query: ExtractionPipelinesQuery, refId: string) {
     const { selections, getRuns } = query;
     if (!getRuns)
       return this.fetchExtractionPipelines(
@@ -115,7 +118,7 @@ export class ExtractionPipelinesDatasource {
         return [];
       }
       if (selections.length) return this.postQuery(query, refId);
-      const items = await this.connector.fetchItems({
+      const items = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: `/extpipes/list`,
         method: HttpMethod.POST,
         data: {
@@ -150,5 +153,18 @@ export class ExtractionPipelinesDatasource {
     return {
       data: _.flatten(data),
     };
+  }
+  async getExtractionPipelinesDropdowns(refId: string): Promise<ExtractionPipelinesResponse[]> {
+    try {
+      const response = await this.connector.fetchItems<ExtractionPipelinesResponse>({
+        path: '/extpipes',
+        method: HttpMethod.GET,
+        data: undefined,
+      });
+      return response;
+    } catch (error) {
+      handleError(error, refId);
+      return [];
+    }
   }
 }
