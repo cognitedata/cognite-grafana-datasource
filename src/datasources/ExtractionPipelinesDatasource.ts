@@ -1,5 +1,5 @@
 import { DataQueryRequest, DataQueryResponse, TableData } from '@grafana/data';
-import _, { map } from 'lodash';
+import _ from 'lodash';
 import { CogniteQuery, ExtractionPipelinesQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
@@ -11,9 +11,11 @@ type ExtractionPipelinesWithRun = {
   status?: string;
   message?: string;
 };
-const exctractValuesToTable = (list, columns) => {
+const exctractValuesToTable = (list, columns, names = undefined) => {
   if (list[0]?.length) {
-    return _.map(list, (result) => exctractValuesToTable(result, columns));
+    return _.map(list, (result, index) =>
+      exctractValuesToTable(result, columns, names[index].value)
+    );
   }
   const deepList = _.map(list, (item) => {
     const resource = {};
@@ -26,12 +28,12 @@ const exctractValuesToTable = (list, columns) => {
     });
     return resource as Resource;
   });
-  return convertItemsToTable(deepList, columns);
+  return convertItemsToTable(deepList, columns, names);
 };
 export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
 
-  fetchExtractionPipelinesRuns = (filter, limit = 100) =>
+  private fetchExtractionPipelinesRuns = (filter, limit = 100) =>
     this.connector.fetchItems({
       path: '/extpipes/runs/list',
       method: HttpMethod.POST,
@@ -40,7 +42,7 @@ export class ExtractionPipelinesDatasource {
         limit,
       },
     });
-  fetchExtractionPipelines = async (items, refId) => {
+  private fetchExtractionPipelines = async (items, refId) => {
     try {
       const pipelines = await this.connector.fetchItems({
         path: `/extpipes/byids`,
@@ -55,7 +57,7 @@ export class ExtractionPipelinesDatasource {
       return [];
     }
   };
-  withLastRun = (items, refId) => {
+  private withLastRun = (items, refId) => {
     return Promise.all(
       items.map(async ({ externalId, ...rest }) => {
         try {
@@ -79,6 +81,11 @@ export class ExtractionPipelinesDatasource {
       })
     );
   };
+  private resolveManyEPRuns(selection) {
+    return Promise.all(
+      selection.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
+    );
+  }
   async getExtractionPipelinesDropdowns(refId) {
     try {
       const response = await this.connector.fetchItems({
@@ -91,11 +98,6 @@ export class ExtractionPipelinesDatasource {
       handleError(error, refId);
       return [];
     }
-  }
-  private resolveManyEPRuns(selection) {
-    return Promise.all(
-      selection.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
-    );
   }
   postQuery(query, refId) {
     const { selection, getRuns } = query;
@@ -136,7 +138,11 @@ export class ExtractionPipelinesDatasource {
             refId: target.refId,
             ...target.extractionPipelinesQuery,
           });
-          return exctractValuesToTable(response, target.extractionPipelinesQuery.columns);
+          return exctractValuesToTable(
+            response,
+            target.extractionPipelinesQuery.columns,
+            target.extractionPipelinesQuery.selection
+          );
         } catch (error) {
           handleError(error, target.refId);
           return [];
