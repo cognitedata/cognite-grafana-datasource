@@ -110,7 +110,7 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
       </InlineFormLabel>
       <div className="gf-form-switch">
         <Switch
-          value={query.eventQuery.aggregate.withAggregate}
+          value={query.eventQuery.aggregate?.withAggregate}
           onChange={({ currentTarget }) =>
             onQueryChange({
               eventQuery: {
