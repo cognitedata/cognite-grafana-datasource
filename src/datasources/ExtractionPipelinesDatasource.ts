@@ -81,11 +81,6 @@ export class ExtractionPipelinesDatasource {
       })
     );
   };
-  private resolveManyEPRuns(selection) {
-    return Promise.all(
-      selection.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
-    );
-  }
   async getExtractionPipelinesDropdowns(refId) {
     try {
       const response = await this.connector.fetchItems({
@@ -100,23 +95,26 @@ export class ExtractionPipelinesDatasource {
     }
   }
   postQuery(query, refId) {
-    const { selection, getRuns } = query;
+    const { selections, getRuns } = query;
     if (!getRuns)
       return this.fetchExtractionPipelines(
-        selection.map(({ id }) => ({ id })),
+        selections.map(({ id }) => ({ id })),
         refId
       );
-    if (selection.length > 1) return this.resolveManyEPRuns(selection);
-    return this.fetchExtractionPipelinesRuns({ externalId: selection[0].value });
+    if (selections.length > 1)
+      return Promise.all(
+        selections.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
+      );
+    return this.fetchExtractionPipelinesRuns({ externalId: selections[0].value });
   }
   async runQuery(query: ExtractionPipelinesQuery & { refId: string }) {
-    const { selection, getRuns, refId } = query;
+    const { selections, getRuns, refId } = query;
     try {
-      if (getRuns && !selection.length) {
+      if (getRuns && !selections.length) {
         handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
         return [];
       }
-      if (selection.length) return this.postQuery(query, refId);
+      if (selections.length) return this.postQuery(query, refId);
       const items = await this.connector.fetchItems({
         path: `/extpipes/list`,
         method: HttpMethod.POST,
@@ -141,7 +139,7 @@ export class ExtractionPipelinesDatasource {
           return exctractValuesToTable(
             response,
             target.extractionPipelinesQuery.columns,
-            target.extractionPipelinesQuery.selection
+            target.extractionPipelinesQuery.selections
           );
         } catch (error) {
           handleError(error, target.refId);

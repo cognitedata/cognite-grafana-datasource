@@ -119,7 +119,7 @@ export const defaultTemplateQuery: TemplateQuery = {
 };
 
 export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
-  selection: [],
+  selections: [],
   getRuns: false,
   columns: [
     'name',
@@ -230,7 +230,7 @@ export interface EventQuery {
   };
 }
 export interface ExtractionPipelinesQuery {
-  selection: SelectableValue[];
+  selections: SelectableValue[];
   getRuns: boolean;
   columns?: string[];
 }

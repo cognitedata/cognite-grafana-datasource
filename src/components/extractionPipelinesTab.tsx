@@ -27,7 +27,7 @@ export const ExtractionPipelinesTab = (
       extractionPipelinesQuery,
     });
   }, [extractionPipelinesQuery]);
-  const { columns, selection, getRuns } = extractionPipelinesQuery;
+  const { columns, selections, getRuns } = extractionPipelinesQuery;
   return (
     <div style={{ marginTop: 8 }}>
       <div className="gf-form-inline">
@@ -86,12 +86,12 @@ export const ExtractionPipelinesTab = (
                     );
                   });
               }}
-              value={selection}
+              value={selections}
               defaultOptions
               allowCustomValue
               onChange={(values) => {
                 return onExtractionPipelinesQueryChange({
-                  selection: values,
+                  selections: values,
                 });
               }}
               placeholder="Extraction Pipeline ExternalId"

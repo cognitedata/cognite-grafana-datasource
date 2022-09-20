@@ -1,0 +1,602 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "789",
+      ],
+    },
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "fetchResources": true,
+    "filter": Object {},
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "789",
+      ],
+    },
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "123",
+      ],
+    },
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 3`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "1",
+      ],
+    },
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "assetIds": Array [
+        "2",
+      ],
+    },
+    "limit": 101,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 5`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+      Object {
+        "id": 456,
+      },
+      Object {
+        "id": 789,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 6`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 7`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "max",
+    ],
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+      Object {
+        "id": 456,
+      },
+      Object {
+        "id": 789,
+      },
+    ],
+    "limit": 3333,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_7_C",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should generate the correct queries 8`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "tv",
+    ],
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_7_D",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries from Asset" queries should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesA-Timeseries123",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesB-Timeseries456",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseriesC-Timeseries789",
+    },
+    Object {
+      "datapoints": Array [
+        Array [
+          0,
+          1549336675000,
+        ],
+        Array [
+          1,
+          1549337275000,
+        ],
+        Array [
+          2,
+          1549337875000,
+        ],
+        Array [
+          3,
+          1549338475000,
+        ],
+      ],
+      "target": "test timeseries",
+    },
+  ],
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 1`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 789,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 2`] = `
+Object {
+  "data": Object {
+    "end": 1549338475000,
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+    "limit": 100000,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_3_A",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 3`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "count",
+    ],
+    "end": 1549338475000,
+    "granularity": "20m",
+    "items": Array [
+      Object {
+        "id": 456,
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_3_B",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given "Select Timeseries" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "step",
+    ],
+    "end": 1549338475000,
+    "granularity": "1s",
+    "items": Array [
+      Object {
+        "id": 789,
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_3_C",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+}
+`;
+
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {
+      "metadata": Object {
+        "key1": "value1",
+      },
+    },
+    "limit": 1000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 2`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 3`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "externalId": "Timeseries1",
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 4`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1, aggregate=\\"discreteVariance\\", granularity=\\"10d\\"}",
+        "limit": 10000,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_12_B",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries should generate the correct filtered queries 5`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{externalId=\\"Timeseries1\\"}",
+        "limit": 10000,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_12_D",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1",
+    },
+  ],
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 1`] = `
+Object {
+  "data": Object {
+    "filter": Object {},
+    "limit": 1000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 2`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 3`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 1,
+      },
+      Object {
+        "externalId": "Timeseries1",
+      },
+      Object {
+        "id": 2,
+      },
+      Object {
+        "id": 3,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 4`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} + pi()",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} + pi()",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} + pi()",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_15_A",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should generate the correct filtered queries 5`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=1} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=2} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+      Object {
+        "end": 1549338475000,
+        "expression": "ts{id=3} * ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\"} - ts{externalId=\\"Timeseries1\\", aggregate=\\"average\\", granularity=\\"10m\\"}",
+        "limit": 3333,
+        "start": 1549336675000,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_15_D",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+}
+`;
+
+exports[`Datasource Query Given custom queries with functions should return correct datapoints and labels 1`] = `
+Object {
+  "data": Array [
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesA value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesB value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "test timeseriesC value1 + pi()",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries1 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries2 * Timeseries1 - Timeseries1",
+    },
+    Object {
+      "datapoints": Array [],
+      "target": "Timeseries3 * Timeseries1 - Timeseries1",
+    },
+  ],
+}
+`;
