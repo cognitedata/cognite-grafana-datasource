@@ -13,11 +13,16 @@ import {
   Resource,
 } from '../cdf/types';
 
-const exctractValuesToTable = (list, columns, names: SelectableValue | SelectableValue[]) => {
-  if (list[0]?.length) {
-    return _.map(list, (result, index) =>
-      exctractValuesToTable(result, columns, names[index].value)
-    );
+type RunsResponse = {
+  filter: ExtractionPipelineRunsParams;
+  response: ExtractionPipelineRunsResponse[];
+};
+
+const exctractValuesToTable = (list, columns, name = undefined) => {
+  if (list[0]?.filter) {
+    return _.map(list, ({ response, filter }) => {
+      return exctractValuesToTable(response, columns, filter.externalId);
+    });
   }
   const deepList = _.map(list, (item) => {
     const resource = {};
@@ -28,25 +33,36 @@ const exctractValuesToTable = (list, columns, names: SelectableValue | Selectabl
         _.map(value, (v, k) => _.assignIn(resource, { [`${key}-${k}`]: v }));
       } else _.assignIn(resource, { [key]: value });
     });
+
     return resource as Resource;
   });
-  return convertItemsToTable(deepList, columns, names);
+  return convertItemsToTable(deepList, columns, name);
 };
 export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
-
-  private fetchExtractionPipelinesRuns = (
+  private fetchExtractionPipelinesRuns = async (
     filter: ExtractionPipelineRunsParams,
+    refId: string,
     limit = 100
-  ): Promise<ExtractionPipelineRunsResponse[]> =>
-    this.connector.fetchItems<ExtractionPipelineRunsResponse>({
-      path: '/extpipes/runs/list',
-      method: HttpMethod.POST,
-      data: {
+  ): Promise<RunsResponse> => {
+    try {
+      const response = await this.connector.fetchItems<ExtractionPipelineRunsResponse>({
+        path: '/extpipes/runs/list',
+        method: HttpMethod.POST,
+        data: {
+          filter,
+          limit,
+        },
+      });
+      return { filter, response };
+    } catch (error) {
+      handleError(error, refId);
+      return {
         filter,
-        limit,
-      },
-    });
+        response: [],
+      };
+    }
+  };
   private fetchExtractionPipelines = async (
     items: FilterRequest<SelectableValue>,
     refId: string
@@ -76,18 +92,19 @@ export class ExtractionPipelinesDatasource {
           ...rest
         }: ExtractionPipelinesResponse): Promise<ExtractionPipelinesWithRun> => {
           try {
-            const run = await this.fetchExtractionPipelinesRuns(
+            const { response } = await this.fetchExtractionPipelinesRuns(
               {
                 externalId,
               },
+              refId,
               1
             );
             return {
               externalId,
               ...rest,
-              status: run[0]?.status,
-              message: run[0]?.message,
-              runId: run[0]?.id,
+              status: response[0]?.status,
+              message: response[0]?.message,
+              runId: response[0]?.id,
             };
           } catch (error) {
             handleError(error, refId);
@@ -104,20 +121,18 @@ export class ExtractionPipelinesDatasource {
         selections.map(({ id }) => ({ id })),
         refId
       );
-    if (selections.length > 1)
-      return Promise.all(
-        selections.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }))
-      );
-    return this.fetchExtractionPipelinesRuns({ externalId: selections[0].value });
+    return Promise.all(
+      selections.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }, refId))
+    );
   }
   async runQuery(query: ExtractionPipelinesQuery & { refId: string }) {
     const { selections, getRuns, refId } = query;
     try {
-      if (getRuns && !selections.length) {
+      if (getRuns && !selections?.length) {
         handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
         return [];
       }
-      if (selections.length) return this.postQuery(query, refId);
+      if (selections?.length) return this.postQuery(query, refId);
       const items = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: `/extpipes/list`,
         method: HttpMethod.POST,
@@ -139,11 +154,7 @@ export class ExtractionPipelinesDatasource {
             refId: target.refId,
             ...target.extractionPipelinesQuery,
           });
-          return exctractValuesToTable(
-            response,
-            target.extractionPipelinesQuery.columns,
-            target.extractionPipelinesQuery.selections
-          );
+          return exctractValuesToTable(response, target.extractionPipelinesQuery.columns);
         } catch (error) {
           handleError(error, target.refId);
           return [];
