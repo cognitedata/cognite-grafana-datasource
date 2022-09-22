@@ -85,7 +85,7 @@ Array [
         "text": "status",
       },
     ],
-    "name": "test-1",
+    "name": "Test 1",
     "rows": Array [
       Array [
         1,
@@ -111,7 +111,7 @@ Array [
         "text": "status",
       },
     ],
-    "name": "test-2",
+    "name": "Test 2",
     "rows": Array [
       Array [
         10,
@@ -137,7 +137,7 @@ Array [
         "text": "status",
       },
     ],
-    "name": "test-3",
+    "name": "Test 3",
     "rows": Array [
       Array [
         100,

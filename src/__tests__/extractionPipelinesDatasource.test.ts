@@ -259,7 +259,7 @@ describe('extraction pipelines', () => {
             runsList = extpipeRunsValues(extpipesRunsListRes[i]);
             expect(results.data[i].columns).toEqual(extpipeRunsColumns.map((text) => ({ text })));
             expect(results.data[i].rows).toEqual(runsList);
-            expect(results.data[i].name).toEqual(`test-${i + 1}`);
+            expect(results.data[i].name).toEqual(`Test ${i + 1}`);
           }
         });
         it('match snapshot', () => {
