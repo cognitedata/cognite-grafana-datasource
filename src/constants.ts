@@ -39,7 +39,7 @@ export const DateFields = [
   'lastFailure',
   'lastSuccess',
 ];
-const commonFields = ['id', 'externalId', 'dataSetId'];
+const commonFields = ['id', 'externalId'];
 export const EventFields = [
   ...commonFields,
   'type',
@@ -48,6 +48,7 @@ export const EventFields = [
   'source',
   'sourceId',
   'metadata',
+  'dataSetId',
   ...DateFields,
 ];
 const createFields = (parent, field) => `${parent}-${field}`;
@@ -60,10 +61,6 @@ const metaFields = [
   'site',
   'source',
 ].map((_) => createFields('metadata', _));
-const contactsFields = ['email', 'name', 'role', 'sendNotification'].map((_) =>
-  createFields('contacts', _)
-);
-const rawTablesFields = ['dbName', 'tableName'].map((_) => createFields('rawTables', _));
 const notificationConfigFields = ['allowedNotSeenRangeInMinutes'].map((_) =>
   createFields('notificationConfig', _)
 );
@@ -78,9 +75,8 @@ export const ExtractionPipelinesFields = [
   'createdBy',
   'documentation',
   'lastMessage',
-  ...contactsFields,
+  'data Set',
   ...metaFields,
-  ...rawTablesFields,
   ...notificationConfigFields,
   ...DateFields,
 ];

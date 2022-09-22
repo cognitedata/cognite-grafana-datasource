@@ -102,7 +102,7 @@ export const ExtractionPipelinesTab = (
             />
           </Tooltip>
         </Field>
-        <Field label="Show Extraction Pipeline Runs" className="gf-field-switch">
+        <Field label="Show Runs" className="gf-field-switch">
           <Tooltip content="Enable for Extraction Pipeline runs">
             <Switch
               value={getRuns}
@@ -114,23 +114,26 @@ export const ExtractionPipelinesTab = (
             />
           </Tooltip>
         </Field>
-        <Field label="Limit" className="">
-          <Tooltip content="change limit to response value max 1000">
-            <Input
-              type="number"
-              value={limit}
-              onChange={(targetValue) => {
-                const { value } = targetValue.target as any;
-                if (value <= EVENTS_PAGE_LIMIT && value > 0) {
-                  return onExtractionPipelinesQueryChange({ limit: value });
-                }
-                return null;
-              }}
-              defaultValue={EVENTS_PAGE_LIMIT}
-              max={EVENTS_PAGE_LIMIT}
-            />
-          </Tooltip>
-        </Field>
+        {getRuns && (
+          <Field label="Limit" className="limit-class">
+            <Tooltip content="Change limit to response value between 1 and 1000, not working on filter-by id EP's">
+              <Input
+                // disabled={}
+                type="number"
+                value={limit}
+                onChange={(targetValue) => {
+                  const { value } = targetValue.target as any;
+                  if (value <= EVENTS_PAGE_LIMIT && value > 0) {
+                    return onExtractionPipelinesQueryChange({ limit: value });
+                  }
+                  return null;
+                }}
+                defaultValue={EVENTS_PAGE_LIMIT}
+                max={EVENTS_PAGE_LIMIT}
+              />
+            </Tooltip>
+          </Field>
+        )}
       </div>
     </div>
   );
