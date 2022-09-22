@@ -1,48 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`extraction pipelines query on empty selected extpipelines list match snapshot 1`] = `
-Array [
-  Object {
-    "columns": Array [
-      Object {
-        "text": "name",
-      },
-      Object {
-        "text": "externalId",
-      },
-      Object {
-        "text": "runId",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": undefined,
-    "rows": Array [
-      Array [
-        "Test 1",
-        "test-1",
-        1,
-        "seen",
-      ],
-      Array [
-        "Test 2",
-        "test-2",
-        10,
-        "succsess",
-      ],
-      Array [
-        "Test 3",
-        "test-3",
-        100,
-        "failure",
-      ],
-    ],
-    "type": "table",
-  },
-]
-`;
-
 exports[`extraction pipelines query on empty selected no runs match snapshot 1`] = `
 Array [
   Object {
@@ -60,7 +17,7 @@ Array [
         "text": "status",
       },
     ],
-    "name": undefined,
+    "name": "Extraction Pipelines",
     "rows": Array [
       Array [
         "Test 1",
@@ -78,89 +35,6 @@ Array [
         "Test 3",
         "test-3",
         100,
-        "failure",
-      ],
-    ],
-    "type": "table",
-  },
-]
-`;
-
-exports[`extraction pipelines query on selected ep many selected and runs match snapshot 1`] = `
-Array [
-  Object {
-    "columns": Array [
-      Object {
-        "text": "id",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": "test-1",
-    "rows": Array [
-      Array [
-        1,
-        "seen",
-      ],
-      Array [
-        2,
-        "failure",
-      ],
-      Array [
-        3,
-        "succsess",
-      ],
-    ],
-    "type": "table",
-  },
-  Object {
-    "columns": Array [
-      Object {
-        "text": "id",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": "test-2",
-    "rows": Array [
-      Array [
-        1,
-        "seen",
-      ],
-      Array [
-        2,
-        "failure",
-      ],
-      Array [
-        3,
-        "succsess",
-      ],
-    ],
-    "type": "table",
-  },
-  Object {
-    "columns": Array [
-      Object {
-        "text": "id",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": "test-3",
-    "rows": Array [
-      Array [
-        10,
-        "succsess",
-      ],
-      Array [
-        20,
-        "seen",
-      ],
-      Array [
-        30,
         "failure",
       ],
     ],
@@ -186,69 +60,7 @@ Array [
         "text": "status",
       },
     ],
-    "name": undefined,
-    "rows": Array [
-      Array [
-        "Test 1",
-        "test-1",
-        1,
-        "seen",
-      ],
-    ],
-    "type": "table",
-  },
-]
-`;
-
-exports[`extraction pipelines query on selected return ep-runs-data one selected and column match snapshot 1`] = `
-Array [
-  Object {
-    "columns": Array [
-      Object {
-        "text": "id",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": "test-1",
-    "rows": Array [
-      Array [
-        1,
-        "seen",
-      ],
-      Array [
-        2,
-        "failure",
-      ],
-      Array [
-        3,
-        "succsess",
-      ],
-    ],
-    "type": "table",
-  },
-]
-`;
-
-exports[`extraction pipelines query on selected returns ep-data and columns match snapshot 1`] = `
-Array [
-  Object {
-    "columns": Array [
-      Object {
-        "text": "name",
-      },
-      Object {
-        "text": "externalId",
-      },
-      Object {
-        "text": "runId",
-      },
-      Object {
-        "text": "status",
-      },
-    ],
-    "name": undefined,
+    "name": "Extraction Pipelines",
     "rows": Array [
       Array [
         "Test 1",

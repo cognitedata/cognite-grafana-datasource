@@ -133,6 +133,7 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
     'status',
     'message',
   ],
+  limit: 1000,
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
@@ -233,6 +234,7 @@ export interface ExtractionPipelinesQuery {
   selections: SelectableValue[];
   getRuns: boolean;
   columns?: string[];
+  limit: number;
 }
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 

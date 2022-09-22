@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AsyncMultiSelect, Field, Segment, Switch, Tooltip } from '@grafana/ui';
+import { AsyncMultiSelect, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
-import { ExtractionPipelinesFields } from '../constants';
+import { EVENTS_PAGE_LIMIT, ExtractionPipelinesFields } from '../constants';
 import { InlineButton } from './inlineButton';
 
 export const ExtractionPipelinesTab = (
@@ -27,7 +27,7 @@ export const ExtractionPipelinesTab = (
       extractionPipelinesQuery,
     });
   }, [extractionPipelinesQuery]);
-  const { columns, selections, getRuns } = extractionPipelinesQuery;
+  const { columns, selections, getRuns, limit } = extractionPipelinesQuery;
   return (
     <div style={{ marginTop: 8 }}>
       <div className="gf-form-inline">
@@ -111,6 +111,23 @@ export const ExtractionPipelinesTab = (
                   getRuns: !getRuns,
                 })
               }
+            />
+          </Tooltip>
+        </Field>
+        <Field label="Limit" className="">
+          <Tooltip content="change limit to response value max 1000">
+            <Input
+              type="number"
+              value={limit}
+              onChange={(targetValue) => {
+                const { value } = targetValue.target as any;
+                if (value <= EVENTS_PAGE_LIMIT && value > 0) {
+                  return onExtractionPipelinesQueryChange({ limit: value });
+                }
+                return null;
+              }}
+              defaultValue={EVENTS_PAGE_LIMIT}
+              max={EVENTS_PAGE_LIMIT}
             />
           </Tooltip>
         </Field>

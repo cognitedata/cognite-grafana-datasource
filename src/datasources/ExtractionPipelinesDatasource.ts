@@ -18,7 +18,7 @@ type RunsResponse = {
   response: ExtractionPipelineRunsResponse[];
 };
 
-const exctractValuesToTable = (list, columns, name = undefined) => {
+const exctractValuesToTable = (list, columns, name) => {
   if (list[0]?.filter) {
     return _.map(list, ({ response, filter }) => {
       return exctractValuesToTable(response, columns, filter.externalId);
@@ -115,18 +115,20 @@ export class ExtractionPipelinesDatasource {
     );
   };
   postQuery(query: ExtractionPipelinesQuery, refId: string) {
-    const { selections, getRuns } = query;
+    const { selections, getRuns, limit } = query;
     if (!getRuns)
       return this.fetchExtractionPipelines(
         selections.map(({ id }) => ({ id })),
         refId
       );
     return Promise.all(
-      selections.map(({ value }) => this.fetchExtractionPipelinesRuns({ externalId: value }, refId))
+      selections.map(({ value }) =>
+        this.fetchExtractionPipelinesRuns({ externalId: value }, refId, limit)
+      )
     );
   }
   async runQuery(query: ExtractionPipelinesQuery & { refId: string }) {
-    const { selections, getRuns, refId } = query;
+    const { selections, getRuns, refId, limit } = query;
     try {
       if (getRuns && !selections?.length) {
         handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
@@ -138,6 +140,7 @@ export class ExtractionPipelinesDatasource {
         method: HttpMethod.POST,
         data: {
           filter: {},
+          limit,
         },
       });
       return this.withLastRun(items, refId);
@@ -154,7 +157,11 @@ export class ExtractionPipelinesDatasource {
             refId: target.refId,
             ...target.extractionPipelinesQuery,
           });
-          return exctractValuesToTable(response, target.extractionPipelinesQuery.columns);
+          return exctractValuesToTable(
+            response,
+            target.extractionPipelinesQuery.columns,
+            !target.extractionPipelinesQuery.getRuns ? 'Extraction Pipelines' : undefined
+          );
         } catch (error) {
           handleError(error, target.refId);
           return [];
