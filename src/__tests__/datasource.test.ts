@@ -14,7 +14,7 @@ type QueryTargetLike = Partial<CogniteQuery>;
 
 const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
-const { Asset, Custom, Timeseries } = Tab;
+const { Asset, Custom, Timeseries, ExtractionPipelines } = Tab;
 let appEvents;
 
 SystemJS.load('app/core/app_events').then((module) => {

@@ -112,7 +112,7 @@ export const FlexibleDataModellingTab = (
   return (
     <>
       <HorizontalGroup>
-        <Field label="Flexible Data Modelling" description="Select Flexible Data Modelling">
+        <Field label="Data Model">
           <AsyncSelect
             loadOptions={loadFlexibleDataModellingOptions}
             defaultOptions
@@ -128,7 +128,7 @@ export const FlexibleDataModellingTab = (
             onBlur={triggerQuery}
           />
         </Field>
-        <Field label="Version" description="Select Flexible Data Modelling version">
+        <Field label="Version">
           <Select
             options={_.sortBy(versionOptions).reverse()}
             value={{

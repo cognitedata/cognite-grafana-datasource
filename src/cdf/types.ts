@@ -84,7 +84,28 @@ export interface EventsFilterRequestParams extends FilterRequestParams {
   type?: string;
   subtype?: string;
 }
+export interface ExtractionPipelineRunsParams extends FilterRequestParams {
+  externalId: string;
+}
+export interface ExtractionPipelineRunsResponse {
+  id: number;
+  message: string;
+  status: string;
+}
+export interface ExtractionPipelinesResponse {
+  id: number;
+  externalId: string;
+  name: string;
+  description: string;
+  dataSetId?: number;
+  'data Set'?: string;
+}
 
+export interface ExtractionPipelinesWithRun extends ExtractionPipelinesResponse {
+  runId: number;
+  message: string;
+  status: string;
+}
 export type EventsFilterTimeParams =
   | Pick<EventsFilterRequestParams, 'activeAtTime'>
   | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;

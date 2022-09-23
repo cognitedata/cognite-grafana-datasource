@@ -30,21 +30,56 @@ export const AuthType = {
   ApiKey: 'cdf-api-key',
 };
 
-export const DateFields = ['lastUpdatedTime', 'createdTime', 'startTime', 'endTime'];
-
+export const DateFields = [
+  'lastUpdatedTime',
+  'createdTime',
+  'startTime',
+  'endTime',
+  'lastSeen',
+  'lastFailure',
+  'lastSuccess',
+];
+const commonFields = ['id', 'externalId'];
 export const EventFields = [
-  'id',
-  'externalId',
+  ...commonFields,
   'type',
   'subtype',
-  'dataSetId',
   'assetIds',
   'source',
   'sourceId',
   'metadata',
+  'dataSetId',
   ...DateFields,
 ];
-
+const createFields = (parent, field) => `${parent}-${field}`;
+const metaFields = [
+  'Dockerfile',
+  'Extractor config',
+  'branch',
+  'environment',
+  'extractor',
+  'site',
+  'source',
+].map((_) => createFields('metadata', _));
+const notificationConfigFields = ['allowedNotSeenRangeInMinutes'].map((_) =>
+  createFields('notificationConfig', _)
+);
+export const ExtractionPipelinesFields = [
+  ...commonFields,
+  'name',
+  'description',
+  'status',
+  'message',
+  'schedule',
+  'runId',
+  'createdBy',
+  'documentation',
+  'lastMessage',
+  'data Set',
+  ...metaFields,
+  ...notificationConfigFields,
+  ...DateFields,
+];
 export const EVENTS_PAGE_LIMIT = 1000;
 
 export const DOCS_URL =
