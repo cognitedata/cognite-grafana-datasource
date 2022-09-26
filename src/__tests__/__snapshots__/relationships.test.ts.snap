@@ -86,6 +86,30 @@ Object {
     "name": "nodes",
     "refId": "A",
   },
+  "relationshipsList": Array [
+    Object {
+      "externalId": "test",
+      "labels": Array [
+        Object {
+          "externalId": "Test Label ExternalId",
+        },
+      ],
+      "source": Object {
+        "description": "test source description",
+        "externalId": "test-source",
+        "metadata": Object {},
+        "name": "Test Source",
+      },
+      "sourceExternalId": "test-source",
+      "target": Object {
+        "description": "Test Target descriptipn",
+        "externalId": "test-target",
+        "metadata": Object {},
+        "name": "Test  Target",
+      },
+      "targetExternalId": "test-target",
+    },
+  ],
 }
 `;
 
@@ -158,5 +182,6 @@ Object {
     "name": "nodes",
     "refId": "A",
   },
+  "relationshipsList": Array [],
 }
 `;

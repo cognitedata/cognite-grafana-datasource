@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip } from '@grafana/ui';
+import { AsyncMultiSelect, Field, Input, MultiSelect, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT } from '../constants';
@@ -43,14 +43,12 @@ const MultiSelectAsync = (props) => {
   );
 };
 export const RelationshipsTab = (
-  props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null } & {
-    data: any;
-  }
+  props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null }
 ) => {
-  const { datasource, query, onQueryChange, queryBinder, data } = props;
+  const { datasource, query, onQueryChange, queryBinder } = props;
   const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
-  const [options, setOptions] = useState([]);
   const [relationshipsQuery, setRelationshipsQuery] = useState(query[route]);
+  const [options, setOptions] = useState([]);
   const onRelationshipsQueryChange = useCallback(
     (relationshipsQueryPatch: Partial<RelationshipsQuery>) =>
       setRelationshipsQuery({
@@ -65,12 +63,19 @@ export const RelationshipsTab = (
     });
   }, [relationshipsQuery]);
   useEffect(() => {
-    if (data?.series) {
-      const { values } = _.find(data.series[0].fields, { name: 'id' });
-      setOptions(_.map(values.buffer, (value) => ({ value, label: value })));
+    if (!!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length) {
+      datasource.relationshipsDatasource
+        .getSourceExternalIds(relationshipsQuery)
+        .then((relationshipsList) => {
+          setOptions(
+            _.map(relationshipsList, ({ sourceExternalId }) => ({
+              value: sourceExternalId,
+              label: sourceExternalId,
+            }))
+          );
+        });
     }
-  }, [data]);
-  console.log(relationshipsQuery.sourceExternalIds, options);
+  }, [relationshipsQuery.dataSetIds, relationshipsQuery.labels.containsAny]);
   return (
     <div className="relationships-row">
       <MultiSelectAsync

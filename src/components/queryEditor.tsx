@@ -112,12 +112,12 @@ export function QueryEditor(props: EditorProps) {
         ))}
       </TabsBar>
       <TabContent>
-        {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource, data }} />}
+        {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {tab === Tabs.Relationships && (
-          <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null, data }} />
+          <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}
         {tab === Tabs.ExtractionPipelines && (
           <ExtractionPipelinesTab {...{ onQueryChange, query, onRunQuery, datasource }} />

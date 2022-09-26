@@ -8,7 +8,7 @@ export const filterLabels = (labels) =>
   };
 export const filterExternalId = (sourceExternalIds) =>
   !_.isEmpty(sourceExternalIds) && {
-    targetTypes: ['timeSeries'],
+    // targetTypes: ['timeSeries'],
     sourceExternalIds,
   };
 export const filterdataSetIds = (dataSetIds) =>

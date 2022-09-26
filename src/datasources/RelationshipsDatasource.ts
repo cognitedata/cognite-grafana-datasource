@@ -6,6 +6,7 @@ import {
   SelectableValue,
 } from '@grafana/data';
 import _ from 'lodash';
+import { TemplateSrv } from '@grafana/runtime';
 import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
@@ -13,7 +14,11 @@ import { CogniteQuery, HttpMethod, RelationshipsQuery } from '../types';
 import { nodeField, edgeField } from '../constants';
 import { handleError } from '../appEventHandler';
 
-type RelationshipsNodeGrap = { nodes: MutableDataFrame; edges: MutableDataFrame };
+type RelationshipsNodeGrap = {
+  nodes: MutableDataFrame;
+  edges: MutableDataFrame;
+  relationshipsList: any[];
+};
 type RelationshipsResponse = {
   [x: string]: any;
 };
@@ -103,11 +108,15 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
         .trim(),
     });
   }
-  relationshipsList.map(addValuesToFields);
-  return { nodes, edges };
+  _.map(relationshipsList, addValuesToFields);
+  return {
+    nodes,
+    edges,
+    relationshipsList,
+  };
 };
 export class RelationshipsDatasource {
-  public constructor(private connector: Connector) {}
+  public constructor(private connector: Connector, private templateSrv: TemplateSrv) {}
 
   private postQuery(query: RelationshipsQuery & { refId: string }, [min, max]) {
     const { labels, dataSetIds, isActiveAtTime, limit = 1000, sourceExternalIds } = query;
@@ -123,10 +132,7 @@ export class RelationshipsDatasource {
       this.connector
     )
       .then((relationshipsList) => {
-        return [
-          _.map(createRelationshipsNode(relationshipsList, query.refId)),
-          [relationshipsList],
-        ];
+        return _.map(createRelationshipsNode(relationshipsList, query.refId));
       })
       .catch((err: any) => {
         handleError(err, query.refId);
@@ -148,7 +154,7 @@ export class RelationshipsDatasource {
       })
     );
     return {
-      data: _.flattenDepth(data, 2),
+      data: _.flatten(data),
     };
   }
 
@@ -175,5 +181,23 @@ export class RelationshipsDatasource {
     } catch (error) {
       return [];
     }
+  }
+  async getSourceExternalIds(query: RelationshipsQuery & { refId: string }) {
+    const { labels, dataSetIds, isActiveAtTime, limit = 1000 } = query;
+    // @ts-ignore
+    const [min, max] = getRange(this.templateSrv.timeRange);
+    const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
+    return fetchRelationships(
+      {
+        labels,
+        dataSetIds,
+      },
+      timeFrame,
+      limit,
+      this.connector
+    ).catch((err: any) => {
+      handleError(err, query.refId);
+      return [];
+    });
   }
 }

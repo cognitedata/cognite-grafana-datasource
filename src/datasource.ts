@@ -96,7 +96,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
-    this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
+    this.relationshipsDatasource = new RelationshipsDatasource(this.connector, this.templateSrv);
     this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(this.connector);
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
       this.connector,
@@ -428,7 +428,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         case Tab.Relationships:
           return (
             !!relationshipsQuery?.dataSetIds.length ||
-            !!relationshipsQuery?.labels?.containsAny?.length
+            !!relationshipsQuery?.labels?.containsAny?.length ||
+            !!relationshipsQuery?.sourceExternalIds.length
           );
         case Tab.FlexibleDataModelling:
           return (

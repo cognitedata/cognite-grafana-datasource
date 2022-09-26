@@ -85,12 +85,8 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
   );
 };
 
-export function AssetTab(
-  props: SelectedProps & { datasource: CogniteDatasource } & {
-    data: any;
-  }
-) {
-  const { query, datasource, onQueryChange, data } = props;
+export function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
+  const { query, datasource, onQueryChange } = props;
 
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
@@ -158,7 +154,6 @@ export function AssetTab(
             datasource,
             onQueryChange,
             queryBinder: 'assetQuery',
-            data,
           }}
         />
       )}
