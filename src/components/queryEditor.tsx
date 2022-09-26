@@ -1,7 +1,6 @@
 import defaults from 'lodash/defaults';
 import React, { useState, useEffect } from 'react';
 import { Tab, TabsBar, TabContent } from '@grafana/ui';
-import { SystemJS } from '@grafana/runtime';
 import {
   defaultQuery,
   CogniteQuery,
@@ -23,8 +22,7 @@ import { EventsTab } from './eventsTab';
 import { AssetTab } from './assetTab';
 import { CustomTab } from './customTab';
 import { TimeseriesTab } from './timeseriesTab';
-
-const appEventsLoader = SystemJS.load('app/core/app_events');
+import { appEventsLoader } from '../appEventHandler';
 
 export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource, data } = props;
@@ -61,6 +59,9 @@ export function QueryEditor(props: EditorProps) {
     const appEvents = await appEventsLoader;
     appEvents.on(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
+    appEvents.on('click-event', (v) => {
+      console.log('click-event', v);
+    });
   };
 
   const eventsUnsubscribe = async () => {

@@ -4,7 +4,7 @@ import { getCalculationWarnings, getLimitsWarnings, stringifyError } from './cdf
 import { failedResponseEvent, responseWarningEvent } from './constants';
 import { SuccessResponse } from './types';
 
-const appEventsLoader = SystemJS.load('app/core/app_events');
+export const appEventsLoader = SystemJS.load('app/core/app_events');
 
 export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
   const appEvents = await appEventsLoader;

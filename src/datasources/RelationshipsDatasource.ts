@@ -183,7 +183,7 @@ export class RelationshipsDatasource {
     }
   }
   async getSourceExternalIds(query: RelationshipsQuery & { refId: string }) {
-    const { labels, dataSetIds, isActiveAtTime, limit = 1000 } = query;
+    const { labels, dataSetIds, isActiveAtTime, limit } = query;
     // @ts-ignore
     const [min, max] = getRange(this.templateSrv.timeRange);
     const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
