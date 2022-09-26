@@ -54,14 +54,10 @@ export function QueryEditor(props: EditorProps) {
       setWarningMessage(warning);
     }
   };
-
   const eventsSubscribe = async () => {
     const appEvents = await appEventsLoader;
     appEvents.on(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
-    appEvents.on('click-event', (v) => {
-      console.log('click-event', v);
-    });
   };
 
   const eventsUnsubscribe = async () => {

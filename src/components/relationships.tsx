@@ -5,6 +5,7 @@ import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT } from '../constants';
 import '../css/relationships.css';
 import { SelectedProps, RelationshipsQuery } from '../types';
+import { appEventsLoader } from '../appEventHandler';
 
 const queryTypeSelector = 'relationshipsQuery';
 
@@ -57,6 +58,37 @@ export const RelationshipsTab = (
       }),
     [relationshipsQuery]
   );
+
+  const handleSelectedItem = ({ nodes }) => {
+    onRelationshipsQueryChange({
+      sourceExternalIds: _.uniq(
+        _.map(
+          _.filter(options, ({ value }) =>
+            _.includes(
+              _.map(nodes, (value) => _.last(value.split('-'))),
+              value
+            )
+          ),
+          'value'
+        )
+      ),
+    });
+  };
+  const eventsSubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.on('vis-node-graph-panel-click-event', handleSelectedItem);
+  };
+
+  const eventsUnsubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.on('vis-node-graph-panel-click-event', handleSelectedItem);
+  };
+  useEffect(() => {
+    eventsSubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
+  }, [options]);
   useEffect(() => {
     onQueryChange({
       relationshipsQuery,
@@ -74,7 +106,7 @@ export const RelationshipsTab = (
             }))
           );
         });
-    }
+    } else setOptions([]);
   }, [relationshipsQuery.dataSetIds, relationshipsQuery.labels.containsAny]);
   return (
     <div className="relationships-row">
