@@ -1,10 +1,10 @@
-import React from 'react';
-import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT } from '../constants';
 import '../css/relationships.css';
-import { SelectedProps } from '../types';
+import { SelectedProps, RelationshipsQuery } from '../types';
 
 const queryTypeSelector = 'relationshipsQuery';
 
@@ -43,11 +43,34 @@ const MultiSelectAsync = (props) => {
   );
 };
 export const RelationshipsTab = (
-  props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null }
+  props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null } & {
+    data: any;
+  }
 ) => {
-  const { datasource, query, onQueryChange, queryBinder } = props;
+  const { datasource, query, onQueryChange, queryBinder, data } = props;
   const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
-
+  const [options, setOptions] = useState([]);
+  const [relationshipsQuery, setRelationshipsQuery] = useState(query[route]);
+  const onRelationshipsQueryChange = useCallback(
+    (relationshipsQueryPatch: Partial<RelationshipsQuery>) =>
+      setRelationshipsQuery({
+        ...relationshipsQuery,
+        ...relationshipsQueryPatch,
+      }),
+    [relationshipsQuery]
+  );
+  useEffect(() => {
+    onQueryChange({
+      relationshipsQuery,
+    });
+  }, [relationshipsQuery]);
+  useEffect(() => {
+    if (data?.series) {
+      const { values } = _.find(data.series[0].fields, { name: 'id' });
+      setOptions(_.map(values.buffer, (value) => ({ value, label: value })));
+    }
+  }, [data]);
+  console.log(relationshipsQuery.sourceExternalIds, options);
   return (
     <div className="relationships-row">
       <MultiSelectAsync
@@ -91,6 +114,25 @@ export const RelationshipsTab = (
           }
         />
       </Field>
+      {!queryBinder && (
+        <Field label="Start ExtrenalId" className="relationships-select">
+          <Tooltip content="Select start source external id">
+            <MultiSelect
+              options={options}
+              value={_.map(relationshipsQuery.sourceExternalIds, (value) => ({
+                value,
+                label: value,
+              }))}
+              allowCustomValue
+              onChange={(e) => {
+                onRelationshipsQueryChange({
+                  sourceExternalIds: _.map(e, ({ value }) => value),
+                });
+              }}
+            />
+          </Tooltip>
+        </Field>
+      )}
     </div>
   );
 };

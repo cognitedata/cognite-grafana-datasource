@@ -79,6 +79,7 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
   },
   isActiveAtTime: false,
   limit: 1000,
+  sourceExternalIds: [],
 };
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,

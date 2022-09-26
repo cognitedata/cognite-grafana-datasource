@@ -118,7 +118,6 @@ export const ExtractionPipelinesTab = (
           <Field label="Limit" className="limit-class">
             <Tooltip content="Change limit to response value between 1 and 1000, not working on filter-by id EP's">
               <Input
-                // disabled={}
                 type="number"
                 value={limit}
                 onChange={(targetValue) => {
