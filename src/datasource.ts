@@ -78,7 +78,7 @@ export default class CogniteDatasource extends DataSourceApi<
       enableTemplates,
       enableEventsAdvancedFiltering,
       enableFlexibleDataModelling,
-      enableExtractionPipalines,
+      enableExtractionPipelines,
     } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
@@ -93,7 +93,7 @@ export default class CogniteDatasource extends DataSourceApi<
       enableTemplates,
       enableEventsAdvancedFiltering,
       enableFlexibleDataModelling,
-      enableExtractionPipalines
+      enableExtractionPipelines
     );
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);

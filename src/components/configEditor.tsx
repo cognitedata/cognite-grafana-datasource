@@ -36,7 +36,7 @@ const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filteri
 
 const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling (preview)';
 
-const enableExtractionPipalinesTooltip = 'Enable Extraction Pipalines (preview)';
+const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview)';
 
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
@@ -56,7 +56,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableTemplates,
     enableEventsAdvancedFiltering,
     enableFlexibleDataModelling,
-    enableExtractionPipalines,
+    enableExtractionPipelines,
   } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
@@ -262,9 +262,9 @@ export function ConfigEditor(props: ConfigEditorProps) {
           <Switch
             label="Extraction Pipalines"
             labelClass="width-11"
-            checked={enableExtractionPipalines}
-            onChange={onJsonBoolValueChange('enableExtractionPipalines')}
-            tooltip={enableExtractionPipalinesTooltip}
+            checked={enableExtractionPipelines}
+            onChange={onJsonBoolValueChange('enableExtractionPipelines')}
+            tooltip={enableExtractionPipelinesTooltip}
           />
         </div>
       </div>

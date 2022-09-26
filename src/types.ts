@@ -168,7 +168,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
   enableFlexibleDataModelling?: boolean;
-  enableExtractionPipalines?: boolean;
+  enableExtractionPipelines?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
