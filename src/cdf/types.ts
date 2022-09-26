@@ -98,7 +98,7 @@ export interface ExtractionPipelinesResponse {
   name: string;
   description: string;
   dataSetId?: number;
-  'data Set'?: string;
+  'data set'?: string;
 }
 
 export interface ExtractionPipelinesWithRun extends ExtractionPipelinesResponse {

@@ -129,7 +129,7 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
     'lastSeen',
     'lastSuccess',
     'schedule',
-    'data Set',
+    'data set',
     'message',
   ],
   limit: 1000,
@@ -168,6 +168,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
   enableFlexibleDataModelling?: boolean;
+  enableExtractionPipalines?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
