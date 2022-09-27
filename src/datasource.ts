@@ -429,6 +429,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return (
             !!relationshipsQuery?.dataSetIds.length ||
             !!relationshipsQuery?.labels?.containsAny?.length
+            // !!relationshipsQuery?.sourceExternalIds?.length
           );
         case Tab.FlexibleDataModelling:
           return (

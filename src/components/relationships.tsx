@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AsyncMultiSelect, Field, Input, MultiSelect, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
-import { EVENTS_PAGE_LIMIT } from '../constants';
+import { EVENTS_PAGE_LIMIT, visNodeGraphPanelClickEvent } from '../constants';
 import '../css/relationships.css';
 import { SelectedProps, RelationshipsQuery } from '../types';
 import { appEventsLoader } from '../appEventHandler';
@@ -58,31 +58,50 @@ export const RelationshipsTab = (
       }),
     [relationshipsQuery]
   );
-
-  const handleSelectedItem = ({ nodes }) => {
-    onRelationshipsQueryChange({
-      sourceExternalIds: _.uniq(
+  const getOptions = async () => {
+    const options = await datasource.relationshipsDatasource.getSourceExternalIds(
+      relationshipsQuery
+    );
+    setOptions(options);
+  };
+  const handleSelectedItem = useCallback(
+    ({ nodes }) => {
+      const sourceExternalIds = _.uniq(
         _.map(
           _.filter(options, ({ value }) =>
             _.includes(
-              _.map(nodes, (value) => _.last(value.split('-'))),
+              _.map(nodes, (item) => _.last(item.split('-'))),
               value
             )
           ),
           'value'
         )
-      ),
-    });
-  };
+      );
+      onRelationshipsQueryChange({
+        sourceExternalIds,
+      });
+    },
+    [options]
+  );
   const eventsSubscribe = async () => {
     const appEvents = await appEventsLoader;
-    appEvents.on('vis-node-graph-panel-click-event', handleSelectedItem);
+    appEvents.on(visNodeGraphPanelClickEvent, handleSelectedItem);
   };
-
   const eventsUnsubscribe = async () => {
     const appEvents = await appEventsLoader;
-    appEvents.on('vis-node-graph-panel-click-event', handleSelectedItem);
+    appEvents.off(visNodeGraphPanelClickEvent, resetSource);
   };
+  const resetSource = () => {
+    setOptions([]);
+    onRelationshipsQueryChange({ sourceExternalIds: [] });
+  };
+  useEffect(() => {
+    if (!!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length) {
+      getOptions();
+    } else {
+      resetSource();
+    }
+  }, [relationshipsQuery.dataSetIds, relationshipsQuery.labels.containsAny]);
   useEffect(() => {
     eventsSubscribe();
     return () => {
@@ -94,23 +113,6 @@ export const RelationshipsTab = (
       relationshipsQuery,
     });
   }, [relationshipsQuery]);
-  useEffect(() => {
-    if (!!relationshipsQuery.dataSetIds.length || !!relationshipsQuery.labels.containsAny.length) {
-      datasource.relationshipsDatasource
-        .getSourceExternalIds(relationshipsQuery)
-        .then((relationshipsList) => {
-          setOptions(
-            _.map(relationshipsList, ({ sourceExternalId }) => ({
-              value: sourceExternalId,
-              label: sourceExternalId,
-            }))
-          );
-        });
-    } else {
-      setOptions([]);
-      onRelationshipsQueryChange({ sourceExternalIds: [] });
-    }
-  }, [relationshipsQuery.dataSetIds, relationshipsQuery.labels.containsAny]);
   return (
     <div className="relationships-row">
       <MultiSelectAsync

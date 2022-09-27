@@ -187,17 +187,23 @@ export class RelationshipsDatasource {
     // @ts-ignore
     const [min, max] = getRange(this.templateSrv.timeRange);
     const timeFrame = isActiveAtTime && { activeAtTime: { max, min } };
-    return fetchRelationships(
-      {
-        labels,
-        dataSetIds,
-      },
-      timeFrame,
-      limit,
-      this.connector
-    ).catch((err: any) => {
-      handleError(err, query.refId);
+    try {
+      const options = await fetchRelationships(
+        {
+          labels,
+          dataSetIds,
+        },
+        timeFrame,
+        limit,
+        this.connector
+      );
+      return _.map(options, ({ sourceExternalId }) => ({
+        value: sourceExternalId,
+        label: sourceExternalId,
+      }));
+    } catch (error) {
+      handleError(error, query.refId);
       return [];
-    });
+    }
   }
 }
