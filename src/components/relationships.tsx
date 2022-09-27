@@ -106,7 +106,10 @@ export const RelationshipsTab = (
             }))
           );
         });
-    } else setOptions([]);
+    } else {
+      setOptions([]);
+      onRelationshipsQueryChange({ sourceExternalIds: [] });
+    }
   }, [relationshipsQuery.dataSetIds, relationshipsQuery.labels.containsAny]);
   return (
     <div className="relationships-row">
