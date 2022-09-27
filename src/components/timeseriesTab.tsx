@@ -1,7 +1,8 @@
-import React from 'react'
+import React from 'react';
 import CogniteDatasource from '../datasource';
-import { SelectedProps,  Tab as Tabs, } from '../types';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { SelectedProps, Tab as Tabs } from '../types';
+import { CommonEditors } from './commonEditors';
+import { LabelEditor } from './labelEditor';
 import { LatestValueCheckbox } from './latestValueCheckbox';
 import { ResourceSelect } from './resourceSelect';
 

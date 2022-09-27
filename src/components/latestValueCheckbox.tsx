@@ -1,6 +1,6 @@
 import { InlineFormLabel, Switch } from '@grafana/ui';
 import React from 'react';
-import { SelectedProps } from "../types";
+import { SelectedProps } from '../types';
 
 export const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;

@@ -4,8 +4,9 @@ import { InlineFormLabel, Switch, AsyncSelect } from '@grafana/ui';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import { SelectedProps } from '../types';
 import { LatestValueCheckbox } from './latestValueCheckbox';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { CommonEditors } from './commonEditors';
 import { RelationshipsTab } from './relationships';
+import { LabelEditor } from './labelEditor';
 
 const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
