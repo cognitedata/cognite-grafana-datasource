@@ -1,14 +1,15 @@
-import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
+import {
+  DataQueryRequest,
+  DataQueryResponse,
+  MutableDataFrame,
+  FieldType,
+  SelectableValue,
+} from '@grafana/data';
 import _ from 'lodash';
 import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
-import {
-  CogniteQuery,
-  HttpMethod,
-  RelationshipsQuery,
-  RelationshipsSelectableValue,
-} from '../types';
+import { CogniteQuery, HttpMethod, RelationshipsQuery } from '../types';
 import { nodeField, edgeField } from '../constants';
 import { handleError } from '../appEventHandler';
 
@@ -151,7 +152,7 @@ export class RelationshipsDatasource {
     };
   }
 
-  async getRelationshipsDropdowns(selector): Promise<RelationshipsSelectableValue[]> {
+  async getRelationshipsDropdowns(selector): Promise<SelectableValue[]> {
     const settings = {
       method: HttpMethod.POST,
       data: {

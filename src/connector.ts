@@ -25,7 +25,8 @@ export class Connector {
     private oauthClientCredentials?: boolean,
     private enableTemplates?: boolean,
     private enableEventsAdvancedFiltering?: boolean,
-    private enableFlexibleDataModelling?: boolean
+    private enableFlexibleDataModelling?: boolean,
+    private enableExtractionPipalines?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -147,6 +148,9 @@ export class Connector {
 
   public isFlexibleDataModellingEnabled() {
     return this.enableFlexibleDataModelling;
+  }
+  public isExtractionPipalinesEnabled() {
+    return this.enableExtractionPipalines;
   }
 
   public cachedRequest = async (

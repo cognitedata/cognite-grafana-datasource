@@ -7,6 +7,7 @@ import {
   TableData,
   MutableDataFrame,
   QueryEditorProps,
+  SelectableValue,
 } from '@grafana/data';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 import CogniteDatasource from './datasource';
@@ -18,6 +19,7 @@ export enum Tab {
   Event = 'Event',
   Relationships = 'Relationships',
   Templates = 'Templates',
+  ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Flexible Data Modelling',
 }
 
@@ -26,6 +28,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.ExtractionPipelines]: 'Extraction Pipelines',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
@@ -84,10 +87,6 @@ const defaultAssetQuery: AssetQuery = {
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
-export interface RelationshipsSelectableValue {
-  value?: string | number;
-  label?: string;
-}
 export interface FlexibleDataModellingQuery {
   externalId: string;
   version?: number;
@@ -97,26 +96,6 @@ export interface FlexibleDataModellingQuery {
   targets?: string[];
 }
 
-export interface RelationshipsQuery {
-  dataSetIds?: {
-    id: number;
-    value?: string;
-  }[];
-  labels?: {
-    containsAny: {
-      externalId: string;
-      value?: string;
-    }[];
-  };
-  isActiveAtTime?: boolean;
-  activeAtTime?: {
-    max: number;
-    min: number;
-  };
-  sourceExternalIds?: string[];
-  targetTypes?: string[];
-  limit: number;
-}
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -139,6 +118,23 @@ export const defaultTemplateQuery: TemplateQuery = {
   groupBy: 'Facility',
 };
 
+export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
+  selections: [],
+  getRuns: false,
+  columns: [
+    'name',
+    'status',
+    'lastUpdatedTime',
+    'lastFailure',
+    'lastSeen',
+    'lastSuccess',
+    'schedule',
+    'data set',
+    'message',
+  ],
+  limit: 1000,
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -151,6 +147,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
   templateQuery: defaultTemplateQuery,
+  extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
 };
 
@@ -171,6 +168,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
   enableFlexibleDataModelling?: boolean;
+  enableExtractionPipelines?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -193,6 +191,26 @@ export interface MetricDescription {
   readonly value: number | string;
 }
 
+export interface RelationshipsQuery {
+  dataSetIds?: {
+    id: number;
+    value?: string;
+  }[];
+  labels?: {
+    containsAny: {
+      externalId: string;
+      value?: string;
+    }[];
+  };
+  isActiveAtTime?: boolean;
+  activeAtTime?: {
+    max: number;
+    min: number;
+  };
+  sourceExternalIds?: string[];
+  targetTypes?: string[];
+  limit: number;
+}
 export interface AssetQuery {
   target: string;
   includeSubtrees: boolean;
@@ -212,7 +230,12 @@ export interface EventQuery {
     withAggregate: boolean;
   };
 }
-
+export interface ExtractionPipelinesQuery {
+  selections: SelectableValue[];
+  getRuns: boolean;
+  columns?: string[];
+  limit: number;
+}
 export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 
 export interface CogniteQueryBase extends DataQuery {
@@ -228,6 +251,7 @@ export interface CogniteQueryBase extends DataQuery {
   expr: string;
   warning: string;
   relationshipsQuery: RelationshipsQuery;
+  extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
 }
 

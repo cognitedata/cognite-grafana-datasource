@@ -31,6 +31,7 @@ import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
+import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
@@ -305,7 +306,11 @@ export function QueryEditor(props: EditorProps) {
   }, [tab]);
 
   const tabId = (t) => {
-    if (t === Tabs.Templates || t === Tabs.FlexibleDataModelling) {
+    if (
+      t === Tabs.Templates ||
+      t === Tabs.FlexibleDataModelling ||
+      t === Tabs.ExtractionPipelines
+    ) {
       return 'preview-tab-label';
     }
     return '';
@@ -317,10 +322,14 @@ export function QueryEditor(props: EditorProps) {
     if (t === Tabs.FlexibleDataModelling) {
       return !datasource.connector.isFlexibleDataModellingEnabled();
     }
+    if (t === Tabs.ExtractionPipelines) {
+      return !datasource.connector.isExtractionPipalinesEnabled();
+    }
     return false;
   };
   const tabClass = (t) => {
-    if (t === Tabs.FlexibleDataModelling) return { minWidth: '14em' };
+    if (t === Tabs.FlexibleDataModelling || t === Tabs.ExtractionPipelines)
+      return { minWidth: '14em' };
     if (t === Tabs.Templates) return { minWidth: '10em' };
     return {};
   };
@@ -346,6 +355,9 @@ export function QueryEditor(props: EditorProps) {
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {tab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
+        )}
+        {tab === Tabs.ExtractionPipelines && (
+          <ExtractionPipelinesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {tab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
