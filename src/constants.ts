@@ -75,7 +75,7 @@ export const ExtractionPipelinesFields = [
   'createdBy',
   'documentation',
   'lastMessage',
-  'data Set',
+  'data set',
   ...metaFields,
   ...notificationConfigFields,
   ...DateFields,

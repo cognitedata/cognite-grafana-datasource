@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AsyncMultiSelect, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
+import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT, ExtractionPipelinesFields } from '../constants';
-import { InlineButton } from './inlineButton';
 import { ColumnPicker } from './columnPicker';
 
 export const ExtractionPipelinesTab = (

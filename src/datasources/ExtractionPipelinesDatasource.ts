@@ -47,12 +47,12 @@ const exctractValuesToTable = (list, query, name) => {
 
     return resource as Resource;
   });
-  const tabelData = convertItemsToTable(
+  const tableData = convertItemsToTable(
     deepList,
     columns,
     !getRuns ? 'Extraction Pipelines' : name
   );
-  return getRuns ? tabelData : [tabelData, ...extra];
+  return getRuns ? tableData : [tableData, ...extra];
 };
 export class ExtractionPipelinesDatasource {
   public constructor(private connector: Connector) {}
@@ -141,9 +141,9 @@ export class ExtractionPipelinesDatasource {
               message: response[0]?.message,
               runId: response[0]?.id,
             };
-            if (columns.includes('data Set')) {
+            if (columns.includes('data set')) {
               const dataset = await this.getDataset(dataSetId, refId);
-              _.assignIn(data, { 'data Set': dataset[0].name });
+              _.assignIn(data, { 'data set': dataset[0].name });
             }
             return data;
           } catch (error) {
