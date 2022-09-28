@@ -5,6 +5,7 @@ import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT, ExtractionPipelinesFields } from '../constants';
 import { InlineButton } from './inlineButton';
+import { ColumnPicker } from './columnPicker';
 
 export const ExtractionPipelinesTab = (
   props: SelectedProps & { datasource: CogniteDatasource }
@@ -33,38 +34,9 @@ export const ExtractionPipelinesTab = (
       <div className="gf-form-inline">
         <Field label="Collumns">
           <Tooltip content="Add or remove columns">
-            <div className="gf-form" style={{ flexWrap: 'wrap' }}>
-              {columns.map((val, key) => (
-                <>
-                  <Segment
-                    value={val}
-                    options={options}
-                    onChange={({ value }) => {
-                      onExtractionPipelinesQueryChange({
-                        columns: columns.map((old, i) => (i === key ? value : old)),
-                      });
-                    }}
-                    allowCustomValue
-                  />
-                  <InlineButton
-                    onClick={() => {
-                      onExtractionPipelinesQueryChange({
-                        columns: columns.filter((_, i) => i !== key),
-                      });
-                    }}
-                    iconName="times"
-                  />
-                </>
-              ))}
-              <InlineButton
-                onClick={() => {
-                  onExtractionPipelinesQueryChange({
-                    columns: [...columns, `column${columns.length}`],
-                  });
-                }}
-                iconName="plus-circle"
-              />
-            </div>
+            <ColumnPicker
+              {...{ columns, options, onQueryChange: onExtractionPipelinesQueryChange }}
+            />
           </Tooltip>
         </Field>
       </div>

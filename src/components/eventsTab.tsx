@@ -14,6 +14,7 @@ import { EventFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
 import { InlineButton } from './inlineButton';
+import { ColumnPicker } from './columnPicker';
 
 const { FormField } = LegacyForms;
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
@@ -37,66 +38,6 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
               },
             })
           }
-        />
-      </div>
-    </div>
-  );
-};
-const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
-  const options = EventFields.map((value) => ({ value, label: value }));
-  const { columns, aggregate } = query.eventQuery;
-  useEffect(() => {
-    if (aggregate?.withAggregate) {
-      ['count', 'map'].map((v) => !columns.includes(v) && columns.push(v));
-    }
-  }, [aggregate]);
-  const onEventQueryChange = (e: Partial<EventQuery>) => {
-    onQueryChange({
-      eventQuery: {
-        ...query.eventQuery,
-        ...e,
-      },
-    });
-  };
-
-  return (
-    <div className="gf-form">
-      <InlineFormLabel
-        tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
-        width={7}
-      >
-        Columns
-      </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
-        {columns.map((val, key) => (
-          <>
-            <Segment
-              value={val}
-              options={options}
-              onChange={({ value }) => {
-                onEventQueryChange({
-                  columns: columns.map((old, i) => (i === key ? value : old)),
-                });
-              }}
-              allowCustomValue
-            />
-            <InlineButton
-              onClick={() => {
-                onEventQueryChange({
-                  columns: columns.filter((_, i) => i !== key),
-                });
-              }}
-              iconName="times"
-            />
-          </>
-        ))}
-        <InlineButton
-          onClick={() => {
-            onEventQueryChange({
-              columns: [...columns, `column${columns.length}`],
-            });
-          }}
-          iconName="plus-circle"
         />
       </div>
     </div>
@@ -257,10 +198,24 @@ const AdvancedEventFilter = (props) => {
 export function EventsTab(
   props: SelectedProps & { datasource: CogniteDatasource } & Pick<EditorProps, 'onRunQuery'>
 ) {
+  const options = EventFields.map((value) => ({ value, label: value }));
   const { query, onQueryChange, datasource } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.eventQuery.expr);
-
+  const { columns, aggregate } = query.eventQuery;
+  useEffect(() => {
+    if (aggregate?.withAggregate) {
+      ['count', 'map'].map((v) => !columns.includes(v) && columns.push(v));
+    }
+  }, [aggregate]);
+  const onEventQueryChange = (e: Partial<EventQuery>) => {
+    onQueryChange({
+      eventQuery: {
+        ...query.eventQuery,
+        ...e,
+      },
+    });
+  };
   return (
     <>
       <div className="gf-form">
@@ -285,7 +240,15 @@ export function EventsTab(
         <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </div>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
-      <ColumnsPicker {...{ query, onQueryChange }} />
+      <div className="gf-form">
+        <InlineFormLabel
+          tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
+          width={7}
+        >
+          Columns
+        </InlineFormLabel>
+        <ColumnPicker {...{ columns, options, onQueryChange: onEventQueryChange }} />
+      </div>
       {datasource.connector.isEventsAdvancedFilteringEnabled() && (
         <AdvancedEventFilter {...{ query, onQueryChange }} />
       )}
