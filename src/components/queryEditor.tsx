@@ -311,7 +311,11 @@ export function QueryEditor(props: EditorProps) {
   }, [tab]);
 
   const tabId = (t) => {
-    if (t === Tabs.Templates || t === Tabs.FlexibleDataModelling) {
+    if (
+      t === Tabs.Templates ||
+      t === Tabs.FlexibleDataModelling ||
+      t === Tabs.ExtractionPipelines
+    ) {
       return 'preview-tab-label';
     }
     return '';
@@ -329,8 +333,9 @@ export function QueryEditor(props: EditorProps) {
     return false;
   };
   const tabClass = (t) => {
-    if (t === Tabs.FlexibleDataModelling) return { minWidth: '14em' };
-    if (t === Tabs.Templates || t === Tabs.ExtractionPipelines) return { minWidth: '10em' };
+    if (t === Tabs.FlexibleDataModelling || t === Tabs.ExtractionPipelines)
+      return { minWidth: '14em' };
+    if (t === Tabs.Templates) return { minWidth: '10em' };
     return {};
   };
   return (
