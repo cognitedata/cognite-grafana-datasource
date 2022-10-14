@@ -270,6 +270,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct queries', () => {
+      // console.log(result);
       expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(8);
       for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
         expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
@@ -310,13 +311,14 @@ describe('Datasource Query', () => {
     const targetA: QueryTargetLike = {
       tab: Asset,
       aggregation: 'max',
-      refId: 'C',
+      refId: 'A',
       target: '',
       label: '{{description}}-{{externalId}}',
       assetQuery,
     };
     const targetB: QueryTargetLike = {
       ...targetA,
+      refId: 'B',
       assetQuery: {
         ...assetQuery,
         includeSubTimeseries: false,
@@ -324,6 +326,7 @@ describe('Datasource Query', () => {
     };
     const targetC: QueryTargetLike = {
       ...targetA,
+      refId: 'C',
       assetQuery: {
         ...assetQuery,
         includeSubTimeseries: false,
@@ -344,7 +347,7 @@ describe('Datasource Query', () => {
       result = await ds.query(options);
     });
     it('should generate the correct queries', () => {
-      expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(2);
+      expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(4);
       for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
         expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
       }

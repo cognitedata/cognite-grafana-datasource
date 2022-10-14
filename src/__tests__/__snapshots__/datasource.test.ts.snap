@@ -21,11 +21,49 @@ Object {
   "data": Object {
     "fetchResources": true,
     "filter": Object {},
-    "limit": 101,
+    "limit": 1000,
   },
   "headers": undefined,
   "method": "POST",
   "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",
+}
+`;
+
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 3`] = `
+Object {
+  "data": Object {
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+  },
+  "headers": undefined,
+  "method": "POST",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+}
+`;
+
+exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 4`] = `
+Object {
+  "data": Object {
+    "aggregates": Array [
+      "max",
+    ],
+    "end": 1549338475000,
+    "granularity": "6m",
+    "items": Array [
+      Object {
+        "id": 123,
+      },
+    ],
+    "limit": 10000,
+    "start": 1549336675000,
+  },
+  "headers": undefined,
+  "method": "POST",
+  "requestId": "1_11_A",
+  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 

@@ -75,9 +75,9 @@ export class Connector {
     return data.items;
   }
 
-  public async fetchQuery<T>(params: RequestParams): Promise<FDMQueryResponse> {
+  public async fetchQuery<T>(params: RequestParams): Promise<FDMResponse> {
     const { data } = await this.fetchData<DataResponse<FDMResponse>>(params);
-    return data.data;
+    return data;
   }
 
   public async fetchAndPaginate<T>(params: RequestParams<Limit>) {

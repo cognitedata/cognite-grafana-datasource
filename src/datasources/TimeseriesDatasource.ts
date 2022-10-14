@@ -54,9 +54,8 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
 async function findTsByAssetAndRelationships(
   { refId, assetQuery }: QueryTarget,
   connector: Connector,
-  [min, max]
+  timeFrame
 ): Promise<TimeSeriesResponseItem[]> {
-  const timeFrame = assetQuery.relationshipsQuery?.isActiveAtTime && { activeAtTime: { max, min } };
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -69,35 +68,39 @@ async function findTsByAssetAndRelationships(
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
   let timeseriesFromRelationships = [];
-  const timeseriesFromAssets =
-    assetQuery?.includeSubTimeseries !== false
-      ? await getTimeseries({ filter, limit }, connector)
-      : [];
-  if (assetQuery?.withRelationships) {
-    const relationshipsList = await fetchRelationships(
-      assetQuery.relationshipsQuery,
-      timeFrame,
-      limit,
-      connector
-    );
-    timeseriesFromRelationships = relationshipsList.map(({ target }) => target);
+  try {
+    const timeseriesFromAssets =
+      assetQuery?.includeSubTimeseries !== false
+        ? await getTimeseries({ filter, limit }, connector)
+        : [];
+    if (assetQuery?.withRelationships) {
+      const relationshipsList = await fetchRelationships(
+        assetQuery?.relationshipsQuery,
+        connector,
+        timeFrame
+      );
+      timeseriesFromRelationships = _.map(relationshipsList, 'target');
+    }
+    if (timeseriesFromAssets.length >= limit) {
+      emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+      timeseriesFromAssets.splice(-1);
+    }
+    if (timeseriesFromRelationships.length >= limit) {
+      emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+      timeseriesFromRelationships.splice(-1);
+    }
+    return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
+  } catch (error) {
+    handleError(error, refId);
+    return [];
   }
-  if (timeseriesFromAssets.length >= limit) {
-    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
-    timeseriesFromAssets.splice(-1);
-  }
-  if (timeseriesFromRelationships.length >= limit) {
-    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
-    timeseriesFromRelationships.splice(-1);
-  }
-  return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
 }
 
 export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
   intervalMs: number,
-  timeRange
+  timeFrame
 ): Promise<QueriesDataItem> {
   const { tab, expr, flexibleDataModellingQuery } = target;
   const type = getDataQueryRequestType(target);
@@ -111,7 +114,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findTsByAssetAndRelationships(target, connector, timeRange);
+      const timeseries = await findTsByAssetAndRelationships(target, connector, timeFrame);
       items = timeseries.map(({ id }) => ({ id }));
       break;
     }
@@ -136,11 +139,15 @@ export class TimeseriesDatasource {
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
+        const [min, max] = getRange(options.range);
+        const timeFrame = target?.assetQuery?.relationshipsQuery?.isActiveAtTime && {
+          activeAtTime: { max, min },
+        };
         return await getDataQueryRequestItems(
           target,
           this.connector,
           options.intervalMs,
-          getRange(options.range)
+          timeFrame
         );
       } catch (e) {
         handleError(e, target.refId);

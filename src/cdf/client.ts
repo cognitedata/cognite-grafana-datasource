@@ -1,5 +1,6 @@
 import { get, cloneDeep } from 'lodash';
 import { TableData, TimeSeries } from '@grafana/data';
+import { getTemplateSrv } from '@grafana/runtime';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -173,7 +174,6 @@ export async function getTimeseries(
       cacheTime: CacheTime.TimeseriesList,
     });
   }
-
   return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
 }
 
@@ -336,15 +336,27 @@ export const convertItemsToTable = (
 };
 
 export function fetchRelationships(
-  { labels, dataSetIds, sourceExternalIds }: RelationshipsFilter,
-  timeFrame: EventsFilterTimeParams,
-  limit: number,
-  connector: Connector
+  {
+    labels = { containsAny: [] },
+    dataSetIds = [],
+    sourceExternalIds = [],
+    limit = 1000,
+    targetTypes,
+  }: RelationshipsFilter,
+  connector: Connector,
+  timeFrame:
+    | []
+    | {
+        activeAtTime: {
+          max: number;
+          min: number;
+        };
+      }
 ) {
   const filter = {
     ...filterLabels(labels),
     ...filterdataSetIds(dataSetIds),
-    ...filterExternalId(sourceExternalIds),
+    ...filterExternalId(sourceExternalIds, targetTypes),
     ...timeFrame,
   };
   return connector.fetchItems<CogniteRelationshipResponse>({

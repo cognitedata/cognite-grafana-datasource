@@ -16,7 +16,7 @@ export const EVENTS_LIMIT_WARNING =
 
 export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
 export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');
-
+export const visNodeGraphPanelClickEvent = 'vis-node-graph-panel-click-event';
 export const CacheTime = {
   TimeseriesList: '61s',
   ResourceByIds: '61m',

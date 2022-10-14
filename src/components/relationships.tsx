@@ -1,10 +1,11 @@
-import React from 'react';
-import { AsyncMultiSelect, Field, Input, Switch, Tooltip } from '@grafana/ui';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
-import { EVENTS_PAGE_LIMIT } from '../constants';
+import { EVENTS_PAGE_LIMIT, visNodeGraphPanelClickEvent } from '../constants';
 import '../css/relationships.css';
 import { SelectedProps } from '../types';
+import { appEventsLoader } from '../appEventHandler';
 
 const queryTypeSelector = 'relationshipsQuery';
 
@@ -47,7 +48,60 @@ export const RelationshipsTab = (
 ) => {
   const { datasource, query, onQueryChange, queryBinder } = props;
   const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
-
+  const [options, setOptions] = useState([]);
+  const getOptions = async () => {
+    const options = await datasource.relationshipsDatasource.getSourceExternalIds(
+      _.get(query, route)
+    );
+    setOptions(options);
+  };
+  const resetDepth = () => onQueryChange(_.set(query, `${route}.depth`, 1));
+  const handleSelectedItem = useCallback(
+    ({ nodes }) => {
+      const sourceExternalIds = _.uniq(
+        _.map(
+          _.filter(options, ({ sourceExternalId }) =>
+            _.includes(
+              _.map(nodes, (item) => _.last(item.split('-'))),
+              sourceExternalId
+            )
+          ),
+          'sourceExternalId'
+        )
+      );
+      onQueryChange(_.set(query, `${route}.sourceExternalIds`, sourceExternalIds));
+    },
+    [options]
+  );
+  const eventsSubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.on(visNodeGraphPanelClickEvent, handleSelectedItem);
+  };
+  const eventsUnsubscribe = async () => {
+    const appEvents = await appEventsLoader;
+    appEvents.off(visNodeGraphPanelClickEvent, resetSource);
+  };
+  const resetSource = () => {
+    setOptions([]);
+    onQueryChange(_.set(query, `${route}.sourceExternalIds`, []));
+    resetDepth();
+  };
+  const dataIds = _.get(query, `${route}.dataSetIds`);
+  const containsAny = _.get(query, `${route}.labels.containsAny`);
+  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`).length;
+  useEffect(() => {
+    if (!!dataIds?.length || !!containsAny?.length) {
+      getOptions();
+    } else {
+      resetSource();
+    }
+  }, [dataIds, containsAny]);
+  useEffect(() => {
+    eventsSubscribe();
+    return () => {
+      eventsUnsubscribe();
+    };
+  }, [options]);
   return (
     <div className="relationships-row">
       <MultiSelectAsync
@@ -66,6 +120,18 @@ export const RelationshipsTab = (
         onQueryChange={onQueryChange}
         queryBinder={queryBinder}
       />
+      <Field label="Target Type Timeseries?" className="relationships-item">
+        <Tooltip content="Switch to get Target Type: Timeseries ">
+          <Switch
+            value={_.get(query, `${route}.targetTypes`)}
+            onChange={() => {
+              onQueryChange(
+                _.set(query, `${route}.targetTypes`, !_.get(query, `${route}.targetTypes`))
+              );
+            }}
+          />
+        </Tooltip>
+      </Field>
       <Field label="Limit" className="relationships-item">
         <Tooltip content="Limit must been between 1 and 1000">
           <Input
@@ -91,6 +157,48 @@ export const RelationshipsTab = (
           }
         />
       </Field>
+      {!queryBinder && (
+        <>
+          <Field label="Start ExtrenalId" className="relationships-select">
+            <Tooltip content="Select start source external id">
+              <MultiSelect
+                options={_.map(options, ({ sourceExternalId }) => ({
+                  value: sourceExternalId,
+                  label: sourceExternalId,
+                }))}
+                value={_.map(_.get(query, `${route}.sourceExternalIds`), (value) => ({
+                  value,
+                  label: value,
+                }))}
+                allowCustomValue
+                onChange={(values) => {
+                  if (!values.length) resetDepth();
+                  onQueryChange(_.set(query, `${route}.sourceExternalIds`, _.map(values, 'value')));
+                }}
+              />
+            </Tooltip>
+          </Field>
+          {isDepthActive && (
+            <Field label="Depth" className="relationships-item">
+              <Tooltip content="Select the depth of the relationships">
+                <Input
+                  type="number"
+                  value={_.get(query, `${route}.depth`)}
+                  onChange={(targetValue) => {
+                    const { value } = targetValue.target as any;
+                    if (value <= EVENTS_PAGE_LIMIT && value > 0) {
+                      return onQueryChange(_.set(query, `${route}.depth`, value));
+                    }
+                    return null;
+                  }}
+                  min={1}
+                  max={EVENTS_PAGE_LIMIT}
+                />
+              </Tooltip>
+            </Field>
+          )}
+        </>
+      )}
     </div>
   );
 };

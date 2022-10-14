@@ -321,7 +321,6 @@ export default class CogniteDatasource extends DataSourceApi<
     });
 
     const filteredAssets = applyFilters(assets, filters);
-
     return filteredAssets.map(({ name, id }) => ({
       text: name,
       value: id,
