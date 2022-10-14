@@ -88,7 +88,7 @@ export const RelationshipsTab = (
   };
   const dataIds = _.get(query, `${route}.dataSetIds`);
   const containsAny = _.get(query, `${route}.labels.containsAny`);
-  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`).length;
+  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`)?.length;
   useEffect(() => {
     if (!!dataIds?.length || !!containsAny?.length) {
       getOptions();
@@ -172,7 +172,7 @@ export const RelationshipsTab = (
                 }))}
                 allowCustomValue
                 onChange={(values) => {
-                  if (!values.length) resetDepth();
+                  if (!values?.length) resetDepth();
                   onQueryChange(_.set(query, `${route}.sourceExternalIds`, _.map(values, 'value')));
                 }}
               />
