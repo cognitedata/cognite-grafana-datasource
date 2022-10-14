@@ -159,7 +159,7 @@ export const RelationshipsTab = (
       </Field>
       {!queryBinder && (
         <>
-          <Field label="Start ExtrenalId" className="relationships-select">
+          <Field label="Start ExternalId" className="relationships-select">
             <Tooltip content="Select start source external id">
               <MultiSelect
                 options={_.map(options, ({ sourceExternalId }) => ({

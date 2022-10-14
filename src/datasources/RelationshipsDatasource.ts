@@ -225,7 +225,6 @@ export class RelationshipsDatasource {
     }
   }
   getSourceExternalIds(query: RelationshipsQuery & { refId: string }): Promise<SelectableValue[]> {
-    console.log('query', query);
     return this.getRelationships({ ...query, sourceExternalIds: [] }, []);
   }
 }
