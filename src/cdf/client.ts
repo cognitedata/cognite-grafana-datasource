@@ -1,6 +1,5 @@
 import { get, cloneDeep } from 'lodash';
 import { TableData, TimeSeries } from '@grafana/data';
-import { getTemplateSrv } from '@grafana/runtime';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -341,7 +340,7 @@ export function fetchRelationships(
     dataSetIds = [],
     sourceExternalIds = [],
     limit = 1000,
-    targetTypes,
+    isTypeTimeseries,
   }: RelationshipsFilter,
   connector: Connector,
   timeFrame:
@@ -356,7 +355,7 @@ export function fetchRelationships(
   const filter = {
     ...filterLabels(labels),
     ...filterdataSetIds(dataSetIds),
-    ...filterExternalId(sourceExternalIds, targetTypes),
+    ...filterExternalId(sourceExternalIds, isTypeTimeseries),
     ...timeFrame,
   };
   return connector.fetchItems<CogniteRelationshipResponse>({

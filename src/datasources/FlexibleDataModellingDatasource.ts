@@ -132,7 +132,10 @@ export class FlexibleDataModellingDatasource {
         const { edges } = firstResponse;
         return this.postQuery(edges, query, options, target);
       }
-      handleError(new Error('Something whent wrong, error happend!'), target.refId);
+      handleError(
+        new Error('An error occurred while attempting to get a response from FDM!'),
+        target.refId
+      );
       return [];
     } catch (error) {
       handleError(error, target.refId);

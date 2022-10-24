@@ -49,7 +49,7 @@ export const RelationshipsTab = (
   const { datasource, query, onQueryChange, queryBinder } = props;
   const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
   const [options, setOptions] = useState([]);
-  const getOptions = async () => {
+  const updateOptions = async () => {
     const options = await datasource.relationshipsDatasource.getSourceExternalIds(
       _.get(query, route)
     );
@@ -91,7 +91,7 @@ export const RelationshipsTab = (
   const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`)?.length;
   useEffect(() => {
     if (!!dataIds?.length || !!containsAny?.length) {
-      getOptions();
+      updateOptions();
     } else {
       resetSource();
     }
@@ -123,10 +123,14 @@ export const RelationshipsTab = (
       <Field label="Target Type Timeseries?" className="relationships-item">
         <Tooltip content="Switch to get Target Type: Timeseries ">
           <Switch
-            value={_.get(query, `${route}.targetTypes`)}
+            value={_.get(query, `${route}.isTypeTimeseries`)}
             onChange={() => {
               onQueryChange(
-                _.set(query, `${route}.targetTypes`, !_.get(query, `${route}.targetTypes`))
+                _.set(
+                  query,
+                  `${route}.isTypeTimeseries`,
+                  !_.get(query, `${route}.isTypeTimeseries`)
+                )
               );
             }}
           />

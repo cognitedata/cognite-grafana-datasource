@@ -239,6 +239,6 @@ export interface RelationshipsFilter {
     min: number;
   };
   sourceExternalIds?: string[];
-  targetTypes?: boolean;
+  isTypeTimeseries?: boolean;
   limit?: number;
 }

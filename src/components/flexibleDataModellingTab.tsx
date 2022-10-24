@@ -1,6 +1,6 @@
 import { AsyncSelect, CodeEditor, Field, HorizontalGroup, Select } from '@grafana/ui';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import _, { assignIn, get, map } from 'lodash';
+import _ from 'lodash';
 import { getFirstSelection } from '../utils';
 import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
 import CogniteDatasource from '../datasource';
@@ -27,7 +27,7 @@ export const FlexibleDataModellingTab = (
   const [allOptions, setAllOptions] = useState({});
   const [names, setNames] = useState({});
   const versionOptions = useMemo(
-    () => get(allOptions, flexibleDataModellingQuery.externalId),
+    () => _.get(allOptions, flexibleDataModellingQuery.externalId),
     [flexibleDataModellingQuery.externalId, allOptions]
   );
   const patchFlexibleDataModellingQuery = useCallback(
@@ -55,12 +55,12 @@ export const FlexibleDataModellingTab = (
         const {
           listApis: { edges },
         } = items;
-        map(edges, ({ node: { externalId, versions, name } }) => {
+        _.map(edges, ({ node: { externalId, versions, name } }) => {
           const collector = [];
-          map(versions, ({ version }) => {
+          _.map(versions, ({ version }) => {
             collector.push({ label: `${version}`, value: version });
           });
-          assignIn(all, { [externalId]: collector });
+          _.assignIn(all, { [externalId]: collector });
           values.push({ value: externalId, label: name });
           _.assignIn(names, { [externalId]: name });
         });

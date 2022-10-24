@@ -7,9 +7,9 @@ export const filterLabels = (labels) =>
     },
   };
 
-export const filterExternalId = (sourceExternalIds, targetTypes: boolean) =>
+export const filterExternalId = (sourceExternalIds, isTypeTimeseries: boolean) =>
   !_.isEmpty(sourceExternalIds) && {
-    targetTypes: targetTypes ? ['timeSeries'] : undefined,
+    targetTypes: isTypeTimeseries ? ['timeSeries'] : undefined,
     sourceExternalIds,
   };
 export const filterdataSetIds = (dataSetIds) =>

@@ -81,7 +81,7 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
   limit: 1000,
   depth: 1,
   sourceExternalIds: [],
-  targetTypes: false,
+  isTypeTimeseries: false,
 };
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
@@ -211,7 +211,7 @@ export interface RelationshipsQuery {
     min: number;
   };
   sourceExternalIds?: string[];
-  targetTypes: boolean;
+  isTypeTimeseries: boolean;
   limit: number;
   depth?: number;
 }
