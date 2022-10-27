@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
-import { EVENTS_PAGE_LIMIT, visNodeGraphPanelClickEvent } from '../constants';
+import { EVENTS_PAGE_LIMIT } from '../constants';
 import '../css/relationships.css';
 import { SelectedProps } from '../types';
-import { appEventsLoader } from '../appEventHandler';
 
 const queryTypeSelector = 'relationshipsQuery';
 
@@ -56,31 +55,6 @@ export const RelationshipsTab = (
     setOptions(options);
   };
   const resetDepth = () => onQueryChange(_.set(query, `${route}.depth`, 1));
-  const handleSelectedItem = useCallback(
-    ({ nodes }) => {
-      const sourceExternalIds = _.uniq(
-        _.map(
-          _.filter(options, ({ sourceExternalId }) =>
-            _.includes(
-              _.map(nodes, (item) => _.last(item.split('-'))),
-              sourceExternalId
-            )
-          ),
-          'sourceExternalId'
-        )
-      );
-      onQueryChange(_.set(query, `${route}.sourceExternalIds`, sourceExternalIds));
-    },
-    [options]
-  );
-  const eventsSubscribe = async () => {
-    const appEvents = await appEventsLoader;
-    appEvents.on(visNodeGraphPanelClickEvent, handleSelectedItem);
-  };
-  const eventsUnsubscribe = async () => {
-    const appEvents = await appEventsLoader;
-    appEvents.off(visNodeGraphPanelClickEvent, resetSource);
-  };
   const resetSource = () => {
     setOptions([]);
     onQueryChange(_.set(query, `${route}.sourceExternalIds`, []));
@@ -96,12 +70,6 @@ export const RelationshipsTab = (
       resetSource();
     }
   }, [dataIds, containsAny]);
-  useEffect(() => {
-    eventsSubscribe();
-    return () => {
-      eventsUnsubscribe();
-    };
-  }, [options]);
   return (
     <div className="relationships-row">
       <MultiSelectAsync
