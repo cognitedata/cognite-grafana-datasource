@@ -30,7 +30,6 @@ export const FlexibleDataModellingTab = (
     });
   };
   const updateGraphQuery = (graphQlQuery) => {
-    console.log('updateGraphQuery', graphQlQuery, firstSelection);
     if (firstSelection.length) {
       patchFlexibleDataModellingQuery({
         graphQlQuery,
