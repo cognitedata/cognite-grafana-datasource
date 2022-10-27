@@ -54,9 +54,8 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
 async function findTsByAssetAndRelationships(
   { refId, assetQuery }: QueryTarget,
   connector: Connector,
-  [min, max]
+  timeFrame
 ): Promise<TimeSeriesResponseItem[]> {
-  const timeFrame = assetQuery.relationshipsQuery?.isActiveAtTime && { activeAtTime: { max, min } };
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -75,12 +74,11 @@ async function findTsByAssetAndRelationships(
       : [];
   if (assetQuery?.withRelationships) {
     const relationshipsList = await fetchRelationships(
-      assetQuery.relationshipsQuery,
-      timeFrame,
-      limit,
-      connector
+      assetQuery?.relationshipsQuery,
+      connector,
+      timeFrame
     );
-    timeseriesFromRelationships = relationshipsList.map(({ target }) => target);
+    timeseriesFromRelationships = _.map(relationshipsList, 'target');
   }
   if (timeseriesFromAssets.length >= limit) {
     emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
@@ -97,7 +95,7 @@ export async function getDataQueryRequestItems(
   target: QueryTarget,
   connector: Connector,
   intervalMs: number,
-  timeRange
+  timeFrame
 ): Promise<QueriesDataItem> {
   const { tab, expr, flexibleDataModellingQuery } = target;
   const type = getDataQueryRequestType(target);
@@ -111,7 +109,7 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findTsByAssetAndRelationships(target, connector, timeRange);
+      const timeseries = await findTsByAssetAndRelationships(target, connector, timeFrame);
       items = timeseries.map(({ id }) => ({ id }));
       break;
     }
@@ -136,11 +134,15 @@ export class TimeseriesDatasource {
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
+        const [min, max] = getRange(options.range);
+        const timeFrame = target?.assetQuery?.relationshipsQuery?.isActiveAtTime && {
+          activeAtTime: { max, min },
+        };
         return await getDataQueryRequestItems(
           target,
           this.connector,
           options.intervalMs,
-          getRange(options.range)
+          timeFrame
         );
       } catch (e) {
         handleError(e, target.refId);

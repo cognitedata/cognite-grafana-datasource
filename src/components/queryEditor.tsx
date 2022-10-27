@@ -1,5 +1,5 @@
 import defaults from 'lodash/defaults';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -24,6 +24,7 @@ import {
   EditorProps,
   SelectedProps,
   OnQueryChange,
+  AssetQuery,
 } from '../types';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
@@ -156,21 +157,25 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   }, [current.value]);
 
   useEffect(() => {
-    const relationshipsQuery = current.externalId
-      ? {
-          ...query.assetQuery.relationshipsQuery,
-          sourceExternalIds: [current.externalId],
-        }
-      : null;
     onQueryChange({
       assetQuery: {
         ...query.assetQuery,
-        relationshipsQuery,
         target: current.value,
       },
     });
   }, [current.value, current.externalId]);
-
+  useEffect(() => {
+    if (query.assetQuery.withRelationships && current?.externalId)
+      onQueryChange({
+        assetQuery: {
+          ...query.assetQuery,
+          relationshipsQuery: {
+            ...query.assetQuery.relationshipsQuery,
+            sourceExternalIds: [current.externalId],
+          },
+        },
+      });
+  }, [current.externalId, query.assetQuery.withRelationships]);
   return (
     <div className="gf-form-inline">
       <div className="gf-form">

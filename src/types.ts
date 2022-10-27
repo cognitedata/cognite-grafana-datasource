@@ -79,6 +79,9 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
   },
   isActiveAtTime: false,
   limit: 1000,
+  depth: 1,
+  sourceExternalIds: [],
+  isTypeTimeseries: false,
 };
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
@@ -208,8 +211,9 @@ export interface RelationshipsQuery {
     min: number;
   };
   sourceExternalIds?: string[];
-  targetTypes?: string[];
+  isTypeTimeseries: boolean;
   limit: number;
+  depth?: number;
 }
 export interface AssetQuery {
   target: string;
@@ -470,6 +474,7 @@ export interface FDMQueryResponse {
 }
 export interface FDMResponse {
   data: FDMQueryResponse;
+  errors?: any;
 }
 export type EditorProps = QueryEditorProps<
   CogniteDatasource,

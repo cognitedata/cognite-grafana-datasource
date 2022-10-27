@@ -1,6 +1,12 @@
 import { DataQueryRequest, TableData, TimeSeries, DataQueryResponse } from '@grafana/data';
 import _, { Many } from 'lodash';
-import { CogniteQuery, FDMQueryResponse, FlexibleDataModellingQuery, HttpMethod } from '../types';
+import {
+  CogniteQuery,
+  FDMQueryResponse,
+  FDMResponse,
+  FlexibleDataModellingQuery,
+  HttpMethod,
+} from '../types';
 import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { TimeseriesDatasource } from './TimeseriesDatasource';
@@ -37,7 +43,7 @@ export class FlexibleDataModellingDatasource {
 
   async listFlexibleDataModelling(refId: string): Promise<FDMQueryResponse> {
     try {
-      const response = await this.connector.fetchQuery({
+      const { data } = await this.connector.fetchQuery<FDMResponse>({
         path: '/schema/graphql',
         method: HttpMethod.POST,
         data: `{
@@ -59,7 +65,7 @@ export class FlexibleDataModellingDatasource {
              }"
            }`,
       });
-      return response;
+      return data;
     } catch (error) {
       handleError(error, refId);
       return {
@@ -108,21 +114,28 @@ export class FlexibleDataModellingDatasource {
     target
   ): Promise<Many<TimeSeries | TableData>> {
     try {
-      const response = await this.connector.fetchQuery({
+      const { data, errors } = await this.connector.fetchQuery({
         path: `/schema/api/${query.externalId}/${query.version}/graphql`,
         method: HttpMethod.POST,
         data: `{"query": "${query.graphQlQuery}"}`,
       });
-      if (!response) {
-        handleError(new Error('Error on the fetch call'), target.refId);
+
+      if (errors) {
+        handleError(_.head(errors), target.refId);
         return [];
       }
-      const first = getFirstNameValue(getFirstSelection(query.graphQlQuery, target.refId)[0]);
-      if (response[first]) {
-        const { edges } = response[first];
+      const firstResponse = _.get(
+        data,
+        getFirstNameValue(_.head(getFirstSelection(query.graphQlQuery, target.refId)))
+      );
+      if (firstResponse) {
+        const { edges } = firstResponse;
         return this.postQuery(edges, query, options, target);
       }
-      handleError(new Error('Some other error happend'), target.refId);
+      handleError(
+        new Error('An error occurred while attempting to get a response from FDM!'),
+        target.refId
+      );
       return [];
     } catch (error) {
       handleError(error, target.refId);

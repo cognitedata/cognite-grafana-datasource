@@ -220,6 +220,7 @@ export interface CogniteRelationshipResponse {
   lastUpdatedTime?: number;
   source?: CogniteRelationshipAsset;
   target?: CogniteRelationshipAsset;
+  name?: string;
 }
 export interface RelationshipsFilter {
   dataSetIds?: {
@@ -238,5 +239,6 @@ export interface RelationshipsFilter {
     min: number;
   };
   sourceExternalIds?: string[];
-  targetTypes?: string[];
+  isTypeTimeseries?: boolean;
+  limit?: number;
 }

@@ -173,7 +173,6 @@ export async function getTimeseries(
       cacheTime: CacheTime.TimeseriesList,
     });
   }
-
   return cloneDeep(filterIsString ? items.filter((ts) => !ts.isString) : items);
 }
 
@@ -336,15 +335,27 @@ export const convertItemsToTable = (
 };
 
 export function fetchRelationships(
-  { labels, dataSetIds, sourceExternalIds }: RelationshipsFilter,
-  timeFrame: EventsFilterTimeParams,
-  limit: number,
-  connector: Connector
+  {
+    labels = { containsAny: [] },
+    dataSetIds = [],
+    sourceExternalIds = [],
+    limit = 1000,
+    isTypeTimeseries,
+  }: RelationshipsFilter,
+  connector: Connector,
+  timeFrame:
+    | []
+    | {
+        activeAtTime: {
+          max: number;
+          min: number;
+        };
+      }
 ) {
   const filter = {
     ...filterLabels(labels),
     ...filterdataSetIds(dataSetIds),
-    ...filterExternalId(sourceExternalIds),
+    ...filterExternalId(sourceExternalIds, isTypeTimeseries),
     ...timeFrame,
   };
   return connector.fetchItems<CogniteRelationshipResponse>({

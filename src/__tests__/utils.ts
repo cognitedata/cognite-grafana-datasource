@@ -1,5 +1,6 @@
 import ms from 'ms';
 import { DataSourceInstanceSettings } from '@grafana/data';
+import _ from 'lodash';
 import CogniteDatasource from '../datasource';
 import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
 
@@ -13,7 +14,7 @@ export function getDataqueryResponse(
     timestamp: i * ms('10m') + 1549336675000,
     [aggregate]: i,
   }));
-  const itemsArr = items.map(({ id }) => ({
+  const itemsArr = _.map(items, ({ id }) => ({
     id,
     datapoints,
     externalId: `${externalIdPrefix}${id}`,

@@ -4,7 +4,7 @@ import { getCalculationWarnings, getLimitsWarnings, stringifyError } from './cdf
 import { failedResponseEvent, responseWarningEvent } from './constants';
 import { SuccessResponse } from './types';
 
-const appEventsLoader = SystemJS.load('app/core/app_events');
+export const appEventsLoader = SystemJS.load('app/core/app_events');
 
 export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
   const appEvents = await appEventsLoader;
@@ -15,7 +15,9 @@ export function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
   emitEvent(failedResponseEvent, { refId, error: errMessage });
 }
-
+export function handleWarning(warningMessage: string, refId: string) {
+  emitEvent(responseWarningEvent, { refId, warning: warningMessage });
+}
 export function showWarnings(responses: SuccessResponse[]) {
   responses.forEach(({ result, metadata }) => {
     const { items } = result.data;
