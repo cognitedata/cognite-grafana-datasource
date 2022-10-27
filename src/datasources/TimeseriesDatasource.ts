@@ -68,32 +68,27 @@ async function findTsByAssetAndRelationships(
   //  we only get the first 100 timeseries, and show a warning if there are too many timeseries
   const limit = 101;
   let timeseriesFromRelationships = [];
-  try {
-    const timeseriesFromAssets =
-      assetQuery?.includeSubTimeseries !== false
-        ? await getTimeseries({ filter, limit }, connector)
-        : [];
-    if (assetQuery?.withRelationships) {
-      const relationshipsList = await fetchRelationships(
-        assetQuery?.relationshipsQuery,
-        connector,
-        timeFrame
-      );
-      timeseriesFromRelationships = _.map(relationshipsList, 'target');
-    }
-    if (timeseriesFromAssets.length >= limit) {
-      emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
-      timeseriesFromAssets.splice(-1);
-    }
-    if (timeseriesFromRelationships.length >= limit) {
-      emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
-      timeseriesFromRelationships.splice(-1);
-    }
-    return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
-  } catch (error) {
-    handleError(error, refId);
-    return [];
+  const timeseriesFromAssets =
+    assetQuery?.includeSubTimeseries !== false
+      ? await getTimeseries({ filter, limit }, connector)
+      : [];
+  if (assetQuery?.withRelationships) {
+    const relationshipsList = await fetchRelationships(
+      assetQuery?.relationshipsQuery,
+      connector,
+      timeFrame
+    );
+    timeseriesFromRelationships = _.map(relationshipsList, 'target');
   }
+  if (timeseriesFromAssets.length >= limit) {
+    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+    timeseriesFromAssets.splice(-1);
+  }
+  if (timeseriesFromRelationships.length >= limit) {
+    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+    timeseriesFromRelationships.splice(-1);
+  }
+  return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
 }
 
 export async function getDataQueryRequestItems(
