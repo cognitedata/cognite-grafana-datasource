@@ -1,4 +1,4 @@
-import { isNil, omitBy, get } from 'lodash';
+import { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq } from 'lodash';
 import { TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
@@ -62,3 +62,45 @@ export const getFirstSelection = (graphQuery, refId) => {
     return [];
   }
 };
+
+export const FDMResponseToDropdown = (edges) => {
+  const values = [];
+  const all = {};
+  const names = {};
+  map(edges, ({ node: { externalId, versions, name } }) => {
+    const collector = [];
+    map(versions, ({ version }) => {
+      collector.push({ label: `${version}`, value: version });
+    });
+    assignIn(all, { [externalId]: collector });
+    values.push({ value: externalId, label: name });
+    assignIn(names, { [externalId]: name });
+  });
+  return { all, names, dataModelOptions: sortBy(values, ['label']) };
+};
+export const reverseSort = (list) => sortBy(list).reverse();
+const getNodeSelection = (selection) => {
+  const { selectionSet } = selection[0];
+  if (selectionSet) {
+    const { selections } = selectionSet;
+    if (selection[0].name.value === 'node') {
+      return selections;
+    }
+    return getNodeSelection(selections);
+  }
+  return [];
+};
+export const typeNameList = (selected) =>
+  uniq(
+    filter(
+      map(getNodeSelection(selected), ({ selectionSet, name: { value } }) => {
+        if (selectionSet) {
+          const i = find(selectionSet.selections, ({ name: { value } }) => value === '__typename');
+          if (i) {
+            return value;
+          }
+        }
+        return undefined;
+      })
+    )
+  );
