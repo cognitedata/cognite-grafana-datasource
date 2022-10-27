@@ -1,30 +1,20 @@
 import { AsyncSelect, CodeEditor, Field, HorizontalGroup, Select } from '@grafana/ui';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import _ from 'lodash';
-import { getFirstSelection } from '../utils';
+import { FDMResponseToDropdown, getFirstSelection, reverseSort, typeNameList } from '../utils';
 import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { CommonEditors } from './commonEditors';
 
-const getNodeSelection = (selection) => {
-  const { selectionSet } = selection[0];
-  if (selectionSet) {
-    const { selections } = selectionSet;
-    if (selection[0].name.value === 'node') {
-      return selections;
-    }
-    return getNodeSelection(selections);
-  }
-  return [];
-};
 export const FlexibleDataModellingTab = (
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }
 ) => {
   const { query, onQueryChange, datasource } = props;
-  const [flexibleDataModellingQuery, setflexibleDataModellingQuery] = useState(
+  const [flexibleDataModellingQuery, setFlexibleDataModellingQuery] = useState(
     query.flexibleDataModellingQuery
   );
   const [allOptions, setAllOptions] = useState({});
+  const [dataModelOptions, setDataModelOptions] = useState([]);
   const [names, setNames] = useState({});
   const versionOptions = useMemo(
     () => _.get(allOptions, flexibleDataModellingQuery.externalId),
@@ -32,43 +22,27 @@ export const FlexibleDataModellingTab = (
   );
   const patchFlexibleDataModellingQuery = useCallback(
     (flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>) => {
-      setflexibleDataModellingQuery({
+      setFlexibleDataModellingQuery({
         ...flexibleDataModellingQuery,
         ...flexibleDataModellingQueryPatch,
       });
     },
     [flexibleDataModellingQuery]
   );
-  const triggerQuery = useCallback(() => {
-    onQueryChange({
-      flexibleDataModellingQuery,
-    });
-  }, [flexibleDataModellingQuery, onQueryChange]);
-
-  const loadFlexibleDataModellingOptions = useCallback(() => {
+  const loadFlexibleDataModellingOptions = () => {
     return datasource.flexibleDataModellingDatasource
       .listFlexibleDataModelling(query.refId)
       .then((items) => {
-        const values = [];
-        const all = {};
-        const names = {};
         const {
           listApis: { edges },
         } = items;
-        _.map(edges, ({ node: { externalId, versions, name } }) => {
-          const collector = [];
-          _.map(versions, ({ version }) => {
-            collector.push({ label: `${version}`, value: version });
-          });
-          _.assignIn(all, { [externalId]: collector });
-          values.push({ value: externalId, label: name });
-          _.assignIn(names, { [externalId]: name });
-        });
+        const { all, names, dataModelOptions } = FDMResponseToDropdown(edges);
         setAllOptions(all);
         setNames(names);
-        return _.sortBy(values, ['label']);
+        setDataModelOptions(dataModelOptions);
+        return dataModelOptions;
       });
-  }, [datasource]);
+  };
   useEffect(() => {
     onQueryChange({
       flexibleDataModellingQuery,
@@ -81,34 +55,32 @@ export const FlexibleDataModellingTab = (
   );
   useEffect(() => {
     patchFlexibleDataModellingQuery({
-      tsKeys: firstSelection.length
-        ? _.uniq(
-            _.filter(
-              _.map(getNodeSelection(firstSelection), ({ selectionSet, name: { value } }) => {
-                if (selectionSet) {
-                  const i = _.find(
-                    selectionSet.selections,
-                    ({ name: { value } }) => value === '__typename'
-                  );
-                  if (i) {
-                    return value;
-                  }
-                }
-                return undefined;
-              })
-            )
-          )
-        : [],
+      tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
     });
   }, [flexibleDataModellingQuery.graphQlQuery, firstSelection]);
   const updateGraphQuery = useCallback(
     (graphQlQuery) => {
+      console.log(
+        'dataModelOptions: ',
+        dataModelOptions,
+        '\nfirstSelection: ',
+        firstSelection,
+        '\nnames: ',
+        names,
+        '\nextr: ',
+        flexibleDataModellingQuery.externalId,
+        '\ntsKeys: ',
+        flexibleDataModellingQuery.tsKeys,
+        '\nversion: ',
+        flexibleDataModellingQuery.version
+      );
       if (firstSelection.length) {
         patchFlexibleDataModellingQuery({ graphQlQuery });
       }
     },
     [firstSelection]
   );
+
   return (
     <>
       <HorizontalGroup>
@@ -125,18 +97,16 @@ export const FlexibleDataModellingTab = (
             onChange={(externalId) => {
               patchFlexibleDataModellingQuery({ externalId: externalId.value, version: undefined });
             }}
-            onBlur={triggerQuery}
           />
         </Field>
         <Field label="Version">
           <Select
-            options={_.sortBy(versionOptions).reverse()}
+            options={reverseSort(versionOptions)}
             value={{
               label: flexibleDataModellingQuery.version?.toString(),
               value: flexibleDataModellingQuery.version,
             }}
             onChange={(version) => patchFlexibleDataModellingQuery({ version: version.value })}
-            onBlur={triggerQuery}
           />
         </Field>
       </HorizontalGroup>
