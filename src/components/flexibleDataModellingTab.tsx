@@ -10,27 +10,40 @@ export const FlexibleDataModellingTab = (
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }
 ) => {
   const { query, onQueryChange, datasource } = props;
-  const [flexibleDataModellingQuery, setFlexibleDataModellingQuery] = useState(
-    query.flexibleDataModellingQuery
-  );
+  const { flexibleDataModellingQuery } = query;
   const [allOptions, setAllOptions] = useState({});
   const [dataModelOptions, setDataModelOptions] = useState([]);
   const [names, setNames] = useState({});
-  const versionOptions = useMemo(
-    () => _.get(allOptions, flexibleDataModellingQuery.externalId),
-    [flexibleDataModellingQuery.externalId, allOptions]
+  const firstSelection = useMemo(
+    (graphQlQuery = flexibleDataModellingQuery.graphQlQuery) =>
+      getFirstSelection(graphQlQuery, query.refId),
+    [flexibleDataModellingQuery.graphQlQuery]
   );
-  const patchFlexibleDataModellingQuery = useCallback(
-    (flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>) => {
-      setFlexibleDataModellingQuery({
+  const patchFlexibleDataModellingQuery = (
+    flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>
+  ) => {
+    onQueryChange({
+      flexibleDataModellingQuery: {
         ...flexibleDataModellingQuery,
         ...flexibleDataModellingQueryPatch,
+      },
+    });
+  };
+  const updateGraphQuery = (graphQlQuery) => {
+    if (firstSelection.length) {
+      patchFlexibleDataModellingQuery({
+        graphQlQuery,
       });
-    },
-    [flexibleDataModellingQuery]
-  );
-  const loadFlexibleDataModellingOptions = () => {
-    return datasource.flexibleDataModellingDatasource
+    }
+  };
+
+  useEffect(() => {
+    patchFlexibleDataModellingQuery({
+      tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
+    });
+  }, [flexibleDataModellingQuery.graphQlQuery, firstSelection]);
+  useEffect(() => {
+    datasource.flexibleDataModellingDatasource
       .listFlexibleDataModelling(query.refId)
       .then((items) => {
         const {
@@ -40,54 +53,14 @@ export const FlexibleDataModellingTab = (
         setAllOptions(all);
         setNames(names);
         setDataModelOptions(dataModelOptions);
-        return dataModelOptions;
       });
-  };
-  useEffect(() => {
-    onQueryChange({
-      flexibleDataModellingQuery,
-    });
-  }, [flexibleDataModellingQuery]);
-  const firstSelection = useMemo(
-    (graphQlQuery = flexibleDataModellingQuery.graphQlQuery) =>
-      getFirstSelection(graphQlQuery, query.refId),
-    [flexibleDataModellingQuery.graphQlQuery]
-  );
-  useEffect(() => {
-    patchFlexibleDataModellingQuery({
-      tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
-    });
-  }, [flexibleDataModellingQuery.graphQlQuery, firstSelection]);
-  const updateGraphQuery = useCallback(
-    (graphQlQuery) => {
-      console.log(
-        'dataModelOptions: ',
-        dataModelOptions,
-        '\nfirstSelection: ',
-        firstSelection,
-        '\nnames: ',
-        names,
-        '\nextr: ',
-        flexibleDataModellingQuery.externalId,
-        '\ntsKeys: ',
-        flexibleDataModellingQuery.tsKeys,
-        '\nversion: ',
-        flexibleDataModellingQuery.version
-      );
-      if (firstSelection.length) {
-        patchFlexibleDataModellingQuery({ graphQlQuery });
-      }
-    },
-    [firstSelection]
-  );
-
+  }, []);
   return (
     <>
       <HorizontalGroup>
         <Field label="Data Model">
-          <AsyncSelect
-            loadOptions={loadFlexibleDataModellingOptions}
-            defaultOptions
+          <Select
+            options={dataModelOptions}
             value={{
               label:
                 names[flexibleDataModellingQuery.externalId] ||
@@ -101,7 +74,7 @@ export const FlexibleDataModellingTab = (
         </Field>
         <Field label="Version">
           <Select
-            options={reverseSort(versionOptions)}
+            options={reverseSort(_.get(allOptions, flexibleDataModellingQuery.externalId))}
             value={{
               label: flexibleDataModellingQuery.version?.toString(),
               value: flexibleDataModellingQuery.version,
