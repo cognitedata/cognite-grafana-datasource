@@ -8,7 +8,7 @@ If applicable, how has the problem been solved? E.g. Refactored out code to elim
 What resource types has been involved in the change? E.g. time series, relationships, events, FDM
 
 **Changes to datasource JSON model**
-What has been update in the JSON? Any fields added/removed?
+What has been updated in the JSON? Any fields added/removed, possible breaking changes?
 
 **Has documentation been updated**
 Yes/No
