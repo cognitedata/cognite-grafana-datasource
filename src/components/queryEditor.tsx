@@ -328,7 +328,7 @@ export function QueryEditor(props: EditorProps) {
       return !datasource.connector.isFlexibleDataModellingEnabled();
     }
     if (t === Tabs.ExtractionPipelines) {
-      return !datasource.connector.isExtractionPipalinesEnabled();
+      return !datasource.connector.isExtractionPipelinesEnabled();
     }
     return false;
   };
