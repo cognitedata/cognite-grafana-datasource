@@ -260,7 +260,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         </div>
         <div className="gf-form-inline">
           <Switch
-            label="Extraction Pipalines"
+            label="Extraction Pipelines"
             labelClass="width-11"
             checked={enableExtractionPipelines}
             onChange={onJsonBoolValueChange('enableExtractionPipelines')}
