@@ -78,7 +78,7 @@ export const FDMResponseToDropdown = (edges) => {
   });
   return { all, names, dataModelOptions: sortBy(values, ['label']) };
 };
-export const reverseSort = (list) => sortBy(list).reverse();
+export const reverseSortGet = (list, id) => sortBy(get(list, id)).reverse();
 const getNodeSelection = (selection) => {
   const { selectionSet } = selection[0];
   if (selectionSet) {

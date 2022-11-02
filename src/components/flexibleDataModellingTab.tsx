@@ -1,7 +1,6 @@
 import { CodeEditor, Field, HorizontalGroup, Select } from '@grafana/ui';
 import React, { useState, useEffect, useMemo } from 'react';
-import _ from 'lodash';
-import { FDMResponseToDropdown, getFirstSelection, reverseSort, typeNameList } from '../utils';
+import { FDMResponseToDropdown, getFirstSelection, reverseSortGet, typeNameList } from '../utils';
 import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { CommonEditors } from './commonEditors';
@@ -74,7 +73,7 @@ export const FlexibleDataModellingTab = (
         </Field>
         <Field label="Version">
           <Select
-            options={reverseSort(_.get(allOptions, flexibleDataModellingQuery.externalId))}
+            options={reverseSortGet(allOptions, flexibleDataModellingQuery.externalId)}
             value={{
               label: flexibleDataModellingQuery.version?.toString(),
               value: flexibleDataModellingQuery.version,
