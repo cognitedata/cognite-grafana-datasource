@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq } from 'lodash';
+import { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
 import { TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
@@ -80,10 +80,10 @@ export const FDMResponseToDropdown = (edges) => {
 };
 export const reverseSortGet = (list, id) => sortBy(get(list, id)).reverse();
 const getNodeSelection = (selection) => {
-  const { selectionSet } = selection[0];
+  const { selectionSet } = head(selection) as any;
   if (selectionSet) {
     const { selections } = selectionSet;
-    if (selection[0].name.value === 'node') {
+    if (selection[0]?.name.value === 'node') {
       return selections;
     }
     return getNodeSelection(selections);
@@ -95,8 +95,7 @@ export const typeNameList = (selected) =>
     filter(
       map(getNodeSelection(selected), ({ selectionSet, name: { value } }) => {
         if (selectionSet) {
-          const i = find(selectionSet.selections, ({ name: { value } }) => value === '__typename');
-          if (i) {
+          if (find(selectionSet.selections, ({ name: { value } }) => value === '__typename')) {
             return value;
           }
         }
