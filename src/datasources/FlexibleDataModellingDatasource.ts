@@ -83,10 +83,7 @@ export class FlexibleDataModellingDatasource {
         const labels = [];
         const targets = _.flatten(
           _.map(edges, ({ node }) => _.filter(node, (_, key) => query.tsKeys.includes(key)))
-        ).map(({ externalId, name }) => {
-          if (name) labels.push(name);
-          return externalId;
-        });
+        );
         const { data } = await this.timeseriesDatasource.query({
           ...options,
           targets: [
