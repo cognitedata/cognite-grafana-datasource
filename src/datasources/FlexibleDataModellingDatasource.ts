@@ -106,8 +106,12 @@ export class FlexibleDataModellingDatasource {
             _.flatten(
               _.map(edges, ({ node }) =>
                 _.filter(node, (value, key) => {
-                  if (_.has(value, 'name')) labels.push(value.name);
-                  return query.tsKeys.includes(key) && _.has(value, 'externalId');
+                  const typename = '__typename';
+                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
+                    if (_.has(value, 'name')) labels.push(value.name);
+                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
+                  }
+                  return false;
                 })
               )
             )
@@ -137,13 +141,43 @@ export class FlexibleDataModellingDatasource {
   }
   async postQueryItems(items, query, options, target) {
     try {
+      let tsData = [];
       const res = getItemsTableData(items);
       if (query.tsKeys.length) {
         const labels = [];
-        const targets = _.map(_.filter(_.map(items, (item) => item)), 'externalId');
+        const targets = _.map(
+          _.filter(
+            _.flatten(
+              _.map(items, (item) =>
+                _.filter(item, (value, key) => {
+                  const typename = '__typename';
+                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
+                    if (_.has(value, 'name')) labels.push(value.name);
+                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
+                  }
+                  return false;
+                })
+              )
+            )
+          ),
+          'externalId'
+        );
+        const { data } = await this.timeseriesDatasource.query({
+          ...options,
+          targets: [
+            {
+              ...target,
+              flexibleDataModellingQuery: {
+                ...target.flexibleDataModellingQuery,
+                targets,
+                labels,
+              },
+            },
+          ],
+        });
+        tsData = data;
       }
-      console.log(items, query, options, target, this);
-      return _.concat(res);
+      return _.concat(res, tsData);
     } catch (error) {
       handleError(error, target.refId);
       return [];
