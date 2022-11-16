@@ -470,6 +470,7 @@ export interface QueryWarning {
 export interface FDMQueryResponse {
   [x: string]: {
     edges?: { node?: { [x: string]: any } }[];
+    items?: any[];
   };
 }
 export interface FDMResponse {

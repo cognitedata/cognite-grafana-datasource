@@ -35,7 +35,6 @@ export const FlexibleDataModellingTab = (
       });
     }
   };
-
   useEffect(() => {
     patchFlexibleDataModellingQuery({
       tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],

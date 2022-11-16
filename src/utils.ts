@@ -86,6 +86,9 @@ const getNodeSelection = (selection) => {
     if (selection[0]?.name.value === 'node') {
       return selections;
     }
+    if (selection[0]?.name.value === 'items') {
+      return selections;
+    }
     return getNodeSelection(selections);
   }
   return [];
