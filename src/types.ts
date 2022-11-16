@@ -448,6 +448,10 @@ export type TimeseriesFilterQuery = {
 export interface VariableQueryData {
   query: string;
   error?: string;
+  valueType?: {
+    label: string;
+    value: string;
+  };
 }
 
 export interface VariableQueryProps {
