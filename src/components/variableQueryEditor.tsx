@@ -112,7 +112,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
             onBlur={this.handleBlur}
             placeholder="eg: assets{name='example', assetSubtreeIds=[{id=123456789, externalId='externalId'}]}"
           />
-          <InlineFormLabel tooltip="use Id or externalId" width={4}>
+          <InlineFormLabel tooltip="Value to populate when using the variable." width={4}>
             Value
           </InlineFormLabel>
           <Select
