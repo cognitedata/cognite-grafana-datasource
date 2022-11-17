@@ -1,6 +1,12 @@
 import { CodeEditor, Field, HorizontalGroup, Select } from '@grafana/ui';
 import React, { useState, useEffect, useMemo } from 'react';
-import { FDMResponseToDropdown, getFirstSelection, reverseSortGet, typeNameList } from '../utils';
+import {
+  FDMResponseToDropdown,
+  getFirstSelection,
+  isValidQuery,
+  reverseSortGet,
+  typeNameList,
+} from '../utils';
 import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { CommonEditors } from './commonEditors';
@@ -29,7 +35,7 @@ export const FlexibleDataModellingTab = (
     });
   };
   const updateGraphQuery = (graphQlQuery) => {
-    if (firstSelection.length) {
+    if (isValidQuery(graphQlQuery, query.refId)) {
       patchFlexibleDataModellingQuery({
         graphQlQuery,
       });

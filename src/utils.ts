@@ -50,6 +50,16 @@ export function getRange(range: TimeRange): Tuple<number> {
   const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
+export const isValidQuery = (query, refId) => {
+  try {
+    return gql`
+      ${query}
+    `;
+  } catch (e) {
+    handleError(e, refId);
+    return false;
+  }
+};
 const getFirstSelectionArr = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
 export const getFirstSelection = (graphQuery, refId) => {
   try {
