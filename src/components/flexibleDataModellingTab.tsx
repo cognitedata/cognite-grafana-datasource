@@ -68,6 +68,7 @@ export const FlexibleDataModellingTab = (
             onChange={(externalId) => {
               patchFlexibleDataModellingQuery({ externalId: externalId.value, version: undefined });
             }}
+            width={24}
           />
         </Field>
         <Field label="Version">

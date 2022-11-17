@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
+import _, { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
 import { TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
@@ -76,7 +76,13 @@ export const FDMResponseToDropdown = (edges) => {
     values.push({ value: externalId, label: name });
     assignIn(names, { [externalId]: name });
   });
-  return { all, names, dataModelOptions: sortBy(values, ['label']) };
+  return {
+    all,
+    names,
+    dataModelOptions: sortBy(values, (value) => {
+      return _.lowerCase(value.label);
+    }),
+  };
 };
 export const reverseSortGet = (list, id) => sortBy(get(list, id)).reverse();
 const getNodeSelection = (selection) => {
