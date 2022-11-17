@@ -74,7 +74,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   }
 
   handleQueryChange = (event) => {
-    this.setState((state) => ({ ...state, query: event.target.value, error: '' }));
+    this.setState({ query: event.target.value, error: '' });
   };
 
   handleBlur = () => {
@@ -92,11 +92,11 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   };
 
   handleValueTypeChange = (value) => {
-    this.setState((state) => ({
-      ...state,
+    this.setState({
       valueType: value,
-    }));
+    });
   };
+
   render() {
     const { query, error, valueType } = this.state;
 
@@ -120,6 +120,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
             onChange={this.handleValueTypeChange}
             value={valueType}
             width={20}
+            onBlur={this.handleBlur}
           />
         </div>
         <div className="gf-form--grow">
