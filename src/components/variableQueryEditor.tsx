@@ -2,6 +2,7 @@ import React from 'react';
 import { InlineFormLabel, Select, Switch } from '@grafana/ui';
 import { VariableQueryData, VariableQueryProps } from '../types';
 import { parse } from '../parser/events-assets';
+import { variableValueOptions } from '../constants';
 
 const help = (
   <pre>
@@ -115,10 +116,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
             Value
           </InlineFormLabel>
           <Select
-            options={[
-              { value: 'id', label: 'Id' },
-              { value: 'externalId', label: 'ExternalId' },
-            ]}
+            options={variableValueOptions}
             onChange={this.handleValueTypeChange}
             value={valueType}
             width={20}

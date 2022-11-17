@@ -110,3 +110,9 @@ export const nodeField: any = {
     type: FieldType.string,
   },
 };
+
+export const variableValueOptions = [
+  { value: 'id', label: 'Id' },
+  { value: 'externalId', label: 'ExternalId' },
+  { value: 'name', label: 'Name' },
+];
