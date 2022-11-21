@@ -2,11 +2,12 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
-## 3.0.0 - November 14th, 2022
+## 3.0.0 - November 21st, 2022
 - The connector dependencies has been updated and the connector now requires Grafana v8 or later.
 - [Flexible Data Modelling](https://hub.cognite.com/groups/flexible-data-modeling-early-adopter-208) is now added as a preview feature. You need enable it on the data source settings. The plugin will visualize tables and time series which has been modelled in Cognite's new Flexible Data Model
 - [Extraction Pipelines](https://docs.cognite.com/cdf/integration/guides/interfaces/about_integrations) is added as a preview feature. You can now see the latest status of your extraction pipelines and runs inside Grafana.
 - Advanced filtering of events now also supports aggregates.
+- Variables created with an asset-query can now return `externalId` and `name` as value in addition to `id`. This is useful when using a variable inside FDM graphQl query.
 
 ## 2.6.0 - August 4th, 2022
 

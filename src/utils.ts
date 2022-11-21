@@ -1,4 +1,4 @@
-import { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
+import _, { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
 import { TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
@@ -50,6 +50,16 @@ export function getRange(range: TimeRange): Tuple<number> {
   const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
+export const isValidQuery = (query, refId) => {
+  try {
+    return gql`
+      ${query}
+    `;
+  } catch (e) {
+    handleError(e, refId);
+    return false;
+  }
+};
 const getFirstSelectionArr = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
 export const getFirstSelection = (graphQuery, refId) => {
   try {
@@ -76,7 +86,13 @@ export const FDMResponseToDropdown = (edges) => {
     values.push({ value: externalId, label: name });
     assignIn(names, { [externalId]: name });
   });
-  return { all, names, dataModelOptions: sortBy(values, ['label']) };
+  return {
+    all,
+    names,
+    dataModelOptions: sortBy(values, (value) => {
+      return _.lowerCase(value.label);
+    }),
+  };
 };
 export const reverseSortGet = (list, id) => sortBy(get(list, id)).reverse();
 const getNodeSelection = (selection) => {
@@ -84,6 +100,9 @@ const getNodeSelection = (selection) => {
   if (selectionSet) {
     const { selections } = selectionSet;
     if (selection[0]?.name.value === 'node') {
+      return selections;
+    }
+    if (selection[0]?.name.value === 'items') {
       return selections;
     }
     return getNodeSelection(selections);

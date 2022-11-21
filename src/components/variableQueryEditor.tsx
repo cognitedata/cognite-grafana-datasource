@@ -1,6 +1,8 @@
 import React from 'react';
+import { InlineFormLabel, Select, Switch } from '@grafana/ui';
 import { VariableQueryData, VariableQueryProps } from '../types';
 import { parse } from '../parser/events-assets';
+import { variableValueOptions } from '../constants';
 
 const help = (
   <pre>
@@ -52,7 +54,6 @@ const help = (
     .
   </pre>
 );
-
 export class CogniteVariableQueryEditor extends React.PureComponent<
   VariableQueryProps,
   VariableQueryData
@@ -60,6 +61,10 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   defaults: VariableQueryData = {
     query: '',
     error: '',
+    valueType: {
+      value: 'id',
+      label: 'Id',
+    },
   };
 
   constructor(props: VariableQueryProps) {
@@ -74,21 +79,26 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
 
   handleBlur = () => {
     const { onChange, datasource } = this.props;
-    const { query } = this.state;
+    const { query, valueType } = this.state;
 
     try {
       const evaluatedQuery = datasource.replaceVariable(query);
       parse(evaluatedQuery);
-
-      onChange({ query }, query);
+      onChange({ query, valueType }, query);
     } catch ({ message }) {
       this.setState({ error: message });
-      onChange({ query: '' }, '');
+      onChange({ query: '', valueType }, '');
     }
   };
 
+  handleValueTypeChange = (value) => {
+    this.setState({
+      valueType: value,
+    });
+  };
+
   render() {
-    const { query, error } = this.state;
+    const { query, error, valueType } = this.state;
 
     return (
       <div>
@@ -101,6 +111,16 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
             onChange={this.handleQueryChange}
             onBlur={this.handleBlur}
             placeholder="eg: assets{name='example', assetSubtreeIds=[{id=123456789, externalId='externalId'}]}"
+          />
+          <InlineFormLabel tooltip="Value to populate when using the variable." width={4}>
+            Value
+          </InlineFormLabel>
+          <Select
+            options={variableValueOptions}
+            onChange={this.handleValueTypeChange}
+            value={valueType}
+            width={20}
+            onBlur={this.handleBlur}
           />
         </div>
         <div className="gf-form--grow">

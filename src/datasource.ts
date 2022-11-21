@@ -299,10 +299,9 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query }: VariableQueryData): Promise<MetricDescription[]> {
+  async metricFindQuery({ query, valueType }: VariableQueryData): Promise<MetricDescription[]> {
     let params: QueryCondition;
     let filters: ParsedFilter[];
-
     try {
       ({ params, filters } = parseQuery(this.replaceVariable(query)));
     } catch (e) {
@@ -321,10 +320,12 @@ export default class CogniteDatasource extends DataSourceApi<
     });
 
     const filteredAssets = applyFilters(assets, filters);
-    return filteredAssets.map(({ name, id }) => ({
-      text: name,
-      value: id,
-    }));
+    return filteredAssets.map((asset) => {
+      return {
+        text: asset.name,
+        value: asset[valueType?.value] || asset.id,
+      };
+    });
   }
 
   fetchSingleTimeseries = (id: IdEither) => {

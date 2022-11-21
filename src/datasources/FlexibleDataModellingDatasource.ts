@@ -13,7 +13,27 @@ import { TimeseriesDatasource } from './TimeseriesDatasource';
 import { convertItemsToTable } from '../cdf/client';
 import { getFirstSelection } from '../utils';
 
-const getData = (edges): TableData => {
+const getItemsTableData = (items): TableData => {
+  const columns = ['item'];
+  const td = [];
+  _.map(items, (item, index) => {
+    const fixedItemProps = { item: index };
+    _.mapValues(item, (v, itemKey) => {
+      if (_.isObject(v)) {
+        _.mapKeys(v, (_, key) => columns.push(key));
+        td.push({
+          item: index,
+          itemKey,
+          ...v,
+        });
+      }
+      columns.push(!_.isObject(v) ? itemKey : 'itemKey');
+      _.assignIn(fixedItemProps, !_.isObject(v) && { [itemKey]: v });
+    });
+  });
+  return convertItemsToTable(td, _.uniq(columns), 'items');
+};
+const getEdgesTableData = (edges): TableData => {
   const columns = ['node'];
   const td = [];
   _.map(edges, ({ node }, index) => {
@@ -32,7 +52,7 @@ const getData = (edges): TableData => {
     });
     td.push(fixNodeProps);
   });
-  return convertItemsToTable(td, _.uniq(columns));
+  return convertItemsToTable(td, _.uniq(columns), 'edges');
 };
 const getFirstNameValue = (arr) => arr?.name?.value;
 export class FlexibleDataModellingDatasource {
@@ -75,18 +95,73 @@ export class FlexibleDataModellingDatasource {
       };
     }
   }
-  async postQuery(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
+  async postQueryEdges(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
     try {
       let tsData = [];
-      const res = getData(edges);
+      const res = getEdgesTableData(edges);
       if (query.tsKeys.length) {
         const labels = [];
-        const targets = _.flatten(
-          _.map(edges, ({ node }) => _.filter(node, (_, key) => query.tsKeys.includes(key)))
-        ).map(({ externalId, name }) => {
-          if (name) labels.push(name);
-          return externalId;
+        const targets = _.map(
+          _.filter(
+            _.flatten(
+              _.map(edges, ({ node }) =>
+                _.filter(node, (value, key) => {
+                  const typename = '__typename';
+                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
+                    if (_.has(value, 'name')) labels.push(value.name);
+                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
+                  }
+                  return false;
+                })
+              )
+            )
+          ),
+          'externalId'
+        );
+        const { data } = await this.timeseriesDatasource.query({
+          ...options,
+          targets: [
+            {
+              ...target,
+              flexibleDataModellingQuery: {
+                ...target.flexibleDataModellingQuery,
+                targets,
+                labels,
+              },
+            },
+          ],
         });
+        tsData = data;
+      }
+      return _.concat(res, tsData);
+    } catch (error) {
+      handleError(error, target.refId);
+      return [];
+    }
+  }
+  async postQueryItems(items, query, options, target) {
+    try {
+      let tsData = [];
+      const res = getItemsTableData(items);
+      if (query.tsKeys.length) {
+        const labels = [];
+        const targets = _.map(
+          _.filter(
+            _.flatten(
+              _.map(items, (item) =>
+                _.filter(item, (value, key) => {
+                  const typename = '__typename';
+                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
+                    if (_.has(value, 'name')) labels.push(value.name);
+                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
+                  }
+                  return false;
+                })
+              )
+            )
+          ),
+          'externalId'
+        );
         const { data } = await this.timeseriesDatasource.query({
           ...options,
           targets: [
@@ -117,7 +192,7 @@ export class FlexibleDataModellingDatasource {
       const { data, errors } = await this.connector.fetchQuery({
         path: `/schema/api/${query.externalId}/${query.version}/graphql`,
         method: HttpMethod.POST,
-        data: `{"query": "${query.graphQlQuery}"}`,
+        data: JSON.stringify({ query: query.graphQlQuery }),
       });
 
       if (errors) {
@@ -129,8 +204,15 @@ export class FlexibleDataModellingDatasource {
         getFirstNameValue(_.head(getFirstSelection(query.graphQlQuery, target.refId)))
       );
       if (firstResponse) {
-        const { edges } = firstResponse;
-        return this.postQuery(edges, query, options, target);
+        if (_.has(firstResponse, 'edges')) {
+          const { edges } = firstResponse;
+          return this.postQueryEdges(edges, query, options, target);
+        }
+        if (_.has(firstResponse, 'items')) {
+          const { items } = firstResponse;
+          return this.postQueryItems(items, query, options, target);
+        }
+        return [];
       }
       handleError(
         new Error('An error occurred while attempting to get a response from FDM!'),
