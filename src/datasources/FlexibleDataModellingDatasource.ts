@@ -30,6 +30,7 @@ const getItemsTableData = (items): TableData => {
       columns.push(!_.isObject(v) ? itemKey : 'itemKey');
       _.assignIn(fixedItemProps, !_.isObject(v) && { [itemKey]: v });
     });
+    td.push(fixedItemProps);
   });
   return convertItemsToTable(td, _.uniq(columns), 'items');
 };
