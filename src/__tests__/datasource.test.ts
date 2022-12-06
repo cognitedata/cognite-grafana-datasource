@@ -1,7 +1,7 @@
 import ms from 'ms';
-import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
+import { bus } from '../appEventHandler';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
@@ -15,11 +15,7 @@ type QueryTargetLike = Partial<CogniteQuery>;
 const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
-let appEvents;
-
-SystemJS.load('app/core/app_events').then((module) => {
-  appEvents = module;
-});
+const appEvents = bus;
 
 const tsError = {
   status: 400,

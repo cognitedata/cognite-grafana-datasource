@@ -1,14 +1,12 @@
-import { AppEvent } from '@grafana/data';
-import { SystemJS } from '@grafana/runtime';
+import { AppEvent, EventBusSrv } from '@grafana/data';
 import { getCalculationWarnings, getLimitsWarnings, stringifyError } from './cdf/client';
 import { failedResponseEvent, responseWarningEvent } from './constants';
 import { SuccessResponse } from './types';
 
-export const appEventsLoader = SystemJS.load('app/core/app_events');
+export const bus = new EventBusSrv();
 
 export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
-  const appEvents = await appEventsLoader;
-  return appEvents.emit(event, payload);
+  return bus.emit(event, payload);
 }
 
 export function handleError(error: any, refId: string) {
