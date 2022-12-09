@@ -1,5 +1,4 @@
 /* eslint-disable no-nested-ternary */
-import { SystemJS } from '@grafana/runtime';
 import _ from 'lodash';
 import { CogniteQuery, Tab } from '../types';
 import { getMockedDataSource } from './utils';
@@ -9,7 +8,7 @@ import { bus } from '../appEventHandler';
 type Mock = jest.Mock;
 type QueryTargetLike = Partial<CogniteQuery>;
 
-jest.mock('@grafana/runtime');
+jest.mock('@grafana/data');
 
 const appEvents = bus;
 
