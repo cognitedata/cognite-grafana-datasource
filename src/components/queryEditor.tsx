@@ -36,9 +36,9 @@ import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
+import { eventBusService } from '../appEventHandler';
 
 const { FormField } = LegacyForms;
-const appEventsLoader = SystemJS.load('app/core/app_events');
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -292,13 +292,13 @@ export function QueryEditor(props: EditorProps) {
   };
 
   const eventsSubscribe = async () => {
-    const appEvents = await appEventsLoader;
+    const appEvents = eventBusService;
     appEvents.on(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
 
   const eventsUnsubscribe = async () => {
-    const appEvents = await appEventsLoader;
+    const appEvents = eventBusService;
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };

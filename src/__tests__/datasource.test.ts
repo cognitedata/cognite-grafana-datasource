@@ -1,13 +1,13 @@
 import ms from 'ms';
-import { SystemJS } from '@grafana/runtime';
 import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
+import { eventBusService } from '../appEventHandler';
 
-jest.mock('@grafana/runtime');
+jest.mock('@grafana/data');
 type Mock = jest.Mock;
 
 type QueryTargetLike = Partial<CogniteQuery>;
@@ -15,11 +15,8 @@ type QueryTargetLike = Partial<CogniteQuery>;
 const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
-let appEvents;
 
-SystemJS.load('app/core/app_events').then((module) => {
-  appEvents = module;
-});
+const appEvents = eventBusService;
 
 const tsError = {
   status: 400,
@@ -190,7 +187,7 @@ describe('Datasource Query', () => {
       expect(result).toEqual({ data: [] });
     });
     it('should display errors for malformed queries', () => {
-      expect(appEvents.emit).toHaveBeenCalledTimes(2);
+      expect(appEvents.emit as Mock).toHaveBeenCalledTimes(2);
       expect((appEvents.emit as Mock).mock.calls[0][1]).toEqual({
         refId: 'A',
         error: '[400 ERROR] error message',
@@ -288,7 +285,7 @@ describe('Datasource Query', () => {
     });
 
     it('should display errors for malformed queries', () => {
-      expect(appEvents.emit).toHaveBeenCalledWith(failedResponseEvent, {
+      expect(appEvents.emit as Mock).toHaveBeenCalledWith(failedResponseEvent, {
         refId: 'E',
         error: '[400 ERROR] error message',
       });
