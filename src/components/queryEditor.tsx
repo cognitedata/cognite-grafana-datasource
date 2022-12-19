@@ -36,7 +36,7 @@ import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
-import { bus } from '../appEventHandler';
+import { eventBusService } from '../appEventHandler';
 
 const { FormField } = LegacyForms;
 
@@ -292,13 +292,13 @@ export function QueryEditor(props: EditorProps) {
   };
 
   const eventsSubscribe = async () => {
-    const appEvents = bus;
+    const appEvents = eventBusService;
     appEvents.on(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };
 
   const eventsUnsubscribe = async () => {
-    const appEvents = bus;
+    const appEvents = eventBusService;
     appEvents.off(failedResponseEvent, handleError);
     appEvents.on(responseWarningEvent, handleWarning);
   };

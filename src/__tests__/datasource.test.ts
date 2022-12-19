@@ -5,7 +5,7 @@ import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
 import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
 import { failedResponseEvent } from '../constants';
-import { bus } from '../appEventHandler';
+import { eventBusService } from '../appEventHandler';
 
 jest.mock('@grafana/data');
 type Mock = jest.Mock;
@@ -16,7 +16,7 @@ const ds = getMockedDataSource();
 const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
 
-const appEvents = bus;
+const appEvents = eventBusService;
 
 const tsError = {
   status: 400,

@@ -3,10 +3,10 @@ import { getCalculationWarnings, getLimitsWarnings, stringifyError } from './cdf
 import { failedResponseEvent, responseWarningEvent } from './constants';
 import { SuccessResponse } from './types';
 
-export const bus = new EventBusSrv();
+export const eventBusService = new EventBusSrv();
 
 export async function emitEvent<T>(event: AppEvent<T>, payload: T): Promise<void> {
-  return bus.emit(event, payload);
+  return eventBusService.emit(event, payload);
 }
 
 export function handleError(error: any, refId: string) {
