@@ -41,12 +41,26 @@
         {
           "name": "x-cdp-sdk",
           "content": "CogniteGrafanaDatasource:%VERSION%"
-        }
+        },
+        {
+          "name": "x-cdp-app",
+          "content": "Cognite Grafana Datasource"
+        }        
       ]
     },
     {
       "path": "cdf-cc-oauth",
       "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}{{if .JsonData.clusterUrl}}{{.JsonData.clusterUrl}}{{else}}api.cognitedata.com{{end}}{{end}}",
+      "headers": [
+        {
+          "name": "x-cdp-sdk",
+          "content": "CogniteGrafanaDatasource:%VERSION%"
+        },
+        {
+          "name": "x-cdp-app",
+          "content": "Cognite Grafana Datasource"
+        }        
+      ],
       "tokenAuth": {
         "url": "{{ .JsonData.oauthTokenUrl }}",
         "params": {
@@ -68,7 +82,11 @@
         {
           "name": "x-cdp-sdk",
           "content": "CogniteGrafanaDatasource:%VERSION%"
-        }
+        },
+        {
+            "name": "x-cdp-app",
+            "content": "Cognite Grafana Datasource"
+        }        
       ]
     }
   ],
