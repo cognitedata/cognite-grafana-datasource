@@ -92,7 +92,8 @@ const defaultAssetQuery: AssetQuery = {
 };
 export interface FlexibleDataModellingQuery {
   externalId: string;
-  version?: number;
+  version?: string;
+  space?: string;
   graphQlQuery: string;
   tsKeys: string[];
   labels?: string[];
@@ -471,14 +472,14 @@ export interface QueryWarning {
   warning: string;
 }
 
-export interface FDMQueryResponse {
+export interface FDMQueryResponse<T> {
   [x: string]: {
-    edges?: { node?: { [x: string]: any } }[];
-    items?: any[];
+    edges?: { node?: T[] }[];
+    items?: T[];
   };
 }
-export interface FDMResponse {
-  data: FDMQueryResponse;
+export interface FDMResponse<T> {
+  data: FDMQueryResponse<T>;
   errors?: any;
 }
 export type EditorProps = QueryEditorProps<

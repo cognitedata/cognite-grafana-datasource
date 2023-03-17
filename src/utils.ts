@@ -73,28 +73,6 @@ export const getFirstSelection = (graphQuery, refId) => {
   }
 };
 
-export const FDMResponseToDropdown = (edges) => {
-  const values = [];
-  const all = {};
-  const names = {};
-  map(edges, ({ node: { externalId, versions, name } }) => {
-    const collector = [];
-    map(versions, ({ version }) => {
-      collector.push({ label: `${version}`, value: version });
-    });
-    assignIn(all, { [externalId]: collector });
-    values.push({ value: externalId, label: name });
-    assignIn(names, { [externalId]: name });
-  });
-  return {
-    all,
-    names,
-    dataModelOptions: sortBy(values, (value) => {
-      return _.lowerCase(value.label);
-    }),
-  };
-};
-export const reverseSortGet = (list, id) => sortBy(get(list, id)).reverse();
 const getNodeSelection = (selection) => {
   const { selectionSet } = head(selection) as any;
   if (selectionSet) {
@@ -109,6 +87,7 @@ const getNodeSelection = (selection) => {
   }
   return [];
 };
+
 export const typeNameList = (selected) =>
   uniq(
     filter(
