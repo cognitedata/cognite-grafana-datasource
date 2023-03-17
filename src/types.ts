@@ -20,7 +20,7 @@ export enum Tab {
   Relationships = 'Relationships',
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
-  FlexibleDataModelling = 'Flexible Data Modelling',
+  FlexibleDataModelling = 'Data Models',
 }
 
 export const TabTitles = {
@@ -31,29 +31,27 @@ export const TabTitles = {
   [Tab.ExtractionPipelines]: 'Extraction Pipelines',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
-  [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
+  [Tab.FlexibleDataModelling]: 'Data Models',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
   graphQlQuery: `{
   listMachine {
-    edges {
-      node {
+    items {
+      __typename
+      MachineWeight
+      Model
+      Anomalies {
+        externalId
+        id
+        name
         __typename
-        MachineWeight
-        Model
-        Anomalies {
-          externalId
-          id
-          name
-          __typename
-        }
-        Availability {
-          id
-          name
-          externalId
-          __typename
-        }
+      }
+      Availability {
+        id
+        name
+        externalId
+        __typename
       }
     }
   }
