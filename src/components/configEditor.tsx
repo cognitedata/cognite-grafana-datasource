@@ -118,7 +118,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
 
         <div className="gf-form gf-form-inline">
           <FormField
-            label="API URL"
+            label="API Host"
             labelWidth={10}
             inputWidth={21}
             onChange={onJsonStringValueChange('cogniteApiUrl')}
