@@ -12,12 +12,12 @@ type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteSecureJsonData
 >;
 
-const apiUrlTooltip = `This is the URL used to reach the API.
-If the project is deployed on the default multi-tenant installation (most are),
-then keep the default value and do not change the URL.
-If the project is deployed on a separate custom cluster,
-then change the URL to point at the API server for that cluster.
-If unsure, leave the URL as default.`;
+const apiUrlTooltip = `This is the hostname used to reach the API.
+If the project is deployed on the default multi-tenant installation (api.cognitedata.com),
+then keep the default value and do not change the hostname.
+If the project is deployed on another cluster like westeurope-1.cognitedata.com,
+then change the hostname to point at the API server for that cluster.
+If unsure, leave the hostname as default.`;
 
 const oAuthPassThruTooltip = `Forward the user's upstream OAuth identity to the data source
 (Their access token gets passed along).`;
@@ -107,7 +107,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form gf-form-inline">
           <FormField
             label="Project"
-            labelWidth={10}
+            labelWidth={12}
             inputWidth={21}
             onChange={onJsonStringValueChange('cogniteProject')}
             value={cogniteProject}
@@ -119,7 +119,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form gf-form-inline">
           <FormField
             label="API Host"
-            labelWidth={10}
+            labelWidth={12}
             inputWidth={21}
             onChange={onJsonStringValueChange('cogniteApiUrl')}
             value={cogniteApiUrl}
@@ -144,7 +144,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Forward OAuth Identity"
-            labelClass="width-11"
+            labelClass="width-12"
             checked={oauthPassThru}
             onChange={onJsonBoolValueChange('oauthPassThru')}
             tooltip={oAuthPassThruTooltip}
@@ -154,7 +154,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
           <div className="gf-form">
             <Switch
               label="OAuth2 client credentials"
-              labelClass="width-11"
+              labelClass="width-12"
               checked={oauthClientCreds}
               onChange={onJsonBoolValueChange('oauthClientCreds')}
               tooltip={oAuthClientCredsTooltip}
@@ -166,7 +166,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <div className="gf-form">
               <FormField
                 label="Token URL"
-                labelWidth={11}
+                labelWidth={12}
                 inputWidth={21}
                 onChange={onJsonStringValueChange('oauthTokenUrl')}
                 value={oauthTokenUrl}
@@ -177,7 +177,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <div className="gf-form">
               <FormField
                 label="Client Id"
-                labelWidth={11}
+                labelWidth={12}
                 inputWidth={21}
                 onChange={onJsonStringValueChange('oauthClientId')}
                 value={oauthClientId}
@@ -190,7 +190,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                 value={oauthClientSecret}
                 label="Client secret"
                 tooltip={oAuthClientSecretTooltip}
-                labelWidth={11}
+                labelWidth={12}
                 inputWidth={21}
                 placeholder="******"
                 onReset={onResetSecretValue('oauthClientSecret')}
@@ -200,7 +200,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <div className="gf-form">
               <FormField
                 label="Scope"
-                labelWidth={11}
+                labelWidth={12}
                 inputWidth={21}
                 onChange={onJsonStringValueChange('oauthScope')}
                 value={oauthScope}
@@ -219,7 +219,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                 label="API Key"
                 placeholder="Cognite Data Fusion API key"
                 tooltip="Cognite Data Fusion API key."
-                labelWidth={11}
+                labelWidth={12}
                 inputWidth={20}
                 onReset={onResetSecretValue('cogniteDataPlatformApiKey')}
                 onChange={onChangeSecretValue('cogniteDataPlatformApiKey')}
@@ -234,7 +234,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Cognite Templates"
-            labelClass="width-11"
+            labelClass="width-12"
             checked={enableTemplates}
             onChange={onJsonBoolValueChange('enableTemplates')}
             tooltip={enableTemplatesTooltip}
@@ -243,7 +243,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Advanced Filtering"
-            labelClass="width-11"
+            labelClass="width-12"
             checked={enableEventsAdvancedFiltering}
             onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
             tooltip={enableEventsAdvancedFilteringTooltip}
@@ -252,7 +252,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Flexible Data Modelling"
-            labelClass="width-11"
+            labelClass="width-12"
             checked={enableFlexibleDataModelling}
             onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
             tooltip={enableFlexibleDataModellingTooltip}
@@ -261,7 +261,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         <div className="gf-form-inline">
           <Switch
             label="Extraction Pipelines"
-            labelClass="width-11"
+            labelClass="width-12"
             checked={enableExtractionPipelines}
             onChange={onJsonBoolValueChange('enableExtractionPipelines')}
             tooltip={enableExtractionPipelinesTooltip}
