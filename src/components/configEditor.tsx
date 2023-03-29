@@ -12,12 +12,12 @@ type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteSecureJsonData
 >;
 
-const apiUrlTooltip = `This is the URL used to reach the API.
-If the project is deployed on the default multi-tenant installation (most are),
-then keep the default value and do not change the URL.
-If the project is deployed on a separate custom cluster,
-then change the URL to point at the API server for that cluster.
-If unsure, leave the URL as default.`;
+const apiUrlTooltip = `This is the hostname used to reach the API.
+If the project is deployed on the default multi-tenant installation (api.cognitedata.com),
+then keep the default value and do not change the hostname.
+If the project is deployed on another cluster like westeurope-1.cognitedata.com,
+then change the hostname to point at the API server for that cluster.
+If unsure, leave the hostname as default.`;
 
 const oAuthPassThruTooltip = `Forward the user's upstream OAuth identity to the data source
 (Their access token gets passed along).`;
