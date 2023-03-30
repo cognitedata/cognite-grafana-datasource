@@ -60,9 +60,9 @@ export const RelationshipsTab = (
     onQueryChange(_.set(query, `${route}.sourceExternalIds`, []));
     resetDepth();
   };
-  const dataIds = _.get(query, `${route}.dataSetIds`);
-  const containsAny = _.get(query, `${route}.labels.containsAny`);
-  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`)?.length;
+  const dataIds = _.get(query, `${route}.dataSetIds`, []);
+  const containsAny = _.get(query, `${route}.labels.containsAny`, []);
+  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`, []).length;
   useEffect(() => {
     if (!!dataIds?.length || !!containsAny?.length) {
       updateOptions();
