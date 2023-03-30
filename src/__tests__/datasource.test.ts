@@ -3,7 +3,7 @@ import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
-import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
+import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from '../test_utils';
 import { failedResponseEvent } from '../constants';
 import { eventBusService } from '../appEventHandler';
 

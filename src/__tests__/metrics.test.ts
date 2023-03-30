@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { getMockedDataSource } from './utils';
+import { getMockedDataSource } from '../test_utils';
 import { VariableQueryData } from '../types';
 
 jest.mock('@grafana/runtime');

@@ -1,8 +1,8 @@
 import ms from 'ms';
 import { DataSourceInstanceSettings } from '@grafana/data';
 import _ from 'lodash';
-import CogniteDatasource from '../datasource';
-import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
+import CogniteDatasource from './datasource';
+import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from './types';
 
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,

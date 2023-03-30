@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { getMockedDataSource } from './utils';
+import { getMockedDataSource } from '../test_utils';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
