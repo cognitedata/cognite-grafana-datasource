@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Metrics Query Given a metrics query with filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
+{
+  "data": {
+    "filter": {},
     "limit": 1000,
   },
   "headers": undefined,
@@ -13,9 +13,9 @@ Object {
 `;
 
 exports[`Metrics Query Given a metrics query with no options should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
+{
+  "data": {
+    "filter": {},
     "limit": 1000,
   },
   "headers": undefined,
@@ -25,9 +25,9 @@ Object {
 `;
 
 exports[`Metrics Query Given a metrics query with unmatched filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {},
+{
+  "data": {
+    "filter": {},
     "limit": 1000,
   },
   "headers": undefined,
@@ -37,10 +37,10 @@ Object {
 `;
 
 exports[`Metrics Query Given a nested variable query should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "parentIds": Array [
+{
+  "data": {
+    "filter": {
+      "parentIds": [
         123,
       ],
     },
@@ -53,9 +53,9 @@ Object {
 `;
 
 exports[`Metrics Query Given a simple metrics query should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
+{
+  "data": {
+    "filter": {
       "id": 123,
     },
     "limit": 1000,
