@@ -244,7 +244,7 @@ describe('Annotations Query', () => {
       expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
-    it('should generate the correct request', () => {
+    it('should return the correct events', () => {
       const resultIds = result.map(({ text }) => text);
       const expectedEvents = ['event 2', 'event 3', 'event 4'];
 

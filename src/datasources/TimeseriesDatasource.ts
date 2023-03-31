@@ -69,7 +69,9 @@ async function findTsByAssetAndRelationships(
   const limit = 101;
 
   let timeseriesFromRelationships = [];
-  const timeseriesFromAssets = assetQuery?.includeSubTimeseries !== false ? await getTimeseries({ filter, limit }, connector) : [];
+  const timeseriesFromAssets = assetQuery?.includeSubTimeseries !== false
+    ? await getTimeseries({ filter, limit }, connector)
+    : [];
 
   if (assetQuery?.withRelationships) {
     const relationshipsList = await fetchRelationships(
