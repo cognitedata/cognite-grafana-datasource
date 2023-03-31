@@ -55,9 +55,9 @@ export const getMockedDataSource = (options = { oauthPassThru: false }) =>
   new CogniteDatasource(instanceSettings(options));
 
 export const getDataSourceWithMocks = (options?: any) => {
-  const ds = getMockedDataSource(options)
-  return { ds, backendSrv: ds.backendSrv, templateSrv: ds.templateSrv }
-}
+  const ds = getMockedDataSource(options);
+  return { ds, backendSrv: ds.backendSrv, templateSrv: ds.templateSrv };
+};
 
 export function getMeta(id, aggregation, labels, type = 'data') {
   return {

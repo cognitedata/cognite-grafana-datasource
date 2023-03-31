@@ -73,7 +73,7 @@ describe('Annotations Query', () => {
   });
 
   describe('Given an empty annotation query', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const annotationOption: any = {
       range: testRange,
@@ -94,7 +94,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query without any filters', () => {
     let result;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -103,7 +103,9 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve(annotationResponse));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(annotationResponse));
       result = await ds.annotationQuery(annotationOption);
     });
 
@@ -115,7 +117,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query where no events are returned', () => {
     let result;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -124,7 +126,9 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve({ data: { items: [] } }));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve({ data: { items: [] } }));
       result = await ds.annotationQuery(annotationOption);
     });
 
@@ -136,7 +140,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query', () => {
     let result;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -149,7 +153,9 @@ describe('Annotations Query', () => {
     );
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
@@ -169,7 +175,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with a metadata request', () => {
     let result;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -180,7 +186,9 @@ describe('Annotations Query', () => {
     response.data.items = annotationResponse.data.items.filter((item) => item.metadata);
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
@@ -205,12 +213,14 @@ describe('Annotations Query', () => {
         query: "events{type='non-existant type'}",
       },
     };
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const response = _.cloneDeep(annotationResponse);
     response.data.items = [];
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve(response));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(response));
       result = await ds.annotationQuery(annotationOption);
     });
 
@@ -226,7 +236,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with filters', () => {
     let result;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -235,9 +245,11 @@ describe('Annotations Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementationOnce(() => Promise.resolve(annotationResponse));
+      backendSrv.datasourceRequest = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.resolve(annotationResponse));
       result = await ds.annotationQuery(annotationOption);
-    })
+    });
 
     it('should generate the correct request', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
@@ -254,7 +266,7 @@ describe('Annotations Query', () => {
   });
 
   describe('Given an annotation query with additional time filters', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
@@ -277,7 +289,7 @@ describe('Annotations Query', () => {
 
   describe('Given an annotation query with variables', () => {
     let result1;
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption1: any = {
       range: testRange,
       annotation: {
@@ -299,7 +311,7 @@ describe('Annotations Query', () => {
 
       result1 = await ds.annotationQuery(annotationOption1);
       await ds.annotationQuery(annotationOption2);
-    })
+    });
 
     it('should generate the correct request', () => {
       expect(backendSrv.datasourceRequest).toBeCalledTimes(2);
@@ -323,7 +335,7 @@ describe('Annotations Query', () => {
         query: 'events{ ',
       },
     };
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     beforeAll(async () => {
       (backendSrv.datasourceRequest as Mock).mockReset();
     });
@@ -334,7 +346,7 @@ describe('Annotations Query', () => {
   });
 
   describe('Given an annotation query with an incorrect event expression', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks()
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const annotationOption: any = {
       range: testRange,
       annotation: {
