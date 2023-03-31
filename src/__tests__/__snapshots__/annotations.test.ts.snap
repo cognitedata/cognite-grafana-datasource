@@ -96,10 +96,10 @@ events{ name=~event, foo}
 `;
 
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },

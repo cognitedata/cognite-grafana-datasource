@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "assetIds": Array [
+{
+  "data": {
+    "filter": {
+      "assetIds": [
         "789",
       ],
     },
@@ -17,10 +17,10 @@ Object {
 `;
 
 exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 2`] = `
-Object {
-  "data": Object {
+{
+  "data": {
     "fetchResources": true,
-    "filter": Object {},
+    "filter": {},
     "limit": 1000,
   },
   "headers": undefined,
@@ -30,10 +30,10 @@ Object {
 `;
 
 exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 3`] = `
-Object {
-  "data": Object {
-    "items": Array [
-      Object {
+{
+  "data": {
+    "items": [
+      {
         "id": 123,
       },
     ],
@@ -45,15 +45,15 @@ Object {
 `;
 
 exports[`Datasource Query Give "Select Timeseries of Relationships target from Asset" queries should generate the correct queries 4`] = `
-Object {
-  "data": Object {
-    "aggregates": Array [
+{
+  "data": {
+    "aggregates": [
       "max",
     ],
     "end": 1549338475000,
     "granularity": "6m",
-    "items": Array [
-      Object {
+    "items": [
+      {
         "id": 123,
       },
     ],
