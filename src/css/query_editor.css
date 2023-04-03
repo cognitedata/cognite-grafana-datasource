@@ -49,24 +49,23 @@ pre code,
 .gf-field-switch > div:last-child {
   margin: 8px 0 0 16px;
 }
-#preview-tab-label:after  {
+.preview-label {
+  align-self: center;
   background: #ffdc7f;
   border-radius: 3px;
   color: #262626;
-  content: 'Preview';
   margin-top: 0px;
   margin-left: 5px;
-  min-width: 20px;
+  margin-bottom: 0;
   padding-left: 5px;
   padding-bottom: 1px;
   padding-top: 1px;
   padding-right: 5px;
-  position: absolute;
   text-align: center;
   font-size: 11px;
   font-weight: 500;
 }
 .limit-class {
-  margin-left: 8px;;
+  margin-left: 8px;
   width: 75px;
 }

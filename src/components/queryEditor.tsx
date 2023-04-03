@@ -310,16 +310,6 @@ export function QueryEditor(props: EditorProps) {
     };
   }, [tab]);
 
-  const tabId = (t) => {
-    if (
-      t === Tabs.Templates ||
-      t === Tabs.FlexibleDataModelling ||
-      t === Tabs.ExtractionPipelines
-    ) {
-      return 'preview-tab-label';
-    }
-    return '';
-  };
   const hiddenTab = (t) => {
     if (t === Tabs.Templates) {
       return !datasource.connector.isTemplatesEnabled();
@@ -332,12 +322,6 @@ export function QueryEditor(props: EditorProps) {
     }
     return false;
   };
-  const tabClass = (t) => {
-    if (t === Tabs.FlexibleDataModelling || t === Tabs.ExtractionPipelines)
-      return { minWidth: '14em' };
-    if (t === Tabs.Templates) return { minWidth: '10em' };
-    return {};
-  };
   return (
     <div>
       <TabsBar>
@@ -348,8 +332,14 @@ export function QueryEditor(props: EditorProps) {
             key={t}
             active={tab === t}
             onChangeTab={onSelectTab(t)}
-            id={tabId(t)}
-            style={tabClass(t)}
+            style={{ display: 'flex' }}
+            suffix={
+              t === Tabs.Templates ||
+              t === Tabs.FlexibleDataModelling ||
+              t === Tabs.ExtractionPipelines
+                ? () => <p className="preview-label">Preview</p>
+                : undefined
+            }
           />
         ))}
       </TabsBar>
