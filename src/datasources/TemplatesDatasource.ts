@@ -7,7 +7,7 @@ import { handleError } from '../appEventHandler';
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
 
 export class TemplatesDatasource {
-  public constructor(private connector: Connector) {}
+  constructor(private connector: Connector) {}
 
   cachedTemplateGroups = [];
 

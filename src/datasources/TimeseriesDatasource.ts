@@ -129,7 +129,7 @@ export async function getDataQueryRequestItems(
   return { type, items, target };
 }
 export class TimeseriesDatasource {
-  public constructor(private connector: Connector) {}
+  constructor(private connector: Connector) {}
   async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
     options: QueryOptions

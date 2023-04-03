@@ -154,6 +154,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     if (current.value && !current.label) {
       fetchAndSetDropdownLabel(current.value);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.value]);
 
   useEffect(() => {
@@ -163,10 +164,11 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
         target: current.value,
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.value, current.externalId]);
   useEffect(() => {
     if (query.assetQuery.withRelationships && current?.externalId)
-      onQueryChange({
+      {onQueryChange({
         assetQuery: {
           ...query.assetQuery,
           relationshipsQuery: {
@@ -174,7 +176,8 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
             sourceExternalIds: [current.externalId],
           },
         },
-      });
+      });}
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.externalId, query.assetQuery.withRelationships]);
   return (
     <div className="gf-form-inline">
@@ -308,6 +311,7 @@ export function QueryEditor(props: EditorProps) {
     return () => {
       eventsUnsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const tabId = (t) => {
@@ -334,8 +338,8 @@ export function QueryEditor(props: EditorProps) {
   };
   const tabClass = (t) => {
     if (t === Tabs.FlexibleDataModelling || t === Tabs.ExtractionPipelines)
-      return { minWidth: '14em' };
-    if (t === Tabs.Templates) return { minWidth: '10em' };
+      {return { minWidth: '14em' };}
+    if (t === Tabs.Templates) {return { minWidth: '10em' };}
     return {};
   };
   return (

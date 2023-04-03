@@ -7,7 +7,7 @@ import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from './ty
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,
   externalIdPrefix = 'externalId-',
-  dpNumber: number = 5
+  dpNumber = 5
 ) {
   const aggregate = aggregates ? aggregates[0] : '';
   const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({

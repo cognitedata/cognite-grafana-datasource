@@ -49,6 +49,7 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     if (aggregate?.withAggregate) {
       ['count', 'map'].map((v) => !columns.includes(v) && columns.push(v));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aggregate]);
   const onEventQueryChange = (e: Partial<EventQuery>) => {
     onQueryChange({
@@ -141,6 +142,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
         },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const properties = query.eventQuery.aggregate?.properties || [];
   const onEventQueryChange = (e: Partial<EventQuery>) => {
@@ -214,12 +216,13 @@ const AdvancedEventFilter = (props) => {
     onQueryChange({
       eventQuery,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventQuery]);
   const valid = (advancedFilter): boolean => {
     return jsonlint.parse(advancedFilter) ?? false;
   };
   const onChange = (advancedFilter) => {
-    if (valid(advancedFilter)) patchEventQuery({ advancedFilter });
+    if (valid(advancedFilter)) {patchEventQuery({ advancedFilter });}
   };
 
   return (

@@ -223,15 +223,15 @@ export interface CogniteRelationshipResponse {
   name?: string;
 }
 export interface RelationshipsFilter {
-  dataSetIds?: {
+  dataSetIds?: Array<{
     id: number;
     value?: string;
-  }[];
+  }>;
   labels?: {
-    containsAny: {
+    containsAny: Array<{
       externalId: string;
       value?: string;
-    }[];
+    }>;
   };
   isActiveAtTime?: boolean;
   activeAtTime?: {

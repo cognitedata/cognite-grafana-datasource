@@ -42,7 +42,7 @@ const exctractValuesToTable = (list, query, name) => {
         );
       } else if (_.isObject(value)) {
         _.map(value, (v, k) => _.assignIn(resource, { [`${key}-${k}`]: v }));
-      } else _.assignIn(resource, { [key]: value });
+      } else {_.assignIn(resource, { [key]: value });}
     });
 
     return resource as Resource;
@@ -55,7 +55,7 @@ const exctractValuesToTable = (list, query, name) => {
   return getRuns ? tableData : [tableData, ...extra];
 };
 export class ExtractionPipelinesDatasource {
-  public constructor(private connector: Connector) {}
+  constructor(private connector: Connector) {}
   private async getDataset(id, refId): Promise<Dataset[]> {
     try {
       const dataset = await this.connector.fetchItems<Dataset>({
@@ -157,11 +157,11 @@ export class ExtractionPipelinesDatasource {
   postQuery(query: ExtractionPipelinesQuery, refId: string) {
     const { selections, getRuns, limit, columns } = query;
     if (!getRuns)
-      return this.fetchExtractionPipelines(
+      {return this.fetchExtractionPipelines(
         selections.map(({ id }) => ({ id })),
         refId,
         columns
-      );
+      );}
     return Promise.all(
       selections.map(({ value }) =>
         this.fetchExtractionPipelinesRuns({ externalId: value }, refId, limit)
@@ -175,7 +175,7 @@ export class ExtractionPipelinesDatasource {
         handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
         return [];
       }
-      if (selections?.length) return this.postQuery(query, refId);
+      if (selections?.length) {return this.postQuery(query, refId);}
       const items = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: `/extpipes/list`,
         method: HttpMethod.POST,

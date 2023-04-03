@@ -184,10 +184,10 @@ export interface CogniteSecureJsonData {
  * Value that is used in the backend, but never sent over HTTP to the frontend
  */
 export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
-  return (<DataQueryError>maybeError).error !== undefined;
+  return (maybeError as DataQueryError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<(TimeSeries | TableData | MutableDataFrame)[]>;
+export type QueryResponse = DataResponse<Array<TimeSeries | TableData | MutableDataFrame>>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -195,15 +195,15 @@ export interface MetricDescription {
 }
 
 export interface RelationshipsQuery {
-  dataSetIds?: {
+  dataSetIds?: Array<{
     id: number;
     value?: string;
-  }[];
+  }>;
   labels?: {
-    containsAny: {
+    containsAny: Array<{
       externalId: string;
       value?: string;
-    }[];
+    }>;
   };
   isActiveAtTime?: boolean;
   activeAtTime?: {
@@ -230,7 +230,7 @@ export interface EventQuery {
   advancedFilter: string;
   aggregate?: {
     name: 'uniqueValues' | 'count';
-    properties: { property?: string }[];
+    properties: Array<{ property?: string }>;
     withAggregate: boolean;
   };
 }
@@ -473,7 +473,7 @@ export interface QueryWarning {
 
 export interface FDMQueryResponse {
   [x: string]: {
-    edges?: { node?: { [x: string]: any } }[];
+    edges?: Array<{ node?: { [x: string]: any } }>;
     items?: any[];
   };
 }

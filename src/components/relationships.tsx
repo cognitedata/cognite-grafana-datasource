@@ -70,6 +70,7 @@ export const RelationshipsTab = (
     } else {
       resetSource();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataIds, containsAny]);
   return (
     <div className="relationships-row">
@@ -145,7 +146,7 @@ export const RelationshipsTab = (
                 }))}
                 allowCustomValue
                 onChange={(values) => {
-                  if (!values?.length) resetDepth();
+                  if (!values?.length) {resetDepth();}
                   onQueryChange(_.set(query, `${route}.sourceExternalIds`, _.map(values, 'value')));
                 }}
               />

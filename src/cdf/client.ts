@@ -83,7 +83,7 @@ export function formQueryForItems(
   }
 }
 
-function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates: boolean = true) {
+function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates = true) {
   return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
 }
 
@@ -153,7 +153,7 @@ export function labelContainsVariableProps(label: string): boolean {
 export async function getTimeseries(
   data: TimeseriesFilterQuery | Items<IdEither>,
   connector: Connector,
-  filterIsString: boolean = true
+  filterIsString = true
 ): Promise<TimeSeriesResponseItem[]> {
   const method = HttpMethod.POST;
   let items: TimeSeriesResponseItem[];
@@ -250,7 +250,7 @@ export function reduceTimeseries(
 export function datapoints2Tuples<T extends Timestamp[]>(
   datapoints: T,
   aggregate: string
-): Tuple<number>[] {
+): Array<Tuple<number>> {
   return datapoints.map((d) => datapoint2Tuple(d, aggregate));
 }
 
