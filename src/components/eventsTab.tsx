@@ -222,7 +222,9 @@ const AdvancedEventFilter = (props) => {
     return jsonlint.parse(advancedFilter) ?? false;
   };
   const onChange = (advancedFilter) => {
-    if (valid(advancedFilter)) {patchEventQuery({ advancedFilter });}
+    if (valid(advancedFilter)) {
+      patchEventQuery({ advancedFilter });
+    }
   };
 
   return (

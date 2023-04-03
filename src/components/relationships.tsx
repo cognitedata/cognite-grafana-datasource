@@ -146,7 +146,9 @@ export const RelationshipsTab = (
                 }))}
                 allowCustomValue
                 onChange={(values) => {
-                  if (!values?.length) {resetDepth();}
+                  if (!values?.length) {
+                    resetDepth();
+                  }
                   onQueryChange(_.set(query, `${route}.sourceExternalIds`, _.map(values, 'value')));
                 }}
               />

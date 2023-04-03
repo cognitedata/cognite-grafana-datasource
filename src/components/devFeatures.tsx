@@ -5,7 +5,6 @@ import React, { useEffect } from 'react';
  * This is used to hide/show experimental features
  */
 export const KonamiTracker = ({ onCheat }: { onCheat: () => void }) => {
-  
   useEffect(() => {
     const keySequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
     let pointer = 0;
