@@ -1,13 +1,13 @@
 import ms from 'ms';
 import { DataSourceInstanceSettings } from '@grafana/data';
 import _ from 'lodash';
-import CogniteDatasource from '../datasource';
-import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from '../types';
+import CogniteDatasource from './datasource';
+import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from './types';
 
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,
   externalIdPrefix = 'externalId-',
-  dpNumber: number = 5
+  dpNumber = 5
 ) {
   const aggregate = aggregates ? aggregates[0] : '';
   const datapoints = new Array(dpNumber).fill(null).map((_, i) => ({
@@ -53,6 +53,11 @@ const instanceSettings = ({ oauthPassThru }) =>
 
 export const getMockedDataSource = (options = { oauthPassThru: false }) =>
   new CogniteDatasource(instanceSettings(options));
+
+export const getDataSourceWithMocks = (options?: any) => {
+  const ds = getMockedDataSource(options);
+  return { ds, backendSrv: ds.backendSrv, templateSrv: ds.templateSrv };
+};
 
 export function getMeta(id, aggregation, labels, type = 'data') {
   return {

@@ -26,6 +26,7 @@ export const ExtractionPipelinesTab = (
     onQueryChange({
       extractionPipelinesQuery,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extractionPipelinesQuery]);
   const { columns, selections, getRuns, limit } = extractionPipelinesQuery;
   return (

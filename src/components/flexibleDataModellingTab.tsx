@@ -22,6 +22,7 @@ export const FlexibleDataModellingTab = (
   const firstSelection = useMemo(
     (graphQlQuery = flexibleDataModellingQuery.graphQlQuery) =>
       getFirstSelection(graphQlQuery, query.refId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [flexibleDataModellingQuery.graphQlQuery]
   );
   const patchFlexibleDataModellingQuery = (
@@ -45,6 +46,7 @@ export const FlexibleDataModellingTab = (
     patchFlexibleDataModellingQuery({
       tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flexibleDataModellingQuery.graphQlQuery, firstSelection]);
   useEffect(() => {
     datasource.flexibleDataModellingDatasource
@@ -58,6 +60,7 @@ export const FlexibleDataModellingTab = (
         setNames(names);
         setDataModelOptions(dataModelOptions);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <>

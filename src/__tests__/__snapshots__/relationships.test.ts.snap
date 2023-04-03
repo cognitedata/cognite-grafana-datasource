@@ -1,86 +1,86 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Relationships createRelationshipsNode adds value when relationshipsList is present match snapshot 1`] = `
-Object {
-  "edges": Object {
-    "fields": Array [
-      Object {
-        "config": Object {},
+{
+  "edges": {
+    "fields": [
+      {
+        "config": {},
         "labels": undefined,
         "name": "id",
         "type": "string",
-        "values": Array [
+        "values": [
           "test",
         ],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "source",
         "type": "string",
-        "values": Array [
+        "values": [
           "test-source",
         ],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "target",
         "type": "string",
-        "values": Array [
+        "values": [
           "test-target",
         ],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "mainStat",
         "type": "string",
-        "values": Array [
+        "values": [
           "Test Label ExternalId",
         ],
       },
     ],
-    "meta": Object {
+    "meta": {
       "preferredVisualisationType": "nodeGraph",
     },
     "name": "edges",
     "refId": "A",
   },
-  "nodes": Object {
-    "fields": Array [
-      Object {
-        "config": Object {},
+  "nodes": {
+    "fields": [
+      {
+        "config": {},
         "labels": undefined,
         "name": "id",
         "type": "string",
-        "values": Array [
+        "values": [
           "test-source",
           "test-target",
         ],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "title",
         "type": "string",
-        "values": Array [
+        "values": [
           "test source description",
           "Test Target descriptipn",
         ],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "mainStat",
         "type": "string",
-        "values": Array [
+        "values": [
           "Test Source",
           "Test  Target",
         ],
       },
     ],
-    "meta": Object {
+    "meta": {
       "preferredVisualisationType": "nodeGraph",
     },
     "name": "nodes",
@@ -90,69 +90,69 @@ Object {
 `;
 
 exports[`Relationships createRelationshipsNode with empty relationships list match snapshot 1`] = `
-Object {
-  "edges": Object {
-    "fields": Array [
-      Object {
-        "config": Object {},
+{
+  "edges": {
+    "fields": [
+      {
+        "config": {},
         "labels": undefined,
         "name": "id",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "source",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "target",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "mainStat",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
     ],
-    "meta": Object {
+    "meta": {
       "preferredVisualisationType": "nodeGraph",
     },
     "name": "edges",
     "refId": "A",
   },
-  "nodes": Object {
-    "fields": Array [
-      Object {
-        "config": Object {},
+  "nodes": {
+    "fields": [
+      {
+        "config": {},
         "labels": undefined,
         "name": "id",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "title",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
-      Object {
-        "config": Object {},
+      {
+        "config": {},
         "labels": undefined,
         "name": "mainStat",
         "type": "string",
-        "values": Array [],
+        "values": [],
       },
     ],
-    "meta": Object {
+    "meta": {
       "preferredVisualisationType": "nodeGraph",
     },
     "name": "nodes",

@@ -49,7 +49,7 @@ pre code,
 .gf-field-switch > div:last-child {
   margin: 8px 0 0 16px;
 }
-#preview-tab-label:after  {
+#preview-tab-label:after {
   background: #ffdc7f;
   border-radius: 3px;
   color: #262626;
@@ -67,6 +67,6 @@ pre code,
   font-weight: 500;
 }
 .limit-class {
-  margin-left: 8px;;
+  margin-left: 8px;
   width: 75px;
 }

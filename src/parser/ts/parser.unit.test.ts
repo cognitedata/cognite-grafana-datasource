@@ -479,7 +479,7 @@ describe('convert expression to label', () => {
 });
 
 describe('parse unary "-" operator', () => {
-  const queries: [string, STSQuery][] = [
+  const queries: Array<[string, STSQuery]> = [
     ['-ts{name="test"}', [Operator('-'), STS([Filter('name', 'test')])]],
     [
       'ts{name="test1"} + - ts{name="test2"}',
