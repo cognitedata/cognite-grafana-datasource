@@ -2,6 +2,10 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 3.0.1 - April 3rd, 2023
+- Patched plugin dependencies
+- Fixed the wording for the CDF host paramether in the plugin configuration
+
 ## 3.0.0 - November 21st, 2022
 - The connector dependencies has been updated and the connector now requires Grafana v8 or later.
 - [Flexible Data Modelling](https://hub.cognite.com/groups/flexible-data-modeling-early-adopter-208) is now added as a preview feature. You need enable it on the data source settings. The plugin will visualize tables and time series which has been modelled in Cognite's new Flexible Data Model
