@@ -50,46 +50,47 @@ export class EventsDatasource {
       })
     );
   }
-  getEventFilterRequestBody = ({ aggregate, advancedFilterQuery, timeRange, sort, params }: { sort?: EventQuerySortProp[], aggregate: EventQueryAggregate, advancedFilterQuery: any, timeRange: EventsFilterTimeParams, params: {} }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
+  getEventFilterRequestBody = ({ aggregate, advancedFilterQuery, timeRange, sort, params }: { sort?: EventQuerySortProp[], aggregate: EventQueryAggregate, advancedFilterQuery: any, timeRange: EventsFilterTimeParams, params: any }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
     const filter = { ...timeRange, ...params };
     const sortParams = sort?.length ? { sort } : {};
+    let body: FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> = {
+      limit: EVENTS_PAGE_LIMIT,
+      filter,
+    }
     if (advancedFilterQuery) {
+      body = {
+        ...body,
+        advancedFilter: advancedFilterQuery,
+      }
       if (aggregate) {
         const { name, properties, withAggregate } = aggregate;
         if (withAggregate) {
           if (properties.length) {
-            return {
-              advancedFilter: advancedFilterQuery,
-              filter,
+            body = {
+              ...body,
               aggregate: name,
-              properties, // is it properties or fields?
-            };
+              properties
+            }
+          } else {
+            body = {
+              ...body,
+              ...sortParams
+            }
           }
-          return {
-            advancedFilter: advancedFilterQuery,
-            filter,
-            ...sortParams,
-          };
         }
       }
-      return {
-        advancedFilter: advancedFilterQuery,
-        filter,
-        ...sortParams,
-        limit: EVENTS_PAGE_LIMIT,
-      };
+      return body;
     }
     return {
-      filter,
-      ...sortParams,
-      limit: EVENTS_PAGE_LIMIT,
+      ...body,
+      ...sortParams, 
     };
   };
 
-  async fetchEvents({ expr, advancedFilter, sort, aggregate, ...rest }: EventQuery, timeRange: EventsFilterTimeParams) {
+  async fetchEvents({ expr, advancedFilter, sort, aggregate }: EventQuery, timeRange: EventsFilterTimeParams) {
     let filter = [];
     let params = {};
-    let path = aggregate ? 'aggregate' : 'list';
+    let path = aggregate?.withAggregate ? 'aggregate' : 'list';
     if (expr) {
       const parsedQuery = parseQuery(expr);
       filter = parsedQuery.filters;
