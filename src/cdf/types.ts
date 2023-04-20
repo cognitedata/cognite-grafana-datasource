@@ -115,6 +115,15 @@ export interface FilterRequest<Filter> extends Limit, Cursor {
   advancedFilter?: any;
 }
 
+export interface AggregateRequest<Filter> extends Limit, Cursor {
+  filter?: Filter;
+  aggregate: string;
+  properties: {
+    property?: string;
+  }[];
+  advancedFilter?: any;
+}
+
 export interface Resource {
   id: number;
   externalId?: string;

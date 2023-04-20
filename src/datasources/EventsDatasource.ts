@@ -1,10 +1,11 @@
 import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
-import { CogniteQuery, HttpMethod, Tuple } from '../types';
+import { CogniteQuery, EventQuery, EventQueryAggregate, EventQuerySortProp, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
 import { applyFilters, getRange } from '../utils';
 import { parse as parseQuery } from '../parser/events-assets';
 import {
+  AggregateRequest,
   CogniteEvent,
   EventsFilterRequestParams,
   EventsFilterTimeParams,
@@ -49,11 +50,46 @@ export class EventsDatasource {
       })
     );
   }
+  getEventFilterRequestBody = ({ aggregate, advancedFilterQuery, timeRange, sort, params }: { sort?: EventQuerySortProp[], aggregate: EventQueryAggregate, advancedFilterQuery: any, timeRange: EventsFilterTimeParams, params: {} }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
+    const filter = { ...timeRange, ...params };
+    const sortParams = sort?.length ? { sort } : {};
+    if (advancedFilterQuery) {
+      if (aggregate) {
+        const { name, properties, withAggregate } = aggregate;
+        if (withAggregate) {
+          if (properties.length) {
+            return {
+              advancedFilter: advancedFilterQuery,
+              filter,
+              aggregate: name,
+              properties, // is it properties or fields?
+            };
+          }
+          return {
+            advancedFilter: advancedFilterQuery,
+            filter,
+            ...sortParams,
+          };
+        }
+      }
+      return {
+        advancedFilter: advancedFilterQuery,
+        filter,
+        ...sortParams,
+        limit: EVENTS_PAGE_LIMIT,
+      };
+    }
+    return {
+      filter,
+      ...sortParams,
+      limit: EVENTS_PAGE_LIMIT,
+    };
+  };
 
-  async fetchEvents({ expr, advancedFilter, ...rest }, timeRange: EventsFilterTimeParams) {
+  async fetchEvents({ expr, advancedFilter, sort, aggregate, ...rest }: EventQuery, timeRange: EventsFilterTimeParams) {
     let filter = [];
     let params = {};
-    let path = 'list';
+    let path = aggregate ? 'aggregate' : 'list';
     if (expr) {
       const parsedQuery = parseQuery(expr);
       filter = parsedQuery.filters;
@@ -63,41 +99,7 @@ export class EventsDatasource {
       this.connector.isEventsAdvancedFilteringEnabled() && advancedFilter
         ? jsonlint.parse(advancedFilter)
         : undefined;
-    const getRequestBody = () => {
-      const filter = { ...timeRange, ...params };
-      if (advancedFilterQuery) {
-        if (rest.aggregate) {
-          const {
-            aggregate: { name, properties, withAggregate },
-          } = rest;
-          if (withAggregate) {
-            path = 'aggregate';
-            if (properties.property?.length) {
-              return {
-                advancedFilter: advancedFilterQuery,
-                filter,
-                aggregate: name,
-                properties,
-              };
-            }
-            return {
-              advancedFilter: advancedFilterQuery,
-              filter,
-            };
-          }
-        }
-        return {
-          advancedFilter: advancedFilterQuery,
-          filter,
-          limit: EVENTS_PAGE_LIMIT,
-        };
-      }
-      return {
-        filter,
-        limit: EVENTS_PAGE_LIMIT,
-      };
-    };
-    const data: FilterRequest<EventsFilterRequestParams> = getRequestBody();
+    const data = this.getEventFilterRequestBody({ advancedFilterQuery, aggregate, timeRange, sort, params });
     const items = await this.connector.fetchItems<CogniteEvent>({
       data,
       path: `/events/${path}`,

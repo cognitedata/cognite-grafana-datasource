@@ -223,16 +223,23 @@ export interface AssetQuery {
   relationshipsQuery?: RelationshipsQuery;
 }
 
+export interface EventQueryAggregate {
+  name: 'uniqueValues' | 'count';
+  properties: Array<{ property?: string }>;
+  withAggregate: boolean;
+}
+
+export interface EventQuerySortProp {
+  property: string, order?: 'asc' | 'desc', nulls?: 'first' | 'last' | 'auto'
+}
+
 export interface EventQuery {
   expr: string;
-  activeAtTimeRange: boolean;
-  columns: string[];
+  activeAtTimeRange?: boolean;
+  columns?: string[];
   advancedFilter: string;
-  aggregate?: {
-    name: 'uniqueValues' | 'count';
-    properties: Array<{ property?: string }>;
-    withAggregate: boolean;
-  };
+  sort?: EventQuerySortProp[]
+  aggregate?: EventQueryAggregate;
 }
 export interface ExtractionPipelinesQuery {
   selections: SelectableValue[];
