@@ -141,7 +141,7 @@ export const FlexibleDataModellingTab = (
           onEditorDidMount={(newEditor) => setEditor(newEditor)}
           value={flexibleDataModellingQuery.graphQlQuery ?? ''}
           language="graphql"
-          height={400}
+          height={200}
           onBlur={updateGraphQuery}
           onSave={updateGraphQuery}
           showMiniMap={false}

@@ -334,9 +334,7 @@ export function QueryEditor(props: EditorProps) {
             onChangeTab={onSelectTab(t)}
             style={{ display: 'flex' }}
             suffix={
-              t === Tabs.Templates ||
-              t === Tabs.FlexibleDataModelling ||
-              t === Tabs.ExtractionPipelines
+              t === Tabs.Templates || t === Tabs.ExtractionPipelines
                 ? () => <p className="preview-label">Preview</p>
                 : undefined
             }
