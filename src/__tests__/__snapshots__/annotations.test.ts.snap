@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Annotations Query Given an annotation query should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
-      "assetIds": Array [
+      "assetIds": [
         123,
       ],
       "type": "type 1",
@@ -22,10 +22,10 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query where nothing is returned should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
@@ -40,14 +40,14 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query with a metadata request should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
-      "metadata": Object {
+      "metadata": {
         "key1": "value1",
         "key2": "value2",
       },
@@ -61,17 +61,17 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query with additional time filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
-      "endTime": Object {
+      "endTime": {
         "isNull": false,
       },
-      "startTime": Object {
+      "startTime": {
         "min": 123,
       },
     },
@@ -96,10 +96,10 @@ events{ name=~event, foo}
 `;
 
 exports[`Annotations Query Given an annotation query with filters should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
@@ -113,14 +113,14 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 1`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
-      "assetIds": Array [
+      "assetIds": [
         123,
       ],
     },
@@ -133,14 +133,14 @@ Object {
 `;
 
 exports[`Annotations Query Given an annotation query with variables should generate the correct request 2`] = `
-Object {
-  "data": Object {
-    "filter": Object {
-      "activeAtTime": Object {
+{
+  "data": {
+    "filter": {
+      "activeAtTime": {
         "max": 1549338475000,
         "min": 1549336675000,
       },
-      "assetIds": Array [
+      "assetIds": [
         123,
         456,
       ],

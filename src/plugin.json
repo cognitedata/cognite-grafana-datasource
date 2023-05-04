@@ -45,7 +45,7 @@
         {
           "name": "x-cdp-app",
           "content": "Cognite Grafana Datasource"
-        }        
+        }
       ]
     },
     {
@@ -59,7 +59,7 @@
         {
           "name": "x-cdp-app",
           "content": "Cognite Grafana Datasource"
-        }        
+        }
       ],
       "tokenAuth": {
         "url": "{{ .JsonData.oauthTokenUrl }}",
@@ -84,9 +84,9 @@
           "content": "CogniteGrafanaDatasource:%VERSION%"
         },
         {
-            "name": "x-cdp-app",
-            "content": "Cognite Grafana Datasource"
-        }        
+          "name": "x-cdp-app",
+          "content": "Cognite Grafana Datasource"
+        }
       ]
     }
   ],

@@ -42,6 +42,7 @@ const MultiSelectAsync = (props) => {
     </Field>
   );
 };
+
 export const RelationshipsTab = (
   props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null }
 ) => {
@@ -60,15 +61,16 @@ export const RelationshipsTab = (
     onQueryChange(_.set(query, `${route}.sourceExternalIds`, []));
     resetDepth();
   };
-  const dataIds = _.get(query, `${route}.dataSetIds`);
-  const containsAny = _.get(query, `${route}.labels.containsAny`);
-  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`)?.length;
+  const dataIds = _.get(query, `${route}.dataSetIds`, []);
+  const containsAny = _.get(query, `${route}.labels.containsAny`, []);
+  const isDepthActive = !!_.get(query, `${route}.sourceExternalIds`, [])?.length;
   useEffect(() => {
     if (!!dataIds?.length || !!containsAny?.length) {
       updateOptions();
     } else {
       resetSource();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataIds, containsAny]);
   return (
     <div className="relationships-row">
@@ -144,7 +146,9 @@ export const RelationshipsTab = (
                 }))}
                 allowCustomValue
                 onChange={(values) => {
-                  if (!values?.length) resetDepth();
+                  if (!values?.length) {
+                    resetDepth();
+                  }
                   onQueryChange(_.set(query, `${route}.sourceExternalIds`, _.map(values, 'value')));
                 }}
               />

@@ -73,6 +73,7 @@ export function ResourceSelect(props: {
         setExternalIdField(resource.externalId);
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

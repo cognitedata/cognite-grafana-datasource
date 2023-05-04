@@ -113,7 +113,7 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
   };
 };
 export class RelationshipsDatasource {
-  public constructor(private connector: Connector) {}
+  constructor(private connector: Connector) {}
 
   private getRelationships(
     query: RelationshipsQuery & { refId: string },

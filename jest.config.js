@@ -1,7 +1,8 @@
-const standard = require('@grafana/toolkit/src/config/jest.plugin.config');
+// force timezone to UTC to allow tests to work regardless of local timezone
+// generally used by snapshots, but can affect specific tests
+process.env.TZ = 'UTC';
 
-// This process will use the same config that `yarn test` is using
-const jestConfig = standard.jestConfig();
-jestConfig.testPathIgnorePatterns = ["<rootDir>/src/__tests__/utils.ts"]
-
-module.exports = jestConfig;
+module.exports = {
+  // Jest configuration provided by Grafana scaffolding
+  ...require('./.config/jest.config'),
+};

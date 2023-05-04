@@ -3,7 +3,11 @@ import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
 import { CogniteQuery, defaultQuery, defaultRelationshipsQuery, QueryTarget, Tab } from '../types';
-import { getDataqueryResponse, getItemsResponseObject, getMockedDataSource } from './utils';
+import {
+  getDataqueryResponse,
+  getDataSourceWithMocks,
+  getItemsResponseObject,
+} from '../test_utils';
 import { failedResponseEvent } from '../constants';
 import { eventBusService } from '../appEventHandler';
 
@@ -12,8 +16,6 @@ type Mock = jest.Mock;
 
 type QueryTargetLike = Partial<CogniteQuery>;
 
-const ds = getMockedDataSource();
-const { backendSrv, templateSrv } = ds;
 const { Asset, Custom, Timeseries } = Tab;
 
 const appEvents = eventBusService;
@@ -55,6 +57,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given an older queryTarget format', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let results;
     const id = 123;
     const aggregates = ['average'];
@@ -97,6 +100,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Select Timeseries" queries', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const id = 789;
     const tsTargetA: QueryTargetLike = {
@@ -160,6 +164,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Select Timeseries" queries with errors', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
@@ -201,6 +206,7 @@ describe('Datasource Query', () => {
 
   //
   describe('Given "Select Timeseries from Asset" queries', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const assetQuery = {
       target: '789',
@@ -297,6 +303,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Give "Select Timeseries of Relationships target from Asset" queries', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const assetQuery = {
       target: '789',
@@ -352,6 +359,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given custom queries', () => {
+    const { ds, backendSrv, templateSrv } = getDataSourceWithMocks();
     let result;
     const targetB: QueryTargetLike = {
       aggregation: 'none',
@@ -437,6 +445,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given custom queries with functions', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
@@ -503,6 +512,7 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Custom queries" with errors', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const targets: QueryTargetLike[] = [
       {
         refId: 'A',
@@ -550,6 +560,7 @@ describe('Datasource Query', () => {
   });
 
   describe('filterQueryTargets', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const normalTargets = [
       {
         target: '',
@@ -662,6 +673,7 @@ describe('Datasource Query', () => {
     });
   });
   describe('replaceVariable', () => {
+    const { ds, backendSrv } = getDataSourceWithMocks();
     const singleValueQuery = `events{assetIds=[$AssetVariable]}`;
     const multiValueQuery = `events{assetIds=[\${MultiValue:csv}]}`;
     const multiVariableQuery = `events{assetIds=[$MultiValue], type=$Type, subtype=$Type}`;
@@ -676,6 +688,7 @@ describe('Datasource Query', () => {
   });
 });
 describe('Given custom query with pure text label', () => {
+  const { ds, backendSrv } = getDataSourceWithMocks();
   beforeAll(async () => {
     jest.clearAllMocks();
     backendSrv.datasourceRequest = jest.fn().mockImplementation(async (x) => {
@@ -698,6 +711,7 @@ describe('Given custom query with pure text label', () => {
 });
 
 describe('custom query granularity less then a second', () => {
+  const { ds, backendSrv } = getDataSourceWithMocks();
   const targetA = {
     tab: Tab.Custom,
     expr: 'ts{id=1}',

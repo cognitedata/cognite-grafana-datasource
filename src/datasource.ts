@@ -122,7 +122,7 @@ export default class CogniteDatasource extends DataSourceApi<
       extractionPipelinesTargets,
       flexibleDataModellingTargets,
     } = groupTargets(queryTargets);
-    let responseData: (TimeSeries | TableData | MutableDataFrame)[] = [];
+    let responseData: Array<TimeSeries | TableData | MutableDataFrame> = [];
     if (queryTargets.length) {
       try {
         const timeseriesResults = await this.timeseriesDatasource.query({
@@ -230,7 +230,7 @@ export default class CogniteDatasource extends DataSourceApi<
     return this.templateSrv.replace(query.trim(), scopedVars);
   }
 
-  replaceVariablesArr(arr: (string | undefined)[], scopedVars: ScopedVars) {
+  replaceVariablesArr(arr: Array<string | undefined>, scopedVars: ScopedVars) {
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
   /**
@@ -274,7 +274,7 @@ export default class CogniteDatasource extends DataSourceApi<
     query: string,
     type?: string,
     options?: any
-  ): Promise<(SelectableValue<string> & Resource)[]> {
+  ): Promise<Array<SelectableValue<string> & Resource>> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',

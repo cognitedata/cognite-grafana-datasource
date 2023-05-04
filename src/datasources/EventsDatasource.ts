@@ -15,7 +15,7 @@ import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '.
 import { emitEvent, handleError } from '../appEventHandler';
 
 export class EventsDatasource {
-  public constructor(private connector: Connector) {}
+  constructor(private connector: Connector) {}
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
     const eventResults = await this.fetchEventTargets(options.targets, timeRange);

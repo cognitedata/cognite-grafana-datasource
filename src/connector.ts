@@ -17,7 +17,7 @@ import { getQueryString } from './utils';
 import { API_V1, AuthType, CacheTime } from './constants';
 
 export class Connector {
-  public constructor(
+  constructor(
     private project: string,
     private apiUrl: string,
     private backendSrv: BackendSrv,
@@ -31,7 +31,7 @@ export class Connector {
 
   cachedRequests = new Map<string, Promise<any>>();
 
-  public fetchData<T>(request: RequestParams): Promise<T> {
+  fetchData<T>(request: RequestParams): Promise<T> {
     const { path, data, method, params, requestId, cacheTime, headers } = request;
     const queryString = params ? `?${getQueryString(params)}` : '';
     const url = `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;
@@ -42,9 +42,9 @@ export class Connector {
     return this.cachedRequest(body, cacheTime);
   }
 
-  public async chunkAndFetch<Req extends Items, Res extends Response>(
+  async chunkAndFetch<Req extends Items, Res extends Response>(
     request: RequestParams<Req>,
-    chunkSize: number = 100
+    chunkSize = 100
   ): Promise<Res> {
     const { data, requestId } = request;
     const chunkedItems = chunk(data.items, chunkSize);
@@ -70,7 +70,7 @@ export class Connector {
     };
   }
 
-  public async fetchItems<T>(params: RequestParams): Promise<T[]> {
+  async fetchItems<T>(params: RequestParams): Promise<T[]> {
     const { data } = await this.fetchData<Response<T>>(params);
     return data.items;
   }
@@ -80,7 +80,7 @@ export class Connector {
     return data;
   }
 
-  public async fetchAndPaginate<T>(params: RequestParams<Limit>) {
+  async fetchAndPaginate<T>(params: RequestParams<Limit>) {
     const maxLimit = 1000;
     const { data: queryData } = params;
     const fullLimit = queryData.limit || maxLimit;
@@ -112,7 +112,7 @@ export class Connector {
     return items;
   }
 
-  public request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
+  request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
     return this.backendSrv.datasourceRequest({
       method,
       url: `${this.apiUrlAuth}/${path}`,
@@ -134,22 +134,22 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
-  public isUsingOAuth() {
+  isUsingOAuth() {
     return this.oauthPassThru || this.oauthClientCredentials;
   }
 
-  public isTemplatesEnabled() {
+  isTemplatesEnabled() {
     return this.enableTemplates;
   }
 
-  public isEventsAdvancedFilteringEnabled() {
+  isEventsAdvancedFilteringEnabled() {
     return this.enableEventsAdvancedFiltering;
   }
 
-  public isFlexibleDataModellingEnabled() {
+  isFlexibleDataModellingEnabled() {
     return this.enableFlexibleDataModelling;
   }
-  public isExtractionPipelinesEnabled() {
+  isExtractionPipelinesEnabled() {
     return this.enableExtractionPipelines;
   }
 

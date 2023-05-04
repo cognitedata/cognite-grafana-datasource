@@ -52,10 +52,7 @@ const getEdgesTableData = (edges): TableData => {
 };
 const getFirstNameValue = (arr) => arr?.name?.value;
 export class FlexibleDataModellingDatasource {
-  public constructor(
-    private connector: Connector,
-    private timeseriesDatasource: TimeseriesDatasource
-  ) {}
+  constructor(private connector: Connector, private timeseriesDatasource: TimeseriesDatasource) {}
 
   async listFlexibleDataModelling(refId: string): Promise<
     FDMQueryResponse<{
@@ -178,7 +175,9 @@ export class FlexibleDataModellingDatasource {
                 _.filter(node, (value, key) => {
                   const typename = '__typename';
                   if (_.has(value, typename) && value[typename] === 'TimeSeries') {
-                    if (_.has(value, 'name')) labels.push(value.name);
+                    if (_.has(value, 'name')) {
+                      labels.push(value.name);
+                    }
                     return query.tsKeys.includes(key) && _.has(value, 'externalId');
                   }
                   return false;
@@ -222,7 +221,9 @@ export class FlexibleDataModellingDatasource {
                 _.filter(item, (value, key) => {
                   const typename = '__typename';
                   if (_.has(value, typename) && value[typename] === 'TimeSeries') {
-                    if (_.has(value, 'name')) labels.push(value.name);
+                    if (_.has(value, 'name')) {
+                      labels.push(value.name);
+                    }
                     return query.tsKeys.includes(key) && _.has(value, 'externalId');
                   }
                   return false;

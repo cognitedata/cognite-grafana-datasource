@@ -51,6 +51,7 @@ export function TemplatesTab(
     onQueryChange({
       templateQuery,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateQuery]);
   return (
     <>

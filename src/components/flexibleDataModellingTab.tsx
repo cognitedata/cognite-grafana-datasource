@@ -76,6 +76,7 @@ export const FlexibleDataModellingTab = (
           }))
         );
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     setVersions([]);
