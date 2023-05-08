@@ -237,7 +237,7 @@ export interface EventQuery {
   expr: string;
   activeAtTimeRange?: boolean;
   columns?: string[];
-  advancedFilter: string;
+  advancedFilter?: string;
   sort?: EventQuerySortProp[]
   aggregate?: EventQueryAggregate;
 }

@@ -316,7 +316,7 @@ export const targetToIdEither = (obj: CogniteTargetObj) => {
 export const convertItemsToTable = (
   items: Resource[],
   columns: string[],
-  name = undefined
+  name: string
 ): TableData => {
   const rows = items.map((item) =>
     columns.map((field) => {

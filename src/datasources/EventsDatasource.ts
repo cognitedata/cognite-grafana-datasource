@@ -16,7 +16,7 @@ import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '.
 import { emitEvent, handleError } from '../appEventHandler';
 
 export class EventsDatasource {
-  constructor(private connector: Connector) {}
+  constructor(private connector: Connector) { }
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
     const eventResults = await this.fetchEventTargets(options.targets, timeRange);
@@ -46,11 +46,20 @@ export class EventsDatasource {
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
-        return convertItemsToTable(events, target.eventQuery.columns);
+        return convertItemsToTable(events, target.eventQuery.columns, "events");
       })
     );
   }
-  getEventFilterRequestBody = ({ aggregate, advancedFilterQuery, timeRange, sort, params }: { sort?: EventQuerySortProp[], aggregate: EventQueryAggregate, advancedFilterQuery: any, timeRange: EventsFilterTimeParams, params: any }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
+  getEventFilterRequestBody = (
+    {
+      aggregate, advancedFilterQuery, timeRange, sort, params
+    }: {
+      sort?: EventQuerySortProp[],
+      aggregate: EventQueryAggregate,
+      advancedFilterQuery: any,
+      timeRange: EventsFilterTimeParams,
+      params: any
+    }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
     const filter = { ...timeRange, ...params };
     const sortParams = sort?.length ? { sort } : {};
     let body: FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> = {
@@ -83,7 +92,7 @@ export class EventsDatasource {
     }
     return {
       ...body,
-      ...sortParams, 
+      ...sortParams,
     };
   };
 

@@ -123,13 +123,14 @@ describe('CDF client', () => {
         { id: 2, name: 'name2' },
       ];
       const columns = ['name', 'metadata.prop', 'startTime'];
-      const table = convertItemsToTable(items, columns);
+      const table = convertItemsToTable(items, columns, "table");
       expect(table).toEqual({
         rows: [
           ['name1', 1, new Date(100)],
           ['name2', undefined, undefined],
         ],
         type: 'table',
+        name: "table",
         columns: [
           {
             text: 'name',

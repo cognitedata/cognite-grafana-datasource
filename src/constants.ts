@@ -48,7 +48,6 @@ export const EventFields = [
   ...DateFields,
 ];
 export const EventSortByFields = [
-  '_score_',
   'dataSetId',
   'description',
   'externalId',
@@ -57,6 +56,7 @@ export const EventSortByFields = [
   'subtype',
   'type',
   ...DateFields,
+  '_score_',
 ];
 const createFields = (parent, field) => `${parent}-${field}`;
 const metaFields = [
