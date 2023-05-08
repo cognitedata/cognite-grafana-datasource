@@ -472,7 +472,7 @@ export interface QueryWarning {
 
 export interface FDMQueryResponse<T> {
   [x: string]: {
-    edges?: { node?: T[] }[];
+    edges?: Array<{ node?: T[] }>;
     items?: T[];
   };
 }

@@ -7,7 +7,7 @@ import {
   MonacoEditor,
   Select,
 } from '@grafana/ui';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SelectableValue } from '@grafana/data';
 import { buildClientSchema, GraphQLSchema } from 'graphql';
 import {
@@ -29,13 +29,15 @@ export const FlexibleDataModellingTab = (
   const { flexibleDataModellingQuery } = query;
   const { externalId, space, version, graphQlQuery } = flexibleDataModellingQuery;
   const [options, setOptions] = useState<
-    SelectableValue<{ space: string; externalId: string; version: string; dml: string }>[]
+    Array<SelectableValue<{ space: string; externalId: string; version: string; dml: string }>>
   >([]);
-  const [versions, setVersions] = useState<SelectableValue<{ version: string; dml: string }>[]>([]);
+  const [versions, setVersions] = useState<
+    Array<SelectableValue<{ version: string; dml: string }>>
+  >([]);
   const [dml, setDML] = useState<string>('');
   const firstSelection = useMemo(
     () => getFirstSelection(graphQlQuery, query.refId),
-    [graphQlQuery]
+    [graphQlQuery, query.refId]
   );
   const patchFlexibleDataModellingQuery = (
     flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>
@@ -58,6 +60,7 @@ export const FlexibleDataModellingTab = (
     patchFlexibleDataModellingQuery({
       tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphQlQuery, firstSelection]);
 
   useEffect(() => {
@@ -90,7 +93,7 @@ export const FlexibleDataModellingTab = (
           }))
         );
       });
-  }, [space, externalId]);
+  }, [space, externalId, datasource.flexibleDataModellingDatasource, query.refId]);
 
   const [schema, setSchema] = useState<GraphQLSchema>();
 
@@ -102,7 +105,7 @@ export const FlexibleDataModellingTab = (
       );
       setSchema(buildClientSchema(data));
     })();
-  }, [externalId, space, version]);
+  }, [externalId, space, version, datasource.flexibleDataModellingDatasource, query]);
 
   return (
     <>
