@@ -124,9 +124,9 @@ export interface FilterRequest<Filter, SortType = {}> extends Limit, Cursor {
 export interface AggregateRequest<Filter> extends Limit, Cursor {
   filter?: Filter;
   aggregate: string;
-  properties: {
+  properties: Array<{
     property?: string;
-  }[];
+  }>;
   advancedFilter?: any;
 }
 
