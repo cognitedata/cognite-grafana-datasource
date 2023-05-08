@@ -110,8 +110,14 @@ export type EventsFilterTimeParams =
   | Pick<EventsFilterRequestParams, 'activeAtTime'>
   | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
 
-export interface FilterRequest<Filter> extends Limit, Cursor {
+
+export interface EventSortRequestParam {
+  property: string[], order?: 'asc' | 'desc', nulls?: 'first' | 'last' | 'auto'
+}
+
+export interface FilterRequest<Filter, SortType = {}> extends Limit, Cursor {
   filter?: Filter;
+  sort?: SortType;
   advancedFilter?: any;
 }
 

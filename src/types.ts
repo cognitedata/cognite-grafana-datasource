@@ -229,8 +229,12 @@ export interface EventQueryAggregate {
   withAggregate: boolean;
 }
 
+export type EventsOrderDirection = 'desc' | 'asc'
+
+export type EventsOrderNulls = 'first' | 'last' | 'auto'
+
 export interface EventQuerySortProp {
-  property: string, order?: 'asc' | 'desc', nulls?: 'first' | 'last' | 'auto'
+  property: string, order?: EventsOrderDirection, nulls?: EventsOrderNulls
 }
 
 export interface EventQuery {

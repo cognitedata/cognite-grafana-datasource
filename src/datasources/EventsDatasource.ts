@@ -7,6 +7,7 @@ import { parse as parseQuery } from '../parser/events-assets';
 import {
   AggregateRequest,
   CogniteEvent,
+  EventSortRequestParam,
   EventsFilterRequestParams,
   EventsFilterTimeParams,
   FilterRequest,
@@ -59,10 +60,15 @@ export class EventsDatasource {
       advancedFilterQuery: any,
       timeRange: EventsFilterTimeParams,
       params: any
-    }): FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> => {
+    }): FilterRequest<EventsFilterRequestParams, EventSortRequestParam[]> | AggregateRequest<EventsFilterRequestParams> => {
     const filter = { ...timeRange, ...params };
-    const sortParams = sort?.length ? { sort } : {};
-    let body: FilterRequest<EventsFilterRequestParams> | AggregateRequest<EventsFilterRequestParams> = {
+    const sortParams = sort?.length ? {
+      sort: sort.map(item => ({
+        property: item.property.split("."),
+        order: item.order,
+      }))
+    } : {};
+    let body: FilterRequest<EventsFilterRequestParams, EventSortRequestParam[]> | AggregateRequest<EventsFilterRequestParams> = {
       limit: EVENTS_PAGE_LIMIT,
       filter,
     }

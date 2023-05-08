@@ -10,7 +10,7 @@ import {
   Select,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
-import { EventQuery, SelectedProps, EditorProps } from '../types';
+import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
 import { EventFields, EventSortByFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
@@ -108,14 +108,14 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
 
 const OrderDirectionEditor = (
   { onChange, direction = "asc" }:
-  { direction: "desc" | "asc", onChange: (val: 'asc' | 'desc') => void }
+  { direction: EventsOrderDirection, onChange: (val: EventsOrderDirection) => void }
 ) => {
 
   return (
     <div className="gf-form">
       <InlineFormLabel width={6}>Order</InlineFormLabel>
       <Select
-        onChange={({ value }) => onChange(value as 'asc' | 'desc')}
+        onChange={({ value }) => onChange(value as  EventsOrderDirection)}
         options={[{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }]}
         menuPosition="fixed"
         value={direction}
