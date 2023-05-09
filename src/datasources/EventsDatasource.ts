@@ -69,36 +69,29 @@ export class EventsDatasource {
       }))
     } : {};
     let body: FilterRequest<EventsFilterRequestParams, EventSortRequestParam[]> | AggregateRequest<EventsFilterRequestParams> = {
-      limit: EVENTS_PAGE_LIMIT,
       filter,
     }
-    if (advancedFilterQuery) {
+    if (advancedFilterQuery && Object.keys(advancedFilterQuery).length) {
       body = {
         ...body,
         advancedFilter: advancedFilterQuery,
       }
-      if (aggregate) {
-        const { name, properties, withAggregate } = aggregate;
-        if (withAggregate) {
-          if (properties?.length && properties.some(p => p.property)) {
-            body = {
-              ...body,
-              aggregate: name,
-              properties: properties.map(({ property: value }) => ({ property: [value] }))
-            }
-          } else {
-            body = {
-              ...body,
-              ...sortParams
-            }
+      if (aggregate?.withAggregate) {
+        const { name, properties } = aggregate;
+        if (properties?.length && properties.some(p => p.property)) {
+          return {
+            ...body,
+            aggregate: name,
+            properties: properties.map(({ property: value }) => ({ property: [value] }))
           }
         }
+        return body;
       }
-      return body;
     }
     return {
       ...body,
       ...sortParams,
+      limit: EVENTS_PAGE_LIMIT,
     };
   };
 
