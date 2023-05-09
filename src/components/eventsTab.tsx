@@ -110,13 +110,14 @@ const OrderDirectionEditor = (
   { onChange, direction = "asc" }:
   { direction: EventsOrderDirection, onChange: (val: EventsOrderDirection) => void }
 ) => {
-
+  const options = [{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }]
+  
   return (
     <div className="gf-form">
       <InlineFormLabel width={6}>Order</InlineFormLabel>
       <Select
         onChange={({ value }) => onChange(value as  EventsOrderDirection)}
-        options={[{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }]}
+        options={options}
         menuPosition="fixed"
         value={direction}
         className="cognite-dropdown width-10"

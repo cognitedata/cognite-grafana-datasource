@@ -80,11 +80,11 @@ export class EventsDatasource {
       if (aggregate) {
         const { name, properties, withAggregate } = aggregate;
         if (withAggregate) {
-          if (properties.length) {
+          if (properties?.length && properties.some(p => p.property)) {
             body = {
               ...body,
               aggregate: name,
-              properties
+              properties: properties.map(({ property: value }) => ({ property: [value] }))
             }
           } else {
             body = {

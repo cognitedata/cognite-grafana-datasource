@@ -125,7 +125,7 @@ export interface AggregateRequest<Filter> extends Limit, Cursor {
   filter?: Filter;
   aggregate: string;
   properties: Array<{
-    property?: string;
+    property?: string[];
   }>;
   advancedFilter?: any;
 }
