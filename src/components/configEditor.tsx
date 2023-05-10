@@ -34,7 +34,7 @@ const enableTemplatesTooltip = `Enable the templates tab for use with the Cognit
 
 const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering (preview)`;
 
-const enableFlexibleDataModellingTooltip = 'Enable Data Models (preview)';
+const enableFlexibleDataModellingTooltip = 'Enable Data Models';
 
 const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview)';
 
