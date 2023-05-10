@@ -24,6 +24,12 @@
         "url": "https://github.com/cognitedata/cognite-grafana-datasource/blob/master/LICENSE"
       }
     ],
+    "screenshots": [
+      { "name": "Time series", "path": "/img/asset_ts.png" },
+      { "name": "Data models", "path": "/img/fdm.png" },
+      { "name": "Events", "path": "/img/events.png" },
+      { "name": "Custom query", "path": "/img/custom_query.png" }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

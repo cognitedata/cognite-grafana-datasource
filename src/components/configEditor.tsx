@@ -34,7 +34,7 @@ const enableTemplatesTooltip = `Enable the templates tab for use with the Cognit
 
 const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering (preview)`;
 
-const enableFlexibleDataModellingTooltip = 'Enable Flexible Data Modelling (preview)';
+const enableFlexibleDataModellingTooltip = 'Enable Data Models';
 
 const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview)';
 
@@ -251,7 +251,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
         </div>
         <div className="gf-form-inline">
           <Switch
-            label="Flexible Data Modelling"
+            label="Data Models"
             labelClass="width-12"
             checked={enableFlexibleDataModelling}
             onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}

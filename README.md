@@ -14,11 +14,10 @@
 
 ![Select Timeseries](https://raw.githubusercontent.com/cognitedata/cognite-grafana-datasource/release-v2/images/readme/image2.png)
 
-
 ## Installation
 
 The easiest way to install this plugin is to follow the installation instructions on [this page](https://grafana.com/grafana/plugins/cognitedata-datasource/?tab=installation).
- 
+
 ## Documentation
 
 To learn more about the connector please visit our [documentation](https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html)
@@ -43,7 +42,7 @@ ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 
 `yarn` followed by `yarn build` should work on systems with a shell.
 
-For debugging and development, use `yarn dev:watch`, and for testing use `yarn test`.
+For debugging and development, use `yarn dev`, and for testing use `yarn test`.
 
 ## Docker
 

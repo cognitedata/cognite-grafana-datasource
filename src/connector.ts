@@ -75,8 +75,8 @@ export class Connector {
     return data.items;
   }
 
-  async fetchQuery<T>(params: RequestParams): Promise<FDMResponse> {
-    const { data } = await this.fetchData<DataResponse<FDMResponse>>(params);
+  async fetchQuery<T>(params: RequestParams): Promise<FDMResponse<T>> {
+    const { data } = await this.fetchData<DataResponse<FDMResponse<T>>>(params);
     return data;
   }
 

@@ -20,7 +20,7 @@ export enum Tab {
   Relationships = 'Relationships',
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
-  FlexibleDataModelling = 'Flexible Data Modelling',
+  FlexibleDataModelling = 'Data Models',
 }
 
 export const TabTitles = {
@@ -31,29 +31,27 @@ export const TabTitles = {
   [Tab.ExtractionPipelines]: 'Extraction Pipelines',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
-  [Tab.FlexibleDataModelling]: 'Flexible Data Modelling',
+  [Tab.FlexibleDataModelling]: 'Data Models',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
   graphQlQuery: `{
   listMachine {
-    edges {
-      node {
+    items {
+      __typename
+      MachineWeight
+      Model
+      Anomalies {
+        externalId
+        id
+        name
         __typename
-        MachineWeight
-        Model
-        Anomalies {
-          externalId
-          id
-          name
-          __typename
-        }
-        Availability {
-          id
-          name
-          externalId
-          __typename
-        }
+      }
+      Availability {
+        id
+        name
+        externalId
+        __typename
       }
     }
   }
@@ -92,7 +90,8 @@ const defaultAssetQuery: AssetQuery = {
 };
 export interface FlexibleDataModellingQuery {
   externalId: string;
-  version?: number;
+  version?: string;
+  space?: string;
   graphQlQuery: string;
   tsKeys: string[];
   labels?: string[];
@@ -471,14 +470,14 @@ export interface QueryWarning {
   warning: string;
 }
 
-export interface FDMQueryResponse {
+export interface FDMQueryResponse<T> {
   [x: string]: {
-    edges?: Array<{ node?: { [x: string]: any } }>;
-    items?: any[];
+    edges?: Array<{ node?: T[] }>;
+    items?: T[];
   };
 }
-export interface FDMResponse {
-  data: FDMQueryResponse;
+export interface FDMResponse<T> {
+  data: FDMQueryResponse<T>;
   errors?: any;
 }
 export type EditorProps = QueryEditorProps<
