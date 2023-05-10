@@ -68,6 +68,7 @@ export class EventsDatasource {
         order: item.order,
       }))
     } : {};
+    const withAggregate = aggregate?.withAggregate;
     let body: FilterRequest<EventsFilterRequestParams, EventSortRequestParam[]> | AggregateRequest<EventsFilterRequestParams> = {
       filter,
     }
@@ -76,7 +77,7 @@ export class EventsDatasource {
         ...body,
         advancedFilter: advancedFilterQuery,
       }
-      if (aggregate?.withAggregate) {
+      if (withAggregate) {
         const { name, properties } = aggregate;
         if (properties?.length && properties.some(p => p.property)) {
           return {
@@ -88,7 +89,7 @@ export class EventsDatasource {
         return body;
       }
     }
-    return {
+    return withAggregate ? body : {
       ...body,
       ...sortParams,
       limit: EVENTS_PAGE_LIMIT,
