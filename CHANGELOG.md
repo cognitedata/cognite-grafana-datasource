@@ -2,6 +2,10 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+## 3.1.0 - May 10th, 2023
+- Added support for the new version of CDF Data Models (GraphQL)
+- Added an option to sort Events table
+
 ## 3.0.1 - April 3rd, 2023
 - Patched plugin dependencies
 - Fixed the wording for the CDF host paramether in the plugin configuration
