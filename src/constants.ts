@@ -34,9 +34,6 @@ export const DateFields = [
   'createdTime',
   'startTime',
   'endTime',
-  'lastSeen',
-  'lastFailure',
-  'lastSuccess',
 ];
 const commonFields = ['id', 'externalId'];
 export const EventFields = [
@@ -49,6 +46,17 @@ export const EventFields = [
   'metadata',
   'dataSetId',
   ...DateFields,
+];
+export const EventSortByFields = [
+  'dataSetId',
+  'description',
+  'externalId',
+  'metadata',
+  'source',
+  'subtype',
+  'type',
+  ...DateFields,
+  '_score_',
 ];
 const createFields = (parent, field) => `${parent}-${field}`;
 const metaFields = [
@@ -78,6 +86,9 @@ export const ExtractionPipelinesFields = [
   ...metaFields,
   ...notificationConfigFields,
   ...DateFields,
+  'lastSeen',
+  'lastFailure',
+  'lastSuccess',
 ];
 export const EVENTS_PAGE_LIMIT = 1000;
 

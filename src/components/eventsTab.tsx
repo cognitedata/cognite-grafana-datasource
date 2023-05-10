@@ -7,10 +7,11 @@ import {
   Switch,
   Segment,
   Tooltip,
+  Select,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
-import { EventQuery, SelectedProps, EditorProps } from '../types';
-import { EventFields } from '../constants';
+import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
+import { EventFields, EventSortByFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
 import { InlineButton } from './inlineButton';
@@ -45,6 +46,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   const options = EventFields.map((value) => ({ value, label: value }));
   const { columns, aggregate } = query.eventQuery;
+  
   useEffect(() => {
     if (aggregate?.withAggregate) {
       ['count', 'map'].map((v) => !columns.includes(v) && columns.push(v));
@@ -103,6 +105,90 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     </div>
   );
 };
+
+const OrderDirectionEditor = (
+  { onChange, direction = "asc" }:
+  { direction: EventsOrderDirection, onChange: (val: EventsOrderDirection) => void }
+) => {
+  const options = [{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }]
+  
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={6}>Order</InlineFormLabel>
+      <Select
+        onChange={({ value }) => onChange(value as  EventsOrderDirection)}
+        options={options}
+        menuPosition="fixed"
+        value={direction}
+        className="cognite-dropdown width-10"
+      />
+    </div>
+  );
+};
+
+
+const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
+  const options = EventSortByFields.map((value) => ({ value, label: value }));
+  const { sort = [] } = query.eventQuery;
+
+  const onEventQueryChange = (e: Partial<EventQuery>) => {
+    onQueryChange({
+      eventQuery: {
+        ...query.eventQuery,
+        ...e,
+      },
+    });
+  };
+
+  return (
+    <div className="gf-form">
+      <InlineFormLabel
+        tooltip="Property to sort on. To access metadata property, use 'metadata.propertyName'"
+        width={7}
+      >
+        Sort by
+      </InlineFormLabel>
+      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+        {sort.map((val, key) => (
+          <>
+            <Segment
+              value={val.property}
+              options={options}
+              onChange={({ value }) => {
+                onEventQueryChange({
+                  sort: sort.map((old, i) => (i === key ? { ...old, property: value } : old)),
+                });
+              }}
+              allowCustomValue
+            />
+            <OrderDirectionEditor direction={val.order} onChange={value => {
+                onEventQueryChange({
+                  sort: sort.map((old, i) => (i === key ? { ...old, order: value } : old)),
+                });
+              }} />
+            <InlineButton
+              onClick={() => {
+                onEventQueryChange({
+                  sort: sort.filter((_, i) => i !== key),
+                });
+              }}
+              iconName="times"
+            />
+          </>
+        ))}
+        {sort?.length < 2 ? <InlineButton
+          onClick={() => {
+            onEventQueryChange({
+              sort: [...sort, { property: 'type', order: 'asc' }],
+            });
+          }}
+          iconName="plus-circle"
+        /> : null}
+      </div>
+    </div>
+  );
+};
+
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
@@ -291,6 +377,7 @@ export function EventsTab(
       </div>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
+      <SortByPicker {...{ query, onQueryChange }} />
       {datasource.connector.isEventsAdvancedFilteringEnabled() && (
         <AdvancedEventFilter {...{ query, onQueryChange }} />
       )}
