@@ -1,4 +1,4 @@
-FROM grafana/grafana:7.0.6
+FROM grafana/grafana:7.5.17
 # Copy the plugin into the grafana plugin folder
 COPY ./dist /cognite-grafana-datasource
 
