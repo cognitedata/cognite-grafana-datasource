@@ -1262,15 +1262,6 @@
     uplot "1.6.24"
     xss "^1.0.14"
 
-"@grafana/e2e-selectors@9.5.3":
-  version "9.5.3"
-  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.5.3.tgz#aef46cfc6617f1fce3d100e8d25e8be8612c2ac9"
-  integrity sha512-aKa8CvUP2Hoe5l+ALhTlqdr3jEk1+/fzP+TEctmUyumqdRSrudF9aIj8Pw5OKQyh3jVrNC0JaSqNjcl0Ovw89w==
-  dependencies:
-    "@grafana/tsconfig" "^1.2.0-rc1"
-    tslib "2.5.0"
-    typescript "4.8.4"
-
 "@grafana/e2e-selectors@9.5.7":
   version "9.5.7"
   resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.5.7.tgz#4b773469b36ede497ab85ddea2d261026f4e4994"
