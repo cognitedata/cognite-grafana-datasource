@@ -35,10 +35,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
         parse(evaluatedQuery);
         onChange({
           ...this.props.query,
-          tab: Tab.Event,
-          eventQuery: {
-            expr: this.state.expr,
-          }
+          query: this.state.expr,
         });
       } catch ({ message }) {
         this.setState({ error: message });

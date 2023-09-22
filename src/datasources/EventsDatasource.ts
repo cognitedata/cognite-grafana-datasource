@@ -66,7 +66,7 @@ export class EventsDatasource {
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeRange);
-        const df = convertItemsToDataFrame(events, target.eventQuery.columns ?? [], "Events", target.refId);
+        const df = convertItemsToDataFrame(events, target.eventQuery?.columns ?? [], "Events", target.refId);
         return df
       })
     );
