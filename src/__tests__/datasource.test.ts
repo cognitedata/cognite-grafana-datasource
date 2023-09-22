@@ -41,7 +41,7 @@ const options: any = {
   maxDataPoints: 760,
   format: 'json',
   panelId: 1,
-  dashboardId: 1,
+  dashboardUID: 1,
 };
 const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
   getItemsResponseObject([{ id, externalId, description }]);
