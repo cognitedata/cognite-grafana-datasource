@@ -2,13 +2,13 @@
 import {
   DataQueryRequest,
   TimeSeries,
-  DataQuery,
   DataSourceJsonData,
   TableData,
   MutableDataFrame,
   QueryEditorProps,
   SelectableValue,
 } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 import CogniteDatasource from './datasource';
 

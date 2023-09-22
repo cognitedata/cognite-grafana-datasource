@@ -1313,7 +1313,7 @@
     systemjs "0.20.19"
     tslib "2.6.0"
 
-"@grafana/schema@10.1.2":
+"@grafana/schema@10.1.2", "@grafana/schema@^10.1.2":
   version "10.1.2"
   resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-10.1.2.tgz#1dbf97ac9577f38db3564cd228791c02f81ae176"
   integrity sha512-k1fZ6ot4LWYNFGOlXJy/W6xEl9FJ3wo0tsCUmJhjq2/+MCLDHerQV5vVJ7m7jyLrb6n+eQZft/P5WcnXI4uwxA==

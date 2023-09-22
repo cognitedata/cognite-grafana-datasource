@@ -1,5 +1,6 @@
 import React from 'react';
-import { AnnotationQuery, DataQuery, QueryEditorProps ,} from '@grafana/data';
+import { AnnotationQuery, QueryEditorProps ,} from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 import { AnnotationQueryData, CogniteQuery, Tab } from 'types';
 import { parse } from '../parser/events-assets';
 
