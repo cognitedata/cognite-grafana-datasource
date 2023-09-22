@@ -1,4 +1,4 @@
-import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, Field, FieldType, MutableDataFrame, arrayToDataFrame, guessFieldTypeFromNameAndValue } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
 import { CogniteQuery, EventQuery, EventQueryAggregate, EventQuerySortProp, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
@@ -33,7 +33,34 @@ export class EventsDatasource {
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
-      return items;
+
+      // TODO: this should only happen for the annotation query
+      let itemsRes =  items.map(({ description, startTime, endTime, type, id }) => ({
+        // annotation,
+        id,
+        isRegion: true,
+        text: description,
+        time: startTime,
+        timeEnd: endTime,
+        title: type,
+      }));
+
+      const fields: Field[] = Object.entries(itemsRes[0]).map(([key, _value]) => ({ 
+        name: key,
+        type: guessFieldTypeFromNameAndValue(key, _value),
+        values: itemsRes.map((item) => item[key]),
+        config: {  }
+      }))
+
+      var df:DataFrame = {
+        // convert attay of itemsRes into a dataframe
+        refId: refId,
+        name: "Events",
+        fields: fields,
+        length: itemsRes.length,
+      }
+
+      return df;
     } catch (e) {
       handleError(e, refId);
     }
@@ -47,7 +74,9 @@ export class EventsDatasource {
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeFrame);
-        return convertItemsToTable(events, target.eventQuery.columns, "events");
+        // TODO: allow column subselection
+        // return convertItemsToTable(events, target.eventQuery.columns, "events");
+        return events
       })
     );
   }

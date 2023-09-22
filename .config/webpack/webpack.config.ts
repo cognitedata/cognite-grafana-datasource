@@ -51,7 +51,6 @@ const config = async (env): Promise<Configuration> => ({
     'react-router',
     'react-router-dom',
     'd3',
-    'angular',
     '@grafana/ui',
     '@grafana/runtime',
     '@grafana/data',

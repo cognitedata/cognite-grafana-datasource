@@ -1,6 +1,4 @@
 import {
-  AnnotationEvent,
-  AnnotationQueryRequest,
   DataQueryRequest,
   DataSourceApi,
   DataSourceInstanceSettings,
@@ -10,6 +8,8 @@ import {
   TimeSeries,
   DataQueryResponse,
   MutableDataFrame,
+  AnnotationQuery,
+  AnnotationQueryRequest,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -26,7 +26,6 @@ import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import {
-  CogniteAnnotationQuery,
   CogniteDataSourceOptions,
   HttpMethod,
   CogniteQuery,
@@ -44,10 +43,12 @@ import {
   EventsDatasource,
   ExtractionPipelinesDatasource,
 } from './datasources';
+import CustomAnnotationsEditor from 'components/annotationsQueryEditor';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
-  CogniteDataSourceOptions
+  CogniteDataSourceOptions,
+  AnnotationQuery
 > {
   /**
    * Parameters that are needed by grafana
@@ -104,6 +105,12 @@ export default class CogniteDatasource extends DataSourceApi<
       this.connector,
       this.timeseriesDatasource
     );
+  }
+
+  annotations = {
+    // This is where you specify the custom editor
+    
+    QueryEditor: CustomAnnotationsEditor,
   }
 
   /**
@@ -233,40 +240,43 @@ export default class CogniteDatasource extends DataSourceApi<
   replaceVariablesArr(arr: Array<string | undefined>, scopedVars: ScopedVars) {
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
-  /**
-   * used by dashboards to get annotations (events)
-   */
-  async annotationQuery(
-    options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationEvent[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
+  
+  // /**
+  //  * used by dashboards to get annotations (events)
+  //  */
+  // async annotationQuery(
+  //   options: AnnotationQueryRequest<CogniteAnnotationQuery>
+  // ): Promise<AnnotationEvent[]> {
+  //   const { range, annotation } = options;
+  //   const { query, error } = annotation;
 
-    if (error || !query) {
-      return [];
-    }
+  //   if (error || !query) {
+  //     return [];
+  //   }
 
-    const [rangeStart, rangeEnd] = getRange(range);
-    const timeRange = {
-      activeAtTime: { min: rangeStart, max: rangeEnd },
-    };
-    const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.eventsDatasource.fetchEvents(
-      {
-        expr: evaluatedQuery,
-        advancedFilter: '',
-      },
-      timeRange
-    );
-    return items.map(({ description, startTime, endTime, type }) => ({
-      annotation,
-      isRegion: true,
-      text: description,
-      time: startTime,
-      timeEnd: endTime || rangeEnd,
-      title: type,
-    }));
-  }
+  //   const [rangeStart, rangeEnd] = getRange(range);
+  //   const timeRange = {
+  //     activeAtTime: { min: rangeStart, max: rangeEnd },
+  //   };
+  //   const evaluatedQuery = this.replaceVariable(query);
+  //   const { items } = await this.eventsDatasource.fetchEvents(
+  //     {
+  //       expr: evaluatedQuery,
+  //       advancedFilter: '',
+  //     },
+  //     timeRange
+  //   );
+  //   return items.map(({ description, startTime, endTime, type }) => ({
+  //     // annotation,
+  //     isRegion: true,
+  //     text: description,
+  //     time: startTime,
+  //     timeEnd: endTime || rangeEnd,
+  //     title: type,
+  //   }));
+  // }
+
+
   /**
    * used by query editor to search for assets/timeseries
    */

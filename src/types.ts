@@ -430,11 +430,6 @@ export interface CDFDataQueryRequest {
   granularity?: string;
 }
 
-export interface CogniteAnnotationQuery extends DataQuery {
-  query?: string;
-  error?: string;
-}
-
 export interface DataResponse<T> {
   data: T;
 }
@@ -462,6 +457,11 @@ export interface VariableQueryData {
     label: string;
     value: string;
   };
+}
+
+export interface AnnotationQueryData extends DataQuery {
+  expr: string;
+  error?: string;
 }
 
 export interface VariableQueryProps {

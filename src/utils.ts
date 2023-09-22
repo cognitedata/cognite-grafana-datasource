@@ -18,7 +18,7 @@ export function toGranularityWithLowerBound(milliseconds: number, lowerBound = 1
 
 // used for generating the options.requestId
 export function getRequestId(options: QueryOptions, target: QueryTarget) {
-  return `${options.dashboardId}_${options.panelId}_${target.refId}`;
+  return `${options.dashboardUID}_${options.panelId}_${target.refId}`;
 }
 
 export const applyFilters = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
