@@ -9,7 +9,6 @@ import {
   DataQueryResponse,
   MutableDataFrame,
   AnnotationQuery,
-  AnnotationQueryRequest,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -43,7 +42,7 @@ import {
   EventsDatasource,
   ExtractionPipelinesDatasource,
 } from './datasources';
-import CustomAnnotationsEditor from 'components/annotationsQueryEditor';
+import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
@@ -108,9 +107,7 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 
   annotations = {
-    // This is where you specify the custom editor
-    
-    QueryEditor: CustomAnnotationsEditor,
+    QueryEditor: AnnotationsQueryEditor,
   }
 
   /**

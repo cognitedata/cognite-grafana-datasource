@@ -1,4 +1,3 @@
-// CustomAnnotationsEditor.js
 import React from 'react';
 import { AnnotationQuery, DataQuery, QueryEditorProps ,} from '@grafana/data';
 import { AnnotationQueryData, CogniteQuery, Tab } from 'types';
@@ -10,7 +9,7 @@ type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any
     onAnnotationChange?: (annotation: AnnotationQuery<TQuery>) => void;
 };
 
-export class CustomAnnotationsEditor extends React.PureComponent<AnnotationQueryEditorProps<CogniteQuery>, AnnotationQueryData> {
+export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryEditorProps<CogniteQuery>, AnnotationQueryData> {
 
     defaults = {
       expr: '',
@@ -66,4 +65,4 @@ export class CustomAnnotationsEditor extends React.PureComponent<AnnotationQuery
     }
 };
 
-export default CustomAnnotationsEditor;
+export default AnnotationsQueryEditor;
