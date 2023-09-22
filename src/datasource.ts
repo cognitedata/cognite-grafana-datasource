@@ -343,20 +343,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  async checkLoginStatusApiKey() {
-    let hasAccessToProject = false;
-    let isLoggedIn = false;
-    const { status, data } = await this.connector.request({ path: 'login/status' });
-
-    if (status === 200) {
-      const { project, loggedIn } = data?.data || {};
-      hasAccessToProject = project === this.project;
-      isLoggedIn = loggedIn;
-    }
-
-    return [hasAccessToProject, isLoggedIn];
-  }
-
   async checkLoginStatusOAuth() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
@@ -379,11 +365,7 @@ export default class CogniteDatasource extends DataSourceApi<
     let hasAccessToProject = false;
     let isLoggedIn = false;
 
-    if (this.connector.isUsingOAuth()) {
-      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
-    } else {
-      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusApiKey();
-    }
+    [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
 
     switch (true) {
       case isLoggedIn && hasAccessToProject:

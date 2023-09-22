@@ -36,7 +36,7 @@ Once logged in you can see that CDF is installed.
 
 5. To set up CDF, do the following:
 
-Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Fusion as "Type". Give the data source a name, provide the name of the project and your API key.
+Go to "Configuration" click Data Sources, then Add data source, and choose Cognite Data Fusion as "Type". Give the data source a name, provide the name of the project and your OAuth credentials.
 
 ![Configuration](./images/image9.png)
 

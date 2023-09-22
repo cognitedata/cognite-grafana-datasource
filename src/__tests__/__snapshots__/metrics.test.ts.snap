@@ -8,7 +8,7 @@ exports[`Metrics Query Given a metrics query with filters should generate the co
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/list",
 }
 `;
 
@@ -20,7 +20,7 @@ exports[`Metrics Query Given a metrics query with no options should generate the
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/list",
 }
 `;
 
@@ -32,7 +32,7 @@ exports[`Metrics Query Given a metrics query with unmatched filters should gener
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/list",
 }
 `;
 
@@ -48,7 +48,7 @@ exports[`Metrics Query Given a nested variable query should generate the correct
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/list",
 }
 `;
 
@@ -62,7 +62,7 @@ exports[`Metrics Query Given a simple metrics query should generate the correct 
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/list",
 }
 `;
 

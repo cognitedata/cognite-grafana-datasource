@@ -175,7 +175,6 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
 }
 
 export interface CogniteSecureJsonData {
-  cogniteDataPlatformApiKey?: string;
   oauthClientSecret?: string;
 }
 

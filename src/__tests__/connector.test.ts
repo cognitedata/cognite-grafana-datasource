@@ -20,7 +20,7 @@ describe('connector', () => {
     const data = { items };
     const method = HttpMethod.POST;
     const path = '/ø';
-    const url = `${protocol}/cdf-api-key/${API_V1}/${project}${path}`;
+    const url = `${protocol}/cdf-oauth/${API_V1}/${project}${path}`;
     const reqBase = { url, method };
 
     beforeEach(() => {

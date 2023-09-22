@@ -1,50 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Login with API key When given invalid login info should display an error message 1`] = `
-{
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
-}
-`;
-
-exports[`Login with API key When given invalid login info should display an error message 2`] = `
-{
-  "message": "Your Cognite credentials are invalid",
-  "status": "error",
-  "title": "Error",
-}
-`;
-
-exports[`Login with API key When given valid login info and correct project should log the user in 1`] = `
-{
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
-}
-`;
-
-exports[`Login with API key When given valid login info and correct project should log the user in 2`] = `
-{
-  "message": "Your Cognite credentials are valid",
-  "status": "success",
-  "title": "Success",
-}
-`;
-
-exports[`Login with API key When given valid login info but incorrect project should display an error message 1`] = `
-{
-  "method": "GET",
-  "url": "/api/datasources/proxy/6/cdf-api-key/login/status",
-}
-`;
-
-exports[`Login with API key When given valid login info but incorrect project should display an error message 2`] = `
-{
-  "message": "Cannot access 'TestProject' project",
-  "status": "warning",
-  "title": "Warning",
-}
-`;
-
 exports[`Login with OAuth2 When given invalid login info should display an error message 1`] = `
 {
   "message": "Cannot access 'TestProject' project",

@@ -129,13 +129,9 @@ export class Connector {
         auth = AuthType.OAuth;
         break;
       default:
-        auth = AuthType.ApiKey;
+        auth = AuthType.OAuth;
     }
     return `${this.apiUrl}/${auth}`;
-  }
-
-  isUsingOAuth() {
-    return this.oauthPassThru || this.oauthClientCredentials;
   }
 
   isTemplatesEnabled() {
