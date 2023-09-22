@@ -43,23 +43,24 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
     };
 
     render () { 
-    return <div>
-    <div className="gf-form gf-form--grow">
-      <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
-      <input
-        type="text"
-        className="gf-form-input"
-        value={this.state.expr}
-        placeholder="eg: events{type='example'}"
-        onChange={this.handleQueryChange}
-        onBlur={this.handleBlur}
-      />
+      return <div>
+      <div className="gf-form gf-form--grow">
+        <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
+        <input
+          type="text"
+          className="gf-form-input"
+          value={this.state.expr}
+          placeholder="eg: events{type='example'}"
+          onChange={this.handleQueryChange}
+          onBlur={this.handleBlur}
+        />
+      </div>
       <div className="gf-form--grow">
           {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
-        </div>
+      </div>
     </div>
-  </div>
-    }
+    
+  }
 };
 
 export default AnnotationsQueryEditor;
