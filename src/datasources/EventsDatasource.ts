@@ -1,4 +1,4 @@
-import { DataFrame, DataQueryRequest, DataQueryResponse, Field, FieldType, MutableDataFrame, arrayToDataFrame, guessFieldTypeFromNameAndValue } from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
 import { CogniteQuery, EventQuery, EventQueryAggregate, EventQuerySortProp, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
@@ -12,9 +12,20 @@ import {
   EventsFilterTimeParams,
   FilterRequest,
 } from '../cdf/types';
-import { convertItemsToTable } from '../cdf/client';
+import { convertItemsToDataFrame } from '../cdf/client';
 import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '../constants';
 import { emitEvent, handleError } from '../appEventHandler';
+
+const convertEventsToAnnotations = (events: CogniteEvent[], timeRangeEnd: number) => {
+  return events.map(({ description, startTime, endTime, type, id }) => ({
+    id,
+    isRegion: true,
+    text: description,
+    time: new Date(startTime),
+    timeEnd: new Date(endTime || timeRangeEnd),
+    title: type,
+  }))
+}
 
 export class EventsDatasource {
   constructor(private connector: Connector) { }
@@ -23,64 +34,40 @@ export class EventsDatasource {
     const eventResults = await this.fetchEventTargets(options.targets, timeRange);
     return { data: eventResults };
   }
+
   async fetchEventsForTarget(
-    { eventQuery, refId }: CogniteQuery,
+    { refId, eventQuery, query }: CogniteQuery,
     [start, end]: Tuple<number>
   ) {
     const timeFrame = {
       activeAtTime: { min: start, max: end },
     };
-    // const timeRange = timeFrame;
+    const finalEventQuery = eventQuery || {
+      expr: query,
+    }
     try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery, timeFrame);
+      const { items, hasMore } = await this.fetchEvents(finalEventQuery, timeFrame);
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
 
-      // const [rangeStart, rangeEnd] = getRange(timeRange);
-      // TODO: this should only happen for the annotation query
-      let itemsRes =  items.map(({ description, startTime, endTime, type, id }) => ({
-        // annotation,
-        id,
-        isRegion: true,
-        text: description,
-        time: new Date(startTime),
-        timeEnd: new Date(endTime || end),
-        title: type,
-      }));
+      // TODO: move this somewhere else, very hackish (maybe last step in the pipeline?)
+      let itemsRes = refId === "Anno" ? convertEventsToAnnotations(items, end) : items;
 
-      const fields: Field[] = Object.entries(itemsRes[0]).map(([key, _value]) => ({ 
-        name: key,
-        type: guessFieldTypeFromNameAndValue(key, _value),
-        values: itemsRes.map((item) => item[key]),
-        config: {  }
-      }))
-
-      var df:DataFrame = {
-        // convert attay of itemsRes into a dataframe
-        refId: refId,
-        name: "Events",
-        fields: fields,
-        length: itemsRes.length,
-      }
-
-      return df;
+      return itemsRes;
     } catch (e) {
       handleError(e, refId);
     }
     return [];
   }
 
+
   async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
-    // const timeFrame = {
-    //   activeAtTime: { min: start, max: end },
-    // };
     return Promise.all(
       targets.map(async (target) => {
         const events = await this.fetchEventsForTarget(target, timeRange);
-        // TODO: allow column subselection
-        // return convertItemsToTable(events, target.eventQuery.columns, "events");
-        return events
+        const df = convertItemsToDataFrame(events, target.eventQuery.columns ?? [], "Events", target.refId);
+        return df
       })
     );
   }

@@ -259,6 +259,7 @@ export interface CogniteQueryBase extends DataQuery {
   error: string;
   label: string;
   tab: Tab;
+  query?: string; // annotation events query
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
   templateQuery: TemplateQuery;

@@ -408,6 +408,8 @@ export default class CogniteDatasource extends DataSourceApi<
   }
 }
 
+const isAnnotationTarget = (target: CogniteQuery) => !target.tab && target.query && target.refId == "Anno";
+
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
@@ -448,7 +450,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return true;
         case Tab.Timeseries:
         default:
-          return target.target;
+          return target.target || isAnnotationTarget(target);
       }
     }
     return false;
@@ -469,7 +471,7 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const groupedByTab = _.groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
+  const groupedByTab = _.groupBy(targets, (target) => target.tab ?? (isAnnotationTarget(target) ? Tab.Event : Tab.Timeseries));
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],

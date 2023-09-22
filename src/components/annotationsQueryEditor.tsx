@@ -19,7 +19,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
 
     constructor(props: AnnotationQueryEditorProps<CogniteQuery>) {
       super(props);
-      const expr = props.query.eventQuery?.expr || '';
+      const expr = props.annotation?.target?.query || '';
       this.state = Object.assign(this.defaults, { expr: expr });
     }
 
