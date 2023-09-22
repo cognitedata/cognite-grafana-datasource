@@ -25,23 +25,27 @@ export class EventsDatasource {
   }
   async fetchEventsForTarget(
     { eventQuery, refId }: CogniteQuery,
-    timeFrame: EventsFilterTimeParams
+    [start, end]: Tuple<number>
   ) {
-    const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
+    const timeFrame = {
+      activeAtTime: { min: start, max: end },
+    };
+    // const timeRange = timeFrame;
     try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery, timeRange);
+      const { items, hasMore } = await this.fetchEvents(eventQuery, timeFrame);
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
 
+      // const [rangeStart, rangeEnd] = getRange(timeRange);
       // TODO: this should only happen for the annotation query
       let itemsRes =  items.map(({ description, startTime, endTime, type, id }) => ({
         // annotation,
         id,
         isRegion: true,
         text: description,
-        time: startTime,
-        timeEnd: endTime,
+        time: new Date(startTime),
+        timeEnd: new Date(endTime || end),
         title: type,
       }));
 
@@ -67,13 +71,13 @@ export class EventsDatasource {
     return [];
   }
 
-  async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
-    const timeFrame = {
-      activeAtTime: { min: start, max: end },
-    };
+  async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
+    // const timeFrame = {
+    //   activeAtTime: { min: start, max: end },
+    // };
     return Promise.all(
       targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, timeFrame);
+        const events = await this.fetchEventsForTarget(target, timeRange);
         // TODO: allow column subselection
         // return convertItemsToTable(events, target.eventQuery.columns, "events");
         return events
