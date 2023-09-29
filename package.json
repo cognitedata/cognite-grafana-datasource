@@ -1,6 +1,6 @@
 {
   "name": "@cognite/cognite-grafana-datasource",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "Cognite Data Fusion datasource",
   "repository": "https://github.com/cognitedata/cognite-grafana-datasource",
   "author": "Cognite AS",
@@ -38,7 +38,6 @@
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.4",
     "@types/glob": "^8.0.0",
-    "@types/grafana": "https://git@github.com/CorpGlory/types-grafana.git",
     "@types/jest": "^29.2.2",
     "@types/lodash": "^4.14.188",
     "@types/ms": "^0.7.31",
