@@ -342,9 +342,10 @@ export const convertItemsToDataFrame = (
 ): DataFrame => {
 
   const firstItem = items[0] ?? {}
+  const entries = Object.entries(firstItem)
   const filteredProps = columns.length ?
-    Object.entries(firstItem).filter(([key]) => columns.includes(key)) :
-    Object.entries(firstItem)
+    entries.filter(([key]) => columns.includes(key)) :
+    entries
 
   const fields: Field[] = filteredProps.map(([key, _value]) => ({ 
     name: key,

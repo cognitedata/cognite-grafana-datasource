@@ -37,10 +37,10 @@ export class EventsDatasource {
 
   async fetchEventsForTarget(
     { refId, eventQuery, query }: CogniteQuery,
-    [start, end]: Tuple<number>
+    [rangeStart, rangeEnd]: Tuple<number>
   ) {
     const timeFrame = {
-      activeAtTime: { min: start, max: end },
+      activeAtTime: { min: rangeStart, max: rangeEnd },
     };
     const finalEventQuery = eventQuery || {
       expr: query,

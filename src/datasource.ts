@@ -173,12 +173,13 @@ export default class CogniteDatasource extends DataSourceApi<
     return { data: responseData };
   }
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
+    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
       target;
 
     const [
       exprTemplated,
       labelTemplated,
+      queryTemplated,
       assetTargetTemplated,
       eventExprTemplated,
       templategraphQlQueryTemplated,
@@ -187,6 +188,7 @@ export default class CogniteDatasource extends DataSourceApi<
       [
         expr,
         label,
+        query,
         assetQuery?.target,
         eventQuery?.expr,
         templateQuery?.graphQlQuery,
@@ -226,6 +228,7 @@ export default class CogniteDatasource extends DataSourceApi<
       ...templatedEventQuery,
       ...templatedTemplateQuery,
       ...templatedflexibleDataModellingQuery,
+      query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
     };
@@ -237,42 +240,6 @@ export default class CogniteDatasource extends DataSourceApi<
   replaceVariablesArr(arr: Array<string | undefined>, scopedVars: ScopedVars) {
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
-  
-  // /**
-  //  * used by dashboards to get annotations (events)
-  //  */
-  // async annotationQuery(
-  //   options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  // ): Promise<AnnotationEvent[]> {
-  //   const { range, annotation } = options;
-  //   const { query, error } = annotation;
-
-  //   if (error || !query) {
-  //     return [];
-  //   }
-
-  //   const [rangeStart, rangeEnd] = getRange(range);
-  //   const timeRange = {
-  //     activeAtTime: { min: rangeStart, max: rangeEnd },
-  //   };
-  //   const evaluatedQuery = this.replaceVariable(query);
-  //   const { items } = await this.eventsDatasource.fetchEvents(
-  //     {
-  //       expr: evaluatedQuery,
-  //       advancedFilter: '',
-  //     },
-  //     timeRange
-  //   );
-  //   return items.map(({ description, startTime, endTime, type }) => ({
-  //     // annotation,
-  //     isRegion: true,
-  //     text: description,
-  //     time: startTime,
-  //     timeEnd: endTime || rangeEnd,
-  //     title: type,
-  //   }));
-  // }
-
 
   /**
    * used by query editor to search for assets/timeseries
