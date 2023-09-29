@@ -33,7 +33,7 @@ import {
   Tab,
   VariableQueryData,
 } from './types';
-import { applyFilters, getRange } from './utils';
+import { applyFilters, getRange, isAnnotationTarget } from './utils';
 import {
   FlexibleDataModellingDatasource,
   RelationshipsDatasource,
@@ -389,8 +389,6 @@ export default class CogniteDatasource extends DataSourceApi<
     }
   }
 }
-
-const isAnnotationTarget = (target: CogniteQuery) => !target.tab && target.query && target.refId === "Anno";
 
 export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
   return targets.filter((target) => {

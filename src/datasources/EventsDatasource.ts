@@ -2,7 +2,7 @@ import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
 import { CogniteQuery, EventQuery, EventQueryAggregate, EventQuerySortProp, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
-import { applyFilters, getRange } from '../utils';
+import { applyFilters, getRange, isAnnotationTarget } from '../utils';
 import { parse as parseQuery } from '../parser/events-assets';
 import {
   AggregateRequest,
@@ -50,11 +50,7 @@ export class EventsDatasource {
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
-
-      // TODO: move this somewhere else, very hackish (maybe last step in the pipeline?)
-      let itemsRes = refId === "Anno" ? convertEventsToAnnotations(items, end) : items;
-
-      return itemsRes;
+      return items;
     } catch (e) {
       handleError(e, refId);
     }
@@ -65,8 +61,9 @@ export class EventsDatasource {
   async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
     return Promise.all(
       targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, timeRange);
-        const df = convertItemsToDataFrame(events, target.eventQuery?.columns ?? [], "Events", target.refId);
+        const resEvents = await this.fetchEventsForTarget(target, timeRange);
+        const items = isAnnotationTarget(target) ? convertEventsToAnnotations(resEvents, timeRange[1]) : resEvents;
+        const df = convertItemsToDataFrame(items, target.eventQuery?.columns ?? [], "Events", target.refId);
         return df
       })
     );

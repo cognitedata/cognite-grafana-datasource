@@ -4,7 +4,7 @@ import { stringify } from 'query-string';
 import ms from 'ms';
 import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
-import { QueryOptions, QueryTarget, Tuple } from './types';
+import { CogniteQuery, QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 import { handleError } from './appEventHandler';
 
@@ -87,6 +87,9 @@ const getNodeSelection = (selection) => {
   }
   return [];
 };
+
+
+export const isAnnotationTarget = (target: CogniteQuery) => !target.tab && target.query && target.refId === "Anno";
 
 export const typeNameList = (selected) =>
   uniq(
