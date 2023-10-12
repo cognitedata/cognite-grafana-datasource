@@ -2,7 +2,7 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
-## 4.0.0 - October
+## 4.0.0 - October 12th, 2023
 - Migrate Annotation editor from Angular to React
 - Bumped minimum Grafana version requirement to v10
 - Events are returned in dataframe format
