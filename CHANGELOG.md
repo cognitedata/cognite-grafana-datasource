@@ -4,7 +4,8 @@ This article documents the ongoing improvements we're making to the **Cognite Da
 
 ## 4.0.0 - October
 - Migrate Annotation editor from Angular to React
-- Bumped minimum Grafana version requirement to v10 
+- Bumped minimum Grafana version requirement to v10
+- Events are returned in dataframe format
 
 ## 3.1.0 - May 10th, 2023
 - Added support for the new version of CDF Data Models (GraphQL)
