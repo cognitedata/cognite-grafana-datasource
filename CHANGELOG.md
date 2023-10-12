@@ -3,7 +3,7 @@
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
 ## 4.0.0 - October
-- Remove Angular - Migrate Annotation editor to React by
+- Remove Angular - Migrate Annotation editor to React 
 - Bumped minimum Grafana version requirement to v10 
 
 ## 3.1.0 - May 10th, 2023
