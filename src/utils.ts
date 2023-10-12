@@ -4,7 +4,7 @@ import { stringify } from 'query-string';
 import ms from 'ms';
 import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
-import { QueryOptions, QueryTarget, Tuple } from './types';
+import { CogniteQuery, QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 import { handleError } from './appEventHandler';
 
@@ -18,7 +18,7 @@ export function toGranularityWithLowerBound(milliseconds: number, lowerBound = 1
 
 // used for generating the options.requestId
 export function getRequestId(options: QueryOptions, target: QueryTarget) {
-  return `${options.dashboardId}_${options.panelId}_${target.refId}`;
+  return `${options.dashboardUID}_${options.panelId}_${target.refId}`;
 }
 
 export const applyFilters = <T>(objs: T[], filters: ParsedFilter[]): T[] => {
@@ -87,6 +87,9 @@ const getNodeSelection = (selection) => {
   }
   return [];
 };
+
+
+export const isAnnotationTarget = (target: CogniteQuery) => !target.tab && target.query && target.refId === "Anno";
 
 export const typeNameList = (selected) =>
   uniq(

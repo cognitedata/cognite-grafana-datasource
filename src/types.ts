@@ -2,13 +2,13 @@
 import {
   DataQueryRequest,
   TimeSeries,
-  DataQuery,
   DataSourceJsonData,
   TableData,
   MutableDataFrame,
   QueryEditorProps,
   SelectableValue,
 } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 import { Datapoints, Items, IdEither, Limit } from './cdf/types';
 import CogniteDatasource from './datasource';
 
@@ -175,7 +175,6 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
 }
 
 export interface CogniteSecureJsonData {
-  cogniteDataPlatformApiKey?: string;
   oauthClientSecret?: string;
 }
 
@@ -259,6 +258,7 @@ export interface CogniteQueryBase extends DataQuery {
   error: string;
   label: string;
   tab: Tab;
+  query?: string; // annotation events query
   assetQuery: AssetQuery;
   eventQuery: EventQuery;
   templateQuery: TemplateQuery;
@@ -430,11 +430,6 @@ export interface CDFDataQueryRequest {
   granularity?: string;
 }
 
-export interface CogniteAnnotationQuery extends DataQuery {
-  query?: string;
-  error?: string;
-}
-
 export interface DataResponse<T> {
   data: T;
 }
@@ -462,6 +457,11 @@ export interface VariableQueryData {
     label: string;
     value: string;
   };
+}
+
+export interface AnnotationQueryData extends DataQuery {
+  expr: string;
+  error?: string;
 }
 
 export interface VariableQueryProps {

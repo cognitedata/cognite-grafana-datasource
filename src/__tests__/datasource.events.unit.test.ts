@@ -78,14 +78,10 @@ describe('events datasource test', () => {
 
     expect(res).toEqual([
       {
-        columns: [
-          {
-            text: "externalId",
-          },
-        ],
-        name: "events",
-        rows: [],
-        type: "table",
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: undefined,
       },
     ]);
   });
@@ -131,14 +127,10 @@ describe('events datasource test', () => {
 
     expect(res).toEqual([
       {
-        columns: [
-          {
-            text: "externalId",
-          },
-        ],
-        name: "events",
-        rows: [],
-        type: "table",
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: undefined,
       },
     ]);
   });

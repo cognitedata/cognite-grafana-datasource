@@ -1,6 +1,4 @@
 import {
-  AnnotationEvent,
-  AnnotationQueryRequest,
   DataQueryRequest,
   DataSourceApi,
   DataSourceInstanceSettings,
@@ -10,6 +8,7 @@ import {
   TimeSeries,
   DataQueryResponse,
   MutableDataFrame,
+  AnnotationQuery,
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -26,7 +25,6 @@ import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import {
-  CogniteAnnotationQuery,
   CogniteDataSourceOptions,
   HttpMethod,
   CogniteQuery,
@@ -35,7 +33,7 @@ import {
   Tab,
   VariableQueryData,
 } from './types';
-import { applyFilters, getRange } from './utils';
+import { applyFilters, getRange, isAnnotationTarget } from './utils';
 import {
   FlexibleDataModellingDatasource,
   RelationshipsDatasource,
@@ -44,10 +42,12 @@ import {
   EventsDatasource,
   ExtractionPipelinesDatasource,
 } from './datasources';
+import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
-  CogniteDataSourceOptions
+  CogniteDataSourceOptions,
+  AnnotationQuery
 > {
   /**
    * Parameters that are needed by grafana
@@ -104,6 +104,10 @@ export default class CogniteDatasource extends DataSourceApi<
       this.connector,
       this.timeseriesDatasource
     );
+  }
+
+  annotations = {
+    QueryEditor: AnnotationsQueryEditor,
   }
 
   /**
@@ -169,12 +173,13 @@ export default class CogniteDatasource extends DataSourceApi<
     return { data: responseData };
   }
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
+    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
       target;
 
     const [
       exprTemplated,
       labelTemplated,
+      queryTemplated,
       assetTargetTemplated,
       eventExprTemplated,
       templategraphQlQueryTemplated,
@@ -183,6 +188,7 @@ export default class CogniteDatasource extends DataSourceApi<
       [
         expr,
         label,
+        query,
         assetQuery?.target,
         eventQuery?.expr,
         templateQuery?.graphQlQuery,
@@ -222,6 +228,7 @@ export default class CogniteDatasource extends DataSourceApi<
       ...templatedEventQuery,
       ...templatedTemplateQuery,
       ...templatedflexibleDataModellingQuery,
+      query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
     };
@@ -233,40 +240,7 @@ export default class CogniteDatasource extends DataSourceApi<
   replaceVariablesArr(arr: Array<string | undefined>, scopedVars: ScopedVars) {
     return arr.map((str) => str && this.replaceVariable(str, scopedVars));
   }
-  /**
-   * used by dashboards to get annotations (events)
-   */
-  async annotationQuery(
-    options: AnnotationQueryRequest<CogniteAnnotationQuery>
-  ): Promise<AnnotationEvent[]> {
-    const { range, annotation } = options;
-    const { query, error } = annotation;
 
-    if (error || !query) {
-      return [];
-    }
-
-    const [rangeStart, rangeEnd] = getRange(range);
-    const timeRange = {
-      activeAtTime: { min: rangeStart, max: rangeEnd },
-    };
-    const evaluatedQuery = this.replaceVariable(query);
-    const { items } = await this.eventsDatasource.fetchEvents(
-      {
-        expr: evaluatedQuery,
-        advancedFilter: '',
-      },
-      timeRange
-    );
-    return items.map(({ description, startTime, endTime, type }) => ({
-      annotation,
-      isRegion: true,
-      text: description,
-      time: startTime,
-      timeEnd: endTime || rangeEnd,
-      title: type,
-    }));
-  }
   /**
    * used by query editor to search for assets/timeseries
    */
@@ -336,20 +310,6 @@ export default class CogniteDatasource extends DataSourceApi<
     return fetchSingleAsset(id, this.connector);
   };
 
-  async checkLoginStatusApiKey() {
-    let hasAccessToProject = false;
-    let isLoggedIn = false;
-    const { status, data } = await this.connector.request({ path: 'login/status' });
-
-    if (status === 200) {
-      const { project, loggedIn } = data?.data || {};
-      hasAccessToProject = project === this.project;
-      isLoggedIn = loggedIn;
-    }
-
-    return [hasAccessToProject, isLoggedIn];
-  }
-
   async checkLoginStatusOAuth() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
@@ -372,11 +332,7 @@ export default class CogniteDatasource extends DataSourceApi<
     let hasAccessToProject = false;
     let isLoggedIn = false;
 
-    if (this.connector.isUsingOAuth()) {
-      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
-    } else {
-      [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusApiKey();
-    }
+    [hasAccessToProject, isLoggedIn] = await this.checkLoginStatusOAuth();
 
     switch (true) {
       case isLoggedIn && hasAccessToProject:
@@ -441,7 +397,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           return true;
         case Tab.Timeseries:
         default:
-          return target.target;
+          return target.target || isAnnotationTarget(target);
       }
     }
     return false;
@@ -462,7 +418,7 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const groupedByTab = _.groupBy(targets, ({ tab }) => tab || Tab.Timeseries);
+  const groupedByTab = _.groupBy(targets, (target) => target.tab ?? (isAnnotationTarget(target) ? Tab.Event : Tab.Timeseries));
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],

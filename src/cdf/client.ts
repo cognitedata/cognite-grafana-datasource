@@ -1,5 +1,5 @@
 import { get, cloneDeep } from 'lodash';
-import { TableData, TimeSeries } from '@grafana/data';
+import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -333,6 +333,34 @@ export const convertItemsToTable = (
     name,
   };
 };
+
+export const convertItemsToDataFrame = (
+  items: Resource[],
+  columns: string[],
+  name: string,
+  refId: string
+): DataFrame => {
+
+  const firstItem = items[0] ?? {}
+  const entries = Object.entries(firstItem)
+  const filteredProps = columns.length ?
+    entries.filter(([key]) => columns.includes(key)) :
+    entries
+
+  const fields: Field[] = filteredProps.map(([key, _value]) => ({ 
+    name: key,
+    type: guessFieldTypeFromNameAndValue(key, _value),
+    values: items.map((item) => item[key]),
+    config: {  }
+  }))
+
+  return {
+    fields,
+    refId,
+    name,
+    length: items.length,
+  }
+}
 
 export function fetchRelationships(
   {

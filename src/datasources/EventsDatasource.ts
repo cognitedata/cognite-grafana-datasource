@@ -2,7 +2,7 @@ import { DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import jsonlint from 'jsonlint-mod';
 import { CogniteQuery, EventQuery, EventQueryAggregate, EventQuerySortProp, HttpMethod, Tuple } from '../types';
 import { Connector } from '../connector';
-import { applyFilters, getRange } from '../utils';
+import { applyFilters, getRange, isAnnotationTarget } from '../utils';
 import { parse as parseQuery } from '../parser/events-assets';
 import {
   AggregateRequest,
@@ -12,9 +12,20 @@ import {
   EventsFilterTimeParams,
   FilterRequest,
 } from '../cdf/types';
-import { convertItemsToTable } from '../cdf/client';
+import { convertItemsToDataFrame } from '../cdf/client';
 import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '../constants';
 import { emitEvent, handleError } from '../appEventHandler';
+
+const convertEventsToAnnotations = (events: CogniteEvent[], timeRangeEnd: number) => {
+  return events.map(({ description, startTime, endTime, type, id }) => ({
+    id,
+    isRegion: true,
+    text: description,
+    time: new Date(startTime),
+    timeEnd: new Date(endTime || timeRangeEnd),
+    title: type,
+  }))
+}
 
 export class EventsDatasource {
   constructor(private connector: Connector) { }
@@ -23,13 +34,19 @@ export class EventsDatasource {
     const eventResults = await this.fetchEventTargets(options.targets, timeRange);
     return { data: eventResults };
   }
+
   async fetchEventsForTarget(
-    { eventQuery, refId }: CogniteQuery,
-    timeFrame: EventsFilterTimeParams
+    { refId, eventQuery, query }: CogniteQuery,
+    [rangeStart, rangeEnd]: Tuple<number>
   ) {
-    const timeRange = eventQuery.activeAtTimeRange ? timeFrame : {};
+    const timeFrame = {
+      activeAtTime: { min: rangeStart, max: rangeEnd },
+    };
+    const finalEventQuery = eventQuery || {
+      expr: query,
+    }
     try {
-      const { items, hasMore } = await this.fetchEvents(eventQuery, timeRange);
+      const { items, hasMore } = await this.fetchEvents(finalEventQuery, timeFrame);
       if (hasMore) {
         emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
       }
@@ -40,14 +57,14 @@ export class EventsDatasource {
     return [];
   }
 
-  async fetchEventTargets(targets: CogniteQuery[], [start, end]: Tuple<number>) {
-    const timeFrame = {
-      activeAtTime: { min: start, max: end },
-    };
+
+  async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
     return Promise.all(
       targets.map(async (target) => {
-        const events = await this.fetchEventsForTarget(target, timeFrame);
-        return convertItemsToTable(events, target.eventQuery.columns, "events");
+        const resEvents = await this.fetchEventsForTarget(target, timeRange);
+        const items = isAnnotationTarget(target) ? convertEventsToAnnotations(resEvents, timeRange[1]) : resEvents;
+        const df = convertItemsToDataFrame(items, target.eventQuery?.columns ?? [], "Events", target.refId);
+        return df
       })
     );
   }

@@ -26,7 +26,6 @@ export const CacheTime = {
 export const AuthType = {
   OAuthClientCredentials: 'cdf-cc-oauth',
   OAuth: 'cdf-oauth',
-  ApiKey: 'cdf-api-key',
 };
 
 export const DateFields = [

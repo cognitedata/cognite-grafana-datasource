@@ -35,7 +35,7 @@
   },
 
   "dependencies": {
-    "grafanaDependency": ">=8.0.0",
+    "grafanaDependency": ">=10.0.0",
     "plugins": []
   },
 
@@ -76,24 +76,6 @@
           "scope": "{{ .JsonData.oauthScope }}"
         }
       }
-    },
-    {
-      "path": "cdf-api-key",
-      "url": "https://{{if .JsonData.cogniteApiUrl}}{{.JsonData.cogniteApiUrl}}{{else}}{{if .JsonData.clusterUrl}}{{.JsonData.clusterUrl}}{{else}}api.cognitedata.com{{end}}{{end}}",
-      "headers": [
-        {
-          "name": "api-key",
-          "content": "{{.SecureJsonData.cogniteDataPlatformApiKey}}"
-        },
-        {
-          "name": "x-cdp-sdk",
-          "content": "CogniteGrafanaDatasource:%VERSION%"
-        },
-        {
-          "name": "x-cdp-app",
-          "content": "Cognite Grafana Datasource"
-        }
-      ]
     }
   ],
 

@@ -42,7 +42,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { onOptionsChange, options } = props;
   const { secureJsonData = {}, jsonData, secureJsonFields } = options;
-  const { cogniteDataPlatformApiKey = '', oauthClientSecret = '' } = secureJsonData;
+  const { oauthClientSecret = '' } = secureJsonData;
   const {
     cogniteProject = '',
     defaultProject,
@@ -209,23 +209,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
               />
             </div>
           </>
-        )}
-        {!(oauthPassThru || oauthClientCreds) && (
-          <div className="gf-form-inline">
-            <div className="gf-form">
-              <SecretFormField
-                isConfigured={secureJsonFields.cogniteDataPlatformApiKey}
-                value={cogniteDataPlatformApiKey}
-                label="API Key"
-                placeholder="Cognite Data Fusion API key"
-                tooltip="Cognite Data Fusion API key."
-                labelWidth={12}
-                inputWidth={20}
-                onReset={onResetSecretValue('cogniteDataPlatformApiKey')}
-                onChange={onChangeSecretValue('cogniteDataPlatformApiKey')}
-              />
-            </div>
-          </div>
         )}
       </div>
 

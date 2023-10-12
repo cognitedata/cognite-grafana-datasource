@@ -12,7 +12,7 @@ exports[`Datasource Query Give "Select Timeseries of Relationships target from A
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -25,7 +25,7 @@ exports[`Datasource Query Give "Select Timeseries of Relationships target from A
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/relationships/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/relationships/list",
 }
 `;
 
@@ -40,7 +40,7 @@ exports[`Datasource Query Give "Select Timeseries of Relationships target from A
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -63,7 +63,7 @@ exports[`Datasource Query Give "Select Timeseries of Relationships target from A
   "headers": undefined,
   "method": "POST",
   "requestId": "1_11_A",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -79,7 +79,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -95,7 +95,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -111,7 +111,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -127,7 +127,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -148,7 +148,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -163,7 +163,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -192,7 +192,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   "headers": undefined,
   "method": "POST",
   "requestId": "1_7_C",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -215,7 +215,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   "headers": undefined,
   "method": "POST",
   "requestId": "1_7_D",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -321,7 +321,7 @@ exports[`Datasource Query Given "Select Timeseries" queries should generate the 
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -340,7 +340,7 @@ exports[`Datasource Query Given "Select Timeseries" queries should generate the 
   "headers": undefined,
   "method": "POST",
   "requestId": "1_3_A",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -363,7 +363,7 @@ exports[`Datasource Query Given "Select Timeseries" queries should generate the 
   "headers": undefined,
   "method": "POST",
   "requestId": "1_3_B",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -386,7 +386,7 @@ exports[`Datasource Query Given "Select Timeseries" queries should generate the 
   "headers": undefined,
   "method": "POST",
   "requestId": "1_3_C",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/data/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
 
@@ -402,7 +402,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -417,7 +417,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -432,7 +432,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -451,7 +451,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   "headers": undefined,
   "method": "POST",
   "requestId": "1_12_B",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -470,7 +470,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   "headers": undefined,
   "method": "POST",
   "requestId": "1_12_D",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -497,7 +497,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/list",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/list",
 }
 `;
 
@@ -518,7 +518,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -542,7 +542,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/byids",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/byids",
 }
 `;
 
@@ -573,7 +573,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   "headers": undefined,
   "method": "POST",
   "requestId": "1_15_A",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 
@@ -604,7 +604,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   "headers": undefined,
   "method": "POST",
   "requestId": "1_15_D",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/synthetic/query",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
 

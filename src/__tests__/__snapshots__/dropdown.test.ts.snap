@@ -9,7 +9,7 @@ exports[`Dropdown Options Query Given a request for asset options should generat
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/search",
 }
 `;
 
@@ -48,7 +48,7 @@ exports[`Dropdown Options Query Given a request for asset options with additiona
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/search?metadata=%7B%22key1%22%3A%22value1%22%7D",
 }
 `;
 
@@ -73,7 +73,7 @@ exports[`Dropdown Options Query Given a request for timeseries options should ge
   },
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/search",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/search",
 }
 `;
 
@@ -122,7 +122,7 @@ exports[`Dropdown Options Query Given an empty request for asset options should 
   "data": {},
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/assets/search",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/assets/search",
 }
 `;
 
@@ -164,7 +164,7 @@ exports[`Dropdown Options Query Given an empty request for timeseries options sh
   "data": {},
   "headers": undefined,
   "method": "POST",
-  "url": "/api/datasources/proxy/6/cdf-api-key/api/v1/projects/TestProject/timeseries/search",
+  "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/search",
 }
 `;
 
