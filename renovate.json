@@ -4,6 +4,5 @@
     "local>cognitedata/renovate-config",
     ":automergeMinor"
   ],
-  "stabilityDays": 31,
-  "schedule": ["before 5am on the first day of the month"]
+  "stabilityDays": 14
 }
