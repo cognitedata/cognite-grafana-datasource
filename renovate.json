@@ -1,9 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>cognitedata/renovate-config",
+    "local>cognitedata/renovate-config-public",
     ":automergeMinor"
   ],
-  "stabilityDays": 31,
-  "schedule": ["before 5am on the first day of the month"]
+  "stabilityDays": 14
 }
