@@ -103,7 +103,7 @@ export async function getLabelsForTarget(
   switch (target.tab) {
     default:
     case Timeseries: {
-      return [await getTimeseriesLabel(labelSrc, targetToIdEither(target), connector)];
+      return [await getTimeseriesLabel(labelSrc, target, connector)];
     }
     case Asset: {
       const tsIds = queryList.map(({ id }) => ({ id }));
@@ -126,11 +126,12 @@ export async function getLabelsForTarget(
 
 async function getTimeseriesLabel(
   label: string,
-  id: IdEither,
+  target: QueryTarget,
   connector: Connector
 ): Promise<string> {
   let resLabel = label;
   if (label && labelContainsVariableProps(label)) {
+    const id = targetToIdEither(target);
     const [ts] = await getTimeseries({ items: [id] }, connector);
     resLabel = getLabelWithInjectedProps(label, ts);
   }
@@ -140,10 +141,17 @@ async function getTimeseriesLabel(
 // injects prop values to ts label, ex. `{{description}} {{metadata.key1}}` -> 'tsDescription tsMetadataKey1Value'
 export function getLabelWithInjectedProps(
   label: string,
-  timeseries: TimeSeriesResponseItem
+  timeseries: TimeSeriesResponseItem | any, // TODO: fix
+  disallow: string[] = ["unitExternalId"]
 ): string {
   // matches with any text within {{ }}
-  return label.replace(variableLabelRegex, (full, group) => get(timeseries, group, full));
+  // const { unitExternalId, ...cleanedTs } = timeseries; // can't rely on unitExternalId here as it depends on the datapoints query
+  return label.replace(variableLabelRegex, (full, group) => {
+    if (disallow.includes(group)) {
+      return full;
+    }
+    return get(timeseries, group, full)
+  });
 }
 
 export function labelContainsVariableProps(label: string): boolean {
@@ -162,6 +170,7 @@ export async function getTimeseries(
     items = await connector.fetchItems({
       data,
       method,
+      headers: { 'cdf-version': 'beta'},
       path: `/timeseries/byids`,
       cacheTime: CacheTime.ResourceByIds,
     });
@@ -181,6 +190,16 @@ export function fetchSingleTimeseries(id: IdEither, connector: Connector) {
     data: { items: [id] },
     path: `/timeseries/byids`,
     method: HttpMethod.POST,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchSingleUnit(id: IdEither, connector: Connector) {
+  const ext = "externalId" in id ? id.externalId : id.id;
+  return connector.fetchItems<Resource>({
+    data: undefined,
+    path: `/units/${ext}`,
+    method: HttpMethod.GET,
     cacheTime: CacheTime.ResourceByIds,
   });
 }
@@ -229,9 +248,10 @@ export function reduceTimeseries(
     const { aggregates } = result.config.data;
     const { items } = result.data;
 
-    const series = items.map(({ datapoints, externalId, id }, i) => {
+    const series = items.map(({ datapoints, externalId, id, unitExternalId }, i) => {
       const label = labels && labels[i];
-      const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
+      const labelWithAddons = getLabelWithInjectedProps(label, { unitExternalId }, []);
+      const resTarget = labelWithAddons || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
         type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end);
       const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);

@@ -12,7 +12,7 @@ import {
 } from '@grafana/data';
 import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
+import { fetchSingleAsset, fetchSingleTimeseries, fetchSingleUnit } from './cdf/client';
 import {
   AssetsFilterRequestParams,
   FilterRequest,
@@ -270,6 +270,23 @@ export default class CogniteDatasource extends DataSourceApi<
     return items.map(resource2DropdownOption);
   }
 
+  async getUnitsOptionsForDropdown(query: string, path: "/units" | "/units/systems"): Promise<Array<SelectableValue<string> & Resource>> {
+    const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
+      data: undefined,
+      path: path,
+      method: HttpMethod.GET,
+      cacheTime: '10s',
+    });
+
+    try {
+      return items.map(resource2DropdownOption).filter((item) =>
+        item.externalId ? item.externalId?.includes(query ?? '') : true
+      );
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   /**
    * used by query editor to get metric suggestions (template variables)
    */
@@ -304,6 +321,10 @@ export default class CogniteDatasource extends DataSourceApi<
 
   fetchSingleTimeseries = (id: IdEither) => {
     return fetchSingleTimeseries(id, this.connector);
+  };
+
+  fetchSingleUnit = (id: IdEither) => {
+    return fetchSingleUnit(id, this.connector);
   };
 
   fetchSingleAsset = (id: IdEither) => {
@@ -406,12 +427,12 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
 
 export function resource2DropdownOption(resource: Resource): SelectableValue<string> & Resource {
   const { id, name, externalId, description } = resource;
-  const value = id.toString();
+  const value = id?.toString() || externalId?.toString() || name;
   const label = name || externalId || value;
   return {
     label,
     value,
-    description,
+    description: description || externalId,
     externalId,
     id,
   };

@@ -7,6 +7,7 @@ export interface Datapoint {
   isStep: boolean;
   isString: boolean;
   unit?: string;
+  unitExternalId?: string;
   datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
 }
 
@@ -141,6 +142,7 @@ export interface TimeSeriesResponseItem extends Resource {
   isString?: boolean;
   metadata?: Record<string, string>;
   unit?: string;
+  unitExternalId?: string;
   assetId?: string;
   isStep: boolean;
   source?: string;
