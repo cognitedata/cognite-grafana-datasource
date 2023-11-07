@@ -10,6 +10,29 @@ type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any
     onAnnotationChange?: (annotation: AnnotationQuery<TQuery>) => void;
 };
 
+const help = (
+  <pre>
+  Annotation query uses the <a className="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank" rel="noreferrer">events/list</a> endpoint to fetch data. Use <code className="query-keyword">&apos;=&apos;</code> operator to provide parameters for the request.
+  Format: <code className="query-keyword">{`events{param=number, ...}`}</code>
+  Example: <code className="query-keyword">{`events{externalIdPrefix='PT', type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}`}</code>
+
+  By default, the query displays all events that are active in the time range.
+  You can customize this with the additional time filters <code className="query-keyword">startTime</code>, <code className="query-keyword">endTime</code>.
+  This example shows how to display all finished events that started in the current time range:
+  <code className="query-keyword">{`events{startTime={min=$__from}, endTime={isNull=false}}`}</code>
+
+  You can specify additional client-side filtering with the <code className="query-keyword">&apos;=~&apos;</code>, <code className="query-keyword">&apos;!~&apos;</code> and <code className="query-keyword">&apos;!=&apos;</code> operators. Comma between multiple filters acts as logic <code className="query-keyword">AND</code>.
+  Format:
+    <code className="query-keyword">&apos;=~&apos;</code> – regex equality, returns results satisfying the regular expression.
+    <code className="query-keyword">&apos;!~&apos;</code> – regex inequality, excludes results satisfying the regular expression.
+    <code className="query-keyword">&apos;!=&apos;</code> – strict inequality, returns items where a property doesn&apos;t equal a given value.
+  Example: <code className="query-keyword">{`events{type='WORKORDER', subtype=~'SUB.*'}`}</code>
+  Templating is available by using the <code className="query-keyword">$variable</code> syntax.
+  Example: <code className="query-keyword">{`events{type='WORKORDER', subtype=$variable}`}</code>.
+  To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a className="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
+      </pre>
+);
+
 export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryEditorProps<CogniteQuery>, AnnotationQueryData> {
 
     defaults = {
@@ -58,6 +81,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
       </div>
       <div className="gf-form--grow">
           {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
+          {help}
       </div>
     </div>
     

@@ -2,12 +2,26 @@
 
 This article documents the ongoing improvements we're making to the **Cognite Data Source for Grafana**.
 
+
+## 4.0.1 - November 7th, 2023
+
+### Bug fixes
+- Patched regressions introduced after the migration to React:
+   * Events table `activeAtTime` filter is now working as before
+   * Annotations filters are applied correctly as before
+   * Added back hints and examples for annotation query
+- Multiple dependencies have been updated to fix security vulnerabilities
+
 ## 4.0.0 - October 12th, 2023
+
+### Features
 - Migrate Annotation editor from Angular to React
 - Bumped minimum Grafana version requirement to v10
 - Events are returned in dataframe format
 
 ## 3.1.0 - May 10th, 2023
+
+### Features
 - Added support for the new version of CDF Data Models (GraphQL)
 - Added an option to sort Events table
 
