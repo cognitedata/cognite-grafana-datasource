@@ -36,15 +36,19 @@ export class EventsDatasource {
   }
 
   async fetchEventsForTarget(
-    { refId, eventQuery, query }: CogniteQuery,
+    target: CogniteQuery,
     [rangeStart, rangeEnd]: Tuple<number>
   ) {
-    const timeFrame = {
+    const { refId, eventQuery, query } = target;
+    const isAnnotation = isAnnotationTarget(target);
+    const activeAtTimeRange = isAnnotation || target.eventQuery?.activeAtTimeRange;
+    const timeFrame = activeAtTimeRange ? {
       activeAtTime: { min: rangeStart, max: rangeEnd },
-    };
-    const finalEventQuery = eventQuery || {
+    } : {};
+    const finalEventQuery = isAnnotation ? {
       expr: query,
-    }
+    } : eventQuery
+
     try {
       const { items, hasMore } = await this.fetchEvents(finalEventQuery, timeFrame);
       if (hasMore) {

@@ -36,6 +36,43 @@ describe('events datasource test', () => {
     },
   }
 
+  it('simple event query outside of time range', async () => {
+
+    fetchItemsMock.mockResolvedValueOnce([])
+
+    const query: CogniteQuery = {
+      ...eventQueryBase,
+      eventQuery: {
+        ...eventQueryBase.eventQuery,
+        activeAtTimeRange: false,
+      }
+    }
+    const res = await eventsDatasource.fetchEventTargets(
+      [query],
+      [startTime, endTime]
+    );
+
+    expect(fetchItemsMock).toHaveBeenCalledTimes(1)
+    expect(connector.fetchItems).toHaveBeenCalledWith({
+      data: {
+        filter: {
+        },
+        limit: 1000,
+      },
+      headers: undefined,
+      method: "POST",
+      path: "/events/list"
+    })
+
+    expect(res).toEqual([
+      {
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: undefined,
+      },
+    ]);
+  });
 
   it('simple event query with sort', async () => {
 
@@ -131,6 +168,133 @@ describe('events datasource test', () => {
         length: 0,
         name: "Events",
         refId: undefined,
+      },
+    ]);
+  });
+
+  it('annotations event query (empty)', async () => {
+
+    fetchItemsMock.mockResolvedValueOnce([])
+
+    const query: CogniteQuery = {
+      ...defaultCogniteQuery,
+      refId: "Anno",
+      tab: null,
+      query: "events{}",
+    }
+    const res = await eventsDatasource.fetchEventTargets(
+      [query],
+      [startTime, endTime]
+    );
+
+    expect(fetchItemsMock).toHaveBeenCalledTimes(1)
+    expect(connector.fetchItems).toHaveBeenCalledWith({
+      data: {
+        filter: {
+          activeAtTime: {
+            max: endTime,
+            min: startTime,
+          },
+        },
+        limit: 1000,
+      },
+      headers: undefined,
+      method: "POST",
+      path: "/events/list"
+    })
+
+    expect(res).toEqual([
+      {
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: "Anno",
+      },
+    ]);
+  });
+
+  it('annotations event query (with end time override)', async () => {
+
+    fetchItemsMock.mockResolvedValueOnce([])
+
+    const query: CogniteQuery = {
+      ...defaultCogniteQuery,
+      refId: "Anno",
+      tab: null,
+      query: "events{endTime={isNull=false}}",
+    }
+    const res = await eventsDatasource.fetchEventTargets(
+      [query],
+      [startTime, endTime]
+    );
+
+    expect(fetchItemsMock).toHaveBeenCalledTimes(1)
+    expect(connector.fetchItems).toHaveBeenCalledWith({
+      data: {
+        filter: {
+          activeAtTime: {
+            max: endTime,
+            min: startTime,
+          },
+          endTime: {
+            isNull: false
+          }
+        },
+        limit: 1000,
+      },
+      headers: undefined,
+      method: "POST",
+      path: "/events/list"
+    })
+
+    expect(res).toEqual([
+      {
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: "Anno",
+      },
+    ]);
+  });
+
+  it('annotations event query (with filters)', async () => {
+
+    fetchItemsMock.mockResolvedValueOnce([])
+
+    const query: CogniteQuery = {
+      ...defaultCogniteQuery,
+      refId: "Anno",
+      tab: null,
+      query: "events{subtype='test'}",
+    }
+    const res = await eventsDatasource.fetchEventTargets(
+      [query],
+      [startTime, endTime]
+    );
+
+    expect(fetchItemsMock).toHaveBeenCalledTimes(1)
+    expect(connector.fetchItems).toHaveBeenCalledWith({
+      data: {
+        filter: {
+          activeAtTime: {
+            max: endTime,
+            min: startTime,
+          },
+          subtype: 'test'
+        },
+        limit: 1000,
+      },
+      headers: undefined,
+      method: "POST",
+      path: "/events/list"
+    })
+
+    expect(res).toEqual([
+      {
+        fields: [],
+        length: 0,
+        name: "Events",
+        refId: "Anno",
       },
     ]);
   });
