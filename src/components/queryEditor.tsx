@@ -9,6 +9,9 @@ import {
   Switch,
   AsyncSelect,
   Button,
+  InlineField,
+  InlineFieldRow,
+  Input
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SystemJS } from '@grafana/runtime';
@@ -245,20 +248,24 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
 
   return (
     <>
-      <div className="gf-form">
-        <FormField
+      <InlineFieldRow>
+        <InlineField
           label="Query"
-          labelWidth={6}
-          inputWidth={30}
-          className="custom-query"
-          placeholder="ts{externalIdPrefix='PT_123'}"
-          onChange={({ target }) => setValue(target.value)}
-          onBlur={() => onQueryChange({ expr: value })}
-          value={value}
           tooltip="Click [?] button for help."
-        />
-        <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
-      </div>
+          grow
+        >
+          <Input
+            type="text"
+            value={value}
+            placeholder="ts{externalIdPrefix='PT_123'}"
+            onChange={(d) => setValue(d.currentTarget.value)}
+            onBlur={() => onQueryChange({ expr: value })}
+          />
+        </InlineField>
+        <InlineField>
+          <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
+        </InlineField>
+      </InlineFieldRow>
       <CommonEditors {...{ onQueryChange, query }} />
       {showHelp && <CustomQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
