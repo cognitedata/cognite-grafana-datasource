@@ -44,6 +44,14 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     Example: <Code>{`sum(ts{metadata{type="TEMP"}}) - ts{id=12345678}`}</Code>
     <br />
     <br />
+    If a time series has a defined <Code>unitExternalId</Code>, you can convert its values to a different unit within the same quantity.
+    <br />
+    Example: <Code>{`ts{externalId='temperature_f_houston', targetUnit='temperature:deg_c'} + ts{id='123', targetUnitSystem='SI'}`}</Code>
+    <br />
+    For each time series/aggregate, you may specify either <Code>targetUnit</Code> or <Code>targetUnitSystem</Code>, but not both. The chosen target unit must be compatible with the original unit.
+    When querying data points using synthetic time series, the values will no longer retain their unit information. For instance, despite it not being physically accurate, it is possible to add values from a <b>temperature</b> time series to those from a <b>distance</b> time series.
+    <br />
+    <br />
     Templating is available by using the <Code>$variable_name</Code> syntax.
     <br />
     Example:{' '}
