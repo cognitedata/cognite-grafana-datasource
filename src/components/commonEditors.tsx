@@ -25,8 +25,8 @@ const GranularityEditor = (props: SelectedProps) => {
       <div className="gf-form">
         <FormField
           label="Granularity"
-          labelWidth={6}
-          inputWidth={10}
+          labelWidth={7}
+          inputWidth={6}
           onChange={({ target }) => onQueryChange({ granularity: target.value })}
           value={query.granularity}
           placeholder="default"
@@ -59,8 +59,8 @@ export const LabelEditor = (props: SelectedProps) => {
     <div className="gf-form gf-form--grow">
       <FormField
         label="Label"
-        labelWidth={6}
-        inputWidth={10}
+        labelWidth={5}
+        inputWidth={20}
         onChange={({ target }) => onQueryChange({ label: target.value })}
         value={query.label}
         placeholder="default"
