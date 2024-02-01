@@ -1,5 +1,6 @@
 import { chunk } from 'lodash';
-import { getBackendSrv, BackendSrv } from '@grafana/runtime';
+import { BackendSrv } from '@grafana/runtime';
+import { lastValueFrom } from 'rxjs';
 import ms from 'ms';
 import {
   RequestParams,
@@ -8,7 +9,6 @@ import {
   DataSourceRequestOptions,
   CursorResponse,
   isError,
-  FDMQueryResponse,
   DataResponse,
   FDMResponse,
 } from './types';
@@ -113,10 +113,10 @@ export class Connector {
   }
 
   request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
-    return this.backendSrv.datasourceRequest({
+    return lastValueFrom(this.backendSrv.fetch({
       method,
       url: `${this.apiUrlAuth}/${path}`,
-    });
+    }));
   }
 
   private get apiUrlAuth() {
@@ -163,7 +163,7 @@ export class Connector {
 
     const request = (async () => {
       try {
-        const res = await this.backendSrv.datasourceRequest(query);
+        const res = await lastValueFrom(this.backendSrv.fetch(query));
         if (isError(res)) {
           throw res;
         }
