@@ -4,8 +4,8 @@ import { VariableQueryData } from '../types';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
-const ds = getMockedDataSource();
-const { backendSrv } = ds;
+const fetcher = { fetch: jest.fn() };
+const ds = getMockedDataSource(fetcher);
 
 const assetsResponse = {
   data: {
@@ -35,7 +35,7 @@ describe('Metrics Query', () => {
       const result = await ds.metricFindQuery(variableQuery);
 
       expect(result).toEqual([]);
-      expect(backendSrv.datasourceRequest).not.toBeCalled();
+      expect(fetcher.fetch).not.toBeCalled();
     });
   });
 
@@ -45,7 +45,7 @@ describe('Metrics Query', () => {
       query: 'assets{}',
     };
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
@@ -56,8 +56,8 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return all assets', () => {
@@ -75,13 +75,13 @@ describe('Metrics Query', () => {
     response.data.items = assetsResponse.data.items.filter((item) => item.id === id);
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockImplementation(() => Promise.resolve(response));
+      fetcher.fetch = jest.fn().mockImplementation(() => Promise.resolve(response));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -99,15 +99,15 @@ describe('Metrics Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -125,15 +125,15 @@ describe('Metrics Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       result = await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should return the correct assets', () => {
@@ -148,7 +148,7 @@ describe('Metrics Query', () => {
     it('should return an empty array', async () => {
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(backendSrv.datasourceRequest).not.toBeCalled();
+      expect(fetcher.fetch).not.toBeCalled();
     });
   });
 
@@ -159,14 +159,14 @@ describe('Metrics Query', () => {
       };
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(backendSrv.datasourceRequest).not.toBeCalled();
+      expect(fetcher.fetch).not.toBeCalled();
     });
     it('should throw an error if filter regexp is wrong', async () => {
       const variableQuery: VariableQueryData = {
         query: "assets{name=~'*.foo'}",
       };
       expect(ds.metricFindQuery(variableQuery)).rejects.toMatchSnapshot();
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect(fetcher.fetch).toBeCalledTimes(1);
     });
   });
 
@@ -176,15 +176,15 @@ describe('Metrics Query', () => {
     };
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementation(() => Promise.resolve(assetsResponse));
       await ds.metricFindQuery(variableQuery);
     });
 
     it('should generate the correct request', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
   });
 });

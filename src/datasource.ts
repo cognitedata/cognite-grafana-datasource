@@ -10,7 +10,7 @@ import {
   MutableDataFrame,
   AnnotationQuery,
 } from '@grafana/data';
-import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
 import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
 import {
@@ -20,7 +20,7 @@ import {
   Resource,
   IdEither,
 } from './cdf/types';
-import { Connector } from './connector';
+import { Connector, Fetcher } from './connector';
 import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -43,6 +43,7 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
+import { lastValueFrom } from 'rxjs';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
@@ -66,8 +67,15 @@ export default class CogniteDatasource extends DataSourceApi<
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>, fetcher?: Fetcher) {
     super(instanceSettings);
+
+    const defaultFetcher = {
+      fetch: (options: BackendSrvRequest) => {
+        const observable = this.backendSrv.fetch(options);
+        return lastValueFrom(observable);
+      }
+    }
 
     const { url, jsonData } = instanceSettings;
     const {
@@ -87,7 +95,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.connector = new Connector(
       this.project,
       url,
-      this.backendSrv,
+      fetcher ?? defaultFetcher,
       oauthPassThru,
       oauthClientCreds,
       enableTemplates,
