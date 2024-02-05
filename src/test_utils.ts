@@ -52,8 +52,13 @@ const instanceSettings = ({ oauthPassThru }) =>
     withCredentials: false,
   } as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>);
 
-export const getMockedDataSource = (fetcher: Fetcher, options = { oauthPassThru: false }) =>
-  new CogniteDatasource(instanceSettings(options), fetcher);
+export const getMockedDataSource = (fetcher: Fetcher, options = { oauthPassThru: false }) => {
+  const instanceProps = instanceSettings(options)
+  const ds = new CogniteDatasource(instanceProps);
+  const connector = new Connector(instanceProps.jsonData.cogniteProject, instanceProps.url, fetcher, options.oauthPassThru);
+  ds.initSources(connector);
+  return ds;
+}
 
 export const getDataSourceWithMocks = (fetcher: Fetcher, options?: any) => {
   const ds = getMockedDataSource(fetcher, options);

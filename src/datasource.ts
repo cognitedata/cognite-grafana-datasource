@@ -67,7 +67,7 @@ export default class CogniteDatasource extends DataSourceApi<
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>, fetcher?: Fetcher) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
 
     const defaultFetcher = {
@@ -92,10 +92,10 @@ export default class CogniteDatasource extends DataSourceApi<
     this.templateSrv = getTemplateSrv();
     this.url = url;
     this.project = cogniteProject ?? defaultProject;
-    this.connector = new Connector(
+    const connector = new Connector(
       this.project,
       url,
-      fetcher ?? defaultFetcher,
+      defaultFetcher,
       oauthPassThru,
       oauthClientCreds,
       enableTemplates,
@@ -103,6 +103,11 @@ export default class CogniteDatasource extends DataSourceApi<
       enableFlexibleDataModelling,
       enableExtractionPipelines
     );
+    this.initSources(connector);
+  }
+  
+  initSources (connector: Connector) {
+    this.connector = connector;
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
