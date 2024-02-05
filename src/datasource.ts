@@ -10,7 +10,7 @@ import {
   MutableDataFrame,
   AnnotationQuery,
 } from '@grafana/data';
-import { BackendSrv, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
 import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
 import {
@@ -20,7 +20,7 @@ import {
   Resource,
   IdEither,
 } from './cdf/types';
-import { Connector } from './connector';
+import { Connector, Fetcher } from './connector';
 import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -43,6 +43,7 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
+import { lastValueFrom } from 'rxjs';
 
 export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
@@ -69,6 +70,13 @@ export default class CogniteDatasource extends DataSourceApi<
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
 
+    const defaultFetcher = {
+      fetch: (options: BackendSrvRequest) => {
+        const observable = this.backendSrv.fetch(options);
+        return lastValueFrom(observable);
+      }
+    }
+
     const { url, jsonData } = instanceSettings;
     const {
       cogniteProject,
@@ -84,10 +92,10 @@ export default class CogniteDatasource extends DataSourceApi<
     this.templateSrv = getTemplateSrv();
     this.url = url;
     this.project = cogniteProject ?? defaultProject;
-    this.connector = new Connector(
+    const connector = new Connector(
       this.project,
       url,
-      this.backendSrv,
+      defaultFetcher,
       oauthPassThru,
       oauthClientCreds,
       enableTemplates,
@@ -95,6 +103,11 @@ export default class CogniteDatasource extends DataSourceApi<
       enableFlexibleDataModelling,
       enableExtractionPipelines
     );
+    this.initSources(connector);
+  }
+  
+  initSources (connector: Connector) {
+    this.connector = connector;
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);

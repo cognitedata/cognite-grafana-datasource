@@ -13,8 +13,8 @@ jest.mock('@grafana/data');
 const appEvents = eventBusService;
 
 const { ExtractionPipelines } = Tab;
-const ds = getMockedDataSource();
-const { backendSrv } = ds;
+const fetcher = { fetch: jest.fn() };
+const ds = getMockedDataSource(fetcher);
 const options: any = {
   targets: [],
   range: {
@@ -101,14 +101,14 @@ describe('extraction pipelines', () => {
   });
   describe('getExtractionPipelinesDropdowns', () => {
     beforeEach(async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve({ data: extpipesRes }))
         .mockResolvedValueOnce((x) => Promise.resolve(x.data));
       results = await ds.extractionPipelinesDatasource.getExtractionPipelinesDropdowns('a');
     });
     it('it is called 1 times', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
+      expect(fetcher.fetch).toBeCalledTimes(1);
     });
     it('returns response data', () => {
       expect(results).toEqual(extpipesRes.items);
@@ -156,7 +156,7 @@ describe('extraction pipelines', () => {
               },
             },
           ];
-          backendSrv.datasourceRequest = jest
+          fetcher.fetch = jest
             .fn()
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRes }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes1 }))
@@ -194,7 +194,7 @@ describe('extraction pipelines', () => {
               },
             },
           ];
-          backendSrv.datasourceRequest = jest
+          fetcher.fetch = jest
             .fn()
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesByIdRes }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes1 }))
@@ -236,7 +236,7 @@ describe('extraction pipelines', () => {
               },
             },
           ];
-          backendSrv.datasourceRequest = jest
+          fetcher.fetch = jest
             .fn()
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes1 }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes2 }))
