@@ -7,6 +7,7 @@ import {
   getDataqueryResponse,
   getDataSourceWithMocks,
   getItemsResponseObject,
+  getMockedDataSource,
 } from '../test_utils';
 import { failedResponseEvent } from '../constants';
 import { eventBusService } from '../appEventHandler';
@@ -57,7 +58,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Given an older queryTarget format', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let results;
     const id = 123;
     const aggregates = ['average'];
@@ -70,7 +72,7 @@ describe('Datasource Query', () => {
     const [start, end] = [+options.range.from, +options.range.to];
 
     it('should generate the correct query', async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data)));
       results = await ds.timeseriesDatasource.fetchTimeseriesForTargets(
@@ -78,8 +80,8 @@ describe('Datasource Query', () => {
         options
       );
 
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0].data).toEqual({
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0].data).toEqual({
         end,
         start,
         items,
@@ -100,7 +102,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Select Timeseries" queries', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let result;
     const id = 789;
     const tsTargetA: QueryTargetLike = {
@@ -134,7 +137,7 @@ describe('Datasource Query', () => {
     beforeAll(async () => {
       options.intervalMs = 1;
       options.targets = [tsTargetA, tsTargetB, tsTargetC];
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponse))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
@@ -142,11 +145,11 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct queries', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(4);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[1][0]).toMatchSnapshot();
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[2][0]).toMatchSnapshot();
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[3][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(4);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect((fetcher.fetch as Mock).mock.calls[1][0]).toMatchSnapshot();
+      expect((fetcher.fetch as Mock).mock.calls[2][0]).toMatchSnapshot();
+      expect((fetcher.fetch as Mock).mock.calls[3][0]).toMatchSnapshot();
     });
     it('should return correct datapoints and labels', () => {
       const { target: targetA } = tsTargetA;
@@ -164,7 +167,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Select Timeseries" queries with errors', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let result;
     const tsTargetA: QueryTargetLike = {
       aggregation: 'none',
@@ -181,7 +185,7 @@ describe('Datasource Query', () => {
     beforeAll(async () => {
       options.intervalMs = ms('1m');
       options.targets = [tsTargetA, tsTargetB];
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockRejectedValueOnce(tsError)
         .mockRejectedValueOnce({});
@@ -206,7 +210,8 @@ describe('Datasource Query', () => {
 
   //
   describe('Given "Select Timeseries from Asset" queries', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let result;
     const assetQuery = {
       target: '789',
@@ -260,7 +265,7 @@ describe('Datasource Query', () => {
     beforeAll(async () => {
       options.intervalMs = ms('6m');
       options.targets = [targetC, targetD, targetError1, targetError2];
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponseC))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
@@ -274,15 +279,15 @@ describe('Datasource Query', () => {
 
     it('should generate the correct queries', () => {
       // console.log(result);
-      expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(8);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
-        expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toHaveBeenCalledTimes(8);
+      for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
+        expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
 
     it('should replace filter assetQuery [[variable]] with its value', () => {
       expect(
-        (backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.filter.assetIds[0]
+        (fetcher.fetch as Mock).mock.calls[1][0].data.filter.assetIds[0]
       ).toEqual('123');
     });
 
@@ -303,7 +308,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Give "Select Timeseries of Relationships target from Asset" queries', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let result;
     const assetQuery = {
       target: '789',
@@ -344,22 +350,23 @@ describe('Datasource Query', () => {
       jest.clearAllMocks();
       options.intervalMs = ms('6m');
       options.targets = [targetA, targetB, targetC];
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
       result = await ds.query(options);
     });
     it('should generate the correct queries', () => {
-      expect(backendSrv.datasourceRequest).toHaveBeenCalledTimes(4);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
-        expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toHaveBeenCalledTimes(4);
+      for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
+        expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
   });
 
   describe('Given custom queries', () => {
-    const { ds, backendSrv, templateSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const { ds, templateSrv } = getDataSourceWithMocks(fetcher);
     let result;
     const targetB: QueryTargetLike = {
       aggregation: 'none',
@@ -414,7 +421,7 @@ describe('Datasource Query', () => {
       const dataMock = async (x) => {
         return getDataqueryResponse(x.data, externalIdPrefix, 0);
       };
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(listMock)
         .mockImplementationOnce(listMock)
@@ -428,9 +435,9 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(5);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
-        expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(5);
+      for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
+        expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
 
@@ -445,7 +452,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Given custom queries with functions', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     let result;
     const targetA: QueryTargetLike = {
       aggregation: 'none',
@@ -487,7 +495,7 @@ describe('Datasource Query', () => {
       jest.clearAllMocks();
       options.intervalMs = ms('2.5h');
       options.targets = [targetA, targetD];
-      backendSrv.datasourceRequest = jest.fn().mockImplementation(async (data: any) => {
+      fetcher.fetch = jest.fn().mockImplementation(async (data: any) => {
         if (data.url.includes('/byids') || data.url.includes('timeseries/list')) {
           return cloneDeep(tsResponse);
         }
@@ -500,9 +508,9 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(5);
-      for (let i = 0; i < (backendSrv.datasourceRequest as Mock).mock.calls.length; i += 1) {
-        expect((backendSrv.datasourceRequest as Mock).mock.calls[i][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(5);
+      for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
+        expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
     });
 
@@ -512,7 +520,8 @@ describe('Datasource Query', () => {
   });
 
   describe('Given "Custom queries" with errors', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     const targets: QueryTargetLike[] = [
       {
         refId: 'A',
@@ -528,7 +537,7 @@ describe('Datasource Query', () => {
     });
 
     test('400 error', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockRejectedValueOnce(tsError);
+      fetcher.fetch = jest.fn().mockRejectedValueOnce(tsError);
       const result = await ds.query(query);
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
@@ -537,7 +546,7 @@ describe('Datasource Query', () => {
     });
 
     test('unknown error', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockRejectedValueOnce({});
+      fetcher.fetch = jest.fn().mockRejectedValueOnce({});
       const result = await ds.query(query);
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
@@ -546,7 +555,7 @@ describe('Datasource Query', () => {
     });
 
     test('empty ts filter result', async () => {
-      backendSrv.datasourceRequest = jest
+      fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
       const result = await ds.query(query);
@@ -560,7 +569,8 @@ describe('Datasource Query', () => {
   });
 
   describe('filterQueryTargets', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     const normalTargets = [
       {
         target: '',
@@ -673,7 +683,8 @@ describe('Datasource Query', () => {
     });
   });
   describe('replaceVariable', () => {
-    const { ds, backendSrv } = getDataSourceWithMocks();
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
     const singleValueQuery = `events{assetIds=[$AssetVariable]}`;
     const multiValueQuery = `events{assetIds=[\${MultiValue:csv}]}`;
     const multiVariableQuery = `events{assetIds=[$MultiValue], type=$Type, subtype=$Type}`;
@@ -688,10 +699,11 @@ describe('Datasource Query', () => {
   });
 });
 describe('Given custom query with pure text label', () => {
-  const { ds, backendSrv } = getDataSourceWithMocks();
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
   beforeAll(async () => {
     jest.clearAllMocks();
-    backendSrv.datasourceRequest = jest.fn().mockImplementation(async (x) => {
+    fetcher.fetch = jest.fn().mockImplementation(async (x) => {
       return getDataqueryResponse(x.data, externalIdPrefix, 0);
     });
   });
@@ -711,7 +723,8 @@ describe('Given custom query with pure text label', () => {
 });
 
 describe('custom query granularity less then a second', () => {
-  const { ds, backendSrv } = getDataSourceWithMocks();
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
   const targetA = {
     tab: Tab.Custom,
     expr: 'ts{id=1}',
@@ -719,7 +732,7 @@ describe('custom query granularity less then a second', () => {
   } as any;
   beforeAll(async () => {
     jest.clearAllMocks();
-    backendSrv.datasourceRequest = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
+    fetcher.fetch = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
   });
 
   it('defaults to one second', async () => {
@@ -728,7 +741,7 @@ describe('custom query granularity less then a second', () => {
       intervalMs: 99,
     });
     expect(
-      (backendSrv.datasourceRequest as Mock).mock.calls[1][0].data.items[0].expression
+      (fetcher.fetch as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');
   });
 });

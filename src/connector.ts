@@ -1,5 +1,5 @@
 import { chunk } from 'lodash';
-import { getBackendSrv, BackendSrv } from '@grafana/runtime';
+import { BackendSrvRequest, FetchResponse } from '@grafana/runtime';
 import ms from 'ms';
 import {
   RequestParams,
@@ -8,7 +8,6 @@ import {
   DataSourceRequestOptions,
   CursorResponse,
   isError,
-  FDMQueryResponse,
   DataResponse,
   FDMResponse,
 } from './types';
@@ -16,11 +15,13 @@ import { Items, Limit } from './cdf/types';
 import { getQueryString } from './utils';
 import { API_V1, AuthType, CacheTime } from './constants';
 
+export interface Fetcher { fetch: (options: BackendSrvRequest) => Promise<FetchResponse<any>> };
+
 export class Connector {
   constructor(
     private project: string,
     private apiUrl: string,
-    private backendSrv: BackendSrv,
+    private fetcher: Fetcher,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
     private enableTemplates?: boolean,
@@ -113,7 +114,7 @@ export class Connector {
   }
 
   request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
-    return this.backendSrv.datasourceRequest({
+    return this.fetcher.fetch({
       method,
       url: `${this.apiUrlAuth}/${path}`,
     });
@@ -163,7 +164,7 @@ export class Connector {
 
     const request = (async () => {
       try {
-        const res = await this.backendSrv.datasourceRequest(query);
+        const res = await this.fetcher.fetch(query);
         if (isError(res)) {
           throw res;
         }

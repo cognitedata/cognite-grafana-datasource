@@ -4,8 +4,8 @@ jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
 
 describe('Login with OAuth2', () => {
-  const ds = getMockedDataSource({ oauthPassThru: true });
-  const { backendSrv } = ds;
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher, { oauthPassThru: true });
 
   function makeLoginResponse(loggedIn: boolean, project: string) {
     return Promise.resolve({
@@ -21,13 +21,13 @@ describe('Login with OAuth2', () => {
     let result;
 
     beforeAll(async () => {
-      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
+      fetcher.fetch = jest.fn().mockReturnValue(response);
       result = await ds.testDatasource();
     });
 
     it('should send a correct request', async () => {
-      expect(backendSrv.datasourceRequest).toBeCalledTimes(1);
-      expect((backendSrv.datasourceRequest as Mock).mock.calls[0][0]).toMatchSnapshot();
+      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
     it('should log the user in', async () => {
@@ -39,7 +39,7 @@ describe('Login with OAuth2', () => {
     const response = makeLoginResponse(true, 'WrongProject');
 
     it('should display an error message', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
+      fetcher.fetch = jest.fn().mockReturnValue(response);
       expect(await ds.testDatasource()).toMatchSnapshot();
     });
   });
@@ -48,7 +48,7 @@ describe('Login with OAuth2', () => {
     const response = makeLoginResponse(false, 'string');
 
     it('should display an error message', async () => {
-      backendSrv.datasourceRequest = jest.fn().mockReturnValue(response);
+      fetcher.fetch = jest.fn().mockReturnValue(response);
       expect(await ds.testDatasource()).toMatchSnapshot();
     });
   });

@@ -1,6 +1,6 @@
 export const getBackendSrv = () =>
   ({
-    datasourceRequest: jest.fn(),
+    fetch: jest.fn(),
   } as any);
 
 const variables = [

@@ -3,6 +3,7 @@ import { DataSourceInstanceSettings } from '@grafana/data';
 import _ from 'lodash';
 import CogniteDatasource from './datasource';
 import { CDFDataQueryRequest, QueryTarget, CogniteDataSourceOptions } from './types';
+import { Connector, Fetcher } from 'connector';
 
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,
@@ -51,11 +52,16 @@ const instanceSettings = ({ oauthPassThru }) =>
     withCredentials: false,
   } as unknown as DataSourceInstanceSettings<CogniteDataSourceOptions>);
 
-export const getMockedDataSource = (options = { oauthPassThru: false }) =>
-  new CogniteDatasource(instanceSettings(options));
+export const getMockedDataSource = (fetcher: Fetcher, options = { oauthPassThru: false }) => {
+  const instanceProps = instanceSettings(options)
+  const ds = new CogniteDatasource(instanceProps);
+  const connector = new Connector(instanceProps.jsonData.cogniteProject, instanceProps.url, fetcher, options.oauthPassThru);
+  ds.initSources(connector);
+  return ds;
+}
 
-export const getDataSourceWithMocks = (options?: any) => {
-  const ds = getMockedDataSource(options);
+export const getDataSourceWithMocks = (fetcher: Fetcher, options?: any) => {
+  const ds = getMockedDataSource(fetcher, options);
   return { ds, backendSrv: ds.backendSrv, templateSrv: ds.templateSrv };
 };
 

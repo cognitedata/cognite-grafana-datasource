@@ -3,10 +3,10 @@ import { HttpMethod } from '../types';
 import { API_V1 } from '../constants';
 
 describe('connector', () => {
-  const datasourceRequest = jest.fn();
   const project = 'test';
   const protocol = 'protocol:/';
   let connector: Connector;
+  const fetcher = { fetch: jest.fn() };
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -24,47 +24,47 @@ describe('connector', () => {
     const reqBase = { url, method };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
+      connector = new Connector(project, protocol, fetcher, false);
     });
 
     it('should not chunk under the limit', async () => {
-      datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
+      fetcher.fetch.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
       const res = await connector.chunkAndFetch({ method, path, data });
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data });
-      expect(datasourceRequest).toHaveBeenCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data });
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect(res).toEqual({ data: { items: [1, 2] } });
     });
 
     it('should chunk if limit has been reached', async () => {
-      datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1] } }));
-      datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [2] } }));
+      fetcher.fetch.mockImplementationOnce(async () => ({ data: { items: [1] } }));
+      fetcher.fetch.mockImplementationOnce(async () => ({ data: { items: [2] } }));
       const res = await connector.chunkAndFetch({ path, data, method }, 1);
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
-      expect(datasourceRequest).toHaveBeenCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
       expect(res).toEqual({ data: { items: [1, 2] } });
     });
 
     it('should chunk and keep metadata', async () => {
-      datasourceRequest.mockImplementationOnce(async () => ({
+      fetcher.fetch.mockImplementationOnce(async () => ({
         data: { items: [1], meta: 2 },
         meta: 1,
       }));
-      datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [2] } }));
+      fetcher.fetch.mockImplementationOnce(async () => ({ data: { items: [2] } }));
       const res = await connector.chunkAndFetch({ path, data, method }, 1);
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
-      expect(datasourceRequest).toHaveBeenCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
       expect(res).toEqual({ data: { items: [1, 2], meta: 2 }, meta: 1 });
     });
 
     it('should reject if at least one chunk was rejected', async () => {
-      datasourceRequest.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
-      datasourceRequest.mockImplementationOnce(async () => Promise.reject(1));
+      fetcher.fetch.mockImplementationOnce(async () => ({ data: { items: [1, 2] } }));
+      fetcher.fetch.mockImplementationOnce(async () => Promise.reject(1));
       await expect(connector.chunkAndFetch({ path, data, method }, 1)).rejects.toEqual(1);
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
-      expect(datasourceRequest).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
-      expect(datasourceRequest).toHaveBeenCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item0] } });
+      expect(fetcher.fetch).toHaveBeenCalledWith({ ...reqBase, data: { items: [item1] } });
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -83,17 +83,17 @@ describe('connector', () => {
     };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
+      connector = new Connector(project, protocol, fetcher, false);
     });
 
     it('returns all 10k elements', async () => {
-      datasourceRequest.mockImplementation(response);
+      fetcher.fetch.mockImplementation(response);
       const res = await connector.fetchAndPaginate(query);
       expect(res.length).toBe(limit);
     });
 
     it('returns as many as it can', async () => {
-      datasourceRequest
+      fetcher.fetch
         .mockImplementationOnce(response)
         .mockImplementationOnce(response)
         .mockImplementationOnce(async () => ({ data: { items: items1000.slice(500) } }));
@@ -103,7 +103,7 @@ describe('connector', () => {
     });
 
     it('returns 1000 by default', async () => {
-      datasourceRequest.mockImplementation(response);
+      fetcher.fetch.mockImplementation(response);
       const res = await connector.fetchAndPaginate({
         ...query,
         data: { ...query.data, limit: undefined },
@@ -123,42 +123,42 @@ describe('connector', () => {
     const response = async () => ({ data: { items: [1] } });
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any, false);
+      connector = new Connector(project, protocol, fetcher, false);
       jest.useFakeTimers();
     });
 
     it('takes response from cache', async () => {
-      datasourceRequest.mockImplementation(response);
+      fetcher.fetch.mockImplementation(response);
       await connector.cachedRequest(request);
       const cached = await connector.cachedRequest(request);
-      expect(datasourceRequest).toBeCalledTimes(1);
+      expect(fetcher.fetch).toBeCalledTimes(1);
       expect(cached.data.items).toEqual([1]);
     });
 
     it('cache is removed after timeout', async () => {
-      datasourceRequest.mockImplementation(response);
+      fetcher.fetch.mockImplementation(response);
       await connector.cachedRequest(request, '1s');
       jest.advanceTimersByTime(2000);
       await connector.cachedRequest(request);
-      expect(datasourceRequest).toBeCalledTimes(2);
+      expect(fetcher.fetch).toBeCalledTimes(2);
     });
 
     it('no cache if url is different', async () => {
-      datasourceRequest.mockImplementation(response);
+      fetcher.fetch.mockImplementation(response);
       await connector.cachedRequest(request);
       await connector.cachedRequest({ ...request, url: '/other' });
-      expect(datasourceRequest).toBeCalledTimes(2);
+      expect(fetcher.fetch).toBeCalledTimes(2);
     });
 
     const error = { error: { message: 1 } };
     it('throws error', async () => {
-      datasourceRequest.mockImplementation(async () => error);
+      fetcher.fetch.mockImplementation(async () => error);
       expect.assertions(1);
       expect(connector.cachedRequest(request)).rejects.toEqual(error);
     });
 
     it('throws error 2', async () => {
-      datasourceRequest.mockImplementation(async () => {
+      fetcher.fetch.mockImplementation(async () => {
         throw error; // eslint-disable-line
       });
       expect.assertions(1);
@@ -170,7 +170,7 @@ describe('connector', () => {
     });
 
     it('do not cache on error', async () => {
-      datasourceRequest.mockImplementation(async () => error);
+      fetcher.fetch.mockImplementation(async () => error);
       try {
         await connector.cachedRequest(request);
       } catch (e) {
@@ -181,7 +181,7 @@ describe('connector', () => {
       } catch (e) {
         // silent
       }
-      expect(datasourceRequest).toBeCalledTimes(2);
+      expect(fetcher.fetch).toBeCalledTimes(2);
     });
   });
 
@@ -189,13 +189,13 @@ describe('connector', () => {
     const request = { path: '' };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any, true);
+      connector = new Connector(project, protocol, fetcher, true);
     });
 
     it('uses cdf-oauth route when oauthPassThru=true', async () => {
-      datasourceRequest.mockImplementation(async () => ({ data: {} }));
+      fetcher.fetch.mockImplementation(async () => ({ data: {} }));
       await connector.request(request);
-      expect(datasourceRequest).toHaveBeenCalledWith({
+      expect(fetcher.fetch).toHaveBeenCalledWith({
         method: HttpMethod.GET,
         url: 'protocol://cdf-oauth/',
       });
@@ -206,13 +206,13 @@ describe('connector', () => {
     const request = { path: '' };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, { datasourceRequest } as any, false, true);
+      connector = new Connector(project, protocol, fetcher, false, true);
     });
 
     it('uses cdf-cc-oauth route when oauthClientCreds=true', async () => {
-      datasourceRequest.mockImplementation(async () => ({ data: {} }));
+      fetcher.fetch.mockImplementation(async () => ({ data: {} }));
       await connector.request(request);
-      expect(datasourceRequest).toHaveBeenCalledWith({
+      expect(fetcher.fetch).toHaveBeenCalledWith({
         method: HttpMethod.GET,
         url: 'protocol://cdf-cc-oauth/',
       });
