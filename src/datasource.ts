@@ -316,7 +316,8 @@ export default class CogniteDatasource extends DataSourceApi<
     const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
 
     if (status === 200) {
-      const projectNames = (data as Array<{ projectUrlName: string }>).map(({ projectUrlName }) => projectUrlName);
+      const { projects = [] } = data || {};
+      const projectNames = projects.map(({ projectUrlName }) => projectUrlName);
       hasAccessToProject = projectNames.includes(this.project);
       isLoggedIn = true;
     }
