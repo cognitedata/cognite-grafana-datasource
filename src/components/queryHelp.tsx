@@ -48,8 +48,11 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     <br />
     Example: <Code>{`ts{externalId='temperature_f_houston', targetUnit='temperature:deg_c'} + ts{id='123', targetUnitSystem='SI'}`}</Code>
     <br />
-    For each time series/aggregate, you may specify either <Code>targetUnit</Code> or <Code>targetUnitSystem</Code>, but not both. The chosen target unit must be compatible with the original unit.
-    When querying data points using synthetic time series, the values will no longer retain their unit information. For instance, despite it not being physically accurate, it is possible to add values from a <b>temperature</b> time series to those from a <b>distance</b> time series.
+    - For each time series/aggregate, you may specify either <Code>targetUnit</Code> or <Code>targetUnitSystem</Code>, but not both. The chosen target unit must be compatible with the original unit.
+    <br />
+    - When querying data points using synthetic time series, the values will no longer retain their unit information. For instance, despite it not being physically accurate, it is possible to add values from a <b>temperature</b> time series to those from a <b>distance</b> time series.
+    <br />
+    - Finally, it's important to note that if you try to access the <Code>unit</Code> or <Code>unitExternalId</Code> properties of each time series on the <b>label</b> field, Grafana will return the original unit of the time series, not the unit associated with the data points.
     <br />
     <br />
     Templating is available by using the <Code>$variable_name</Code> syntax.
