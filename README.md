@@ -29,4 +29,4 @@ If you find any bugs, or have any suggestions, please [visit support portal](htt
 
 ## Development
 
-See [here](./DEVELOPMENT.md)
+See [here](https://github.com/cognitedata/cognite-grafana-datasource/blob/master/DEVELOPMENT.md).
