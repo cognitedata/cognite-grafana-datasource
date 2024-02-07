@@ -7,6 +7,7 @@ export interface Datapoint {
   isStep: boolean;
   isString: boolean;
   unit?: string;
+  unitExternalId?: string;
   datapoints: TimeSeriesDatapoint[] | TimeSeriesAggregateDatapoint[];
 }
 
@@ -68,6 +69,8 @@ export interface TimeseriesFilterRequestParams extends FilterRequestParams {
   unit?: string;
   isString?: boolean;
   isStep?: boolean;
+  unitExternalId?: string;
+  unitQuantity?: string;
   assetIds?: CogniteInternalId[];
   assetExternalIds?: CogniteExternallId[];
   rootAssetIds?: IdEither[];
@@ -98,21 +101,23 @@ export interface ExtractionPipelinesResponse {
   name: string;
   description: string;
   dataSetId?: number;
-  'data set'?: string;
+  "data set"?: string;
 }
 
-export interface ExtractionPipelinesWithRun extends ExtractionPipelinesResponse {
+export interface ExtractionPipelinesWithRun
+  extends ExtractionPipelinesResponse {
   runId: number;
   message: string;
   status: string;
 }
 export type EventsFilterTimeParams =
-  | Pick<EventsFilterRequestParams, 'activeAtTime'>
-  | Pick<EventsFilterRequestParams, 'startTime' | 'endTime'>;
-
+  | Pick<EventsFilterRequestParams, "activeAtTime">
+  | Pick<EventsFilterRequestParams, "startTime" | "endTime">;
 
 export interface EventSortRequestParam {
-  property: string[], order?: 'asc' | 'desc', nulls?: 'first' | 'last' | 'auto'
+  property: string[];
+  order?: "asc" | "desc";
+  nulls?: "first" | "last" | "auto";
 }
 
 export interface FilterRequest<Filter, SortType = {}> extends Limit, Cursor {
@@ -141,6 +146,7 @@ export interface TimeSeriesResponseItem extends Resource {
   isString?: boolean;
   metadata?: Record<string, string>;
   unit?: string;
+  unitExternalId?: string;
   assetId?: string;
   isStep: boolean;
   source?: string;
@@ -178,11 +184,11 @@ export type Items<T = any> = {
 
 export type IdEither =
   | {
-      id: number;
-    }
+    id: number;
+  }
   | {
-      externalId: string;
-    };
+    externalId: string;
+  };
 
 export interface Range<T> {
   min?: T;
@@ -206,7 +212,7 @@ interface CogniteRelationshipAsset {
     path?: [
       {
         id: string | number;
-      }
+      },
     ];
   };
   parentId?: number;

@@ -1,15 +1,16 @@
-/* eslint-disable */ // TODO: remove this
-import { TimeSeriesResponseItem, IdEither } from '../../cdf/types';
-import { DataQueryRequestItem, QueryTarget } from '../../types';
-import _, { isArray, isObjectLike, uniqBy, findIndex, cloneDeep } from 'lodash';
-import { Parser, Grammar } from 'nearley';
-import grammar from './grammar';
-import { getTimeseries, getLabelWithInjectedProps } from '../../cdf/client';
-import { Connector } from '../../connector';
-import { FilterTypes, FilterType } from '../types';
-import { applyFilters } from '../../utils';
-import { parseWith } from '../events-assets/index';
-import getFilterDeep from 'deepdash/getFilterDeep';
+/* eslint-disable */
+// TODO: remove this
+import { IdEither, TimeSeriesResponseItem } from "../../cdf/types";
+import { DataQueryRequestItem, QueryTarget } from "../../types";
+import _, { cloneDeep, findIndex, isArray, isObjectLike, uniqBy } from "lodash";
+import { Grammar, Parser } from "nearley";
+import grammar from "./grammar";
+import { getLabelWithInjectedProps, getTimeseries } from "../../cdf/client";
+import { Connector } from "../../connector";
+import { FilterType, FilterTypes } from "../types";
+import { applyFilters } from "../../utils";
+import { parseWith } from "../events-assets/index";
+import getFilterDeep from "deepdash/getFilterDeep";
 
 const filterDeep = getFilterDeep(_);
 const compiledGrammar = Grammar.fromCompiled(grammar);
@@ -18,14 +19,14 @@ export const formQueriesForExpression = async (
   expression: string,
   target: QueryTarget,
   connector: Connector,
-  defaultInterval: string
+  defaultInterval: string,
 ): Promise<DataQueryRequestItem[]> => {
   const rawParsed = parse(expression);
   const { aggregation, granularity } = target;
   const parsed = enrichWithDefaultAggregates(
     rawParsed,
     { granularity, aggregate: aggregation },
-    defaultInterval
+    defaultInterval,
   );
   const serverFilters = getServerFilters(parsed);
   if (!serverFilters.length) {
@@ -38,16 +39,20 @@ export const formQueriesForExpression = async (
         throw NoTimeseriesFound(expression, filter);
       }
       return tsResult;
-    })
+    }),
   );
   const clientFilters = getClientFilters(parsed);
-  const clientFilteredTimeseries = timeseries.map((arr, i) => applyFilters(arr, clientFilters[i]));
+  const clientFilteredTimeseries = timeseries.map((arr, i) =>
+    applyFilters(arr, clientFilters[i])
+  );
   const multiaryFuncTsIndices = getIndicesOfMultiaryFunctionArgs(parsed);
   const permutations = generateAllPossiblePermutations(
     clientFilteredTimeseries,
-    multiaryFuncTsIndices
+    multiaryFuncTsIndices,
   );
-  const queryExpressions = permutations.map((series) => injectTSIdsInExpression(parsed, series));
+  const queryExpressions = permutations.map((series) =>
+    injectTSIdsInExpression(parsed, series)
+  );
   if (!queryExpressions.length) {
     throw NoTimeseriesFound(expression);
   }
@@ -55,8 +60,10 @@ export const formQueriesForExpression = async (
 };
 
 const NoTimeseriesFound = (expr: string, filter?: StringMap) => {
-  const where = filter ? ` ${JSON.stringify(filter)}` : 's';
-  return new Error(`No timeseries found for filter${where} in expression ${expr}`);
+  const where = filter ? ` ${JSON.stringify(filter)}` : "s";
+  return new Error(
+    `No timeseries found for filter${where} in expression ${expr}`,
+  );
 };
 
 /**
@@ -69,9 +76,9 @@ const NoTimeseriesFound = (expr: string, filter?: StringMap) => {
 export const enrichWithDefaultAggregates = (
   parsedData: STSQuery,
   { aggregate, granularity }: { aggregate: string; granularity: string },
-  defaultInterval: string
+  defaultInterval: string,
 ) => {
-  if (aggregate === 'none') {
+  if (aggregate === "none") {
     return parsedData;
   }
 
@@ -83,7 +90,7 @@ export const enrichWithDefaultAggregates = (
   walk(result, (obj) => {
     if (isSTSReference(obj)) {
       Object.keys(defaultValues).forEach((key) => {
-        if (findIndex(obj.query, ['path', key]) === -1) {
+        if (findIndex(obj.query, ["path", key]) === -1) {
           obj.query.push(STSFilter(key, defaultValues[key]));
         }
       });
@@ -95,7 +102,7 @@ export const enrichWithDefaultAggregates = (
 
 export const injectTSIdsInExpression = (
   parsedData: STSQuery,
-  timeseries: TimeSeriesResponseItem[][]
+  timeseries: TimeSeriesResponseItem[][],
 ) => {
   let i = 0;
   const exprWithSum = composeSTSQuery(parsedData, (item) => {
@@ -103,9 +110,9 @@ export const injectTSIdsInExpression = (
       const syntheticFilters = item.query.filter(isSTSAggregateFilter);
       const paramTSIds = timeseries[i++].map(({ id }) => id);
       const pseudoParsedSTS = paramTSIds.map((id) =>
-        STSReference([STSFilter('id', id), ...syntheticFilters])
+        STSReference([STSFilter("id", id), ...syntheticFilters])
       );
-      return pseudoParsedSTS.map((ts) => composeSTSQuery(ts)).join(', ');
+      return pseudoParsedSTS.map((ts) => composeSTSQuery(ts)).join(", ");
     }
   });
   return flattenSumFunctions(exprWithSum);
@@ -117,7 +124,7 @@ export const parse = (s: string): STSQuery => {
 
 export const generateAllPossiblePermutations = <T>(
   arrayOfArrays: T[][],
-  lockIndices: number[] = []
+  lockIndices: number[] = [],
 ): T[][][] => {
   let res: T[][][] = [];
   for (let i = 0; i < arrayOfArrays.length; i++) {
@@ -150,7 +157,7 @@ export const generateAllPossiblePermutations = <T>(
 export const convertExpressionToLabel = (
   expression: string,
   labelSrc: string,
-  tsMap: TSResponseMap
+  tsMap: TSResponseMap,
 ) => {
   return composeSTSQuery(parse(expression), (item) => {
     if (isSTSReference(item)) {
@@ -167,13 +174,19 @@ export const convertExpressionToLabel = (
 export const getLabelsForExpression = async (
   expressions: string[],
   labelSrc: string,
-  connector: Connector
+  connector: Connector,
 ) => {
   const tsIds = getReferencedIdsInExpressions(expressions);
   const tsUniqueIds = uniqBy(tsIds, unwrapId);
-  const referencedTS = await getTimeseries({ items: tsUniqueIds }, connector, false);
+  const referencedTS = await getTimeseries(
+    { items: tsUniqueIds },
+    connector,
+    false,
+  );
   const tsMap = reduceTsToMap(referencedTS);
-  return expressions.map((expr) => convertExpressionToLabel(expr, labelSrc, tsMap));
+  return expressions.map((expr) =>
+    convertExpressionToLabel(expr, labelSrc, tsMap)
+  );
 };
 
 export const getReferencedTimeseries = (route: STSQuery): StringMap[] => {
@@ -195,7 +208,10 @@ export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
     if (isByIdsQuery(filter.value)) {
       value = filter.value.map((item) => flattenServerQueryFilters([item]));
     } else if (isSTSFilterArr(filter.value)) {
-      value = { ...res[filter.path], ...flattenServerQueryFilters(filter.value) };
+      value = {
+        ...res[filter.path],
+        ...flattenServerQueryFilters(filter.value),
+      };
     } else if (isSTSFilterArr2d(filter.value)) {
       value = filter.value.map(flattenServerQueryFilters);
     } else {
@@ -206,7 +222,10 @@ export const flattenServerQueryFilters = (items: unknown[]): StringMap => {
   }, {});
 };
 
-export const walk = (route: STSQuery, iterator: (item: STSQueryItem | STSFunction) => void) => {
+export const walk = (
+  route: STSQuery,
+  iterator: (item: STSQueryItem | STSFunction) => void,
+) => {
   if (isArray(route)) {
     route.forEach((r) => walk(r, iterator));
   } else {
@@ -236,7 +255,7 @@ export const getIndicesOfMultiaryFunctionArgs = (route: STSQuery): number[] => {
 
 export const extractFilters = (
   route: STSQuery,
-  condition: (_, __, parent) => boolean
+  condition: (_, __, parent) => boolean,
 ): unknown[][] => {
   const extracted: unknown[][] = [];
   walk(route, (obj) => {
@@ -248,20 +267,26 @@ export const extractFilters = (
 };
 
 export const getServerFilters = (route: STSQuery): StringMap[] => {
-  const filter = (_, __, parent) => isServerFilter(parent) || !isSTSFilter(parent);
+  const filter = (_, __, parent) =>
+    isServerFilter(parent) || !isSTSFilter(parent);
   return extractFilters(route, filter).map((filters) =>
     flattenServerQueryFilters(filters || [])
   ) as StringMap[];
 };
 
-export const flattenClientQueryFilters = (filters: unknown[], path = []): STSClientFilter[] => {
+export const flattenClientQueryFilters = (
+  filters: unknown[],
+  path = [],
+): STSClientFilter[] => {
   const res: STSClientFilter[] = [];
   filters.filter(isSTSFilter).forEach((filter) => {
     if (isServerFilter(filter) && isSTSFilterArr(filter.value)) {
-      res.push(...flattenClientQueryFilters(filter.value, [...path, filter.path]));
+      res.push(
+        ...flattenClientQueryFilters(filter.value, [...path, filter.path]),
+      );
     } else {
       res.push({
-        path: [...path, filter.path].join('.'),
+        path: [...path, filter.path].join("."),
         value: filter.value,
         filter: filter.filter,
       } as STSClientFilter);
@@ -271,7 +296,8 @@ export const flattenClientQueryFilters = (filters: unknown[], path = []): STSCli
 };
 
 export const getClientFilters = (route: STSQuery): STSClientFilter[][] => {
-  const filter = (_, __, parent) => isClientFilter(parent) || isArray(parent.value);
+  const filter = (_, __, parent) =>
+    isClientFilter(parent) || isArray(parent.value);
   return extractFilters(route, filter).map((filters) =>
     flattenClientQueryFilters(filters || [])
   ) as STSClientFilter[][];
@@ -286,7 +312,7 @@ const stringifyValue = (val: STSValue, wrap: boolean = true) => {
     const items = (val as any).map((item) => {
       return isSTSFilter(item) ? reverseSTSFilter(item) : stringifyValue(item);
     });
-    const joinedStr = items.join(', ');
+    const joinedStr = items.join(", ");
     if (wrap) {
       return isSTSFilterArr(val) ? `{${joinedStr}}` : `[${joinedStr}]`;
     }
@@ -298,7 +324,7 @@ const stringifyValue = (val: STSValue, wrap: boolean = true) => {
 export const composeSTSQuery = (
   target: STSQuery,
   custom?: (item: STSQuery) => string,
-  separateWith: string = ''
+  separateWith: string = "",
 ): string => {
   if (custom) {
     const customRes = custom(target);
@@ -318,13 +344,15 @@ export const composeSTSQuery = (
   if (isWrappedConst(target)) {
     return `${target.constant}`;
   }
-  const separator = isMultiaryFunction(target) ? ', ' : '';
-  let stringArgs = '';
+  const separator = isMultiaryFunction(target) ? ", " : "";
+  let stringArgs = "";
   if (isMapFunction(target)) {
     const [arg0, ...args] = target.args;
-    stringArgs = `${composeSTSQuery(arg0, custom)}, ${args
-      .map((arg) => stringifyValue(arg))
-      .join(', ')}`;
+    stringArgs = `${composeSTSQuery(arg0, custom)}, ${
+      args
+        .map((arg) => stringifyValue(arg))
+        .join(", ")
+    }`;
   } else {
     stringArgs = composeSTSQuery(target.args, custom, separator);
   }
@@ -334,13 +362,13 @@ export const composeSTSQuery = (
 const flattenSumFunctions = (expression: string): string => {
   return composeSTSQuery(parse(expression), (item) => {
     if (isSumFunction(item)) {
-      return `(${composeSTSQuery(item.args, null, ' + ')})`;
+      return `(${composeSTSQuery(item.args, null, " + ")})`;
     }
   });
 };
 
 const unwrapId = (idEither: IdEither) => {
-  if ('id' in idEither) {
+  if ("id" in idEither) {
     return idEither.id;
   }
   return idEither.externalId;
@@ -369,19 +397,19 @@ const reduceTsToMap = (timeseries: TimeSeriesResponseItem[]): TSResponseMap => {
 export const STSReference = (query: STSFilter[] = []): STSReference => {
   return {
     query,
-    type: 'ts',
+    type: "ts",
   };
 };
 
 export const STSFilter = (
   path: string,
-  value: STSFilter['value'],
-  filter: FilterType = '='
+  value: STSFilter["value"],
+  filter: FilterType = "=",
 ): STSFilter => {
   return { path, value, filter } as STSFilter;
 };
 
-export const Operator = (operator: Operator['operator']): Operator => {
+export const Operator = (operator: Operator["operator"]): Operator => {
   return { operator };
 };
 
@@ -406,11 +434,19 @@ const isOneOf = (value: string, ...arr: string[]) => {
 };
 
 const isSTSAggregateFilter = (query: STSFilter) => {
-  return isEqualsFilter(query) && isOneOf(query.path, 'granularity', 'aggregate', 'alignment');
+  return isEqualsFilter(query) &&
+    isOneOf(
+      query.path,
+      "granularity",
+      "aggregate",
+      "alignment",
+      "targetUnit",
+      "targetUnitSystem",
+    );
 };
 
 const isIdsFilter = (query: STSFilter): query is STSServerFilter => {
-  return isEqualsFilter(query) && isOneOf(query.path, 'id', 'externalId');
+  return isEqualsFilter(query) && isOneOf(query.path, "id", "externalId");
 };
 
 const isServerFilter = (item: STSFilter): item is STSServerFilter => {
@@ -426,7 +462,7 @@ const isByIdsQuery = (query: any): query is STSFilter[] => {
 };
 
 const isSTSFilter = (item: any): item is STSFilter => {
-  return isObjectLike(item) && item.path && item.filter && 'value' in item;
+  return isObjectLike(item) && item.path && item.filter && "value" in item;
 };
 
 const isSTSFilterArr = (query: any): query is STSFilter[] => {
@@ -438,19 +474,19 @@ const isSTSFilterArr2d = (query: any): query is STSFilter[][] => {
 };
 
 const isWrappedConst = (obj: any): obj is WrappedConst => {
-  return isObjectLike(obj) && 'constant' in obj;
+  return isObjectLike(obj) && "constant" in obj;
 };
 
 const isSTSReference = (obj: any): obj is STSReference => {
-  return isObjectLike(obj) && obj.type === 'ts';
+  return isObjectLike(obj) && obj.type === "ts";
 };
 
 const isOperator = (obj: any): obj is Operator => {
-  return isObjectLike(obj) && 'operator' in obj;
+  return isObjectLike(obj) && "operator" in obj;
 };
 
 const isSTSFunction = (obj: any): obj is STSFunction => {
-  return isObjectLike(obj) && 'args' in obj && 'func' in obj;
+  return isObjectLike(obj) && "args" in obj && "func" in obj;
 };
 
 const isSpecificFunction = (obj: any, name: string): obj is STSFunction => {
@@ -458,16 +494,17 @@ const isSpecificFunction = (obj: any, name: string): obj is STSFunction => {
 };
 
 const isMapFunction = (obj: any): obj is MapFunction => {
-  return isSpecificFunction(obj, 'map');
+  return isSpecificFunction(obj, "map");
 };
 
 const isSumFunction = (obj: any): obj is MultiaryFunction => {
-  return isSpecificFunction(obj, 'sum');
+  return isSpecificFunction(obj, "sum");
 };
 
 const isMultiaryFunction = (obj: any): obj is MultiaryFunction => {
   return (
-    isSTSFunction(obj) && isOneOf(obj.func, 'avg', 'sum', 'min', 'max', 'pow', 'round', 'on_error')
+    isSTSFunction(obj) &&
+    isOneOf(obj.func, "avg", "sum", "min", "max", "pow", "round", "on_error")
   );
 };
 
@@ -475,7 +512,11 @@ type TSResponseMap = { [s: string]: TimeSeriesResponseItem };
 
 type StringMap = { [key: string]: string };
 
-type STSValue = STSPrimitiveValue | STSPrimitiveValue[] | STSFilter[] | STSFilter[][];
+type STSValue =
+  | STSPrimitiveValue
+  | STSPrimitiveValue[]
+  | STSFilter[]
+  | STSFilter[][];
 
 type STSPrimitiveValue = string | number | boolean;
 
@@ -485,7 +526,7 @@ export type STSFilter = STSClientFilter | STSServerFilter;
 
 export type STSClientFilter = {
   path: string;
-  filter: Exclude<FilterType, '='>;
+  filter: Exclude<FilterType, "=">;
   value: STSPrimitiveValue;
 };
 
@@ -496,25 +537,25 @@ export type STSServerFilter = {
 };
 
 export type Operator = {
-  operator: '+' | '-' | '/' | '*';
+  operator: "+" | "-" | "/" | "*";
 };
 
 export type STSQueryItem = Operator | STSReference | WrappedConst | STSFunction;
 
 export type WrappedConst = {
-  constant: number | 'pi()';
+  constant: number | "pi()";
 };
 
 export type STSFunction = UnaryFunction | MultiaryFunction | MapFunction;
 
 export type UnaryFunction = {
-  func: 'sin' | 'cos' | 'ln' | 'sqrt' | 'exp' | 'abs' | '';
+  func: "sin" | "cos" | "ln" | "sqrt" | "exp" | "abs" | "";
   args: STSQueryItem[];
 };
 
-export type MultiaryOperator = 'avg' | 'max' | 'min' | 'sum';
+export type MultiaryOperator = "avg" | "max" | "min" | "sum";
 
-export type BinaryOperator = 'pow' | 'round' | 'on_error';
+export type BinaryOperator = "pow" | "round" | "on_error";
 
 export type MultiaryFunction = {
   func: MultiaryOperator | BinaryOperator;
@@ -522,11 +563,11 @@ export type MultiaryFunction = {
 };
 
 export type MapFunction = {
-  func: 'map';
+  func: "map";
   args: [STSReference, string[], number[], number];
 };
 
 export type STSReference = {
-  type: 'ts';
+  type: "ts";
   query: STSFilter[];
 };
