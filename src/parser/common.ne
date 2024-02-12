@@ -15,6 +15,7 @@ prop_name -> [A-Za-z0-9_]:+ {% join %}
 
 # number
 number -> decimal {% id %}
+  | jsonfloat {% id %}
 
 # strings
 dqstring -> "\"" dstrchar:* "\"" {% d => d[1].join("") %}
