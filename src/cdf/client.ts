@@ -131,7 +131,7 @@ async function getTimeseriesLabel(
 ): Promise<string> {
   let resLabel = label;
   if (label && labelContainsVariableProps(label)) {
-    const [ts] = await getTimeseries({ items: [id] }, connector);
+    const [ts] = await getTimeseries({ items: [id] }, connector, false);
     resLabel = getLabelWithInjectedProps(label, ts);
   }
   return resLabel;
