@@ -7,7 +7,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
-- Fixed an issue with the custom query where floats with more than 7 digits after the decimal point were not supported
+- Fixed an issue with the custom query where floats with more than 7 digits after the decimal point were causing syntax error
 
 ## 4.1.0 - February 7th, 2024
 
