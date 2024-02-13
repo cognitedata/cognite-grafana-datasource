@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.1.1 - February 14th, 2024
+
+### Bug fixes
+
+- Fixed an issue with the custom query where floats with more than 7 digits after the decimal point were causing syntax error
+
 ## 4.1.0 - February 7th, 2024
 
 ### Features

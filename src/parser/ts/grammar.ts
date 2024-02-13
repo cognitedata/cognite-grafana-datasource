@@ -1,4 +1,4 @@
-// Generated automatically by nearley, version 2.19.7
+// Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
@@ -112,7 +112,7 @@ interface NearleyLexer {
   reset: (chunk: string, info: any) => void;
   next: () => NearleyToken | undefined;
   save: () => any;
-  formatError: (token: NearleyToken) => string;
+  formatError: (token: never) => string;
   has: (tokenType: string) => boolean;
 }
 
@@ -307,6 +307,7 @@ const grammar: Grammar = {
     },
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
     { name: 'number', symbols: ['decimal'], postprocess: id },
+    { name: 'number', symbols: ['jsonfloat'], postprocess: id },
     { name: 'dqstring$ebnf$1', symbols: [] },
     {
       name: 'dqstring$ebnf$1',

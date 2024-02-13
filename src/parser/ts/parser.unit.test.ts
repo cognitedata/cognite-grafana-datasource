@@ -178,6 +178,16 @@ describe('nearley parser', () => {
     expect(res).toEqual([STS([Filter('id', 1)]), Operator('-'), STS([Filter('a', 2)])]);
   });
 
+  it('number scientific notation', () => {
+    const res = parse(`10e-100 - ts{id=1}`);
+    expect(res).toEqual([Constant(10e-100), Operator('-'), STS([Filter('id', 1)])]);
+  });
+
+  it('number supports 20 digits after comma', () => {
+    const res = parse(`0.00000000000000007203 - ts{id=1}`);
+    expect(res).toEqual([Constant(0.00000000000000007203), Operator('-'), STS([Filter('id', 1)])]);
+  });
+
   it('function with arithmetics and filters', () => {
     const res = parse(`sin(ts{assetSubtreeIds=[{id=1}], aggregate="average"} / 10)`);
     expect(res).toEqual(
