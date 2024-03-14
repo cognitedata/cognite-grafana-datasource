@@ -42,7 +42,7 @@
     "@types/lodash": "^4.14.188",
     "@types/ms": "^0.7.31",
     "@types/node": "^18.11.9",
-    "@types/react": "^16.7.22",
+    "@types/react": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
     "copy-webpack-plugin": "^12.0.0",
@@ -113,7 +113,7 @@
     "ms": "^2.1.2",
     "nearley": "^2.19",
     "query-string": "^6.10.1",
-    "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }
