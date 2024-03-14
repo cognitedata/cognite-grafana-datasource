@@ -27,6 +27,18 @@ const convertEventsToAnnotations = (events: CogniteEvent[], timeRangeEnd: number
   }))
 }
 
+export const convertEventsDateFields = (events: CogniteEvent[]) => {
+  return events.map(({ createdTime, lastUpdatedTime, startTime, endTime, ...rest }) => {
+    return {
+      ...rest,
+      createdTime: new Date(createdTime),
+      lastUpdatedTime: new Date(lastUpdatedTime),
+      ...(startTime && { startTime: new Date(startTime) }),
+      ...(endTime && { endTime: new Date(endTime) }),
+    }
+  });
+}
+
 export class EventsDatasource {
   constructor(private connector: Connector) { }
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
@@ -66,7 +78,7 @@ export class EventsDatasource {
     return Promise.all(
       targets.map(async (target) => {
         const resEvents = await this.fetchEventsForTarget(target, timeRange);
-        const items = isAnnotationTarget(target) ? convertEventsToAnnotations(resEvents, timeRange[1]) : resEvents;
+        const items = isAnnotationTarget(target) ? convertEventsToAnnotations(resEvents, timeRange[1]) : convertEventsDateFields(resEvents);
         const df = convertItemsToDataFrame(items, target.eventQuery?.columns ?? [], "Events", target.refId);
         return df
       })

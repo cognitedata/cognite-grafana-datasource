@@ -32,8 +32,8 @@ export interface TimeSeriesAggregateDatapoint {
 
 export interface CogniteEvent {
   id: number;
-  lastUpdatedTime: string;
-  createdTime: string;
+  lastUpdatedTime: number;
+  createdTime: number;
   externalId?: string;
   startTime?: number;
   endTime?: number;
