@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.1.2 - March 14th, 2024
+
+### Bug fixes
+
+- Fixed an issue with Events resource timestamp columns where it was previously displayed in epoch format and now it is displayed in human-readable format
+
 ## 4.1.1 - February 14th, 2024
 
 ### Bug fixes
