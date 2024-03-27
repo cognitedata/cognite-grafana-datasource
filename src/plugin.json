@@ -84,5 +84,7 @@
   },
 
   "metrics": true,
-  "annotations": true
+  "annotations": true,
+  "backend": true,
+  "executable": "gpx_grafana_backend"
 }

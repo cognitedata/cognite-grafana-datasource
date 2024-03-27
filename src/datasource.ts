@@ -9,8 +9,9 @@ import {
   DataQueryResponse,
   MutableDataFrame,
   AnnotationQuery,
+  LoadingState,
 } from '@grafana/data';
-import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { BackendSrv, BackendSrvRequest, DataSourceWithBackend, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
 import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
 import {
@@ -43,12 +44,11 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 
-export default class CogniteDatasource extends DataSourceApi<
+export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
-  CogniteDataSourceOptions,
-  AnnotationQuery
+  CogniteDataSourceOptions
 > {
   /**
    * Parameters that are needed by grafana
@@ -126,64 +126,91 @@ export default class CogniteDatasource extends DataSourceApi<
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
-    const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
-      this.replaceVariablesInTarget(t, options.scopedVars)
-    );
+  query(options: DataQueryRequest<CogniteQuery>): Observable<DataQueryResponse> {
 
-    const {
-      eventTargets,
-      tsTargets,
-      templatesTargets,
-      relationshipsTargets,
-      extractionPipelinesTargets,
-      flexibleDataModellingTargets,
-    } = groupTargets(queryTargets);
-    let responseData: Array<TimeSeries | TableData | MutableDataFrame> = [];
-    if (queryTargets.length) {
-      try {
-        const timeseriesResults = await this.timeseriesDatasource.query({
-          ...options,
-          targets: tsTargets,
-        });
-        const eventResults = await this.eventsDatasource.query({
-          ...options,
-          targets: eventTargets,
-        });
-        const templatesResults = await this.templatesDatasource.query({
-          ...options,
-          targets: templatesTargets,
-        });
-        const relationshipsResults = await this.relationshipsDatasource.query({
-          ...options,
-          targets: relationshipsTargets,
-        });
-        const extractionPipelinesResult = await this.extractionPipelinesDatasource.query({
-          ...options,
-          targets: extractionPipelinesTargets,
-        });
-        const flexibleDataModellingResult = await this.flexibleDataModellingDatasource.query({
-          ...options,
-          targets: flexibleDataModellingTargets,
-        });
-        responseData = [
-          ...timeseriesResults.data,
-          ...eventResults.data,
-          ...relationshipsResults.data,
-          ...templatesResults.data,
-          ...extractionPipelinesResult.data,
-          ...flexibleDataModellingResult.data,
-        ];
-      } catch (error) {
-        return {
-          data: [],
-          error: {
-            message: error?.message ?? error,
-          },
-        };
-      }
-    }
-    return { data: responseData };
+    return new Observable<DataQueryResponse>((subscriber) => {
+      // let request = getUpdatedDataRequest(options, this.instanceSettings);
+      // reportQuery(request?.targets || [], this.instanceSettings, this.meta, request?.app);
+      super
+        .query(options)
+        .toPromise()
+        // .then((result) => this.getResults(request, result))
+        .then((result) => subscriber.next({ ...result, state: LoadingState.Done }))
+        .catch((error) => {
+          console.error(error);
+          subscriber.next({ data: [], error, state: LoadingState.Error });
+          subscriber.error(error);
+        })
+        .finally(() => subscriber.complete());
+    });
+
+    // return new Observable<DataQueryResponse>((subscriber) => {
+    //   const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
+    //     this.replaceVariablesInTarget(t, options.scopedVars)
+    //   );
+
+    //   const {
+    //     eventTargets,
+    //     tsTargets,
+    //     templatesTargets,
+    //     relationshipsTargets,
+    //     extractionPipelinesTargets,
+    //     flexibleDataModellingTargets,
+    //   } = groupTargets(queryTargets);
+    //   //let responseData// : Array<TimeSeries | TableData | MutableDataFrame> = [];
+    //   let allPromiseData: Promise<Array<TimeSeries | TableData | MutableDataFrame>>;
+    //   if (queryTargets.length) {
+    //     allPromiseData = Promise.resolve((async () => {
+    //         try {
+    //           const timeseriesResults = await this.timeseriesDatasource.query({
+    //             ...options,
+    //             targets: tsTargets,
+    //           });
+    //           const eventResults = await this.eventsDatasource.query({
+    //             ...options,
+    //             targets: eventTargets,
+    //           });
+    //           const templatesResults = await this.templatesDatasource.query({
+    //             ...options,
+    //             targets: templatesTargets,
+    //           });
+    //           const relationshipsResults = await this.relationshipsDatasource.query({
+    //             ...options,
+    //             targets: relationshipsTargets,
+    //           });
+    //           const extractionPipelinesResult = await this.extractionPipelinesDatasource.query({
+    //             ...options,
+    //             targets: extractionPipelinesTargets,
+    //           });
+    //           const flexibleDataModellingResult = await this.flexibleDataModellingDatasource.query({
+    //             ...options,
+    //             targets: flexibleDataModellingTargets,
+    //           });
+    //           return [
+    //             ...timeseriesResults.data,
+    //             ...eventResults.data,
+    //             ...relationshipsResults.data,
+    //             ...templatesResults.data,
+    //             ...extractionPipelinesResult.data,
+    //             ...flexibleDataModellingResult.data,
+    //           ];
+    //           } catch (error) {
+          
+    //             subscriber.next({
+    //               data: [],
+    //               error: {
+    //                 message: error?.message ?? error,
+    //               },
+    //             });
+    //             subscriber.complete();
+    //           }
+    //       })());
+    //   }
+    //   allPromiseData.then((responseData) => {
+    //     subscriber.next({ data: responseData });
+    //     subscriber.complete();
+    //   });
+    // });
   }
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
