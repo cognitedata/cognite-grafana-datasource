@@ -7,7 +7,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
-- Fixed performance issue with parser which occurs when adding a lot of timeseries by names. 
+- Fixed performance issue with parser which occurs when a fairly long custom time series query is used. 
 
 ## 4.1.2 - March 14th, 2024
 
