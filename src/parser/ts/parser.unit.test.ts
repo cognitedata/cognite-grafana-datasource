@@ -542,7 +542,8 @@ describe('parse unary "-" operator', () => {
       const startTime = Date.now(); // get current time
       expect(parse(query)).toEqual(expected);
       const endTime = Date.now(); // get current time
-      const timeDiff = endTime - startTime; // in ms
+      const timeDiff = endTime - startTime; // in 
+      // in case you have to bump the limit up from 10ms, make sure you know what you are doing :)
       expect(timeDiff).toBeLessThan(10); // expect test to pass in 1 second
     },1000)
   );
