@@ -513,7 +513,6 @@ describe('parse unary "-" operator', () => {
       [
         STS([Filter('name', 'test1')]),
         Operator('*'),
-        //STSFunc('', [Operator('-'), STS([Filter('name', 'test2')]), Operator('+'), Constant(-5)]),
         STSFunc('', [Operator('-'), STS([Filter('name', 'test2')]), Operator('+'), Operator('-'), Constant(5)])        
       ],
     ],
