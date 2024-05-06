@@ -539,10 +539,10 @@ describe('parse unary "-" operator', () => {
 
   queries.map(([query, expected], index) =>
     it(query, () => {
-      const startTime = Date.now(); // get current time
+      const startTime = Date.now(); 
       expect(parse(query)).toEqual(expected);
-      const endTime = Date.now(); // get current time
-      const timeDiff = endTime - startTime; // in 
+      const endTime = Date.now(); 
+      const timeDiff = endTime - startTime; 
       // in case you have to bump the limit up from 10ms, make sure you know what you are doing :)
       expect(timeDiff).toBeLessThan(10); // expect test to pass in 10ms
     },1000)
