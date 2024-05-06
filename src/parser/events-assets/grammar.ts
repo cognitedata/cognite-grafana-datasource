@@ -1,8 +1,8 @@
+/* eslint-disable */
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
-/* eslint-disable */
 function id(d: any[]): any {
   return d[0];
 }
@@ -249,7 +249,6 @@ const grammar: Grammar = {
       postprocess: (d) => d[0].concat([d[1]]),
     },
     { name: 'prop_name', symbols: ['prop_name$ebnf$1'], postprocess: join },
-    { name: 'number', symbols: ['decimal'], postprocess: id },
     { name: 'number', symbols: ['jsonfloat'], postprocess: id },
     { name: 'dqstring$ebnf$1', symbols: [] },
     {
