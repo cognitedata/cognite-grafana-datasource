@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.1.3 - May 7th, 2024
+
+### Bug fixes
+
+- Fixed performance issue when adding a lot of timeseries by names. 
+
 ## 4.1.2 - March 14th, 2024
 
 ### Bug fixes
