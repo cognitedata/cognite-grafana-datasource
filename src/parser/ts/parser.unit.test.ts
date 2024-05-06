@@ -489,6 +489,19 @@ describe('convert expression to label', () => {
 });
 
 describe('parse unary "-" operator', () => {
+  const long_expression = [];
+  const long_expression_parsed = [];
+
+  for (let i = 0; i < 19; i++) {
+    long_expression.push('ts{id=1234567890}');
+    long_expression_parsed.push(STS([Filter('id', 1234567890)]));
+    long_expression_parsed.push(Operator('+'));
+  }
+
+  long_expression_parsed.pop();
+
+  
+  
   const queries: Array<[string, STSQuery]> = [
     ['-ts{name="test"}', [Operator('-'), STS([Filter('name', 'test')])]],
     [
@@ -516,13 +529,25 @@ describe('parse unary "-" operator', () => {
         STSFunc('', [Operator('-'), STS([Filter('name', 'test2')]), Operator('+'), Operator('-'), Constant(5)])        
       ],
     ],
+    [
+      long_expression.join(' + '),
+      long_expression_parsed,
+    ],
   ];
+
+  
 
   queries.map(([query, expected], index) =>
     it(query, () => {
+      const startTime = Date.now(); // get current time
       expect(parse(query)).toEqual(expected);
-    })
+      const endTime = Date.now(); // get current time
+      const timeDiff = endTime - startTime; // in ms
+      expect(timeDiff).toBeLessThan(10); // expect test to pass in 1 second
+    },1000)
   );
+
+  
 });
 describe('check if default aggregation and granularity will be added', () => {
   const defaults = { aggregate: 'average', granularity: '1h' };
