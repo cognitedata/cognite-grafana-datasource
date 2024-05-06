@@ -545,7 +545,7 @@ describe('parse unary "-" operator', () => {
       const timeDiff = endTime - startTime; 
       // in case you have to bump the limit up from 10ms, make sure you know what you are doing :)
       expect(timeDiff).toBeLessThan(10); // expect test to pass in 10ms
-    },1000)
+    })
   );
 
   
