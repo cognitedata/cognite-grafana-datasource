@@ -134,6 +134,7 @@ export class TimeseriesDatasource {
     queryTargets: QueryTarget[],
     options: QueryOptions
   ): Promise<Responses<SuccessResponse, FailResponse>> {
+    console.log("options", options)
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
         const [min, max] = getRange(options.range);
@@ -195,6 +196,7 @@ export class TimeseriesDatasource {
   }
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
+    console.log('options.timezone', options.timezone)
     const { failed, succeded } = await this.fetchTimeseriesForTargets(options.targets, options);
 
     handleFailedTargets(failed);

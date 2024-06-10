@@ -43,6 +43,7 @@ const options: any = {
   format: 'json',
   panelId: 1,
   dashboardUID: 1,
+  timezone: 'Europe/Oslo'
 };
 const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
   getItemsResponseObject([{ id, externalId, description }]);
@@ -88,6 +89,7 @@ describe('Datasource Query', () => {
         aggregates,
         limit: 10000,
         granularity: '30s',
+        timeZone: 'Europe/Oslo',
       });
     });
 

@@ -9,6 +9,7 @@ import {
   DataQueryResponse,
   MutableDataFrame,
   AnnotationQuery,
+  getTimeZone
 } from '@grafana/data';
 import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -130,6 +131,8 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
+    const tzone = this.replaceVariable("$__timezone", options.scopedVars);
+    options.timezone = tzone;
 
     const {
       eventTargets,

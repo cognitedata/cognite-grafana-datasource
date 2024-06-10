@@ -45,8 +45,9 @@ const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
-  { range, intervalMs }: QueryOptions
+  { range, intervalMs, timezone: timeZone }: QueryOptions
 ): CDFDataQueryRequest {
+  console.log({ timeZone })
   const { aggregation, granularity } = target;
   const [start, end] = getRange(range);
 
@@ -54,7 +55,7 @@ export function formQueryForItems(
     case 'synthetic': {
       const limit = calculateDPLimitPerQuery(items.length);
       return {
-        items: items.map(({ expression }) => ({ expression, start, end, limit })),
+        items: items.map(({ expression }) => ({ expression, start, end, limit, timeZone })),
       };
     }
     case 'latest': {
@@ -78,6 +79,7 @@ export function formQueryForItems(
         start,
         items,
         limit,
+        timeZone
       };
     }
   }
