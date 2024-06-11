@@ -47,7 +47,6 @@ export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
   { range, intervalMs, timezone: timeZone }: QueryOptions
 ): CDFDataQueryRequest {
-  console.log({ timeZone })
   const { aggregation, granularity } = target;
   const [start, end] = getRange(range);
 

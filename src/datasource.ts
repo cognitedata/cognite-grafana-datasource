@@ -131,8 +131,8 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    const tzone = this.replaceVariable("$__timezone", options.scopedVars);
-    options.timezone = tzone;
+    
+    options.timezone = options.timezone === 'browser' ? this.replaceVariable("$__timezone", options.scopedVars) : options.timezone;
 
     const {
       eventTargets,
