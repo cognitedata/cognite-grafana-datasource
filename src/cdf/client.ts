@@ -24,6 +24,7 @@ import {
   ResponseMetadata,
   Aggregates,
   Granularity,
+  TimeZone,
   Tuple,
   SuccessResponse,
   Responses,
@@ -63,12 +64,13 @@ export function formQueryForItems(
       };
     }
     default: {
-      let aggregations: Aggregates & Granularity = null;
+      let aggregations: Aggregates & Granularity & TimeZone = null;
       const isAggregated = aggregation && aggregation !== 'none';
       if (isAggregated) {
         aggregations = {
           aggregates: [aggregation],
           granularity: granularity || toGranularityWithLowerBound(intervalMs),
+          timeZone,
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
@@ -92,7 +94,8 @@ export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  return queriesData.map((itemsData) => formQueryForItems(itemsData, options));
+  const timezone = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
+  return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timezone }));
 }
 
 export async function getLabelsForTarget(

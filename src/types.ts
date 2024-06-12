@@ -421,6 +421,7 @@ export type DataQueryRequestItem = {
 
 export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
 export type Granularity = Pick<CDFDataQueryRequest, 'granularity'>;
+export type TimeZone = Pick<CDFDataQueryRequest, 'timeZone'>;
 
 export interface CDFDataQueryRequest {
   items: DataQueryRequestItem[];

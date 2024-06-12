@@ -9,7 +9,6 @@ import {
   DataQueryResponse,
   MutableDataFrame,
   AnnotationQuery,
-  getTimeZone
 } from '@grafana/data';
 import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -21,7 +20,7 @@ import {
   Resource,
   IdEither,
 } from './cdf/types';
-import { Connector, Fetcher } from './connector';
+import { Connector } from './connector';
 import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
@@ -131,8 +130,6 @@ export default class CogniteDatasource extends DataSourceApi<
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
-    
-    options.timezone = options.timezone === 'browser' ? this.replaceVariable("$__timezone", options.scopedVars) : options.timezone;
 
     const {
       eventTargets,
