@@ -93,7 +93,8 @@ export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  const timeZone = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
+  const timeZoneValue = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
+  const timeZone = timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue
   return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timeZone }));
 }
 
