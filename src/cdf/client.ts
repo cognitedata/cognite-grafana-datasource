@@ -1,5 +1,5 @@
 import { get, cloneDeep } from 'lodash';
-import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue } from '@grafana/data';
+import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -46,7 +46,7 @@ const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
-  { range, intervalMs, timezone: timeZone }: QueryOptions
+  { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
 ): CDFDataQueryRequest {
   const { aggregation, granularity } = target;
   const [start, end] = getRange(range);
@@ -79,8 +79,7 @@ export function formQueryForItems(
         end,
         start,
         items,
-        limit,
-        timeZone
+        limit
       };
     }
   }
@@ -94,8 +93,8 @@ export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  const timezone = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
-  return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timezone }));
+  const timeZone = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
+  return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timeZone }));
 }
 
 export async function getLabelsForTarget(

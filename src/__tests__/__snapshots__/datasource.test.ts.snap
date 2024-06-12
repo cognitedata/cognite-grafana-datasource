@@ -339,7 +339,6 @@ exports[`Datasource Query Given "Select Timeseries" queries should generate the 
     ],
     "limit": 100000,
     "start": 1549336675000,
-    "timeZone": "Europe/Oslo",
   },
   "headers": undefined,
   "method": "POST",

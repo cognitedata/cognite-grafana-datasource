@@ -61,8 +61,8 @@ describe('formQueryForItems: enrich items with additional props for request', ()
   const queryOptions = {
     range: { from: dateTime(0), to: dateTime(3000) },
     intervalMs: 2000,
-    timezone: 'UTC',
-  } as QueryOptions;
+    timeZone: 'UTC',
+  } as any;
 
   it('for timeseries/data request', () => {
     const queryItems = formQueryForItems(
