@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
 import { AsyncSelect, InlineFormLabel, LegacyForms } from '@grafana/ui';
-import { targetToIdEither } from '../cdf/client';
+import { fetchSingleUnit, targetToIdEither } from '../cdf/client';
 import { IdEither, Resource } from '../cdf/types';
-import { resource2DropdownOption } from '../datasource';
-import { CogniteTargetObj, Tab } from '../types';
+import CogniteDatasource, { resource2DropdownOption } from '../datasource';
+import { CogniteTargetObj, SelectedProps, Tab } from '../types';
 
 const { FormField } = LegacyForms;
 
@@ -102,3 +102,94 @@ export function ResourceSelect(props: {
     </div>
   );
 }
+
+export const TargetUnitExternalIdEditor = (props: SelectedProps & { datasource: CogniteDatasource, fetchSingleResource: (id: IdEither) => Promise<Resource[]> }) => {
+  const { query, onQueryChange, datasource, fetchSingleResource } = props;
+  const [current, setCurrent] = useState<SelectableValue<string>>({
+    value: query.unitExternalId,
+  });
+
+  useEffect(() => {
+    if (current?.value) {
+      onQueryChange({
+        unitExternalId: current?.value,
+        unitSystemExternalId: ''
+      });
+    } else {
+      onQueryChange({
+        unitExternalId: current?.value,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.value]);
+
+  useEffect(() => {
+    if(query.unitExternalId) {
+      fetchSingleResource({ externalId: query.unitExternalId }).then(async (resource) => {
+        setCurrent(resource2DropdownOption(resource[0]));
+      });
+    }
+  }, []);
+
+  
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={6}>Target unit</InlineFormLabel>
+      <AsyncSelect
+       isClearable={true}
+        loadOptions={(query) => datasource.getUnitsOptionsForDropdown(query, "/units")}
+        value={current?.value ? current : null}
+        defaultOptions={true}
+        placeholder="Set target unit for timeseries"
+        className="cognite-dropdown width-20"
+        // allowCustomValue
+        onChange={setCurrent}
+      />
+    </div>
+  );
+};
+
+export const TargetUnitSystemEditor = (props: SelectedProps & { datasource: CogniteDatasource }) => {
+  const { query, onQueryChange, datasource } = props;
+  const [current, setCurrent] = useState<SelectableValue<string>>({
+    value: query.unitSystemExternalId,
+  });
+
+  useEffect(() => {
+    if (current?.value) {
+      onQueryChange({
+        unitSystemExternalId: current?.value,
+        unitExternalId: ''
+      });
+    } else {
+      onQueryChange({
+        unitSystemExternalId: current?.value,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.value]);
+
+  useEffect(() => {
+    if(query.unitSystemExternalId) {
+      setCurrent({ value: query.unitSystemExternalId });
+    }
+  }, []);
+
+  
+  return (
+    <div className="gf-form">
+      <InlineFormLabel width={8}>Target unit system</InlineFormLabel>
+      <AsyncSelect
+        isClearable={true}
+        
+        loadOptions={(query) => datasource.getUnitsOptionsForDropdown(query, "/units/systems")}
+        value={current?.value ? current : null}
+        defaultOptions={true}
+        placeholder="Set target unit system for timeseries"
+        className="cognite-dropdown width-20"
+        // allowCustomValue
+        onChange={setCurrent}
+      />
+    </div>
+  );
+};

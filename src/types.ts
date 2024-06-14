@@ -267,6 +267,8 @@ export interface CogniteQueryBase extends DataQuery {
   relationshipsQuery: RelationshipsQuery;
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
+  unitExternalId?: string;
+  unitSystemExternalId?: string;
 }
 
 export type TemplateQuery = {
@@ -415,6 +417,8 @@ export type DataQueryRequestItem = {
   granularity?: string;
   aggregates?: string[];
   id?: number;
+  targetUnit?: string,
+  targetUnitSystem?: string;
   externalId?: string;
 };
 
