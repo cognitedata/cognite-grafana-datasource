@@ -65,10 +65,6 @@
         {
           "name": "x-cdp-app",
           "content": "Cognite Grafana Datasource"
-        },
-        {
-          "name": "cdf-version",
-          "content": "beta"
         }
       ],
       "tokenAuth": {
