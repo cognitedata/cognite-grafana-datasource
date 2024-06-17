@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.1.3 - June 17th, 2024
+
+### Features
+
+- Adds support for time zones in Timeseries, the user can select the timezone using the Grafana time range options.
+
 ## 4.1.3 - May 7th, 2024
 
 ### Bug fixes
