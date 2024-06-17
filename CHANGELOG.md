@@ -3,7 +3,7 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
-## 4.1.3 - June 17th, 2024
+## 4.2.0 - June 17th, 2024
 
 ### Features
 
