@@ -7,7 +7,7 @@ Data Source for Grafana**.
 
 ### Features
 
-- Adds support for time zones in Timeseries, the user can select the timezone using the Grafana time range options.
+- Adds time zone support for aggregated time series, the user can select the timezone using the Grafana time range options.
 
 ## 4.1.3 - May 7th, 2024
 
