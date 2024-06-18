@@ -29,15 +29,3 @@ export const getTemplateSrv = () =>
       return query;
     }),
   } as any);
-
-export const SystemJS = {
-  load: async (module) => {
-    return module === 'app/core/app_events' ? AppEvents : new Error('mo mock');
-  },
-};
-
-const AppEvents = {
-  emit: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn(),
-};

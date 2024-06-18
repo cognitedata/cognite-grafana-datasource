@@ -416,10 +416,12 @@ export type DataQueryRequestItem = {
   aggregates?: string[];
   id?: number;
   externalId?: string;
+  timeZone?: string;
 };
 
 export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
 export type Granularity = Pick<CDFDataQueryRequest, 'granularity'>;
+export type TimeZone = Pick<CDFDataQueryRequest, 'timeZone'>;
 
 export interface CDFDataQueryRequest {
   items: DataQueryRequestItem[];
@@ -428,6 +430,7 @@ export interface CDFDataQueryRequest {
   limit?: number;
   aggregates?: string[];
   granularity?: string;
+  timeZone?: string;
 }
 
 export interface DataResponse<T> {

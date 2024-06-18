@@ -1,5 +1,5 @@
 import defaults from 'lodash/defaults';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LegacyForms,
   Tab,
@@ -14,7 +14,6 @@ import {
   Input
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SystemJS } from '@grafana/runtime';
 import { CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -27,7 +26,6 @@ import {
   EditorProps,
   SelectedProps,
   OnQueryChange,
-  AssetQuery,
 } from '../types';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';

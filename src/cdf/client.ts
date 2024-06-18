@@ -1,5 +1,5 @@
 import { get, cloneDeep } from 'lodash';
-import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue } from '@grafana/data';
+import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -24,6 +24,7 @@ import {
   ResponseMetadata,
   Aggregates,
   Granularity,
+  TimeZone,
   Tuple,
   SuccessResponse,
   Responses,
@@ -45,7 +46,7 @@ const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
-  { range, intervalMs }: QueryOptions
+  { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
 ): CDFDataQueryRequest {
   const { aggregation, granularity } = target;
   const [start, end] = getRange(range);
@@ -54,7 +55,7 @@ export function formQueryForItems(
     case 'synthetic': {
       const limit = calculateDPLimitPerQuery(items.length);
       return {
-        items: items.map(({ expression }) => ({ expression, start, end, limit })),
+        items: items.map(({ expression }) => ({ expression, start, end, limit, timeZone })),
       };
     }
     case 'latest': {
@@ -63,12 +64,13 @@ export function formQueryForItems(
       };
     }
     default: {
-      let aggregations: Aggregates & Granularity = null;
+      let aggregations: Aggregates & Granularity & TimeZone = null;
       const isAggregated = aggregation && aggregation !== 'none';
       if (isAggregated) {
         aggregations = {
           aggregates: [aggregation],
           granularity: granularity || toGranularityWithLowerBound(intervalMs),
+          timeZone,
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
@@ -77,7 +79,7 @@ export function formQueryForItems(
         end,
         start,
         items,
-        limit,
+        limit
       };
     }
   }
@@ -91,7 +93,9 @@ export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  return queriesData.map((itemsData) => formQueryForItems(itemsData, options));
+  const timeZoneValue = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
+  const timeZone = timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue
+  return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timeZone }));
 }
 
 export async function getLabelsForTarget(

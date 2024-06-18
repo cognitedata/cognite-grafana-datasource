@@ -20,7 +20,7 @@ import {
   Resource,
   IdEither,
 } from './cdf/types';
-import { Connector, Fetcher } from './connector';
+import { Connector } from './connector';
 import { CacheTime } from './constants';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
