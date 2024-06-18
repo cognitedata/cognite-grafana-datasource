@@ -112,7 +112,7 @@
     "lodash": "^4.17.21",
     "ms": "^2.1.2",
     "nearley": "^2.19",
-    "query-string": "^6.10.1",
+    "query-string": "^9.0.0",
     "react": "18.3.0",
     "react-dom": "18.3.0"
   }
