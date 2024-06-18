@@ -1,6 +1,6 @@
 import _, { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
 import { TimeRange } from '@grafana/data';
-import { stringify } from 'query-string';
+import queryString from 'query-string';
 import ms from 'ms';
 import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
@@ -9,7 +9,7 @@ import { FilterTypes, ParsedFilter } from './parser/types';
 import { handleError } from './appEventHandler';
 
 export function getQueryString(obj: any) {
-  return stringify(omitBy(obj, isNil));
+  return queryString.stringify(omitBy(obj, isNil));
 }
 
 export function toGranularityWithLowerBound(milliseconds: number, lowerBound = 1000): string {
