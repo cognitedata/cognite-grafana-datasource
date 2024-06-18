@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
     "copy-webpack-plugin": "^12.0.0",
-    "css-loader": "^6.7.1",
+    "css-loader": "^7.0.0",
     "eslint": "^7.10.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^9.0.0",
