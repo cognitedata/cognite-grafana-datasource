@@ -104,7 +104,7 @@
     "@grafana/schema": "^10.1.2",
     "@grafana/ui": "^10.1.2",
     "deepdash": "^5.0.0",
-    "eslint-plugin-jsdoc": "48.2.8",
+    "eslint-plugin-jsdoc": "48.2.9",
     "graphql": "^16.6.0",
     "graphql-language-service": "^5.1.2",
     "graphql-tag": "^2.12.6",
