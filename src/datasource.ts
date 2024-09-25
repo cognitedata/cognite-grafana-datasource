@@ -158,7 +158,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
 
     if (queryTargets.length) {
       // If there are backend targets (e.g., Tab.Backend), send them to the backend
-      const backendTargets = queryTargets.filter((t) => t.tab === Tab.DataModelsV2);
+      const backendTargets = queryTargets.filter((t) => t.tab === Tab.DataModellingV2);
       if (backendTargets.length) {
         const backendObservable = this.queryBackend(backendTargets, options);
         observables.push(backendObservable);

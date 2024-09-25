@@ -69,7 +69,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 
 type DataModelsQuery struct {
 	ExternalId string `json:"externalId,omitempty"`
-	Version int `json:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 	Space string `json:"space,omitempty"`
 	GraphQlQuery string `json:"graphQlQuery,omitempty"`
 	PostProcessing string `json:"postProcessing,omitempty"`
@@ -77,11 +77,11 @@ type DataModelsQuery struct {
 
 type queryModel struct {
     // Add fields if you need to pass specific parameters
-	DataModelsQuery DataModelsQuery `json:"dataModelsV2Query,omitempty"`
+	DataModelsQuery DataModelsQuery `json:"dataModellingV2Query,omitempty"`
 }
 
-var gqlendpoint = "https://westeurope-1.cognitedata.com/api/v1/projects/cognite-simulator-integration/userapis/spaces/shower-mixer/datamodels/ShowerMixer/versions/1/graphql"
 var auth = "Bearer ..."
+// var gqlendpoint = "https://westeurope-1.cognitedata.com/api/v1/projects/cognite-simulator-integration/userapis/spaces/shower-mixer/datamodels/ShowerMixer/versions/1/graphql"
 
 
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -105,7 +105,7 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
 	dataModelsQuery	:= queryParameters.DataModelsQuery
 	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", "https://westeurope-1.cognitedata.com", "cognite-simulator-integration")
-	gqlendpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%d/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
+	gqlendpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%s/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
 
     // Make the HTTP POST request to the GraphQL endpoint
     req, err := http.NewRequest("POST", gqlendpoint, bytes.NewBuffer(jsonPayload))
