@@ -17,7 +17,12 @@ import {
   Range,
 } from 'graphql-language-service';
 import { getFirstSelection, isValidQuery, typeNameList } from '../utils';
-import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
+import {
+  FlexibleDataModellingQuery,
+  SelectedProps,
+  EditorProps,
+  DataModellingV2Query,
+} from '../types';
 import CogniteDatasource from '../datasource';
 import { CommonEditors } from './commonEditors';
 
@@ -25,9 +30,10 @@ export const DataModellingV2Tab = (
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }
 ) => {
   const { query, onQueryChange, datasource } = props;
-  const [editor, setEditor] = useState<MonacoEditor>();
-  const { flexibleDataModellingQuery } = query;
-  const { externalId, space, version, graphQlQuery } = flexibleDataModellingQuery;
+  const [graphQlQueryEditor, setGraphQlQueryEditor] = useState<MonacoEditor>();
+  const [postProcessingEditor, setPostProcessingEditor] = useState<MonacoEditor>();
+  const { dataModellingV2Query } = query;
+  const { externalId, space, version, graphQlQuery, postProcessing } = dataModellingV2Query;
   const [options, setOptions] = useState<
     Array<SelectableValue<{ space: string; externalId: string; version: string; dml: string }>>
   >([]);
@@ -39,25 +45,33 @@ export const DataModellingV2Tab = (
     () => getFirstSelection(graphQlQuery, query.refId),
     [graphQlQuery, query.refId]
   );
-  const patchFlexibleDataModellingQuery = (
-    flexibleDataModellingQueryPatch: Partial<FlexibleDataModellingQuery>
+  const patchDataModellingV2Query = (
+    flexibleDataModellingQueryPatch: Partial<DataModellingV2Query>
   ) => {
     onQueryChange({
-      flexibleDataModellingQuery: {
-        ...flexibleDataModellingQuery,
+      dataModellingV2Query: {
+        ...dataModellingV2Query,
         ...flexibleDataModellingQueryPatch,
       },
     });
   };
+
   const updateGraphQuery = (newQuery) => {
     if (isValidQuery(newQuery, query.refId)) {
-      patchFlexibleDataModellingQuery({
+      patchDataModellingV2Query({
         graphQlQuery: newQuery,
       });
     }
   };
+
+  const updatePostProcessing = (newQuery) => {
+    patchDataModellingV2Query({
+      postProcessing: newQuery,
+    });
+  };
+
   useEffect(() => {
-    patchFlexibleDataModellingQuery({
+    patchDataModellingV2Query({
       tsKeys: firstSelection.length ? typeNameList(firstSelection) : [],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,11 +129,11 @@ export const DataModellingV2Tab = (
             options={options}
             value={options.find(
               (el) =>
-                el.value.space === flexibleDataModellingQuery.space &&
-                el.value.externalId === flexibleDataModellingQuery.externalId
+                el.value.space === dataModellingV2Query.space &&
+                el.value.externalId === dataModellingV2Query.externalId
             )}
             onChange={(data) => {
-              patchFlexibleDataModellingQuery({
+              patchDataModellingV2Query({
                 externalId: data.value.externalId,
                 space: data.value.space,
                 version: data.value.version,
@@ -132,9 +146,9 @@ export const DataModellingV2Tab = (
         <Field label="Version">
           <Select
             options={versions}
-            value={versions.find((el) => el.value.version === flexibleDataModellingQuery.version)}
+            value={versions.find((el) => el.value.version === dataModellingV2Query.version)}
             onChange={(update) => {
-              patchFlexibleDataModellingQuery({ version: update.value.version });
+              patchDataModellingV2Query({ version: update.value.version });
               setDML(update.value.dml);
             }}
           />
@@ -142,8 +156,8 @@ export const DataModellingV2Tab = (
       </HorizontalGroup>
       <Field label="Query" description="GraphQL query">
         <CodeEditor
-          onEditorDidMount={(newEditor) => setEditor(newEditor)}
-          value={flexibleDataModellingQuery.graphQlQuery ?? ''}
+          onEditorDidMount={setGraphQlQueryEditor}
+          value={dataModellingV2Query.graphQlQuery ?? ''}
           language="graphql"
           height={200}
           onBlur={updateGraphQuery}
@@ -151,25 +165,40 @@ export const DataModellingV2Tab = (
           showMiniMap={false}
           showLineNumbers
           getSuggestions={() => {
-            if (schema && editor) {
+            if (schema && graphQlQueryEditor) {
               return getAutocompleteSuggestions(
                 schema,
-                editor.getModel().getValue(),
-                new Position(editor.getPosition().lineNumber - 1, editor.getPosition().column - 1)
+                graphQlQueryEditor.getModel().getValue(),
+                new Position(
+                  graphQlQueryEditor.getPosition().lineNumber - 1,
+                  graphQlQueryEditor.getPosition().column - 1
+                )
               ).map((el) => toCompletionItem(el));
             }
             return [];
           }}
         />
       </Field>
-      {flexibleDataModellingQuery.tsKeys?.length > 0 && (
+      <Field label="Post process">
+        <CodeEditor
+          onEditorDidMount={setPostProcessingEditor}
+          value={dataModellingV2Query.postProcessing}
+          language="javascript"
+          height={200}
+          onBlur={updatePostProcessing}
+          onSave={updatePostProcessing}
+          showMiniMap={false}
+          showLineNumbers
+        />
+      </Field>
+      {dataModellingV2Query.tsKeys?.length > 0 && (
         <CommonEditors {...{ onQueryChange, query, visible: true }} />
       )}
     </>
   );
 };
 
-/** Format the text, adds icon and returns in format that monaco editor expects */
+/** Format the text, adds icon and returns in format that monaco graphQlQueryEditor expects */
 const toCompletionItem = (entry: CompletionItem, range?: Range): CodeEditorSuggestionItem => {
   const results = {
     label: entry.label,
