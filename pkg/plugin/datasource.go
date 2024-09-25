@@ -67,10 +67,17 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
+type DataModelsQuery struct {
+	ExternalId string `json:"externalId,omitempty"`
+	Version int `json:"version,omitempty"`
+	Space string `json:"space,omitempty"`
+	GraphQlQuery string `json:"graphQlQuery,omitempty"`
+	PostProcessing string `json:"postProcessing,omitempty"`
+}
+
 type queryModel struct {
     // Add fields if you need to pass specific parameters
-    QueryText string `json:"queryText,omitempty"`
-	RootSelector string `json:"rootSelector,omitempty"`
+	DataModelsQuery DataModelsQuery `json:"dataModelsV2Query,omitempty"`
 }
 
 var gqlendpoint = "https://westeurope-1.cognitedata.com/api/v1/projects/cognite-simulator-integration/userapis/spaces/shower-mixer/datamodels/ShowerMixer/versions/1/graphql"
@@ -89,12 +96,16 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
     // Create the GraphQL request payload
     payload := map[string]string{
-        "query": queryParameters.QueryText,
+        "query": queryParameters.DataModelsQuery.GraphQlQuery,
     }
     jsonPayload, err := json.Marshal(payload)
     if err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("json marshal: %v", err.Error()))
     }
+
+	dataModelsQuery	:= queryParameters.DataModelsQuery
+	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", "https://westeurope-1.cognitedata.com", "cognite-simulator-integration")
+	gqlendpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%d/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
 
     // Make the HTTP POST request to the GraphQL endpoint
     req, err := http.NewRequest("POST", gqlendpoint, bytes.NewBuffer(jsonPayload))
@@ -159,7 +170,7 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
 	newFrame, err := jsonframer.ToFrame(string(stringData), jsonframer.FramerOptions{
 		FrameName:    query.RefID,
-		RootSelector: queryParameters.RootSelector,
+		RootSelector: queryParameters.DataModelsQuery.PostProcessing,
 		Columns:      columns,
 	})
 
