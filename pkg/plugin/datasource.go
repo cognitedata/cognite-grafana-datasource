@@ -55,9 +55,35 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 
 	log.DefaultLogger.Info("request", req)
 
+	settings, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
+	if err != nil {
+		return nil, err
+	}
+
+
+	var cluster string
+	if settings.CogniteApiUrl != "" {
+		cluster = settings.CogniteApiUrl
+	} else {
+		cluster = settings.ClusterUrl
+	}
+	var project string
+	if settings.CogniteProject != "" {
+		project = settings.CogniteProject
+	} else {
+		project = settings.DefaultProject
+	}
+
+	client := &http.Client{}
+	client = ApplyOAuthClientCredentials(ctx, client, *settings)
+
+	clusterUrl := fmt.Sprintf("https://%s", cluster)
+	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", clusterUrl, project)
+
+
 	// loop over queries and execute them individually.
 	for _, q := range req.Queries {
-		res := d.query(ctx, req.PluginContext, q)
+		res := d.query(ctx, req.PluginContext, *client, projectUrl, q)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
@@ -80,11 +106,7 @@ type queryModel struct {
 	DataModelsQuery DataModelsQuery `json:"dataModellingV2Query,omitempty"`
 }
 
-var auth = "Bearer ..."
-// var gqlendpoint = "https://westeurope-1.cognitedata.com/api/v1/projects/cognite-simulator-integration/userapis/spaces/shower-mixer/datamodels/ShowerMixer/versions/1/graphql"
-
-
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, client http.Client, projectUrl string, query backend.DataQuery) backend.DataResponse {
     var response backend.DataResponse
 
     //Unmarshal the JSON into a generic map[string]interface{}
@@ -104,21 +126,18 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
     }
 
 	dataModelsQuery	:= queryParameters.DataModelsQuery
-	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", "https://westeurope-1.cognitedata.com", "cognite-simulator-integration")
-	gqlendpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%s/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
+	gqlEndpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%s/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
 
     // Make the HTTP POST request to the GraphQL endpoint
-    req, err := http.NewRequest("POST", gqlendpoint, bytes.NewBuffer(jsonPayload))
+    req, err := http.NewRequest("POST", gqlEndpoint, bytes.NewBuffer(jsonPayload))
     if err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("http request creation: %v", err.Error()))
     }
 
-    // Set headers (e.g., authorization)
+    // Set headers
     req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", auth)
 
     // Perform the HTTP request
-    client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("http request: %v", err.Error()))
@@ -195,17 +214,11 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 // a datasource is working as expected.
 func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
-	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
+	_, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = "Unable to load settings"
-		return res, nil
-	}
-
-	if config.Secrets.ApiKey == "" {
-		res.Status = backend.HealthStatusError
-		res.Message = "API key is missing"
 		return res, nil
 	}
 
