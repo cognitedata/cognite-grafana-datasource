@@ -10,7 +10,7 @@ import {
   MutableDataFrame,
   AnnotationQuery,
 } from '@grafana/data';
-import { BackendSrv, BackendSrvRequest, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { BackendSrv, BackendSrvRequest, DataSourceWithBackend, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
 import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
 import {
@@ -43,12 +43,12 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Observable, from, map } from 'rxjs';
 
-export default class CogniteDatasource extends DataSourceApi<
+export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
-  CogniteDataSourceOptions,
-  AnnotationQuery
+  CogniteDataSourceOptions//,
+  // AnnotationQuery
 > {
   /**
    * Parameters that are needed by grafana
@@ -106,6 +106,7 @@ export default class CogniteDatasource extends DataSourceApi<
     this.initSources(connector);
   }
   
+
   initSources (connector: Connector) {
     this.connector = connector;
     this.templatesDatasource = new TemplatesDatasource(this.connector);
@@ -123,10 +124,24 @@ export default class CogniteDatasource extends DataSourceApi<
     QueryEditor: AnnotationsQueryEditor,
   }
 
+  // Queries the backend by using `super.query`
+   queryBackend(
+    backendTargets: QueryTarget[],
+    options: DataQueryRequest<CogniteQuery>
+  ): Observable<DataQueryResponse> {
+    const request = {
+      ...options,
+      targets: backendTargets,
+    };
+
+    // Leverage super.query to make a backend request via Grafana
+    return super.query(request);
+  }
+
   /**
    * used by panels to get timeseries data
    */
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  query(options: DataQueryRequest<CogniteQuery>): Observable<DataQueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
@@ -139,52 +154,109 @@ export default class CogniteDatasource extends DataSourceApi<
       extractionPipelinesTargets,
       flexibleDataModellingTargets,
     } = groupTargets(queryTargets);
-    let responseData: Array<TimeSeries | TableData | MutableDataFrame> = [];
+
+    let observables: Array<Observable<DataQueryResponse>> = [];
+
     if (queryTargets.length) {
-      try {
-        const timeseriesResults = await this.timeseriesDatasource.query({
-          ...options,
-          targets: tsTargets,
-        });
-        const eventResults = await this.eventsDatasource.query({
-          ...options,
-          targets: eventTargets,
-        });
-        const templatesResults = await this.templatesDatasource.query({
-          ...options,
-          targets: templatesTargets,
-        });
-        const relationshipsResults = await this.relationshipsDatasource.query({
-          ...options,
-          targets: relationshipsTargets,
-        });
-        const extractionPipelinesResult = await this.extractionPipelinesDatasource.query({
-          ...options,
-          targets: extractionPipelinesTargets,
-        });
-        const flexibleDataModellingResult = await this.flexibleDataModellingDatasource.query({
-          ...options,
-          targets: flexibleDataModellingTargets,
-        });
-        responseData = [
-          ...timeseriesResults.data,
-          ...eventResults.data,
-          ...relationshipsResults.data,
-          ...templatesResults.data,
-          ...extractionPipelinesResult.data,
-          ...flexibleDataModellingResult.data,
-        ];
-      } catch (error) {
-        return {
-          data: [],
-          error: {
-            message: error?.message ?? error,
-          },
-        };
+      // If there are backend targets (e.g., Tab.Backend), send them to the backend
+      const backendTargets = queryTargets.filter((t) => t.tab === Tab.Backend);
+      if (backendTargets.length) {
+        const backendObservable = this.queryBackend(backendTargets, options);
+        observables.push(backendObservable);
+      }
+
+      // Handle other datasources (Timeseries, Events, etc.) in the frontend
+      if (tsTargets.length) {
+        const tsObservable = from(
+          this.timeseriesDatasource.query({
+            ...options,
+            targets: tsTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(tsObservable);
+      }
+
+      if (eventTargets.length) {
+        const eventObservable = from(
+          this.eventsDatasource.query({
+            ...options,
+            targets: eventTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(eventObservable);
+      }
+
+      if (templatesTargets.length) {
+        const templatesObservable = from(
+          this.templatesDatasource.query({
+            ...options,
+            targets: templatesTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(templatesObservable);
+      }
+
+      if (relationshipsTargets.length) {
+        const relationshipsObservable = from(
+          this.relationshipsDatasource.query({
+            ...options,
+            targets: relationshipsTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(relationshipsObservable);
+      }
+
+      if (extractionPipelinesTargets.length) {
+        const extractionPipelinesObservable = from(
+          this.extractionPipelinesDatasource.query({
+            ...options,
+            targets: extractionPipelinesTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(extractionPipelinesObservable);
+      }
+
+      if (flexibleDataModellingTargets.length) {
+        const flexibleDataModellingObservable = from(
+          this.flexibleDataModellingDatasource.query({
+            ...options,
+            targets: flexibleDataModellingTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(flexibleDataModellingObservable);
       }
     }
-    return { data: responseData };
+
+    return this.mergeObservables(observables);
   }
+
+  // A utility function to merge multiple observables into one
+  mergeObservables(observables: Array<Observable<DataQueryResponse>>): Observable<DataQueryResponse> {
+    return new Observable((subscriber) => {
+      let allData: any[] = [];
+
+      const subscriptions = observables.map((obs) =>
+        obs.subscribe({
+          next: (response) => {
+            allData = [...allData, ...response.data];
+          },
+          error: (err) => {
+            subscriber.error(err);
+          },
+          complete: () => {
+            if (allData.length > 0) {
+              subscriber.next({ data: allData });
+              subscriber.complete();
+            }
+          },
+        })
+      );
+
+      // Clean up subscriptions when the observable is unsubscribed
+      return () => subscriptions.forEach((sub) => sub.unsubscribe());
+    });
+  }
+
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
     const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
       target;

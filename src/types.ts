@@ -21,6 +21,7 @@ export enum Tab {
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Data Models',
+  Backend = 'Backend',
 }
 
 export const TabTitles = {
@@ -32,6 +33,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.Backend]: 'Data Models (new)',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',

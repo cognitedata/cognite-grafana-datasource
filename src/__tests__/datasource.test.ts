@@ -11,6 +11,7 @@ import {
 } from '../test_utils';
 import { failedResponseEvent } from '../constants';
 import { eventBusService } from '../appEventHandler';
+import { lastValueFrom } from 'rxjs';
 
 jest.mock('@grafana/data');
 type Mock = jest.Mock;
@@ -716,10 +717,11 @@ describe('Given custom query with pure text label', () => {
       expr: 'ts{id=1}',
       label: 'Pure text',
     };
-    const result = await ds.query({
+    const resultObs = await ds.query({
       ...options,
       targets: [targetA],
     });
+    const result = await lastValueFrom(resultObs);
     expect((result.data[0] as TimeSeries).target).toEqual('Pure text');
   });
 });
