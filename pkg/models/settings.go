@@ -10,6 +10,8 @@ import (
 type PluginSettings struct {
 	Path    string                `json:"path"`
 	Secrets *SecretPluginSettings `json:"-"`
+	
+	OAuthClientId       string      `json:"oauthClientId,omitempty"`
 }
 
 type SecretPluginSettings struct {

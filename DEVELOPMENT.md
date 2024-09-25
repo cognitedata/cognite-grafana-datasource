@@ -22,11 +22,9 @@ ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 
 
 ## Building backend
-
-Build backend plugin binaries for Linux, Windows and Darwin:
-
+Build backend for Linux and run docker compose:
 ```bash
-mage -v
+mage -v build:linuxARM64 && docker compose up
 ```
 
 ## Building frontend

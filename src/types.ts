@@ -21,7 +21,7 @@ export enum Tab {
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Data Models',
-  DataModelsV2 = 'Data Models (v2)',
+  DataModelsV2 = 'Data Models V2',
 }
 
 export const TabTitles = {

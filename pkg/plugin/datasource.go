@@ -53,6 +53,8 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// create response struct
 	response := backend.NewQueryDataResponse()
 
+	log.DefaultLogger.Info("request", req)
+
 	// loop over queries and execute them individually.
 	for _, q := range req.Queries {
 		res := d.query(ctx, req.PluginContext, q)
@@ -78,7 +80,7 @@ var auth = "Bearer ..."
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
     var response backend.DataResponse
 
-    // Unmarshal the JSON into a generic map[string]interface{}
+    //Unmarshal the JSON into a generic map[string]interface{}
     var queryParameters queryModel
     err := json.Unmarshal(query.JSON, &queryParameters)
     if err != nil {
@@ -102,7 +104,7 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
     // Set headers (e.g., authorization)
     req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", auth)
+	req.Header.Set("Authorization", auth)
 
     // Perform the HTTP request
     client := &http.Client{}
