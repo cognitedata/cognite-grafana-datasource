@@ -21,6 +21,7 @@ export enum Tab {
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Data Models',
+  DataModellingV2 = 'Data Models V2',
 }
 
 export const TabTitles = {
@@ -32,6 +33,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.DataModellingV2]: 'Data Models V2',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
@@ -227,12 +229,14 @@ export interface EventQueryAggregate {
   withAggregate: boolean;
 }
 
-export type EventsOrderDirection = 'desc' | 'asc'
+export type EventsOrderDirection = 'desc' | 'asc';
 
-export type EventsOrderNulls = 'first' | 'last' | 'auto'
+export type EventsOrderNulls = 'first' | 'last' | 'auto';
 
 export interface EventQuerySortProp {
-  property: string, order?: EventsOrderDirection, nulls?: EventsOrderNulls
+  property: string;
+  order?: EventsOrderDirection;
+  nulls?: EventsOrderNulls;
 }
 
 export interface EventQuery {
@@ -240,7 +244,7 @@ export interface EventQuery {
   activeAtTimeRange?: boolean;
   columns?: string[];
   advancedFilter?: string;
-  sort?: EventQuerySortProp[]
+  sort?: EventQuerySortProp[];
   aggregate?: EventQueryAggregate;
 }
 export interface ExtractionPipelinesQuery {
