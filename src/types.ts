@@ -63,27 +63,25 @@ const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
 
 const defaultDataModellingV2Query: DataModellingV2Query = {
   externalId: '',
-  graphQlQuery: `{
-  listMachine {
+  graphQlQuery: `
+query {
+  listHeatExchanger {
     items {
-      __typename
-      MachineWeight
-      Model
-      Anomalies {
-        externalId
-        id
-        name
-        __typename
-      }
-      Availability {
-        id
-        name
-        externalId
-        __typename
+      name,
+      externalId,
+      shellFluid,
+      tubesFlowrate {
+        getDataPoints {
+          items {
+            timestamp,
+            value
+          }
+        }
       }
     }
   }
-}`,
+}
+  `,
   postProcessing: '',
   tsKeys: [],
 };
