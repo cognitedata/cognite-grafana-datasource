@@ -11,11 +11,23 @@ type PluginSettings struct {
 	Path    string                `json:"path"`
 	Secrets *SecretPluginSettings `json:"-"`
 	
-	OAuthClientId       string      `json:"oauthClientId,omitempty"`
+	// these two are the same
+	ClusterUrl		string		`json:"clusterUrl,omitempty"`
+	CogniteApiUrl 		 string          `json:"cogniteApiUrl,omitempty"`
+
+	// these two are the same
+	CogniteProject		string		`json:"cogniteProject,omitempty"`
+	DefaultProject		string		`json:"defaultProject,omitempty"`
+
+	OauthPassThru		bool		`json:"oauthPassThru,omitempty"`
+	OAuthClientCreds       bool      `json:"oauthClientCreds,omitempty"`
+	OAuthClientId		string		`json:"oauthClientId,omitempty"`
+	OAuthTokenUrl		string		`json:"oauthTokenUrl,omitempty"`
+	OauthScope		string		`json:"oauthScope,omitempty"`
 }
 
 type SecretPluginSettings struct {
-	ApiKey string `json:"apiKey"`
+	OAuthClientSecret string `json:"oauthClientSecret"`
 }
 
 func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSettings, error) {
@@ -32,6 +44,6 @@ func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSetti
 
 func loadSecretPluginSettings(source map[string]string) *SecretPluginSettings {
 	return &SecretPluginSettings{
-		ApiKey: source["apiKey"],
+		OAuthClientSecret: source["oauthClientSecret"],
 	}
 }
