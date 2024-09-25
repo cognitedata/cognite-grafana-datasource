@@ -20,7 +20,16 @@ cd /path/to/grafana/data/plugins
 ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 ```
 
-## Building
+
+## Building backend
+
+Build backend plugin binaries for Linux, Windows and Darwin:
+
+```bash
+mage -v
+```
+
+## Building frontend
 
 `yarn` followed by `yarn build` should work on systems with a shell.
 
