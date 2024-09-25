@@ -477,6 +477,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.version &&
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
+        case Tab.DataModellingV2:
+          return target.dataModellingV2Query.externalId && target.dataModellingV2Query.space && target.dataModellingV2Query.version;
         case Tab.ExtractionPipelines:
           return true;
         case Tab.Timeseries:
