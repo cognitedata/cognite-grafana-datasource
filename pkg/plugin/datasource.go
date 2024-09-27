@@ -5,16 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	// "time"
 	"errors"
 	"io"
-    "net/http"
+	"net/http"
 
+	"github.com/cognitedata/cognite-grafana-datasource/pkg/models"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/cognitedata/cognite-grafana-datasource/pkg/models"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/infinity-libs/lib/go/jsonframer"
 )
 
@@ -45,6 +46,36 @@ func (d *Datasource) Dispose() {
 	// Clean up datasource instance resources.
 }
 
+
+func GetProjectURL(ctx context.Context, settings models.PluginSettings, query queryModel, includeSect bool) (string, error) {
+	var cluster string
+	if settings.CogniteApiUrl != "" {
+		cluster = settings.CogniteApiUrl
+	} else {
+		cluster = settings.ClusterUrl
+	}
+	var project string
+	if settings.CogniteProject != "" {
+		project = settings.CogniteProject
+	} else {
+		project = settings.DefaultProject
+	}
+	
+	clusterUrl := fmt.Sprintf("https://%s", cluster)
+	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", clusterUrl, project)
+
+	return projectUrl, nil
+	
+}
+
+func GetRequest(ctx context.Context, settings models.PluginSettings, body io.Reader, query queryModel, requestHeaders map[string]string, includeSect bool, queryUrl string) (req *http.Request, err error) {
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, queryUrl, body)
+	// req = ApplyAcceptHeader(query, settings, req, includeSect)
+	// req = ApplyContentTypeHeader(query, settings, req, includeSect)
+	req = ApplyForwardedOAuthIdentity(requestHeaders, settings, req, includeSect)
+	return req, err
+}
+
 // QueryData handles multiple queries and returns multiple responses.
 // req contains the queries []DataQuery (where each query contains RefID as a unique identifier).
 // The QueryDataResponse contains a map of RefID to the response for each query, and each response
@@ -60,30 +91,15 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 		return nil, err
 	}
 
-
-	var cluster string
-	if settings.CogniteApiUrl != "" {
-		cluster = settings.CogniteApiUrl
-	} else {
-		cluster = settings.ClusterUrl
-	}
-	var project string
-	if settings.CogniteProject != "" {
-		project = settings.CogniteProject
-	} else {
-		project = settings.DefaultProject
-	}
-
 	client := &http.Client{}
 	client = ApplyOAuthClientCredentials(ctx, client, *settings)
 
-	clusterUrl := fmt.Sprintf("https://%s", cluster)
-	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", clusterUrl, project)
-
+	projectUrl, err := GetProjectURL(ctx, *settings, queryModel{}, true)
+	headers := req.Headers
 
 	// loop over queries and execute them individually.
 	for _, q := range req.Queries {
-		res := d.query(ctx, req.PluginContext, *client, projectUrl, q)
+		res := d.query(ctx, *settings, *client, headers, projectUrl, q)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
@@ -106,7 +122,12 @@ type queryModel struct {
 	DataModelsQuery DataModelsQuery `json:"dataModellingV2Query,omitempty"`
 }
 
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, client http.Client, projectUrl string, query backend.DataQuery) backend.DataResponse {
+type ErrorResult struct {
+	Message string `json:"message"`
+	Code int `json:"code"`
+}
+
+func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, client http.Client, headers map[string]string, projectUrl string, query backend.DataQuery) backend.DataResponse {
     var response backend.DataResponse
 
     //Unmarshal the JSON into a generic map[string]interface{}
@@ -129,7 +150,7 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, client
 	gqlEndpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%s/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
 
     // Make the HTTP POST request to the GraphQL endpoint
-    req, err := http.NewRequest("POST", gqlEndpoint, bytes.NewBuffer(jsonPayload))
+	req, err := GetRequest(ctx, settings, bytes.NewBuffer(jsonPayload), queryParameters, headers, true, gqlEndpoint)
     if err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("http request creation: %v", err.Error()))
     }
@@ -155,11 +176,21 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, client
 
     // Unmarshal the raw JSON into the expected structure
     var gqlResponse struct {
-        Data map[string]interface{} `json:"data"`
+        Data *map[string]interface{} `json:"data,omitempty"`
+		Error *ErrorResult `json:"error,omitempty"`
     }
     if err := json.Unmarshal(body, &gqlResponse); err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("json unmarshal: %v", err.Error()))
     }
+
+	if gqlResponse.Error != nil {
+		log.DefaultLogger.Info(fmt.Sprintf("error response: %v", gqlResponse.Error))
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("API error: %v", gqlResponse.Error.Message))
+	}
+
+	if gqlResponse.Data == nil {
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("no data in response"))
+	}
 
     // Log the unmarshalled response for inspection
     log.DefaultLogger.Info(fmt.Sprintf("unmarshalled GraphQL response: %v", gqlResponse.Data))
