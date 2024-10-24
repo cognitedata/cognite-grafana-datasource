@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.3.0 - Oct 24th, 2024
+
+### Bug fixes
+
+- Upgrade plugin dependencies to fix CVEs
+
 ## 4.2.0 - June 17th, 2024
 
 ### Features
