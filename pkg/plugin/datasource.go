@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	// "time"
 	"errors"
@@ -127,6 +128,27 @@ type ErrorResult struct {
 	Code int `json:"code"`
 }
 
+// InterpolateVariables replaces variables in the query string with actual values from ScopedVars
+func InterpolateVariables(query string, scopedVars map[string]interface{}) string {
+    // Iterate through all scopedVars and replace them in the query
+    for key, val := range scopedVars {
+        valueMap, ok := val.(map[string]interface{})
+        if !ok {
+            continue
+        }
+
+        value, exists := valueMap["value"]
+        if !exists {
+            continue
+        }
+
+        placeholder := fmt.Sprintf("$%s", key)  // Example: $__from
+        query = strings.ReplaceAll(query, placeholder, fmt.Sprintf("%v", value))
+    }
+    return query
+}
+
+
 func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, client http.Client, headers map[string]string, projectUrl string, query backend.DataQuery) backend.DataResponse {
     var response backend.DataResponse
 
@@ -136,10 +158,25 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     if err != nil {
         return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", err.Error()))
     }
+		
+	scopedVars := map[string]interface{}{
+		
+		"__from": map[string]interface{}{
+			// timestamp in milliseconds
+			"value": query.TimeRange.From.UnixMilli(),
+		},
+		"__to": map[string]interface{}{
+			"value": query.TimeRange.To.UnixMilli(),
+		},
+	}
+
+	interpolatedQuery := InterpolateVariables(queryParameters.DataModelsQuery.GraphQlQuery, scopedVars)
+
+	log.DefaultLogger.Info(fmt.Sprintf("interpolated query: %s", interpolatedQuery))
 
     // Create the GraphQL request payload
     payload := map[string]string{
-        "query": queryParameters.DataModelsQuery.GraphQlQuery,
+        "query": interpolatedQuery,
     }
     jsonPayload, err := json.Marshal(payload)
     if err != nil {
