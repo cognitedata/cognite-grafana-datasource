@@ -21,6 +21,7 @@ export enum Tab {
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Data Models',
+  DataModellingV2 = 'Data Models V2',
 }
 
 export const TabTitles = {
@@ -32,6 +33,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.DataModellingV2]: 'Data Models (new)',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
@@ -58,6 +60,32 @@ const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
 }`,
   tsKeys: [],
 };
+
+const defaultDataModellingV2Query: DataModellingV2Query = {
+  externalId: '',
+  graphQlQuery: `
+query {
+  listHeatExchanger {
+    items {
+      name,
+      externalId,
+      shellFluid,
+      tubesFlowrate {
+        getDataPoints {
+          items {
+            timestamp,
+            value
+          }
+        }
+      }
+    }
+  }
+}
+  `,
+  postProcessing: '',
+  tsKeys: [],
+};
+
 const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
@@ -93,6 +121,17 @@ export interface FlexibleDataModellingQuery {
   version?: string;
   space?: string;
   graphQlQuery: string;
+  tsKeys: string[];
+  labels?: string[];
+  targets?: string[];
+}
+
+export interface DataModellingV2Query {
+  externalId: string;
+  version?: string;
+  space?: string;
+  graphQlQuery: string;
+  postProcessing: string;
   tsKeys: string[];
   labels?: string[];
   targets?: string[];
@@ -151,6 +190,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   templateQuery: defaultTemplateQuery,
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
+  dataModellingV2Query: defaultDataModellingV2Query,
 };
 
 /**
@@ -227,12 +267,14 @@ export interface EventQueryAggregate {
   withAggregate: boolean;
 }
 
-export type EventsOrderDirection = 'desc' | 'asc'
+export type EventsOrderDirection = 'desc' | 'asc';
 
-export type EventsOrderNulls = 'first' | 'last' | 'auto'
+export type EventsOrderNulls = 'first' | 'last' | 'auto';
 
 export interface EventQuerySortProp {
-  property: string, order?: EventsOrderDirection, nulls?: EventsOrderNulls
+  property: string;
+  order?: EventsOrderDirection;
+  nulls?: EventsOrderNulls;
 }
 
 export interface EventQuery {
@@ -240,7 +282,7 @@ export interface EventQuery {
   activeAtTimeRange?: boolean;
   columns?: string[];
   advancedFilter?: string;
-  sort?: EventQuerySortProp[]
+  sort?: EventQuerySortProp[];
   aggregate?: EventQueryAggregate;
 }
 export interface ExtractionPipelinesQuery {
@@ -267,6 +309,7 @@ export interface CogniteQueryBase extends DataQuery {
   relationshipsQuery: RelationshipsQuery;
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
+  dataModellingV2Query: DataModellingV2Query;
 }
 
 export type TemplateQuery = {

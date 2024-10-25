@@ -20,7 +20,14 @@ cd /path/to/grafana/data/plugins
 ln -s /path/to/cognite-grafana-datasource cognitedata-datasource
 ```
 
-## Building
+
+## Building backend
+Build backend for Linux and run docker compose:
+```bash
+mage -v build:linuxARM64 && docker compose up
+```
+
+## Building frontend
 
 `yarn` followed by `yarn build` should work on systems with a shell.
 
