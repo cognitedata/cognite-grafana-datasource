@@ -7,7 +7,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
-- Upgrade plugin dependencies to fix CVEs
+- **Breaking** Upgrade plugin dependencies to fix CVEs  (requires Grafana v11)
 
 ## 4.2.0 - June 17th, 2024
 
