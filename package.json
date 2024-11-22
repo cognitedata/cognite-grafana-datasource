@@ -31,7 +31,7 @@
     "@babel/preset-env": "^7.11.5",
     "@grafana/e2e-selectors": "11.3.0",
     "@grafana/eslint-config": "^6.0.0",
-    "@grafana/tsconfig": "^1.2.0-rc1",
+    "@grafana/tsconfig": "^2.0.0",
     "@swc/core": "^1.2.144",
     "@swc/helpers": "^0.5.0",
     "@swc/jest": "^0.2.23",

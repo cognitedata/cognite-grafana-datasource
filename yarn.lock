@@ -1504,11 +1504,6 @@
   dependencies:
     tslib "2.7.0"
 
-"@grafana/tsconfig@^1.2.0-rc1":
-  version "1.2.0-rc1"
-  resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.2.0-rc1.tgz#10973c978ec95b0ea637511254b5f478bce04de7"
-  integrity sha512-+SgQeBQ1pT6D/E3/dEdADqTrlgdIGuexUZ8EU+8KxQFKUeFeU7/3z/ayI2q/wpJ/Kr6WxBBNlrST6aOKia19Ag==
-
 "@grafana/tsconfig@^2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-2.0.0.tgz#277aba907ddbe0301dc37248923e6bd2b68f5151"
