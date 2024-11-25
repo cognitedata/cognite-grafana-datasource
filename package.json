@@ -59,8 +59,8 @@
     "fork-ts-checker-webpack-plugin": "^9.0.0",
     "glob": "^11.0.0",
     "identity-obj-proxy": "3.0.0",
-    "jest": "^29.3.1",
-    "jest-environment-jsdom": "^29.3.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
     "replace-in-file-webpack-plugin": "^1.0.6",
@@ -68,13 +68,15 @@
     "sass-loader": "14.2.1",
     "style-loader": "3.3.4",
     "swc-loader": "^0.2.3",
-    "ts-jest": "^29.0.5",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.1.0",
     "typescript": "~5.6.0",
     "webpack": "^5.96.1",
     "webpack-cli": "^5.1.4",
-    "webpack-livereload-plugin": "^3.0.2"
+    "webpack-livereload-plugin": "^3.0.2",
+    "wrap-ansi": "^7.0.0",
+    "wrap-ansi-cjs": "^7.0.0"
   },
   "husky": {
     "hooks": {
@@ -115,5 +117,8 @@
     "query-string": "^6.10.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
+  },
+  "resolutions": {
+    "wrap-ansi": "^7.0.0"
   }
 }
