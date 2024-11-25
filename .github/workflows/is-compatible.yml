@@ -10,9 +10,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+      - name: Check installed packages
+        run: yarn list --depth=0
+      - name: Clear Yarn cache
+        run: yarn cache clean
       - name: Install dependencies
         run: yarn install --immutable --prefer-offline
       - name: Build plugin
-        run: yarn build
+        run: yarn build --verbose
       - name: Compatibility check
         run: npx @grafana/levitate@latest is-compatible --path src/module.ts --target @grafana/data,@grafana/ui,@grafana/runtime
