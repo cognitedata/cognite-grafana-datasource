@@ -75,8 +75,8 @@
     "webpack": "^5.96.1",
     "webpack-cli": "^5.1.4",
     "webpack-livereload-plugin": "^3.0.2",
-    "wrap-ansi": "^7.0.0",
-    "wrap-ansi-cjs": "^7.0.0"
+    "wrap-ansi": "^9.0.0",
+    "wrap-ansi-cjs": "^8.0.0"
   },
   "husky": {
     "hooks": {
@@ -119,6 +119,7 @@
     "react-dom": "18.3.1"
   },
   "resolutions": {
-    "wrap-ansi": "^7.0.0"
+    "wrap-ansi": "^9.0.0",
+    "wrap-ansi-cjs": "^8.0.0"
   }
 }
