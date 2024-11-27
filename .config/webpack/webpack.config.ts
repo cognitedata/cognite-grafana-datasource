@@ -184,7 +184,9 @@ const config = async (env): Promise<Configuration> => ({
     }),
     new ESLintPlugin({
       extensions: ['.ts', '.tsx'],
-      lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
+      configType: 'flat',
+      lintDirtyModulesOnly: Boolean(env.development), 
+      overrideConfigFile: path.resolve(__dirname, '../../.eslintrc.cjs'), 
     }),
     ...(env.development ? [new LiveReloadPlugin()] : []),
   ],
