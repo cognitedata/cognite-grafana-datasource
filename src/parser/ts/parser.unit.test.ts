@@ -205,8 +205,8 @@ describe('nearley parser', () => {
   });
 
   it('advanced template variable', () => {
-    const res = parse('ts{id=${asset:json}}'); // eslint-disable-line no-template-curly-in-string
-    expect(res).toEqual(STS([Filter('id', '${asset:json}')])); // eslint-disable-line no-template-curly-in-string
+    const res = parse('ts{id=${asset:json}}'); 
+    expect(res).toEqual(STS([Filter('id', '${asset:json}')])); 
   });
 
   it('empty filter with aligned aggregate', () => {

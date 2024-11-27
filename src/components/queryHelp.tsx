@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 import { Alert, InfoBox } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
