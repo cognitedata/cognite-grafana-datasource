@@ -340,8 +340,8 @@ export class Ok<T, E> implements Result<T, E> {
     this.value = v;
   }
 
-  isOk: boolean = true;
-  isErr: boolean = false;
+  isOk = true;
+  isErr = false;
 }
 
 export class Err<T, E> implements Result<T, E> {
@@ -351,8 +351,8 @@ export class Err<T, E> implements Result<T, E> {
     this.error = error;
   }
 
-  isOk: boolean = false;
-  isErr: boolean = true;
+  isOk = false;
+  isErr = true;
 }
 
 export type Responses<T, U> = {
