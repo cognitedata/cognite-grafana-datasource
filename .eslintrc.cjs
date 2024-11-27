@@ -10,7 +10,8 @@ module.exports = [{
     ".eslintrc.*", 
     ".prettierrc.*"],
 },
-grafanaConfig, {
+grafanaConfig, 
+{
   rules: {
     "react/prop-types": "off",
   },
