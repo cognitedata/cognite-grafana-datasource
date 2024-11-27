@@ -159,7 +159,7 @@ describe('connector', () => {
 
     it('throws error 2', async () => {
       fetcher.fetch.mockImplementation(async () => {
-        throw error; // eslint-disable-line
+        throw error; 
       });
       expect.assertions(1);
       try {
