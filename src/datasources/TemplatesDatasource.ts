@@ -75,11 +75,6 @@ export class TemplatesDatasource {
       throw `Your data path did not exist! Data Path: '${dataPath}''`;
     }
 
-    if (resultsData.errors) {
-      // There can still be errors even if there is data
-      console.log('Got GraphQL errors:', resultsData.error);
-    }
-
     return Array.isArray(data) ? data : [data];
   }
 
