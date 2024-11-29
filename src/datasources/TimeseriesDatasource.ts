@@ -107,7 +107,12 @@ export async function getDataQueryRequestItems(
     default:
     case undefined:
     case Tab.Timeseries: {
-      items = [targetToIdEither(target)];
+      const { unitExternalId: targetUnit, unitSystemExternalId: targetUnitSystem } = target;
+      const params = {
+        ...(targetUnit && { targetUnit }),
+        ...(targetUnitSystem && { targetUnitSystem }),
+      }
+      items = [{ ...targetToIdEither(target), ...params }];
       break;
     }
     case Tab.Asset: {
@@ -176,6 +181,7 @@ export class TimeseriesDatasource {
         data,
         path: datapointsPath(type),
         method: HttpMethod.POST,
+        headers: { 'cdf-version': 'beta'},
         requestId: getRequestId(options, target),
       };
 

@@ -28,14 +28,14 @@ import {
   OnQueryChange,
 } from '../types';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
-import { ResourceSelect } from './resourceSelect';
+import { ResourceSelect, TargetUnitExternalIdEditor, TargetUnitSystemEditor } from './resourceSelect';
 import '../css/query_editor.css';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { CommonEditors, LabelEditor} from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
 
@@ -231,6 +231,8 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
         }}
       />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
+      <TargetUnitExternalIdEditor {...{ query, onQueryChange, datasource, fetchSingleResource: datasource.fetchSingleUnit, }} />
+      <TargetUnitSystemEditor {...{ query, onQueryChange, datasource, }} />
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
