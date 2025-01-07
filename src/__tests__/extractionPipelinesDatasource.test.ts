@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import _ from 'lodash';
 import { CogniteQuery, Tab } from '../types';
 import { getMockedDataSource } from '../test_utils';
