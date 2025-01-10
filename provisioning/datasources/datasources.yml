@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: 'Cognite Data Fusion'
+    type: 'cognitedata-datasource'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      cogniteApiUrl: ${COGNITE_HOST}
+      cogniteProject: ${COGNITE_PROJECT}
+      enableEventsAdvancedFiltering: true
+      enableTemplates: false
+      oauthClientCreds: true
+      oauthClientId: ${AZURE_CLIENT_ID}
+      oauthScope: https://${COGNITE_HOST}/.default
+      oauthTokenUrl: https://login.microsoftonline.com/${AZURE_TENANT}/oauth2/v2.0/token
+    secureJsonData:
+      oauthClientSecret: ${AZURE_CLIENT_SECRET}
