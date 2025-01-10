@@ -1242,10 +1242,10 @@
     tslib "2.7.0"
     typescript "5.5.4"
 
-"@grafana/e2e-selectors@^11.5.0-216167":
-  version "11.5.0-216287"
-  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-11.5.0-216287.tgz#8d34424806cc90ea1ddd26976d85a92cf124f2eb"
-  integrity sha512-+goSPPOsEXKmkxlhBEkK0asEPpESUjwaHEKUxJhbmHtkw10lOexw4sw7d/XBtlS58tPmWn7nlV+31q8SsEAPGw==
+"@grafana/e2e-selectors@^11.5.0-216287":
+  version "11.5.0-216360"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-11.5.0-216360.tgz#7d986f2d89c6095270e354a2e139a47dbd98f061"
+  integrity sha512-2DCikDLp0FwehaCiPIWwy4u1LwB+LggMy1V2/OtXqGf+yUBIV/ZWrHLEL+h3IhjDl09U7cTrrMHL7tCDdyRq6Q==
   dependencies:
     "@grafana/tsconfig" "^2.0.0"
     semver "7.6.3"
@@ -1274,12 +1274,12 @@
     ua-parser-js "^1.0.32"
     web-vitals "^4.0.1"
 
-"@grafana/plugin-e2e@^1.14.3":
-  version "1.14.5"
-  resolved "https://registry.yarnpkg.com/@grafana/plugin-e2e/-/plugin-e2e-1.14.5.tgz#9b1441477ac12a56ad2d60f016852b2e1ba34fb6"
-  integrity sha512-eQV0XyaYfPh2f5vubEy26XUL5L0STTy0B9iWB8mM3yXvlwoHqPwrJW2efjpP+tsf037PJJRGx8i+3gB6h+s21g==
+"@grafana/plugin-e2e@^1.14.6":
+  version "1.14.6"
+  resolved "https://registry.yarnpkg.com/@grafana/plugin-e2e/-/plugin-e2e-1.14.6.tgz#3ad08b4fd5aadee8dfd9170c7bb6d5e31a67bb53"
+  integrity sha512-YnARXviUFI+Ez0ygi1CypBHZGY+rNIShI428Mnrj8bn48mr0lCeiI/V2NGsQUz5YJegIfP1JSb05gb/7t8avBQ==
   dependencies:
-    "@grafana/e2e-selectors" "^11.5.0-216167"
+    "@grafana/e2e-selectors" "^11.5.0-216287"
     semver "^7.5.4"
     uuid "^11.0.2"
     yaml "^2.3.4"
@@ -8525,6 +8525,7 @@ string-template@~0.2.1:
   integrity sha512-Yptehjogou2xm4UJbxJ4CxgZx12HBfeystp0y3x7s4Dj32ltVVG1Gg8YhKjHZkHicuKpZX/ffilA8505VbUbpw==
 
 "string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -8616,6 +8617,7 @@ string_decoder@0.10:
   integrity sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==
 
 "strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  name strip-ansi-cjs
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -9377,6 +9379,7 @@ wrap-ansi-cjs@^8.0.0:
   integrity sha512-ulIS1SVkr+L2i8Zdp7x7ghDD3HCrrGXnMJ5ZbT1F9HBDugpT9o0e9qkCHj6cXJRLQYHy1xlY2i9BzvvSV/C8sQ==
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
