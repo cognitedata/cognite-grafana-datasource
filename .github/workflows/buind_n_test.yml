@@ -121,6 +121,11 @@ jobs:
   playwright-tests:
     env:
       GRAFANA_URL: http://localhost:2999
+      COGNITE_HOST: api.cognitedata.com
+      AZURE_CLIENT_ID: 1b90ede3-271e-401b-81a0-a4d52bea3273
+      AZURE_TENANT: 48d5043c-cf70-4c49-881c-c638f5796997
+      COGNITE_PROJECT: publicdata
+
     needs: [resolve-versions, build-and-test]
     timeout-minutes: 15
     strategy:
