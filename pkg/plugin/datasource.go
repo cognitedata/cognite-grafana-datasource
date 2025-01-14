@@ -87,7 +87,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// create response struct
 	response := backend.NewQueryDataResponse()
 
-	log.DefaultLogger.Debug("Request", req)
+	// log.DefaultLogger.Debug("Request", req)
 
 	if req.PluginContext.DataSourceInstanceSettings == nil {
 		return nil, fmt.Errorf("data source instance settings are not set")

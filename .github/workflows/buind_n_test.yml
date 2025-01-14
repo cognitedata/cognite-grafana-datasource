@@ -8,7 +8,13 @@ on:
 
 jobs:
   build-and-test:
+    name: Lint, build and unit tests
     runs-on: ubuntu-latest
+    outputs:
+      plugin-id: ${{ steps.metadata.outputs.plugin-id }}
+      plugin-version: ${{ steps.metadata.outputs.plugin-version }}
+      has-e2e: ${{ steps.check-for-e2e.outputs.has-e2e }}
+      has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     steps:
       - uses: actions/checkout@v4
 
