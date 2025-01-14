@@ -119,6 +119,8 @@ jobs:
         uses: grafana/plugin-actions/e2e-version@main
 
   playwright-tests:
+    env:
+      GRAFANA_URL: http://localhost:2999
     needs: [resolve-versions, build-and-test]
     timeout-minutes: 15
     strategy:
@@ -158,14 +160,14 @@ jobs:
       - name: Wait for grafana server
         uses: grafana/plugin-actions/wait-for-grafana@main
         with:
-          url: http://localhost:3000/login
+          url: ${{ env.GRAFANA_URL }}/login
 
       - name: Install Playwright Browsers
         run: npm exec playwright install chromium --with-deps
 
       - name: Run Playwright tests
         id: run-tests
-        run: npm run e2e
+        run: yarn e2e
 
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
