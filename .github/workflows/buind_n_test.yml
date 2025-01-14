@@ -148,7 +148,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dev dependencies
-        run: npm ci
+        run: yarn install --immutable --prefer-offline
 
       - name: Start Grafana
         run: |
