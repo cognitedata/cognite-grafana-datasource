@@ -10,7 +10,7 @@ const pluginE2eAuth = `${dirname(require.resolve('@grafana/plugin-e2e'))}/auth`;
  * https://github.com/motdotla/dotenv
  */
 require('dotenv').config({ override: true });
-console.log(process.env.COGNITE_PROJECT);
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
