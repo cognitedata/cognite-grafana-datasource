@@ -4,7 +4,12 @@ go 1.22.1
 
 toolchain go1.22.6
 
-require github.com/grafana/grafana-plugin-sdk-go v0.245.0
+require (
+	github.com/grafana/grafana-plugin-sdk-go v0.245.0
+	github.com/grafana/infinity-libs/lib/go/jsonframer v1.1.4
+	github.com/stretchr/testify v1.10.0
+	golang.org/x/oauth2 v0.23.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
@@ -15,6 +20,7 @@ require (
 	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/chromedp/cdproto v0.0.0-20231114014204-3e458d5176f9 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/elazarl/goproxy v0.0.0-20231117061959-7cc037d33fb5 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/getkin/kin-openapi v0.124.0 // indirect
@@ -30,7 +36,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grafana/infinity-libs/lib/go/gframer v1.0.0 // indirect
-	github.com/grafana/infinity-libs/lib/go/jsonframer v1.1.4 // indirect
 	github.com/grafana/infinity-libs/lib/go/utils v1.0.0 // indirect
 	github.com/grafana/otel-profiling-go v0.5.1 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.8 // indirect
@@ -61,7 +66,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.20.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
@@ -92,7 +97,6 @@ require (
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect

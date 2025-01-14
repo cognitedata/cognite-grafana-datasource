@@ -65,6 +65,8 @@ func GetProjectURL(ctx context.Context, settings models.PluginSettings, query qu
 	clusterUrl := fmt.Sprintf("https://%s", cluster)
 	projectUrl := fmt.Sprintf("%s/api/v1/projects/%s", clusterUrl, project)
 
+	log.DefaultLogger.Debug(fmt.Sprintf("projectUrl: %s", projectUrl))
+
 	return projectUrl, nil
 	
 }
@@ -85,7 +87,11 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// create response struct
 	response := backend.NewQueryDataResponse()
 
-	log.DefaultLogger.Info("request", req)
+	log.DefaultLogger.Debug("Request", req)
+
+	if req.PluginContext.DataSourceInstanceSettings == nil {
+		return nil, fmt.Errorf("data source instance settings are not set")
+	}
 
 	settings, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 	if err != nil {
@@ -172,7 +178,7 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
 
 	interpolatedQuery := InterpolateVariables(queryParameters.DataModelsQuery.GraphQlQuery, scopedVars)
 
-	log.DefaultLogger.Info(fmt.Sprintf("interpolated query: %s", interpolatedQuery))
+	log.DefaultLogger.Debug(fmt.Sprintf("Interpolated Query: %s", interpolatedQuery))
 
     // Create the GraphQL request payload
     payload := map[string]string{
@@ -209,7 +215,7 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     }
 
     // Log the raw response for inspection
-    log.DefaultLogger.Info(fmt.Sprintf("raw GraphQL response: %s", string(body)))
+    log.DefaultLogger.Debug(fmt.Sprintf("Raw GraphQL response: %s", string(body)))
 
     // Unmarshal the raw JSON into the expected structure
     var gqlResponse struct {
@@ -221,7 +227,7 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     }
 
 	if gqlResponse.Error != nil {
-		log.DefaultLogger.Info(fmt.Sprintf("error response: %v", gqlResponse.Error))
+		log.DefaultLogger.Error(fmt.Sprintf("Error Response: %v", gqlResponse.Error))
 		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("API error: %v", gqlResponse.Error.Message))
 	}
 
@@ -230,12 +236,12 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
 	}
 
     // Log the unmarshalled response for inspection
-    log.DefaultLogger.Info(fmt.Sprintf("unmarshalled GraphQL response: %v", gqlResponse.Data))
+    log.DefaultLogger.Debug(fmt.Sprintf("Unmarshalled GraphQL response: %v", gqlResponse.Data))
 
     // Create a data frame response based on the result
     frame := data.NewFrame("response")
 
-	log.DefaultLogger.Info(fmt.Sprintf("gpl result: %v", gqlResponse))
+	log.DefaultLogger.Debug(fmt.Sprintf("GQL result: %v", gqlResponse))
 
 	columns := []jsonframer.ColumnSelector{
 		// jsonframer.ColumnSelector{
@@ -263,14 +269,14 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
 
 	if err != nil {
 		if errors.Is(err, jsonframer.ErrInvalidRootSelector) || errors.Is(err, jsonframer.ErrInvalidJSONContent) || errors.Is(err, jsonframer.ErrEvaluatingJSONata) {
-			return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %w", err))
+			return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %v", err))
 		}
-		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %w", err))
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %v", err))
 	}
 	if newFrame != nil {
 		frame.Fields = append(frame.Fields, newFrame.Fields...)
 	}
-	// // Add the frame to the response
+	// Add the frame to the response
     response.Frames = append(response.Frames, frame)
 
     return response
