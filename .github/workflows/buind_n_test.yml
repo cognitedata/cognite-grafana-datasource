@@ -127,6 +127,7 @@ jobs:
       CLIENT_ID: fecf978a-25c9-45d8-8b80-f29f411929c2
       TOKEN_URL: https://login.microsoftonline.com/a10bc71f-eb26-4e94-a961-58b5311eb4d0/oauth2/v2.0/token
       COGNITE_PROJECT: grafana-plugin-test
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
 
     needs: [resolve-versions, build-and-test]
     timeout-minutes: 15
