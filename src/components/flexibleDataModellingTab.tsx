@@ -3,7 +3,7 @@ import {
   CodeEditorSuggestionItem,
   CodeEditorSuggestionItemKind,
   Field,
-  HorizontalGroup,
+  Stack,
   MonacoEditor,
   Select,
 } from '@grafana/ui';
@@ -14,7 +14,7 @@ import {
   CompletionItem,
   getAutocompleteSuggestions,
   Position,
-  Range,
+  Range as GqlRange,
 } from 'graphql-language-service';
 import { getFirstSelection, isValidQuery, typeNameList } from '../utils';
 import { FlexibleDataModellingQuery, SelectedProps, EditorProps } from '../types';
@@ -109,7 +109,7 @@ export const FlexibleDataModellingTab = (
 
   return (
     <>
-      <HorizontalGroup>
+      <Stack>
         <Field label="Data Model">
           <Select
             options={options}
@@ -139,7 +139,7 @@ export const FlexibleDataModellingTab = (
             }}
           />
         </Field>
-      </HorizontalGroup>
+      </Stack>
       <Field label="Query" description="GraphQL query">
         <CodeEditor
           onEditorDidMount={(newEditor) => setEditor(newEditor)}
@@ -170,7 +170,7 @@ export const FlexibleDataModellingTab = (
 };
 
 /** Format the text, adds icon and returns in format that monaco editor expects */
-const toCompletionItem = (entry: CompletionItem, range?: Range): CodeEditorSuggestionItem => {
+const toCompletionItem = (entry: CompletionItem, range?: GqlRange): CodeEditorSuggestionItem => {
   const results = {
     label: entry.label,
     insertText: entry.insertText || entry.label,
@@ -189,7 +189,7 @@ const toCompletionItem = (entry: CompletionItem, range?: Range): CodeEditorSugge
   return results;
 };
 
-const toMonacoRange = (range: Range) => {
+const toMonacoRange = (range: GqlRange) => {
   return {
     startLineNumber: range.start.line + 1,
     startColumn: range.start.character + 1,

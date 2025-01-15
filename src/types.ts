@@ -466,7 +466,7 @@ export interface DataResponse<T> {
 
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
-export type Response<T = any> = DataResponse<{
+export type ItemsResponse<T = any> = DataResponse<{
   items: T[];
 }>;
 
