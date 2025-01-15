@@ -64,21 +64,6 @@ const defaultDataModellingV2Query: DataModellingV2Query = {
   externalId: '',
   graphQlQuery: `
 query {
-  listHeatExchanger {
-    items {
-      name,
-      externalId,
-      shellFluid,
-      tubesFlowrate {
-        getDataPoints {
-          items {
-            timestamp,
-            value
-          }
-        }
-      }
-    }
-  }
 }
   `,
   postProcessing: '',

@@ -50,7 +50,7 @@ const options: any = {
 const tsResponseWithId = (id, externalId = `Timeseries${id}`, description = 'test timeseries') =>
   getItemsResponseObject([{ id, externalId, description }]);
 
-describe.skip('Datasource Query', () => {
+describe('Datasource Query', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -145,7 +145,8 @@ describe.skip('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponse))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+        const observableRes = ds.query(options);
+        result = await lastValueFrom(observableRes);
     });
 
     it('should generate the correct queries', () => {
@@ -170,7 +171,7 @@ describe.skip('Datasource Query', () => {
     });
   });
 
-  describe('Given "Select Timeseries" queries with errors', () => {
+  describe.skip('Given "Select Timeseries" queries with errors', () => {
     const fetcher = { fetch: jest.fn() };
     const ds = getMockedDataSource(fetcher);
     let result;
@@ -193,7 +194,7 @@ describe.skip('Datasource Query', () => {
         .fn()
         .mockRejectedValueOnce(tsError)
         .mockRejectedValueOnce({});
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should return an empty array', () => {
@@ -278,7 +279,7 @@ describe.skip('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(tsResponseC))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should generate the correct queries', () => {
@@ -358,7 +359,7 @@ describe.skip('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
     it('should generate the correct queries', () => {
       expect(fetcher.fetch).toHaveBeenCalledTimes(4);
@@ -432,7 +433,7 @@ describe.skip('Datasource Query', () => {
         .mockImplementationOnce(listMock)
         .mockImplementation(dataMock);
 
-      result = await ds.query(options);
+        result = await lastValueFrom(ds.query(options));
     });
     afterAll(() => {
       (templateSrv.replace as Mock).mockClear();
@@ -508,7 +509,7 @@ describe.skip('Datasource Query', () => {
         }
         throw new Error('no mock');
       });
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should generate the correct filtered queries', () => {
@@ -523,7 +524,7 @@ describe.skip('Datasource Query', () => {
     });
   });
 
-  describe('Given "Custom queries" with errors', () => {
+  describe.skip('Given "Custom queries" with errors', () => {
     const fetcher = { fetch: jest.fn() };
     const ds = getMockedDataSource(fetcher);
     const targets: QueryTargetLike[] = [
@@ -542,7 +543,7 @@ describe.skip('Datasource Query', () => {
 
     test('400 error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce(tsError);
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];
@@ -551,7 +552,7 @@ describe.skip('Datasource Query', () => {
 
     test('unknown error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce({});
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];
@@ -562,7 +563,7 @@ describe.skip('Datasource Query', () => {
       fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];

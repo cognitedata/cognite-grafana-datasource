@@ -6,7 +6,7 @@ import {
   concurrent,
   convertItemsToTable,
 } from '../cdf/client';
-import { getDataqueryResponse, getMeta } from '../test_helpers';
+import { getDataqueryResponse, getMeta } from '../test_utils';
 
 describe('CDF client', () => {
   describe('datapoints to tuples', () => {

@@ -1,0 +1,158 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`extraction pipelines query on empty selected no runs match snapshot 1`] = `
+[
+  {
+    "columns": [
+      {
+        "text": "name",
+      },
+      {
+        "text": "externalId",
+      },
+      {
+        "text": "runId",
+      },
+      {
+        "text": "status",
+      },
+    ],
+    "name": "Extraction Pipelines",
+    "rows": [
+      [
+        "Test 1",
+        "test-1",
+        1,
+        "seen",
+      ],
+      [
+        "Test 2",
+        "test-2",
+        10,
+        "succsess",
+      ],
+      [
+        "Test 3",
+        "test-3",
+        100,
+        "failure",
+      ],
+    ],
+    "type": "table",
+  },
+]
+`;
+
+exports[`extraction pipelines query on selected no runs match snapshot 1`] = `
+[
+  {
+    "columns": [
+      {
+        "text": "name",
+      },
+      {
+        "text": "externalId",
+      },
+      {
+        "text": "runId",
+      },
+      {
+        "text": "status",
+      },
+    ],
+    "name": "Extraction Pipelines",
+    "rows": [
+      [
+        "Test 1",
+        "test-1",
+        1,
+        "seen",
+      ],
+    ],
+    "type": "table",
+  },
+]
+`;
+
+exports[`extraction pipelines query on selected with runs match snapshot 1`] = `
+[
+  {
+    "columns": [
+      {
+        "text": "id",
+      },
+      {
+        "text": "status",
+      },
+    ],
+    "name": "Test 1",
+    "rows": [
+      [
+        1,
+        "seen",
+      ],
+      [
+        2,
+        "failure",
+      ],
+      [
+        3,
+        "succsess",
+      ],
+    ],
+    "type": "table",
+  },
+  {
+    "columns": [
+      {
+        "text": "id",
+      },
+      {
+        "text": "status",
+      },
+    ],
+    "name": "Test 2",
+    "rows": [
+      [
+        10,
+        "succsess",
+      ],
+      [
+        20,
+        "seen",
+      ],
+      [
+        30,
+        "failure",
+      ],
+    ],
+    "type": "table",
+  },
+  {
+    "columns": [
+      {
+        "text": "id",
+      },
+      {
+        "text": "status",
+      },
+    ],
+    "name": "Test 3",
+    "rows": [
+      [
+        100,
+        "failure",
+      ],
+      [
+        200,
+        "succsess",
+      ],
+      [
+        300,
+        "seen",
+      ],
+    ],
+    "type": "table",
+  },
+]
+`;
