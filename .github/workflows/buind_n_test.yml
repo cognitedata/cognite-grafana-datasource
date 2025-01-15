@@ -8,7 +8,6 @@ on:
 
 jobs:
   build-and-test:
-    name: Lint, build and unit tests
     runs-on: ubuntu-latest
     outputs:
       plugin-id: ${{ steps.metadata.outputs.plugin-id }}
@@ -124,10 +123,10 @@ jobs:
   playwright-tests:
     env:
       GRAFANA_URL: http://localhost:2999
-      COGNITE_HOST: api.cognitedata.com
-      AZURE_CLIENT_ID: 1b90ede3-271e-401b-81a0-a4d52bea3273
-      AZURE_TENANT: 48d5043c-cf70-4c49-881c-c638f5796997
-      COGNITE_PROJECT: publicdata
+      COGNITE_HOST: westeurope-1.cognitedata.com
+      CLIENT_ID: fecf978a-25c9-45d8-8b80-f29f411929c2
+      TOKEN_URL: https://login.microsoftonline.com/a10bc71f-eb26-4e94-a961-58b5311eb4d0/oauth2/v2.0/token
+      COGNITE_PROJECT: grafana-plugin-test
 
     needs: [resolve-versions, build-and-test]
     timeout-minutes: 15

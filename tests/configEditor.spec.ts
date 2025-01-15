@@ -4,8 +4,7 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
-// TODO: enable when CI is ready
-test.skip('"Save & test" should be successful when configuration is valid', async ({
+test('"Save & test" should be successful when configuration is valid', async ({
   createDataSourceConfigPage,
   readProvisionedDataSource,
   page,

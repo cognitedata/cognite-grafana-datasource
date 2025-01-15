@@ -14,8 +14,8 @@ datasources:
       enableEventsAdvancedFiltering: true
       enableTemplates: false
       oauthClientCreds: true
-      oauthClientId: ${AZURE_CLIENT_ID}
+      oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
-      oauthTokenUrl: https://login.microsoftonline.com/${AZURE_TENANT}/oauth2/v2.0/token
+      oauthTokenUrl: ${TOKEN_URL}
     secureJsonData:
-      oauthClientSecret: ${AZURE_CLIENT_SECRET}
+      oauthClientSecret: ${CLIENT_SECRET}
