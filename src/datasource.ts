@@ -9,6 +9,7 @@ import {
   DataQueryResponse,
   MutableDataFrame,
   AnnotationQuery,
+  DataQueryError,
 } from '@grafana/data';
 import { BackendSrv, BackendSrvRequest, DataSourceWithBackend, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import _ from 'lodash';
@@ -233,18 +234,31 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   mergeObservables(observables: Array<Observable<DataQueryResponse>>): Observable<DataQueryResponse> {
     return new Observable((subscriber) => {
       let allData: any[] = [];
-
+      let allErrors: DataQueryError[] = [];
+      let completedCount = 0;
+  
       const subscriptions = observables.map((obs) =>
         obs.subscribe({
           next: (response) => {
             allData = [...allData, ...response.data];
           },
           error: (err) => {
-            subscriber.error(err);
+            allErrors.push({
+              message: err?.message || 'Unknown error',
+              refId: err?.refId || undefined,
+              ...err,
+            });
           },
           complete: () => {
-            if (allData.length > 0) {
-              subscriber.next({ data: allData });
+            completedCount++;
+            if (completedCount === observables.length) {
+              const fullResponse: DataQueryResponse = {
+                data: allData,
+              }
+              if (allErrors.length) {
+                fullResponse.errors = allErrors;
+              }
+              subscriber.next(fullResponse);
               subscriber.complete();
             }
           },

@@ -63,7 +63,7 @@ exports[`Datasource Query Give "Select Timeseries of Relationships target from A
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_9_A",
+  "requestId": "1_11_A",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
@@ -193,7 +193,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_5_C",
+  "requestId": "1_7_C",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
@@ -217,7 +217,7 @@ exports[`Datasource Query Given "Select Timeseries from Asset" queries should ge
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_5_D",
+  "requestId": "1_7_D",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/data/list",
 }
 `;
@@ -456,7 +456,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_10_B",
+  "requestId": "1_12_B",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -476,7 +476,7 @@ exports[`Datasource Query Given custom queries should generate the correct filte
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_10_D",
+  "requestId": "1_12_D",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -582,7 +582,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_13_A",
+  "requestId": "1_15_A",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;
@@ -616,7 +616,7 @@ exports[`Datasource Query Given custom queries with functions should generate th
   },
   "headers": undefined,
   "method": "POST",
-  "requestId": "1_13_D",
+  "requestId": "1_15_D",
   "url": "/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/timeseries/synthetic/query",
 }
 `;

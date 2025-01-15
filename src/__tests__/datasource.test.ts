@@ -171,7 +171,7 @@ describe('Datasource Query', () => {
     });
   });
 
-  describe.skip('Given "Select Timeseries" queries with errors', () => {
+  describe('Given "Select Timeseries" queries with errors', () => {
     const fetcher = { fetch: jest.fn() };
     const ds = getMockedDataSource(fetcher);
     let result;
@@ -524,7 +524,7 @@ describe('Datasource Query', () => {
     });
   });
 
-  describe.skip('Given "Custom queries" with errors', () => {
+  describe('Given "Custom queries" with errors', () => {
     const fetcher = { fetch: jest.fn() };
     const ds = getMockedDataSource(fetcher);
     const targets: QueryTargetLike[] = [

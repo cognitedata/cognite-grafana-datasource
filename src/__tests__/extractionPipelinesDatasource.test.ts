@@ -1,4 +1,4 @@
-import _, { last } from 'lodash';
+import _ from 'lodash';
 import { CogniteQuery, Tab } from '../types';
 import { getMockedDataSource } from '../test_utils';
 import { ExtractionPipelinesResponse } from '../cdf/types';
@@ -9,7 +9,6 @@ type Mock = jest.Mock;
 type QueryTargetLike = Partial<CogniteQuery>;
 
 jest.mock('@grafana/data');
-jest.mock('@grafana/runtime');
 
 const appEvents = eventBusService;
 
