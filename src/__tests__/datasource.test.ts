@@ -283,7 +283,6 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct queries', () => {
-      // console.log(result);
       expect(fetcher.fetch).toHaveBeenCalledTimes(8);
       for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
         expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
