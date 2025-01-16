@@ -9,6 +9,7 @@ on:
 env:
   COGNITE_HOST: westeurope-1.cognitedata.com
   CLIENT_ID: fecf978a-25c9-45d8-8b80-f29f411929c2
+  TOKEN_URL: https://login.microsoftonline.com/a10bc71f-eb26-4e94-a961-58b5311eb4d0/oauth2/v2.0/token
   COGNITE_PROJECT: grafana-plugin-test
 
 jobs:
@@ -54,6 +55,7 @@ jobs:
           go-version: '1.22'
 
       - name: Test backend
+        env:
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@v3
