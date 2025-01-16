@@ -20,12 +20,11 @@ func marshalJson(t *testing.T, v interface{}) []byte {
 }
 
 func TestQueryData(t *testing.T) {
-	oAuthClientId := os.Getenv("AZURE_CLIENT_ID")
-	oAuthClientSecret := os.Getenv("AZURE_CLIENT_SECRET")
-	oAuthTenant := os.Getenv("AZURE_TENANT")
+	oAuthClientId := os.Getenv("CLIENT_ID")
+	oAuthClientSecret := os.Getenv("CLIENT_SECRET")
 	cogniteHost := os.Getenv("COGNITE_HOST")
 	cogniteProject := os.Getenv("COGNITE_PROJECT")
-	oAuthTokenUrl := "https://login.microsoftonline.com/" + oAuthTenant + "/oauth2/token"
+	oAuthTokenUrl := os.Getenv("TOKEN_URL")
 	oauthScope := "https://" + cogniteHost + "/.default"
 
 	pluginSettings := models.PluginSettings{
@@ -36,14 +35,13 @@ func TestQueryData(t *testing.T) {
 		OAuthTokenUrl: oAuthTokenUrl,
 		OauthScope: oauthScope,
 		OAuthClientCreds: true,
-		Secrets: &models.SecretPluginSettings{
-			OAuthClientSecret: oAuthClientSecret,
-		},
 	}
 
 	settings := backend.DataSourceInstanceSettings{
 		JSONData: marshalJson(t, pluginSettings),
-		DecryptedSecureJSONData: map[string]string{},
+		DecryptedSecureJSONData: map[string]string{
+			"oauthClientSecret": oAuthClientSecret,
+		},
 	}
 
 	pluginContext := backend.PluginContext{
@@ -55,11 +53,11 @@ func TestQueryData(t *testing.T) {
 
 	query := queryModel{
 		DataModelsQuery: DataModelsQuery{
-			ExternalId: "externalId",
-			Version: "version",
-			Space: "space",
-			GraphQlQuery: "graphQlQuery",
-			PostProcessing: "postProcessing",
+			ExternalId: "test_dm",
+			Version: "1",
+			Space: "test_space",
+			GraphQlQuery: "query{}",
+			PostProcessing: "",
 		},
 	}
 
@@ -82,6 +80,6 @@ func TestQueryData(t *testing.T) {
 	for refID := range resp.Responses {
 		assert.Equal(t, "A", refID)
 		assert.NotNil(t, resp.Responses[refID].Error)
+		assert.Equal(t, "API errors:\n- Could not find data model with space=test_space, externalId=test_dm and version=1", resp.Responses[refID].Error.Error())
 	}
-	// assert.Equal(t, 1, len(resp.Responses["A"].Frames))
 }

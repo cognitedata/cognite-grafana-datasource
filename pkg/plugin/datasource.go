@@ -129,9 +129,13 @@ type queryModel struct {
 	DataModelsQuery DataModelsQuery `json:"dataModellingV2Query,omitempty"`
 }
 
-type ErrorResult struct {
+type ErrorResponse struct {
 	Message string `json:"message"`
 	Code int `json:"code"`
+}
+
+type ErrorItemResult struct {
+	Message string `json:"message"`
 }
 
 // InterpolateVariables replaces variables in the query string with actual values from ScopedVars
@@ -188,7 +192,7 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     if err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("json marshal: %v", err.Error()))
     }
-
+	
 	dataModelsQuery	:= queryParameters.DataModelsQuery
 	gqlEndpoint := fmt.Sprintf("%s/userapis/spaces/%s/datamodels/%s/versions/%s/graphql", projectUrl, dataModelsQuery.Space, dataModelsQuery.ExternalId, dataModelsQuery.Version)
 
@@ -220,7 +224,8 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     // Unmarshal the raw JSON into the expected structure
     var gqlResponse struct {
         Data *map[string]interface{} `json:"data,omitempty"`
-		Error *ErrorResult `json:"error,omitempty"`
+		Errors *[]ErrorItemResult `json:"errors,omitempty"`
+		Error *ErrorResponse `json:"error,omitempty"`
     }
     if err := json.Unmarshal(body, &gqlResponse); err != nil {
         return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("json unmarshal: %v", err.Error()))
@@ -229,6 +234,14 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
 	if gqlResponse.Error != nil {
 		log.DefaultLogger.Error(fmt.Sprintf("Error Response: %v", gqlResponse.Error))
 		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("API error: %v", gqlResponse.Error.Message))
+	}
+
+	if gqlResponse.Errors != nil {
+		allErrors := "API errors:"
+		for _, e := range *gqlResponse.Errors {
+			allErrors += fmt.Sprintf("\n- %v", e.Message)
+		}
+		return backend.ErrDataResponse(backend.StatusInternal, allErrors)
 	}
 
 	if gqlResponse.Data == nil {

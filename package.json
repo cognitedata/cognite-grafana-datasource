@@ -18,7 +18,7 @@
     "lint:fix": "yarn lint --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
     "run-docker": "docker build -t cognite-grafana . && docker run --rm -it -p 3000:3000 cognite-grafana",
-    "server": "docker-compose up --build",
+    "server": "docker compose up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
