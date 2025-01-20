@@ -20,6 +20,7 @@ export enum Tab {
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
   FlexibleDataModelling = 'Data Models',
+  DataModellingV2 = 'Data Models V2',
 }
 
 export const TabTitles = {
@@ -31,6 +32,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.DataModellingV2]: 'Data Models (new)',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
@@ -57,6 +59,7 @@ const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
 }`,
   tsKeys: [],
 };
+
 const defaultEventQuery: EventQuery = {
   expr: '',
   columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
@@ -226,12 +229,14 @@ export interface EventQueryAggregate {
   withAggregate: boolean;
 }
 
-export type EventsOrderDirection = 'desc' | 'asc'
+export type EventsOrderDirection = 'desc' | 'asc';
 
-export type EventsOrderNulls = 'first' | 'last' | 'auto'
+export type EventsOrderNulls = 'first' | 'last' | 'auto';
 
 export interface EventQuerySortProp {
-  property: string, order?: EventsOrderDirection, nulls?: EventsOrderNulls
+  property: string;
+  order?: EventsOrderDirection;
+  nulls?: EventsOrderNulls;
 }
 
 export interface EventQuery {
@@ -239,7 +244,7 @@ export interface EventQuery {
   activeAtTimeRange?: boolean;
   columns?: string[];
   advancedFilter?: string;
-  sort?: EventQuerySortProp[]
+  sort?: EventQuerySortProp[];
   aggregate?: EventQueryAggregate;
 }
 export interface ExtractionPipelinesQuery {
@@ -438,7 +443,7 @@ export interface DataResponse<T> {
 
 export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
 
-export type Response<T = any> = DataResponse<{
+export type ItemsResponse<T = any> = DataResponse<{
   items: T[];
 }>;
 

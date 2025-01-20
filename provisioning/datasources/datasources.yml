@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: 'Cognite Data Fusion'
+    type: 'cognitedata-datasource'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      cogniteApiUrl: ${COGNITE_HOST}
+      cogniteProject: ${COGNITE_PROJECT}
+      enableEventsAdvancedFiltering: true
+      enableTemplates: false
+      oauthClientCreds: true
+      oauthClientId: ${CLIENT_ID}
+      oauthScope: https://${COGNITE_HOST}/.default
+      oauthTokenUrl: ${TOKEN_URL}
+    secureJsonData:
+      oauthClientSecret: ${CLIENT_SECRET}

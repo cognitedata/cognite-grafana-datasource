@@ -3,6 +3,7 @@ import { CogniteQuery, Tab } from '../types';
 import { getMockedDataSource } from '../test_utils';
 import { ExtractionPipelinesResponse } from '../cdf/types';
 import { eventBusService } from '../appEventHandler';
+import { lastValueFrom } from 'rxjs';
 
 type Mock = jest.Mock;
 type QueryTargetLike = Partial<CogniteQuery>;
@@ -128,7 +129,7 @@ describe('extraction pipelines', () => {
               },
             },
           ];
-          results = await ds.query(options);
+          results = await lastValueFrom(ds.query(options));
         });
         it('emits error', () => {
           expect(appEvents.emit).toHaveBeenCalledTimes(1);
@@ -162,7 +163,7 @@ describe('extraction pipelines', () => {
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes2 }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes3 }))
             .mockImplementation((x) => Promise.resolve(x.data));
-          results = await ds.query(options);
+          results = await lastValueFrom(ds.query(options));
           runsList = extpipesWithRunsValues(extpipesRes);
         });
         it('dont emits error', () => {
@@ -198,7 +199,7 @@ describe('extraction pipelines', () => {
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesByIdRes }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes1 }))
             .mockImplementation((x) => Promise.resolve(x.data));
-          results = await ds.query(options);
+          results = await lastValueFrom(ds.query(options));
           runsList = extpipesWithRunsValues(extpipesByIdRes);
         });
         it('dont emits error', () => {
@@ -241,7 +242,7 @@ describe('extraction pipelines', () => {
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes2 }))
             .mockImplementationOnce(() => Promise.resolve({ data: extpipesRunsListRes3 }))
             .mockImplementation((x) => Promise.resolve(x.data));
-          results = await ds.query(options);
+            results = await lastValueFrom(ds.query(options));
         });
         it('dont emits error', () => {
           expect(appEvents.emit).toHaveBeenCalledTimes(0);
