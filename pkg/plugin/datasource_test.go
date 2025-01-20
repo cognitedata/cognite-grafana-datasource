@@ -2,20 +2,11 @@ package plugin
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-func marshalJson(t *testing.T, v interface{}) []byte {
-	t.Helper()
-	data, err := json.Marshal(v)
-	require.Nil(t, err)
-	return data
-}
 
 func TestQueryData(t *testing.T) {
 	settings := backend.DataSourceInstanceSettings{
