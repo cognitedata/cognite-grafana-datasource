@@ -32,7 +32,6 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
-  [Tab.DataModellingV2]: 'Data Models (new)',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
