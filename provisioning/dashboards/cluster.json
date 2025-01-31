@@ -135,6 +135,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Test dashboard",
+    "uid": "test-dashboard",
     "version": 1,
     "weekStart": ""
 }

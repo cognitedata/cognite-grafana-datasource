@@ -57,7 +57,7 @@ func TestQueryData(t *testing.T) {
 			Version: "1",
 			Space: "test_space",
 			GraphQlQuery: "query{}",
-			PostProcessing: "",
+			PostProcessing: "@",
 		},
 	}
 

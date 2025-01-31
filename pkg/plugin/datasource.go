@@ -18,6 +18,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/infinity-libs/lib/go/jsonframer"
+	"github.com/jmespath-community/go-jmespath"
 )
 
 // Make sure Datasource implements required interfaces. This is important to do
@@ -254,34 +255,29 @@ func (d *Datasource) query(ctx context.Context, settings models.PluginSettings, 
     // Create a data frame response based on the result
     frame := data.NewFrame("response")
 
-	log.DefaultLogger.Debug(fmt.Sprintf("GQL result: %v", gqlResponse))
 
-	columns := []jsonframer.ColumnSelector{
-		// jsonframer.ColumnSelector{
-		// 	Selector:  "data",
-		// 	Alias:     "data",
-		// 	Type:      "string",
-		//     TimeFormat: "",
-		// },
+	postProcessingExpr := queryParameters.DataModelsQuery.PostProcessing
+	data := *gqlResponse.Data
+
+	log.DefaultLogger.Debug(fmt.Sprintf("Post Processing Expression: %v", postProcessingExpr))
+	transformedRes, err := jmespath.Search(postProcessingExpr, data)
+
+	log.DefaultLogger.Debug(fmt.Sprintf("Transformed Result: %v", transformedRes))
+
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error transforming JSON response: %v", err))
 	}
-	// for _, c := range query.Columns {
-	// 	columns = append(columns, jsonframer.ColumnSelector{
-	// 		Selector:   c.Selector,
-	// 		Alias:      c.Text,
-	// 		Type:       c.Type,
-	// 		TimeFormat: c.TimeStampFormat,
-	// 	})
-	// }
-	stringData, _ := json.Marshal(gqlResponse.Data)
 
-	newFrame, err := jsonframer.ToFrame(string(stringData), jsonframer.FramerOptions{
+	transformedResString, _ := json.Marshal(transformedRes)
+
+	newFrame, err := jsonframer.ToFrame(string(transformedResString), jsonframer.FramerOptions{
 		FrameName:    query.RefID,
-		RootSelector: queryParameters.DataModelsQuery.PostProcessing,
-		Columns:      columns,
+		// RootSelector: queryParameters.DataModelsQuery.PostProcessing,
+		// Columns:      columns,
 	})
 
 	if err != nil {
-		if errors.Is(err, jsonframer.ErrInvalidRootSelector) || errors.Is(err, jsonframer.ErrInvalidJSONContent) || errors.Is(err, jsonframer.ErrEvaluatingJSONata) {
+		if errors.Is(err, jsonframer.ErrInvalidJSONContent) || errors.Is(err, jsonframer.ErrEvaluatingJSONata) {
 			return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %v", err))
 		}
 		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("error converting json data to frame: %v", err))

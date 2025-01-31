@@ -66,7 +66,7 @@ const defaultDataModellingV2Query: DataModellingV2Query = {
 query {
 }
   `,
-  postProcessing: '',
+  postProcessing: '@',
   tsKeys: [],
 };
 

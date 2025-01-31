@@ -7,6 +7,7 @@ toolchain go1.22.6
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.245.0
 	github.com/grafana/infinity-libs/lib/go/jsonframer v1.1.4
+	github.com/jmespath-community/go-jmespath v1.1.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/oauth2 v0.23.0
 )
