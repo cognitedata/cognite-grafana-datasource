@@ -11,7 +11,7 @@ import {
   Button,
   InlineField,
   InlineFieldRow,
-  Input
+  Input,
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
@@ -38,6 +38,7 @@ import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
+import { DataModellingV2Tab } from './dataModellingV2Tab';
 
 const { FormField } = LegacyForms;
 
@@ -247,11 +248,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   return (
     <>
       <InlineFieldRow>
-        <InlineField
-          label="Query"
-          tooltip="Click [?] button for help."
-          grow
-        >
+        <InlineField label="Query" tooltip="Click [?] button for help." grow>
           <Input
             type="text"
             value={value}
@@ -261,7 +258,11 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           />
         </InlineField>
         <InlineField>
-          <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
+          <Button
+            variant="secondary"
+            icon="question-circle"
+            onClick={() => setShowHelp(!showHelp)}
+          />
         </InlineField>
       </InlineFieldRow>
       <CommonEditors {...{ onQueryChange, query }} />
@@ -367,6 +368,9 @@ export function QueryEditor(props: EditorProps) {
         )}
         {tab === Tabs.FlexibleDataModelling && (
           <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
+        {tab === Tabs.DataModellingV2 && (
+          <DataModellingV2Tab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

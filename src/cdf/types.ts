@@ -170,7 +170,7 @@ export interface Metadata {
   [name: string]: string;
 }
 
-export type TimeRange = Range<number>;
+export type TimeRange = TRange<number>;
 export type CogniteInternalId = number;
 export type CogniteExternallId = string;
 
@@ -190,7 +190,7 @@ export type IdEither =
     externalId: string;
   };
 
-export interface Range<T> {
+export interface TRange<T> {
   min?: T;
   max?: T;
 }

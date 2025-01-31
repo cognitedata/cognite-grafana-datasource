@@ -3,7 +3,7 @@ import { BackendSrvRequest, FetchResponse } from '@grafana/runtime';
 import ms from 'ms';
 import {
   RequestParams,
-  Response,
+  ItemsResponse,
   HttpMethod,
   DataSourceRequestOptions,
   CursorResponse,
@@ -43,7 +43,7 @@ export class Connector {
     return this.cachedRequest(body, cacheTime);
   }
 
-  async chunkAndFetch<Req extends Items, Res extends Response>(
+  async chunkAndFetch<Req extends Items, Res extends ItemsResponse>(
     request: RequestParams<Req>,
     chunkSize = 100
   ): Promise<Res> {
@@ -72,7 +72,7 @@ export class Connector {
   }
 
   async fetchItems<T>(params: RequestParams): Promise<T[]> {
-    const { data } = await this.fetchData<Response<T>>(params);
+    const { data } = await this.fetchData<ItemsResponse<T>>(params);
     return data.items;
   }
 
