@@ -18,7 +18,7 @@
     "lint:fix": "yarn lint --fix",
     "prettier": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
     "docker-recreate": "docker compose up --build -d --force-recreate",
-    "server-amd": "mage -v build:linuxARM64 && yarn docker-recreate",
+    "server-amd": "mage -v build:linux && yarn docker-recreate",
     "server": "mage -v build:linuxARM64 && yarn docker-recreate",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "test": "jest --watch --onlyChanged",

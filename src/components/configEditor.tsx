@@ -118,7 +118,6 @@ export function ConfigEditor(props: ConfigEditorProps) {
 
         <div className="gf-form gf-form-inline">
           <FormField
-            data-testid='API Host'
             label="API Host"
             labelWidth={12}
             inputWidth={21}
