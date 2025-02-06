@@ -2,7 +2,7 @@ module github.com/cognitedata/cognite-grafana-datasource
 
 go 1.22.1
 
-toolchain go1.22.6
+toolchain go1.23.5
 
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.250.0
