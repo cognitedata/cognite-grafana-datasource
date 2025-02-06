@@ -11,6 +11,8 @@ import {
 } from '../test_utils';
 import { failedResponseEvent } from '../constants';
 import { eventBusService } from '../appEventHandler';
+import { lastValueFrom } from 'rxjs';
+
 
 jest.mock('@grafana/data');
 type Mock = jest.Mock;
@@ -143,7 +145,8 @@ describe('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponse))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+        const observableRes = ds.query(options);
+        result = await lastValueFrom(observableRes);
     });
 
     it('should generate the correct queries', () => {
@@ -191,7 +194,7 @@ describe('Datasource Query', () => {
         .fn()
         .mockRejectedValueOnce(tsError)
         .mockRejectedValueOnce({});
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should return an empty array', () => {
@@ -276,11 +279,10 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(() => Promise.resolve(tsResponseC))
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should generate the correct queries', () => {
-      // console.log(result);
       expect(fetcher.fetch).toHaveBeenCalledTimes(8);
       for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
         expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
@@ -356,7 +358,7 @@ describe('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(tsResponseA))
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data, externalIdPrefix)));
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
     it('should generate the correct queries', () => {
       expect(fetcher.fetch).toHaveBeenCalledTimes(4);
@@ -430,7 +432,7 @@ describe('Datasource Query', () => {
         .mockImplementationOnce(listMock)
         .mockImplementation(dataMock);
 
-      result = await ds.query(options);
+        result = await lastValueFrom(ds.query(options));
     });
     afterAll(() => {
       (templateSrv.replace as Mock).mockClear();
@@ -506,7 +508,7 @@ describe('Datasource Query', () => {
         }
         throw new Error('no mock');
       });
-      result = await ds.query(options);
+      result = await lastValueFrom(ds.query(options));
     });
 
     it('should generate the correct filtered queries', () => {
@@ -540,7 +542,7 @@ describe('Datasource Query', () => {
 
     test('400 error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce(tsError);
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];
@@ -549,7 +551,7 @@ describe('Datasource Query', () => {
 
     test('unknown error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce({});
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];
@@ -560,7 +562,7 @@ describe('Datasource Query', () => {
       fetcher.fetch = jest
         .fn()
         .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
-      const result = await ds.query(query);
+      const result = await lastValueFrom(ds.query(query));
       expect(result).toEqual(emptyResult);
       expect(appEvents.emit).toHaveBeenCalledTimes(1);
       const emitted = (appEvents.emit as Mock).mock.calls[0][1];
@@ -716,10 +718,11 @@ describe('Given custom query with pure text label', () => {
       expr: 'ts{id=1}',
       label: 'Pure text',
     };
-    const result = await ds.query({
+    const resultObs = await ds.query({
       ...options,
       targets: [targetA],
     });
+    const result = await lastValueFrom(resultObs);
     expect((result.data[0] as TimeSeries).target).toEqual('Pure text');
   });
 });

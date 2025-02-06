@@ -29,3 +29,9 @@ export const getTemplateSrv = () =>
       return query;
     }),
   } as any);
+
+export class DataSourceWithBackend<TQuery, TOptions> {
+  query() {
+    throw new Error('This is a backend method. Write the Golang or e2e tests for the backend-related code.');
+  }
+}
