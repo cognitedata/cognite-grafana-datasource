@@ -1261,16 +1261,6 @@
     uplot "1.6.31"
     xss "^1.0.14"
 
-"@grafana/e2e-selectors@11.5.3":
-  version "11.5.3"
-  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-11.5.3.tgz#6766c53aed7e8d5d52ea3c5f4f171efe3a62c007"
-  integrity sha512-emdRCfbAY3cBrK/BKQPu5DgdAYJ00W/CXDbfWi79wHRXdyy9vKi/YRXsXwAMLUX6Yamc2HSAX4xSa1J3homKxw==
-  dependencies:
-    "@grafana/tsconfig" "^2.0.0"
-    semver "7.6.3"
-    tslib "2.8.1"
-    typescript "5.7.3"
-
 "@grafana/e2e-selectors@11.6.0":
   version "11.6.0"
   resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-11.6.0.tgz#50ac0cecf09ea680b700bc3a9d3109acb554630e"
@@ -8106,11 +8096,6 @@ selection-is-backward@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/selection-is-backward/-/selection-is-backward-1.0.0.tgz#97a54633188a511aba6419fc5c1fa91b467e6be1"
   integrity sha512-C+6PCOO55NLCfS8uQjUKV/6E5XMuUcfOVsix5m0QqCCCKi495NgeQVNfWtAaD71NKHsdmFCJoXUGfir3qWdr9A==
-
-semver@7.6.3:
-  version "7.6.3"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
-  integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==
 
 semver@7.7.0:
   version "7.7.0"
