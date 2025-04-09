@@ -45,6 +45,7 @@ import {
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
 import { lastValueFrom, Observable, from, map } from 'rxjs';
+import { ComboboxOption } from '@grafana/ui';
 
 export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
@@ -345,7 +346,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     query: string,
     type?: string,
     options?: any
-  ): Promise<Array<SelectableValue<string> & Resource>> {
+  ): Promise<Array<ComboboxOption<string> & Resource>> {
     const resources = {
       [Tab.Asset]: 'assets',
       [Tab.Timeseries]: 'timeseries',
@@ -503,7 +504,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
   }) as QueryTarget[];
 }
 
-export function resource2DropdownOption(resource: Resource): SelectableValue<string> & Resource {
+export function resource2DropdownOption(resource: Resource): ComboboxOption<string> & Resource {
   const { id, name, externalId, description } = resource;
   const value = id.toString();
   const label = name || externalId || value;
