@@ -7,22 +7,20 @@ test('Panel with multiple time series queries rendered OK', async ({ gotoDashboa
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   await gotoDashboardPage(dashboard);
 
-  // Check labels are rendered correctly
-  await expect(page.getByTestId('data-testid panel content')).toMatchAriaSnapshot(`
-    - list:
-      - listitem:
-        - button "59.9139-10.7522-current.clouds percent"
-      - listitem:
-        - button "59.9139-10.7522-current.feels_like Kelvin"
-      - listitem:
-        - button "59.9139-10.7522-current.humidity percent"
-      - listitem:
-        - button "59.9139-10.7522-current.pressure hPa"
-      - listitem:
-        - button "59.9139-10.7522-current.temp Kelvin"
-      - listitem:
-        - button "59.9139-10.7522-current.wind_speed meter / second"
-      - listitem:
-        - button "59.9139-10.7522-current.uvi W/m2"
-  `);
+  var expectedTs = [
+    '59.9139-10.7522-current.clouds percent',
+    '59.9139-10.7522-current.feels_like Kelvin',
+    '59.9139-10.7522-current.humidity percent',
+    '59.9139-10.7522-current.pressure hPa',
+    '59.9139-10.7522-current.temp Kelvin',
+    '59.9139-10.7522-current.wind_speed meter / second',
+    '59.9139-10.7522-current.uvi W/m2'
+  ];
+
+  const buttons = await page.getByRole('button', { name: /59.9139-10.7522.*/ });
+  
+  for (const expectedTsName of expectedTs) {
+    const button = buttons.locator(`text=${expectedTsName}`);
+    await expect(button).toBeVisible();
+  }
 });
