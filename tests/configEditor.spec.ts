@@ -4,6 +4,18 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
+test('"Save & test" should be successful on provisioned data source', async ({
+  readProvisionedDataSource,
+  gotoDataSourceConfigPage,
+  page,
+}) => {
+  const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const configPage = await gotoDataSourceConfigPage(datasource.uid);
+  
+  await page.getByTestId('data-testid Data source settings page Save and Test button').click();
+  await expect(configPage).toHaveAlert('success', { hasText: 'Your Cognite credentials are valid' });
+});
+
 test('"Save & test" should be successful when configuration is valid', async ({
   createDataSourceConfigPage,
   readProvisionedDataSource,
@@ -25,7 +37,6 @@ test('"Save & test" should be successful when configuration is valid', async ({
   await page.getByTestId('data-testid Data source settings page Save and Test button').click();
   await expect(configPage).toHaveAlert('success', { hasText: 'Your Cognite credentials are valid' });
 
-  await page.pause();
 });
 
 

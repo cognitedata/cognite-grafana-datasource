@@ -8,7 +8,10 @@ module.exports = [{
     "**/dist/", 
     "**/.config/", 
     ".eslintrc.*", 
-    ".prettierrc.*"],
+    ".prettierrc.*",
+    "test-results/",
+    "playwright-report/"
+  ],
 },
 grafanaConfig, 
 {
