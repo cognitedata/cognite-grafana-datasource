@@ -49,6 +49,9 @@ export function ResourceSelect(props: {
   };
 
   const fetchDropdownResource = async (id: IdEither) => {
+    if (('externalId' in id && !id.externalId) || ('id' in id && !id.id)) {
+      return null;
+    }
     try {
       const [res] = await fetchSingleResource(id);
       return res;

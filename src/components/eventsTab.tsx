@@ -4,10 +4,10 @@ import {
   CodeEditor,
   InlineFormLabel,
   LegacyForms,
-  Switch,
   Segment,
   Tooltip,
   Select,
+  InlineSwitch,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
 import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
@@ -22,24 +22,25 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
       <InlineFormLabel
+        htmlFor='active-at-time-range'
         tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
         width={7}
       >
         Active only
       </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={query.eventQuery.activeAtTimeRange}
-          onChange={({ currentTarget }) =>
-            onQueryChange({
-              eventQuery: {
-                ...query.eventQuery,
-                activeAtTimeRange: currentTarget.checked,
-              },
-            })
-          }
-        />
-      </div>
+      <InlineSwitch
+        label='Active only'
+        id='active-at-time-range'
+        value={query.eventQuery.activeAtTimeRange}
+        onChange={({ currentTarget }) =>
+          onQueryChange({
+            eventQuery: {
+              ...query.eventQuery,
+              activeAtTimeRange: currentTarget.checked,
+            },
+          })
+        }
+      />
     </div>
   );
 };
@@ -195,22 +196,20 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
       <InlineFormLabel tooltip="Fetch with Aggregate count " width={10}>
         With Aggregate
       </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={query.eventQuery.aggregate?.withAggregate}
-          onChange={({ currentTarget }) =>
-            onQueryChange({
-              eventQuery: {
-                ...query.eventQuery,
-                aggregate: {
-                  ...query.eventQuery.aggregate,
-                  withAggregate: currentTarget.checked,
-                },
+      <InlineSwitch
+        value={query.eventQuery.aggregate?.withAggregate}
+        onChange={({ currentTarget }) =>
+          onQueryChange({
+            eventQuery: {
+              ...query.eventQuery,
+              aggregate: {
+                ...query.eventQuery.aggregate,
+                withAggregate: currentTarget.checked,
               },
-            })
-          }
-        />
-      </div>
+            },
+          })
+        }
+      />
     </div>
   );
 };

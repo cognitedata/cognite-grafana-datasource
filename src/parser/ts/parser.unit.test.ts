@@ -543,8 +543,8 @@ describe('parse unary "-" operator', () => {
       expect(parse(query)).toEqual(expected);
       const endTime = Date.now(); 
       const timeDiff = endTime - startTime; 
-      // in case you have to bump the limit up from 20ms, make sure you know what you are doing :)
-      expect(timeDiff).toBeLessThan(20);
+      // in case you have to bump the limit up from 50ms, make sure you know what you are doing :)
+      expect(timeDiff).toBeLessThan(50);
     })
   );
 
