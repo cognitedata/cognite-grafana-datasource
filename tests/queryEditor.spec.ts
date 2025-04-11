@@ -1,4 +1,5 @@
 import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
@@ -21,7 +22,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
-  
+
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   await editorRow.getByText('Time series from asset').click();
@@ -43,8 +44,11 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
   await latestValue.check({ force: true });
   await expect(latestValue).toBeChecked();
 
+  await waitForQueriesToFinish(page);
+
   await expect(panelEditPage.refreshPanel(
     {
+      timeout: 10000,
       waitForResponsePredicateCallback: async (response) => {
         
         const isTsData = response.request().url().endsWith('/timeseries/data/latest');
@@ -52,7 +56,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
         
         if (isTsData && is200) {
           const json = await response.json();
-          const externalIds = json.items?.map(({ externalId }) => externalId).sort();
+          const externalIds = [...json.items?.map(({ externalId }) => externalId)].sort();
           const isEqualArr = JSON.stringify(externalIds) === JSON.stringify(expectedTs);
           return isEqualArr;
         }
@@ -62,9 +66,8 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
     }
   )).toBeOK();
 
-  const buttons = await page.getByRole('button', { name: /59.9139-10.7522.*/ });
-  for (const expectedTsName of expectedTs) {
-    const button = buttons.locator(`text='${expectedTsName}'`);
-    await expect(button).toBeVisible();
-  }
+  await expect.poll(async () => {
+    const buttonTexts = await panelEditPage.panel.locator.getByRole('button', { name: /59.9139-10.7522.*/ }).allInnerTexts();
+    return buttonTexts.sort();
+  }, { timeout: 10000 }).toEqual(expectedTs);
 });
