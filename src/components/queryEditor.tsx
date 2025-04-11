@@ -1,17 +1,16 @@
 import defaults from 'lodash/defaults';
 import React, { useState, useEffect } from 'react';
 import {
-  LegacyForms,
   Tab,
   TabsBar,
   TabContent,
   InlineFormLabel,
-  Switch,
   AsyncSelect,
   Button,
   InlineField,
   InlineFieldRow,
-  Input
+  Input,
+  InlineSwitch
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
@@ -39,21 +38,19 @@ import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
 
-const { FormField } = LegacyForms;
-
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <div className="gf-form gf-form-inline">
-      <InlineFormLabel tooltip="Fetch the latest data point in the provided time range" width={7}>
+      <InlineFormLabel htmlFor='latest-value' tooltip="Fetch the latest data point in the provided time range" width={7}>
         Latest value
       </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={query.latestValue}
-          onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
-        />
-      </div>
+      <InlineSwitch
+        label='Latest value'
+        id='latest-value'
+        value={query.latestValue}
+        onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+      />
     </div>
   );
 };
@@ -62,23 +59,23 @@ const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { includeSubTimeseries } = query.assetQuery;
   return (
     <div className="gf-form">
-      <InlineFormLabel width={11} tooltip="Fetch time series linked to the asset">
+      <InlineFormLabel htmlFor='include-sub-timeseries' width={11} tooltip="Fetch time series linked to the asset">
         Include sub-timeseries
       </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={includeSubTimeseries !== false}
-          onChange={({ currentTarget }) => {
-            const { checked } = currentTarget;
-            onQueryChange({
-              assetQuery: {
-                ...query.assetQuery,
-                includeSubTimeseries: checked,
-              },
-            });
-          }}
-        />
-      </div>
+      <InlineSwitch
+        label='Include sub-timeseries'
+        id='include-sub-timeseries'
+        value={includeSubTimeseries !== false}
+        onChange={({ currentTarget }) => {
+          const { checked } = currentTarget;
+          onQueryChange({
+            assetQuery: {
+              ...query.assetQuery,
+              includeSubTimeseries: checked,
+            },
+          });
+        }}
+      />
     </div>
   );
 };
@@ -97,13 +94,13 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
 
   return (
     <div className="gf-form">
-      <InlineFormLabel width={9}>Include sub-assets</InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={includeSubtrees}
-          onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
-        />
-      </div>
+      <InlineFormLabel htmlFor='include-sub-assets' width={9}>Include sub-assets</InlineFormLabel>
+      <InlineSwitch
+        label='Include sub-assets'
+        value={includeSubtrees}
+        id='include-sub-assets'
+        onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
+      />
     </div>
   );
 };
@@ -122,15 +119,15 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
 
   return (
     <div className="gf-form">
-      <InlineFormLabel tooltip="Fetch time series related to the asset" width={12}>
+      <InlineFormLabel htmlFor='include-relationships' tooltip="Fetch time series related to the asset" width={12}>
         Include relationships
       </InlineFormLabel>
-      <div className="gf-form-switch">
-        <Switch
-          value={withRelationships}
-          onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
-        />
-      </div>
+      <InlineSwitch
+        label='Include relationships'
+        id='include-relationships'
+        value={withRelationships}
+        onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
+      />
     </div>
   );
 };
@@ -184,11 +181,13 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
   return (
     <div className="gf-form-inline">
       <div className="gf-form">
-        <InlineFormLabel width={6}>Asset Tag</InlineFormLabel>
+        <InlineFormLabel htmlFor={'asset-select-dropdown'} width={6}>Asset Tag</InlineFormLabel>
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
           value={current}
           defaultOptions
+          inputId='asset-select-dropdown'
+          data-testid='asset-select-dropdown'
           placeholder="Search asset by name/description"
           className="cognite-dropdown width-20"
           allowCustomValue
