@@ -44,6 +44,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
   await expect(latestValue).toBeChecked();
 
   await page.waitForLoadState('networkidle', { timeout: 10000 });
+  await page.waitForTimeout(3000); // todo: fix, even if this works, it is not a good solution
 
   await expect(panelEditPage.refreshPanel(
     {
