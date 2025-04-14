@@ -8,6 +8,7 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-11.0.0}
         development: ${DEVELOPMENT:-false}
+        grafana_image: ${GRAFANA_IMAGE:-grafana}
     ports:
       - 2999:3000/tcp
     security_opt:

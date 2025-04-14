@@ -32,6 +32,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.DataModellingV2]: 'Data Models (new)',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
@@ -56,6 +57,16 @@ const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
     }
   }
 }`,
+  tsKeys: [],
+};
+
+const defaultDataModellingV2Query: DataModellingV2Query = {
+  externalId: '',
+  graphQlQuery: `
+query {
+}
+  `,
+  postProcessing: '@',
   tsKeys: [],
 };
 
@@ -94,6 +105,17 @@ export interface FlexibleDataModellingQuery {
   version?: string;
   space?: string;
   graphQlQuery: string;
+  tsKeys: string[];
+  labels?: string[];
+  targets?: string[];
+}
+
+export interface DataModellingV2Query {
+  externalId: string;
+  version?: string;
+  space?: string;
+  graphQlQuery: string;
+  postProcessing: string;
   tsKeys: string[];
   labels?: string[];
   targets?: string[];
@@ -152,6 +174,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   templateQuery: defaultTemplateQuery,
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
+  dataModellingV2Query: defaultDataModellingV2Query,
 };
 
 /**
@@ -270,6 +293,7 @@ export interface CogniteQueryBase extends DataQuery {
   relationshipsQuery: RelationshipsQuery;
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
+  dataModellingV2Query: DataModellingV2Query;
 }
 
 export type TemplateQuery = {

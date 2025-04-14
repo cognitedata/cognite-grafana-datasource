@@ -87,5 +87,6 @@
 
   "backend": true,
   "metrics": true,
-  "annotations": true
+  "annotations": true,
+  "alerting": true
 }

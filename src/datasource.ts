@@ -48,7 +48,8 @@ import { lastValueFrom, Observable, from, map } from 'rxjs';
 
 export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
-  CogniteDataSourceOptions
+  CogniteDataSourceOptions//,
+  // AnnotationQuery
 > {
   /**
    * Parameters that are needed by grafana
@@ -491,7 +492,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
         case Tab.DataModellingV2:
-          return true;
+          return target.dataModellingV2Query.externalId && target.dataModellingV2Query.space && target.dataModellingV2Query.version;
         case Tab.ExtractionPipelines:
           return true;
         case Tab.Timeseries:
