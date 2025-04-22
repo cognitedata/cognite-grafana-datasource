@@ -1,10 +1,17 @@
-import { DataQueryRequest, DataQueryResponse, MutableDataFrame, FieldType } from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse, FieldType, toDataFrame, DataFrame } from '@grafana/data';
 import _ from 'lodash';
 import { Connector } from '../connector';
 import { TemplateQuery, CogniteQuery, HttpMethod } from '../types';
 import { handleError } from '../appEventHandler';
 
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
+
+const addValuesToDataFrameObj = (dataFrame: Partial<DataFrame>, valueObj: any) => {
+  for (const field of dataFrame.fields) {
+      const fieldName = field.name;
+      field.values.push(_.get(valueObj, fieldName));
+    }
+}
 
 export class TemplatesDatasource {
   constructor(private connector: Connector) {}
@@ -106,7 +113,7 @@ export class TemplatesDatasource {
 
       const items: any[] = TemplatesDatasource.getItems(res.results.data, dataPath.trim());
 
-      const dataFrameMap = new Map<string, MutableDataFrame>();
+      const dataFrameMap = new Map<string, Partial<DataFrame>>();
       items.forEach((item) => {
         const groupByValues = groupByArray.map((groupByKey) => [
           groupByKey,
@@ -119,17 +126,17 @@ export class TemplatesDatasource {
             datapointsPathArray.length > 1 ? `${groupByPrefix}:${datapointsPath}` : groupByPrefix;
           let dataFrame = dataFrameMap.get(groupString);
           if (!dataFrame) {
-            dataFrame = TemplatesDatasource.createDatapointsDataFrame(refId, groupString);
+            dataFrame = TemplatesDatasource.createDatapointsDataFrameObj(refId, groupString);
             dataFrameMap.set(groupString, dataFrame);
           }
 
           const datapoints =
             TemplatesDatasource.getDataFromPathInObject(item, datapointsPath) ?? [];
-          datapoints.forEach((datapoint) => dataFrame.add(datapoint));
+          datapoints.forEach((datapoint) => addValuesToDataFrameObj(dataFrame, datapoint));
         });
       });
 
-      return Array.from(dataFrameMap.values());
+      return Array.from(dataFrameMap.values()).map(toDataFrame);
     });
 
     return { data: dataframes };
@@ -144,14 +151,16 @@ export class TemplatesDatasource {
     }, obj);
   }
 
-  static createDatapointsDataFrame(refId: string, name: string) {
-    return new MutableDataFrame({
+  static createDatapointsDataFrameObj(refId: string, name: string): Partial<DataFrame> {
+    return {
       refId,
       name,
       fields: [
         {
           name: 'timestamp',
           type: FieldType.time,
+          config: {},
+          values: [],
         },
         {
           name: 'value',
@@ -159,8 +168,9 @@ export class TemplatesDatasource {
           config: {
             displayName: name,
           },
+          values: [],
         },
       ],
-    });
+    };
   }
 }

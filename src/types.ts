@@ -3,7 +3,7 @@ import {
   TimeSeries,
   DataSourceJsonData,
   TableData,
-  MutableDataFrame,
+  DataFrame,
   QueryEditorProps,
   SelectableValue,
 } from '@grafana/data';
@@ -186,7 +186,7 @@ export function isError(maybeError: DataQueryError | any): maybeError is DataQue
   return (maybeError as DataQueryError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<Array<TimeSeries | TableData | MutableDataFrame>>;
+export type QueryResponse = DataResponse<Array<TimeSeries | TableData | DataFrame>>;
 
 export interface MetricDescription {
   readonly text: string;
