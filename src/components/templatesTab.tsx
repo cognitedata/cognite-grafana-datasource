@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Select, AsyncSelect, Field, Input, HorizontalGroup, CodeEditor } from '@grafana/ui';
+import { Select, AsyncSelect, Field, Input, CodeEditor, Stack } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 import { EditorProps, SelectedProps, TemplateQuery } from '../types';
@@ -55,7 +55,7 @@ export function TemplatesTab(
   }, [templateQuery]);
   return (
     <>
-      <HorizontalGroup>
+      <Stack>
         <Field label="Template Group" description="Select template group">
           <AsyncSelect
             loadOptions={loadTemplateGroupsOptions}
@@ -73,7 +73,7 @@ export function TemplatesTab(
             onBlur={triggerQuery}
           />
         </Field>
-      </HorizontalGroup>
+      </Stack>
       <Field label="Query" description="GraphQL query">
         <CodeEditor
           value={templateQuery.graphQlQuery ?? ''}
@@ -85,7 +85,7 @@ export function TemplatesTab(
           showLineNumbers
         />
       </Field>
-      <HorizontalGroup>
+      <Stack>
         <Field label="Data Path" description="Path to the data">
           <Input
             value={templateQuery.dataPath}
@@ -109,7 +109,7 @@ export function TemplatesTab(
             onBlur={triggerQuery}
           />
         </Field>
-      </HorizontalGroup>
+      </Stack>
     </>
   );
 }

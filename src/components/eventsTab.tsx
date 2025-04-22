@@ -193,10 +193,12 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
-      <InlineFormLabel tooltip="Fetch with Aggregate count " width={10}>
+      <InlineFormLabel htmlFor='with-aggregate' tooltip="Fetch with Aggregate count " width={10}>
         With Aggregate
       </InlineFormLabel>
       <InlineSwitch
+        id='with-aggregate'
+        label='With Aggregate'
         value={query.eventQuery.aggregate?.withAggregate}
         onChange={({ currentTarget }) =>
           onQueryChange({
