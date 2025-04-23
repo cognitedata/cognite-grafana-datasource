@@ -26,7 +26,7 @@ test('Panel with multiple time series queries rendered OK', async ({ gotoDashboa
 });
 
 
-test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
 
