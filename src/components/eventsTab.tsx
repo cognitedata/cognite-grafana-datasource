@@ -121,7 +121,7 @@ const OrderDirectionEditor = (
         options={options}
         menuPosition="fixed"
         value={direction}
-        className="cognite-dropdown width-10"
+        className="cog-mr-4 width-10"
       />
     </div>
   );
