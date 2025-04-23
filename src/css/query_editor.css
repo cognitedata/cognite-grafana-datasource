@@ -10,14 +10,6 @@
   min-width: 20rem;
 }
 
-.gf-form-select-wrapper select.gf-form-input {
-  height: 2.64rem;
-}
-
-.gf-form-select-wrapper--caret-indent.gf-form-select-wrapper::after {
-  right: 0.775rem;
-}
-
 .gf-tabs-cognite.active:before,
 .gf-tabs-cognite.active:focus:before,
 .gf-tabs-cognite.active:hover:before {
@@ -33,21 +25,10 @@ pre code,
   line-height: 2;
 }
 
-.cognite-dropdown {
+.cog-mr-4 {
   margin-right: 4px;
 }
 
-.gf-dropdown-wrapper {
-  min-width: 200px;
-}
-
-.gf-field-switch {
-  margin: 0 0 0 8px;
-}
-
-.gf-field-switch > div:last-child {
-  margin: 8px 0 0 16px;
-}
 .preview-label {
   align-self: center;
   background: #ffdc7f;

@@ -47,7 +47,7 @@ const AggregationEditor = (props: SelectedProps) => {
         options={aggregateOptions}
         menuPosition="fixed"
         value={query.aggregation}
-        className="cognite-dropdown width-10"
+        className="cog-mr-4 width-10"
       />
     </div>
   );
