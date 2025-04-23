@@ -44,7 +44,7 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
-import { lastValueFrom, Observable, from, map } from 'rxjs';
+import { lastValueFrom, Observable, from, map, of } from 'rxjs';
 
 export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
@@ -124,7 +124,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   }
 
   // Queries the backend by using `super.query`
-   queryBackend(
+  queryBackend(
     backendTargets: QueryTarget[],
     options: DataQueryRequest<CogniteQuery>
   ): Observable<DataQueryResponse> {
@@ -231,6 +231,10 @@ export default class CogniteDatasource extends DataSourceWithBackend<
 
   // A utility function to merge multiple observables into one
   mergeObservables(observables: Array<Observable<DataQueryResponse>>): Observable<DataQueryResponse> {
+    if (observables.length === 0) {
+      return of({ data: [] });
+    }
+    
     return new Observable((subscriber) => {
       let allData: any[] = [];
       let allErrors: DataQueryError[] = [];

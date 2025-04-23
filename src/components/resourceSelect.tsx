@@ -49,6 +49,9 @@ export function ResourceSelect(props: {
   };
 
   const fetchDropdownResource = async (id: IdEither) => {
+    if (('externalId' in id && !id.externalId) || ('id' in id && !id.id)) {
+      return null;
+    }
     try {
       const [res] = await fetchSingleResource(id);
       return res;
@@ -86,7 +89,7 @@ export function ResourceSelect(props: {
         defaultOptions
         value={current.value ? current : null}
         placeholder={`Search ${resourceType.toLowerCase()} by name/description`}
-        className="cognite-dropdown width-20"
+        className="cog-mr-4 width-20"
         onChange={onDropdown}
       />
       <FormField
