@@ -189,7 +189,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           inputId='asset-select-dropdown'
           data-testid='asset-select-dropdown'
           placeholder="Search asset by name/description"
-          className="cognite-dropdown width-20"
+          className="cog-mr-4 width-20"
           allowCustomValue
           onChange={setCurrent}
         />
