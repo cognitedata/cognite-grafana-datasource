@@ -20,4 +20,4 @@ jobs:
       - uses: grafana/plugin-actions/build-plugin@main
         with:
           grafana_token: ${{ secrets.GRAFANA_API_KEY }}
-          attestation: 
+          attestation: true
