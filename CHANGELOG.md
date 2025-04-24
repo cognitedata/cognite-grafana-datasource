@@ -3,6 +3,17 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.3.0 - April 24th, 2025
+
+### Features
+
+- Updated plugin GUI components to accomodate for Grafana v12 changes
+- Preliminary work to enable backend data source in the future
+
+### Bug fixes
+
+- Upgraded plugin dependencies
+
 ## 4.2.1 - November 28th, 2024
 
 ### Bug fixes
