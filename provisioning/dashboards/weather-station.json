@@ -12,6 +12,20 @@
           "iconColor": "rgba(0, 211, 255, 1)",
           "name": "Annotations & Alerts",
           "type": "dashboard"
+        },
+        {
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "red",
+          "name": "events",
+          "target": {
+            "query": "events{}",
+            "refId": "Anno"
+          }
         }
       ]
     },
@@ -38,6 +52,7 @@
               "axisLabel": "",
               "axisPlacement": "auto",
               "barAlignment": 0,
+              "barWidthFactor": 0.6,
               "drawStyle": "line",
               "fillOpacity": 0,
               "gradientMode": "none",
@@ -82,8 +97,8 @@
           "overrides": []
         },
         "gridPos": {
-          "h": 8,
-          "w": 12,
+          "h": 9,
+          "w": 24,
           "x": 0,
           "y": 0
         },
@@ -101,6 +116,7 @@
             "sort": "none"
           }
         },
+        "pluginVersion": "11.4.3",
         "targets": [
           {
             "aggregation": "average",
@@ -218,13 +234,14 @@
         "type": "timeseries"
       }
     ],
-    "schemaVersion": 39,
+    "preload": false,
+    "schemaVersion": 40,
     "tags": [],
     "templating": {
       "list": []
     },
     "time": {
-      "from": "now-1h",
+      "from": "now-1y",
       "to": "now"
     },
     "timepicker": {},
