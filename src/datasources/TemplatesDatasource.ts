@@ -3,15 +3,9 @@ import _ from 'lodash';
 import { Connector } from '../connector';
 import { TemplateQuery, CogniteQuery, HttpMethod } from '../types';
 import { handleError } from '../appEventHandler';
+import { addValuesToDataFrameObj } from '../utils';
 
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
-
-const addValuesToDataFrameObj = (dataFrame: Partial<DataFrame>, valueObj: any) => {
-  for (const field of dataFrame.fields) {
-      const fieldName = field.name;
-      field.values.push(_.get(valueObj, fieldName));
-    }
-}
 
 export class TemplatesDatasource {
   constructor(private connector: Connector) {}

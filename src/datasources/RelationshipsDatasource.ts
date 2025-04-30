@@ -14,7 +14,7 @@ import { CogniteQuery, HttpMethod, RelationshipsQuery } from '../types';
 import { nodeField, edgeField } from '../constants';
 import { handleError, handleWarning } from '../appEventHandler';
 import { CogniteRelationshipResponse } from '../cdf/types';
-import { getRange } from '../utils';
+import { getRange, addValuesToDataFrameObj } from '../utils';
 
 type RelationshipsNodeGrap = {
   nodes: DataFrame;
@@ -22,13 +22,6 @@ type RelationshipsNodeGrap = {
 };
 const getDifferedIds = (sourceList, targetList) =>
   _.difference(_.map(sourceList, 'targetExternalId'), targetList);
-
-const addValuesToDataFrameObj = (dataFrame: Partial<DataFrame>, valueObj: any) => {
-  for (const field of dataFrame.fields) {
-      const fieldName = field.name;
-      field.values.push(_.get(valueObj, fieldName));
-    }
-}
 
 export const createRelationshipsNode = (relationshipsList, refId): RelationshipsNodeGrap => {
   const generateDetailKey = (key: string): string => ['detail__', key.trim().split(' ')].join('');

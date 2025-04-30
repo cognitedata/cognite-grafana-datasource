@@ -1,20 +1,13 @@
 import { expect } from '@grafana/plugin-e2e';
+import { Page } from '@playwright/test';
+import semver from 'semver';
 
-const grafanaVersion = process.env.GRAFANA_VERSION ?? '11.0.0'
-const [majorVersion, minorVersion] = grafanaVersion.split('.').map(Number);
-
-// Workaround to get a "stable" panel state
-export const waitForQueriesToFinish = async (page) => {
-  const isGrafanaGte = (major: number, minor: number) => {
-    if (majorVersion > major) {
-      return true;
-    } else if (majorVersion === major && minorVersion >= minor) {
-      return true;
-    }
-    return false;
-  }
-
-  if (isGrafanaGte(11, 4)) {
+// Workaround to get a "stable" panel state.
+// Some of the queries are cached, so the API call is not made.
+// In such cases standard page.waitForResponse does not work.
+// We need to wait at least a second to get a new time range that is not cached.
+export const waitForQueriesToFinish = async (page: Page, grafanaVersion: string) => {
+  if (semver.gte(grafanaVersion, '11.4')) {
     const refreshButtonLocator = page.getByTestId('data-testid RefreshPicker run button');
     await expect(refreshButtonLocator).toContainText('Refresh', { timeout: 15000 });
   } else {
