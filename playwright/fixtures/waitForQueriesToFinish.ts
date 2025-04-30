@@ -7,7 +7,7 @@ import semver from 'semver';
 // In such cases standard page.waitForResponse does not work.
 // We need to wait at least a second to get a new time range that is not cached.
 export const waitForQueriesToFinish = async (page: Page, grafanaVersion: string) => {
-  if (semver.gte(grafanaVersion, '11.4')) {
+  if (semver.gte(grafanaVersion, '11.4.0')) {
     const refreshButtonLocator = page.getByTestId('data-testid RefreshPicker run button');
     await expect(refreshButtonLocator).toContainText('Refresh', { timeout: 15000 });
   } else {
