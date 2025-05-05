@@ -1,11 +1,10 @@
 import React, { ChangeEvent, useState } from 'react';
-import { Icon, LegacyForms } from '@grafana/ui';
+import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
 import { FeatureFlagsWarning, KonamiTracker } from './devFeatures';
 import '../css/common.css';
 
-const { SecretFormField, FormField, Switch } = LegacyForms;
 
 type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteDataSourceOptions,
@@ -102,37 +101,38 @@ export function ConfigEditor(props: ConfigEditorProps) {
 
   return (
     <>
-      <div className="gf-form-group">
-        <h3 className="page-heading">HTTP</h3>
-        <div className="gf-form gf-form-inline">
-          <FormField
+      <FieldSet label='HTTP'>
+          <InlineField
             label="Project"
-            labelWidth={12}
-            inputWidth={21}
-            onChange={onJsonStringValueChange('cogniteProject')}
-            value={cogniteProject}
-            placeholder={defaultProject ?? 'Cognite Data Fusion project'}
+            labelWidth={24}            
             tooltip="Cognite Data Fusion project name."
-          />
-        </div>
+          >
+            <Input
+              value={cogniteProject}
+              width={42}
+              placeholder={defaultProject ?? 'Cognite Data Fusion project'}
+              onChange={onJsonStringValueChange('cogniteProject')}
+            />
+          </InlineField>
 
-        <div className="gf-form gf-form-inline">
-          <FormField
-            label="API Host"
-            labelWidth={12}
-            inputWidth={21}
-            onChange={onJsonStringValueChange('cogniteApiUrl')}
+        <InlineField
+          label="API Host"
+          labelWidth={24}
+          tooltip={apiUrlTooltip}
+        >
+          <Input
             value={cogniteApiUrl}
+            width={42}
             placeholder={clusterUrl ?? 'api.cognitedata.com'}
-            tooltip={apiUrlTooltip}
+            onChange={onJsonStringValueChange('cogniteApiUrl')}
           />
-        </div>
-      </div>
+        </InlineField>
+      </FieldSet>
 
-      <div className="gf-form-group">
-        <h3 className="page-heading">
-          Auth <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} />
-        </h3>
+      <FieldSet 
+        label={<>Auth <Icon name="question-circle" onClick={() => setShowHelp(!showHelp)} /></>}
+        >
+
         {showHelp && (
           <pre>
             Find out more about authentication at{' '}
@@ -141,116 +141,130 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </a>
           </pre>
         )}
-        <div className="gf-form-inline">
-          <Switch
-            label="Forward OAuth Identity"
-            labelClass="width-12"
-            checked={oauthPassThru}
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='oauth-pass-thru' tooltip={oAuthPassThruTooltip} width={12}>
+            Forward OAuth Identity
+          </InlineFormLabel>
+          <InlineSwitch
+            label='Forward OAuth Identity'
+            id='oauth-pass-thru'
+            value={oauthPassThru}
             onChange={onJsonBoolValueChange('oauthPassThru')}
-            tooltip={oAuthPassThruTooltip}
           />
-        </div>
+        </InlineFieldRow>
         {!oauthPassThru && (
-          <div className="gf-form">
-            <Switch
-              label="OAuth2 client credentials"
-              labelClass="width-12"
-              checked={oauthClientCreds}
+          <InlineFieldRow style={{ marginBottom: '4px' }}>
+            <InlineFormLabel htmlFor='oauth-client-creds' tooltip={oAuthClientCredsTooltip} width={12}>
+              OAuth2 client credentials
+            </InlineFormLabel>
+            <InlineSwitch
+              label='OAuth2 client credentials'
+              value={oauthClientCreds}
               onChange={onJsonBoolValueChange('oauthClientCreds')}
-              tooltip={oAuthClientCredsTooltip}
             />
-          </div>
+          </InlineFieldRow>
         )}
         {!oauthPassThru && oauthClientCreds && (
           <>
-            <div className="gf-form">
-              <FormField
-                label="Token URL"
-                labelWidth={12}
-                inputWidth={21}
-                onChange={onJsonStringValueChange('oauthTokenUrl')}
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='oauth-token-url' tooltip={oAuthTokenUrlTooltip} width={12}>
+                Token URL
+              </InlineFormLabel>
+              <Input
+                id='oauth-token-url'
                 value={oauthTokenUrl}
+                width={42}
                 placeholder="https://login.example.com/.../oauth2/v2.0/token"
-                tooltip={oAuthTokenUrlTooltip}
+                onChange={onJsonStringValueChange('oauthTokenUrl')}
               />
-            </div>
-            <div className="gf-form">
-              <FormField
-                label="Client Id"
-                labelWidth={12}
-                inputWidth={21}
-                onChange={onJsonStringValueChange('oauthClientId')}
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='oauth-client-id' tooltip={oAuthClientSecretTooltip} width={12}>
+                Client Id
+              </InlineFormLabel>
+              <Input
+                id='oauth-client-id'
                 value={oauthClientId}
+                width={42}
                 placeholder="Your Application (client) ID"
+                onChange={onJsonStringValueChange('oauthClientId')}
               />
-            </div>
-            <div className="gf-form">
-              <SecretFormField
-                isConfigured={secureJsonFields.oauthClientSecret}
-                value={oauthClientSecret}
-                label="Client secret"
-                tooltip={oAuthClientSecretTooltip}
-                labelWidth={12}
-                inputWidth={21}
-                placeholder="******"
-                onReset={onResetSecretValue('oauthClientSecret')}
-                onChange={onChangeSecretValue('oauthClientSecret')}
-              />
-            </div>
-            <div className="gf-form">
-              <FormField
-                label="Scope"
-                labelWidth={12}
-                inputWidth={21}
-                onChange={onJsonStringValueChange('oauthScope')}
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField label="Client secret" labelWidth={24} tooltip={oAuthClientSecretTooltip}>
+                <SecretInput
+                  isConfigured={secureJsonFields.oauthClientSecret}
+                  value={oauthClientSecret}
+                  label="Client secret"
+                  width={42}
+                  placeholder="******"
+                  onReset={onResetSecretValue('oauthClientSecret')}
+                  onChange={onChangeSecretValue('oauthClientSecret')}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='oauth-scope' tooltip={oAuthScopeTooltip} width={12}>
+                Scope
+              </InlineFormLabel>
+              <Input
+                id='oauth-scope'
                 value={oauthScope}
-                tooltip={oAuthScopeTooltip}
+                width={42}
                 placeholder="E.g. https://api.cognitedata.com/.default"
+                onChange={onJsonStringValueChange('oauthScope')}
               />
-            </div>
+            </InlineFieldRow>
           </>
         )}
-      </div>
+      </FieldSet>
 
-      <div className="gf-form-group">
-        <h3 className="page-heading">Opt-in features</h3>
-        <div className="gf-form-inline">
-          <Switch
-            label="Cognite Templates"
-            labelClass="width-12"
-            checked={enableTemplates}
+      <FieldSet label="Opt-in features">
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-templates' tooltip={enableTemplatesTooltip} width={12}>
+            Cognite Templates
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-templates'
+            label='Cognite Templates'
+            value={enableTemplates}
             onChange={onJsonBoolValueChange('enableTemplates')}
-            tooltip={enableTemplatesTooltip}
           />
-        </div>
-        <div className="gf-form-inline">
-          <Switch
-            label="Advanced Filtering"
-            labelClass="width-12"
-            checked={enableEventsAdvancedFiltering}
+        </InlineFieldRow>
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-events-advanced-filtering' tooltip={enableEventsAdvancedFilteringTooltip} width={12}>
+            Advanced Filtering
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-events-advanced-filtering'
+            label='Advanced Filtering'
+            value={enableEventsAdvancedFiltering}
             onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
-            tooltip={enableEventsAdvancedFilteringTooltip}
           />
-        </div>
-        <div className="gf-form-inline">
-          <Switch
-            label="Data Models"
-            labelClass="width-12"
-            checked={enableFlexibleDataModelling}
+        </InlineFieldRow>
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-flexible-data-modelling' tooltip={enableFlexibleDataModellingTooltip} width={12}>
+            Data Models
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-flexible-data-modelling'
+            label='Data Models'
+            value={enableFlexibleDataModelling}
             onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
-            tooltip={enableFlexibleDataModellingTooltip}
           />
-        </div>
-        <div className="gf-form-inline">
-          <Switch
-            label="Extraction Pipelines"
-            labelClass="width-12"
-            checked={enableExtractionPipelines}
+        </InlineFieldRow>
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-extraction-pipelines' tooltip={enableExtractionPipelinesTooltip} width={12}>
+            Extraction Pipelines
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-extraction-pipelines'
+            label='Extraction Pipelines'
+            value={enableExtractionPipelines}
             onChange={onJsonBoolValueChange('enableExtractionPipelines')}
-            tooltip={enableExtractionPipelinesTooltip}
           />
-        </div>
-      </div>
+        </InlineFieldRow>
+      </FieldSet>
     </>
   );
 }
