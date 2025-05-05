@@ -27,7 +27,7 @@ test('"Save & test" should be successful when configuration is valid', async ({
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
   await page.getByPlaceholder('api.cognitedata.com').fill(ds.jsonData.cogniteApiUrl ?? '');
   
-  await page.locator('label').filter({ hasText: 'OAuth2 client credentials' }).locator('span').click();
+  await page.getByLabel('OAuth2 client credentials').click();
   
   await page.getByPlaceholder('https://login.example.com').fill(ds.jsonData.oauthTokenUrl ?? '');
   await page.getByPlaceholder('Your Application (client) ID').fill(ds.jsonData.oauthClientId ?? '');
@@ -51,7 +51,7 @@ test('"Save & test" should fail when configuration is invalid', async ({
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
   await page.getByPlaceholder('api.cognitedata.com').fill(ds.jsonData.cogniteApiUrl ?? '');
   
-  await page.locator('label').filter({ hasText: 'OAuth2 client credentials' }).locator('span').click();
+  await page.getByLabel('OAuth2 client credentials').click();
   
   await page.getByPlaceholder('https://login.example.com').fill(ds.jsonData.oauthTokenUrl ?? '');
   await page.getByPlaceholder('Your Application (client) ID').fill(ds.jsonData.oauthClientId ?? '');
