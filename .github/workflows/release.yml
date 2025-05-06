@@ -8,8 +8,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }} # Requires a Grafana API key from Grafana.com.
     permissions:
       id-token: write
       contents: write
@@ -19,5 +17,5 @@ jobs:
 
       - uses: grafana/plugin-actions/build-plugin@main
         with:
-          grafana_token: ${{ secrets.GRAFANA_API_KEY }}
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           attestation: true
