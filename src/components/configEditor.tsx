@@ -2,7 +2,6 @@ import React, { ChangeEvent, useState } from 'react';
 import { Icon, LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
-import { FeatureFlagsWarning, KonamiTracker } from './devFeatures';
 import '../css/common.css';
 
 const { SecretFormField, FormField, Switch } = LegacyForms;
