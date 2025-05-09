@@ -2,7 +2,6 @@ import React, { ChangeEvent, useState } from 'react';
 import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
-import { FeatureFlagsWarning, KonamiTracker } from './devFeatures';
 import '../css/common.css';
 
 

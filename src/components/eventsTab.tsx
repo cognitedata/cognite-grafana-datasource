@@ -22,7 +22,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
       <InlineFormLabel
-        htmlFor='active-at-time-range'
+        htmlFor={`active-at-time-range-${query.refId}`}
         tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
         width={7}
       >
@@ -30,7 +30,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
       </InlineFormLabel>
       <InlineSwitch
         label='Active only'
-        id='active-at-time-range'
+        id={`active-at-time-range-${query.refId}`}
         value={query.eventQuery.activeAtTimeRange}
         onChange={({ currentTarget }) =>
           onQueryChange({
@@ -193,11 +193,11 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
     <div className="gf-form gf-form-inline">
-      <InlineFormLabel htmlFor='with-aggregate' tooltip="Fetch with Aggregate count " width={10}>
+      <InlineFormLabel htmlFor={`with-aggregate-${query.refId}`} tooltip="Fetch with Aggregate count " width={10}>
         With Aggregate
       </InlineFormLabel>
       <InlineSwitch
-        id='with-aggregate'
+        id={`with-aggregate-${query.refId}`}
         label='With Aggregate'
         value={query.eventQuery.aggregate?.withAggregate}
         onChange={({ currentTarget }) =>
