@@ -1,14 +1,9 @@
 import {
   DataQueryRequest,
-  DataSourceApi,
   DataSourceInstanceSettings,
   SelectableValue,
   ScopedVars,
-  TableData,
-  TimeSeries,
   DataQueryResponse,
-  MutableDataFrame,
-  AnnotationQuery,
   DataQueryError,
 } from '@grafana/data';
 import { BackendSrv, BackendSrvRequest, DataSourceWithBackend, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
@@ -34,7 +29,7 @@ import {
   Tab,
   VariableQueryData,
 } from './types';
-import { applyFilters, getRange, isAnnotationTarget } from './utils';
+import { applyFilters, isAnnotationTarget } from './utils';
 import {
   FlexibleDataModellingDatasource,
   RelationshipsDatasource,

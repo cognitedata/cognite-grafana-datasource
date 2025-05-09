@@ -15,7 +15,7 @@ const expectedTs = [
   '59.9139-10.7522-current.uvi'
 ].sort();
 
-test('Panel with asset subtree queries rendered OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('Panel with asset subtree queries rendered OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -44,7 +44,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
   await latestValue.check({ force: true });
   await expect(latestValue).toBeChecked();
 
-  await waitForQueriesToFinish(page);
+  await waitForQueriesToFinish(page, grafanaVersion);
 
   await expect(panelEditPage.refreshPanel(
     {

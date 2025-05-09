@@ -1,5 +1,5 @@
-import _, { isNil, omitBy, get, map, assignIn, sortBy, filter, find, uniq, head } from 'lodash';
-import { TimeRange } from '@grafana/data';
+import _, { isNil, omitBy, get, map, filter, find, uniq, head } from 'lodash';
+import { DataFrame, TimeRange } from '@grafana/data';
 import { stringify } from 'query-string';
 import ms from 'ms';
 import { ExecutableDefinitionNode } from 'graphql';
@@ -104,3 +104,10 @@ export const typeNameList = (selected) =>
       })
     )
   );
+
+export const addValuesToDataFrameObj = (dataFrame: Partial<DataFrame>, valueObj: any) => {
+  for (const field of dataFrame.fields) {
+      const fieldName = field.name;
+      field.values.push(_.get(valueObj, fieldName));
+    }
+}

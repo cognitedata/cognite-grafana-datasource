@@ -41,6 +41,79 @@
           "uid": "42"
         },
         "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "edges": {},
+          "nodes": {}
+        },
+        "pluginVersion": "11.4.3",
+        "targets": [
+          {
+            "aggregation": "average",
+            "assetQuery": {
+              "includeSubTimeseries": true,
+              "includeSubtrees": false,
+              "relationshipsQuery": {
+                "dataSetIds": [
+                  {
+                    "label": "openweathermap",
+                    "value": 5657360878312999
+                  }
+                ],
+                "depth": 1,
+                "isActiveAtTime": false,
+                "isTypeTimeseries": false,
+                "labels": {
+                  "containsAny": []
+                },
+                "limit": 1000,
+                "sourceExternalIds": []
+              },
+              "target": "",
+              "withRelationships": false
+            },
+            "granularity": "",
+            "label": "",
+            "latestValue": false,
+            "refId": "A",
+            "relationshipsQuery": {
+              "dataSetIds": [
+                {
+                  "label": "openweathermap",
+                  "value": 5657360878312999
+                }
+              ],
+              "depth": 1,
+              "isActiveAtTime": false,
+              "isTypeTimeseries": false,
+              "labels": {
+                "containsAny": []
+              },
+              "limit": 1000,
+              "sourceExternalIds": []
+            },
+            "tab": "Relationships",
+            "target": ""
+          }
+        ],
+        "title": "Relationships",
+        "type": "nodeGraph"
+      },
+      {
+        "datasource": {
+          "type": "cognitedata-datasource",
+          "uid": "42"
+        },
+        "fieldConfig": {
           "defaults": {
             "color": {
               "mode": "palette-classic"

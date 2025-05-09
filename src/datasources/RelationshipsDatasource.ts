@@ -1,9 +1,11 @@
 import {
   DataQueryRequest,
   DataQueryResponse,
-  MutableDataFrame,
   FieldType,
   SelectableValue,
+  DataFrame,
+  toDataFrame,
+  Field,
 } from '@grafana/data';
 import _ from 'lodash';
 import { fetchRelationships } from '../cdf/client';
@@ -12,11 +14,11 @@ import { CogniteQuery, HttpMethod, RelationshipsQuery } from '../types';
 import { nodeField, edgeField } from '../constants';
 import { handleError, handleWarning } from '../appEventHandler';
 import { CogniteRelationshipResponse } from '../cdf/types';
-import { getRange } from '../utils';
+import { getRange, addValuesToDataFrameObj } from '../utils';
 
 type RelationshipsNodeGrap = {
-  nodes: MutableDataFrame;
-  edges: MutableDataFrame;
+  nodes: DataFrame;
+  edges: DataFrame;
 };
 const getDifferedIds = (sourceList, targetList) =>
   _.difference(_.map(sourceList, 'targetExternalId'), targetList);
@@ -48,28 +50,30 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
       },
     };
   }, nodeField);
-  const edges = new MutableDataFrame({
+  const edges: Partial<DataFrame> = {
     name: 'edges',
     fields: Object.keys(edgeField).map((key) => ({
       ...edgeField[key],
       name: key,
+      values: []
     })),
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
     refId,
-  });
-  const nodes = new MutableDataFrame({
+  };
+  const nodes: Partial<DataFrame> = {
     name: 'nodes',
     fields: Object.keys(extendedFields).map((key) => ({
       ...extendedFields[key],
       name: key,
+      values: []
     })),
     meta: {
       preferredVisualisationType: 'nodeGraph',
     },
     refId,
-  });
+  };
   function addValuesToFields(options) {
     const { externalId, labels, sourceExternalId, targetExternalId, source, target } = options;
     const { sourceMeta, targetMeta } = allMetaKeysFromSourceAndTarget.reduce((a, key) => {
@@ -85,19 +89,19 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
         },
       };
     }, {});
-    nodes.add({
+    addValuesToDataFrameObj(nodes, {
       id: sourceExternalId,
       title: _.get(source, 'description'),
       mainStat: _.get(source, 'name'),
       ...sourceMeta,
     });
-    nodes.add({
+    addValuesToDataFrameObj(nodes, {
       id: targetExternalId,
       title: _.get(target, 'description'),
       mainStat: _.get(target, 'name'),
       ...targetMeta,
     });
-    edges.add({
+    addValuesToDataFrameObj(edges, {
       id: externalId,
       source: sourceExternalId,
       target: targetExternalId,
@@ -108,8 +112,8 @@ export const createRelationshipsNode = (relationshipsList, refId): Relationships
   }
   _.map(relationshipsList, addValuesToFields);
   return {
-    nodes,
-    edges,
+    nodes: toDataFrame(nodes),
+    edges: toDataFrame(edges),
   };
 };
 export class RelationshipsDatasource {
