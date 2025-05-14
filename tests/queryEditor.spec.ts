@@ -2,6 +2,7 @@ import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plu
 import { Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
+import semver from 'semver';
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
@@ -99,7 +100,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   await panelEditPage.setVisualization('Table');
   
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
-    await page.getByTestId('query-tab-add-query').click();
+    await page.getByTestId(/query-tab-add-query/).click();
     const editorRow = panelEditPage.getQueryEditorRow(panels[index]);
   
     await editorRow.getByText('Time series custom query').click();
@@ -120,6 +121,11 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
 
   // transform into a single table, this is simpler to assert
   await page.getByRole('tab', { name: 'Tab Transform' }).click();
+
+  if (semver.gte(grafanaVersion, '11.0.0')) {
+    await page.getByTestId('data-testid add transformation button').click();
+  }
+
   await page.getByRole('button', { name: 'Join by field' }).click();
   
   const tsWithUnits = tsExternalIds.map((ts, i) => `${ts}-${units[i]}`);
