@@ -120,9 +120,13 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isTsResponse('/timeseries/synthetic/query') })).toBeOK();
 
   // transform into a single table, this is simpler to assert
-  await page.getByRole('tab', { name: 'Tab Transform' }).click();
+  if (semver.gte(grafanaVersion, '11.5.4')) {
+    await page.getByTestId('data-testid Tab Transformations').click();
+  } else {
+    await page.getByRole('tab', { name: 'Tab Transform' }).click();
+  }
 
-  if (semver.gte(grafanaVersion, '11.0.0')) {
+  if (semver.gte(grafanaVersion, '10.2.0')) {
     await page.getByTestId('data-testid add transformation button').click();
   }
 
