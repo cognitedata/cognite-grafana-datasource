@@ -107,6 +107,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             tooltip="Cognite Data Fusion project name."
           >
             <Input
+              id='cognite-project'
               value={cogniteProject}
               width={42}
               placeholder={defaultProject ?? 'Cognite Data Fusion project'}
@@ -120,6 +121,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
           tooltip={apiUrlTooltip}
         >
           <Input
+            id='cognite-api-host'
             value={cogniteApiUrl}
             width={42}
             placeholder={clusterUrl ?? 'api.cognitedata.com'}
@@ -179,7 +181,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </InlineFieldRow>
             <InlineFieldRow style={{ marginBottom: '4px' }}>
               <InlineFormLabel htmlFor='oauth-client-id' tooltip={oAuthClientSecretTooltip} width={12}>
-                Client Id
+                Client ID
               </InlineFormLabel>
               <Input
                 id='oauth-client-id'
@@ -192,6 +194,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <InlineFieldRow>
               <InlineField label="Client secret" labelWidth={24} tooltip={oAuthClientSecretTooltip}>
                 <SecretInput
+                  id="oauth-client-secret"
                   isConfigured={secureJsonFields.oauthClientSecret}
                   value={oauthClientSecret}
                   label="Client secret"
