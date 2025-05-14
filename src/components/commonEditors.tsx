@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from 'react';
-import { FieldSet, InlineField, InlineSegmentGroup, InlineFieldRow, InlineFormLabel, Input, Select } from '@grafana/ui';
+import { InlineField, InlineSegmentGroup, InlineFieldRow, InlineFormLabel, Input, Select } from '@grafana/ui';
 import { SelectedProps } from '../types';
 
 const aggregateOptions = [
@@ -21,8 +21,7 @@ const GranularityEditor = (props: SelectedProps) => {
   return (
     query.aggregation &&
     query.aggregation !== 'none' && (
-      <div className="gf-form">
-      {/* // <InlineSegmentGroup> */}
+      <InlineSegmentGroup>
         <InlineField
           label="Granularity"
           labelWidth={14}
@@ -37,8 +36,7 @@ const GranularityEditor = (props: SelectedProps) => {
             onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ granularity: e.target.value })}
           />
         </InlineField>
-      {/* </InlineSegmentGroup> */}
-      </div>
+      </InlineSegmentGroup>
     )
   );
 };
@@ -46,7 +44,7 @@ const GranularityEditor = (props: SelectedProps) => {
 const AggregationEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
       <Select
         onChange={({ value }) => onQueryChange({ aggregation: value })}
@@ -55,15 +53,14 @@ const AggregationEditor = (props: SelectedProps) => {
         value={query.aggregation}
         className="cog-mr-4 width-10"
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 
 export const LabelEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form gf-form--grow">
-    {/* <InlineFieldRow> */}
+    <InlineSegmentGroup grow={true}>
       <InlineField
         label="Label"
         labelWidth={10}
@@ -78,17 +75,14 @@ export const LabelEditor = (props: SelectedProps) => {
           onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ label: e.target.value })}
         />
       </InlineField>
-    {/* </InlineFieldRow> */}
-    </div>
+    </InlineSegmentGroup>
   );
 };
 
 export const CommonEditors = ({ onQueryChange, query, ...etc }: SelectedProps & any) => (
-  <div className="gf-form-inline">
-  {/* // <FieldSet> */}
+  <InlineFieldRow>
     <AggregationEditor {...{ onQueryChange, query }} />
     <GranularityEditor {...{ onQueryChange, query }} />
     {!etc?.visible && <LabelEditor {...{ onQueryChange, query }} />}
-  {/* </FieldSet> */}
-  </div>
+  </InlineFieldRow>
 );
