@@ -31,6 +31,7 @@ const GranularityEditor = (props: SelectedProps) => {
         >
           <Input
             value={query.granularity}
+            id={`granularity-${query.refId}`}
             width={12}
             placeholder="default"
             onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ granularity: e.target.value })}
@@ -45,8 +46,9 @@ const AggregationEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <InlineFieldRow>
-      <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
+      <InlineFormLabel htmlFor={`aggregation-${query.refId}`} width={6}>Aggregation</InlineFormLabel>
       <Select
+        inputId={`aggregation-${query.refId}`}
         onChange={({ value }) => onQueryChange({ aggregation: value })}
         options={aggregateOptions}
         menuPosition="fixed"
@@ -69,6 +71,7 @@ export const LabelEditor = (props: SelectedProps) => {
         }
       >
         <Input
+          id={`label-${query.refId}`}
           value={query.label}
           width={40}
           placeholder="default"

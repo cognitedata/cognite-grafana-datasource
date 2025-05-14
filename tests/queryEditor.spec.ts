@@ -1,4 +1,5 @@
 import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 
@@ -14,6 +15,16 @@ const expectedTs = [
   '59.9139-10.7522-current.visibility',
   '59.9139-10.7522-current.uvi'
 ].sort();
+
+
+const isTsResponse = (path: string) => {
+  return (response: Response) => {
+    const isTsData = response.request().url().endsWith(path);
+    const is200 = response.status() === 200;
+
+    return isTsData && is200;
+  }
+};
 
 test('Panel with asset subtree queries rendered OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
@@ -50,11 +61,8 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
     {
       timeout: 10000,
       waitForResponsePredicateCallback: async (response) => {
-        
-        const isTsData = response.request().url().endsWith('/timeseries/data/latest');
-        const is200 = response.status() === 200;
-        
-        if (isTsData && is200) {
+
+        if (isTsResponse('/timeseries/data/latest')(response)) {
           const json = await response.json();
           const externalIds = [...json.items?.map(({ externalId }) => externalId)].sort();
           const isEqualArr = JSON.stringify(externalIds) === JSON.stringify(expectedTs);
@@ -70,4 +78,50 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
     const buttonTexts = await panelEditPage.panel.locator.getByRole('button', { name: /59.9139-10.7522.*/ }).allInnerTexts();
     return buttonTexts.sort();
   }, { timeout: 10000 }).toEqual(expectedTs);
+});
+
+test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  
+  const tsExternalIds = [
+    '59.9139-10.7522-current.humidity',
+    '59.9139-10.7522-current.pressure',
+    '59.9139-10.7522-current.temp',
+  ].sort();
+
+  const panels = ['A', 'B', 'C'];
+  const units = ['percent', 'hPa', 'Kelvin'];
+  
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  await panelEditPage.setVisualization('Table');
+  
+  for (const [index, tsExternalId] of tsExternalIds.entries()) {
+    await page.getByTestId('query-tab-add-query').click();
+    const editorRow = panelEditPage.getQueryEditorRow(panels[index]);
+  
+    await editorRow.getByText('Time series custom query').click();
+  
+    await editorRow.getByRole('textbox', { name: 'Query' }).fill(`ts{externalId="${tsExternalId}"}`);
+  
+    await editorRow.getByRole('combobox', { name: 'Aggregation' }).click();
+    const option = selectors.components.Select.option;
+    
+    await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Interpolation' }).first().click();
+    
+    await editorRow.getByRole('textbox', { name: 'Label' }).fill(`{{externalId}}-{{unit}}`);
+    await editorRow.getByRole('textbox', { name: 'Granularity' }).fill(`1d`);
+  }
+
+  await waitForQueriesToFinish(page, grafanaVersion);
+  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isTsResponse('/timeseries/synthetic/query') })).toBeOK();
+
+  // transform into a single table, this is simpler to assert
+  await page.getByRole('tab', { name: 'Tab Transform' }).click();
+  await page.getByRole('button', { name: 'Join by field' }).click();
+  
+  const tsWithUnits = tsExternalIds.map((ts, i) => `${ts}-${units[i]}`);
+  await expect(panelEditPage.panel.fieldNames).toContainText(tsWithUnits);
 });
