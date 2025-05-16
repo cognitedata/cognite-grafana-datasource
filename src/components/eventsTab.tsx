@@ -14,6 +14,7 @@ import {
   Input,
   InlineSegmentGroup,
   Icon,
+  Field,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
 import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
@@ -334,18 +335,17 @@ const AdvancedEventFilter = (props) => {
           </>
         </Label>
         {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
-        <InlineFieldRow aria-labelledby={`advanced-filter-${query.refId}`}>
+        <Field aria-labelledby={`advanced-filter-${query.refId}`}>
           <CodeEditor
             value={query.eventQuery.advancedFilter ?? ''}
             language="json"
             height={200}
-            width="80rem"
             showLineNumbers
             showMiniMap
             onBlur={onChange}
             onSave={onChange}
           />
-        </InlineFieldRow>
+        </Field>
       </FieldSet>
       <ActiveAggregateCheckbox {...{ query, onQueryChange }} />
       {query.eventQuery.aggregate?.withAggregate && (

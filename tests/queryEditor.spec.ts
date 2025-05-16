@@ -18,7 +18,7 @@ const expectedTs = [
 ].sort();
 
 
-const isTsResponse = (path: string) => {
+const isCdfResponse = (path: string) => {
   return (response: Response) => {
     const isTsData = response.request().url().endsWith(path);
     const is200 = response.status() === 200;
@@ -63,7 +63,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
       timeout: 10000,
       waitForResponsePredicateCallback: async (response) => {
 
-        if (isTsResponse('/timeseries/data/latest')(response)) {
+        if (isCdfResponse('/timeseries/data/latest')(response)) {
           const json = await response.json();
           const externalIds = [...json.items?.map(({ externalId }) => externalId)].sort();
           const isEqualArr = JSON.stringify(externalIds) === JSON.stringify(expectedTs);
@@ -117,7 +117,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   }
 
   await waitForQueriesToFinish(page, grafanaVersion);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isTsResponse('/timeseries/synthetic/query') })).toBeOK();
+  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
   // transform into a single table, this is simpler to assert
   if (semver.gte(grafanaVersion, '11.5.4')) {
@@ -134,4 +134,32 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   
   const tsWithUnits = tsExternalIds.map((ts, i) => `${ts}-${units[i]}`);
   await expect(panelEditPage.panel.fieldNames).toContainText(tsWithUnits);
+});
+
+
+test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvisionedDashboard, grafanaVersion }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  
+  const panelEditPage = await dashboardPage.gotoPanelEditPage('3')
+
+  await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
+
+  await page.getByTestId('data-testid Code editor container').getByRole("textbox").first().fill(`
+    {
+      "prefix": {
+          "property": ["externalId"],
+          "value": "test_event (1"
+      }
+    }`
+  , { force: true });
+
+  await waitForQueriesToFinish(page, grafanaVersion);
+
+  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
+
+  await expect.poll(async () => {
+    const cellTexts = await panelEditPage.panel.data.getByRole('cell').allInnerTexts();
+    return cellTexts.every(text => /test_event \(0/.test(text)) && !cellTexts.some(text => /test_event \(1-9/.test(text));
+  }, { timeout: 10000 }).toBeTruthy();
 });
