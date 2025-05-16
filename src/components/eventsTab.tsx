@@ -388,13 +388,13 @@ export function EventsTab(
         </InlineField>
         <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
       </InlineFieldRow>
+      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
       <SortByPicker {...{ query, onQueryChange }} />
       {datasource.connector.isEventsAdvancedFilteringEnabled() && (
         <AdvancedEventFilter {...{ query, onQueryChange }} />
       )}
-      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
 }
