@@ -62,7 +62,7 @@ const AggregationEditor = (props: SelectedProps) => {
 export const LabelEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <InlineSegmentGroup grow={true}>
+    <InlineSegmentGroup>
       <InlineField
         label="Label"
         labelWidth={10}
