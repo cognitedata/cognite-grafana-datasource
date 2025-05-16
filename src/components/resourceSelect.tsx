@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
-import { AsyncSelect, InlineFormLabel, LegacyForms } from '@grafana/ui';
+import { AsyncSelect, InlineFormLabel, InlineField, Input, InlineFieldRow } from '@grafana/ui';
 import { targetToIdEither } from '../cdf/client';
 import { IdEither, Resource } from '../cdf/types';
 import { resource2DropdownOption } from '../datasource';
-import { CogniteTargetObj, Tab } from '../types';
-
-const { FormField } = LegacyForms;
+import { CogniteQuery, CogniteTargetObj, Tab } from '../types';
 
 const optionalIdsToTargetObj = ({
   id,
@@ -24,7 +22,7 @@ const optionalIdsToTargetObj = ({
 };
 
 export function ResourceSelect(props: {
-  query: CogniteTargetObj;
+  query: CogniteQuery;
   resourceType: Tab.Timeseries | Tab.Asset;
   onTargetQueryChange: (patch: CogniteTargetObj, shouldRunQuery?: boolean) => void;
   fetchSingleResource: (id: IdEither) => Promise<Resource[]>;
@@ -80,7 +78,7 @@ export function ResourceSelect(props: {
   }, []);
 
   return (
-    <div className="gf-form gf-form-inline">
+    <InlineFieldRow>
       <InlineFormLabel width={7} tooltip={`${resourceType} name`}>
         {current.value ? 'Name' : 'Search'}
       </InlineFormLabel>
@@ -92,16 +90,21 @@ export function ResourceSelect(props: {
         className="cog-mr-4 width-20"
         onChange={onDropdown}
       />
-      <FormField
+      <InlineField
         label="External Id"
-        labelWidth={7}
-        inputWidth={20}
-        onBlur={({ target }) => onExternalIdField(target.value)}
-        onChange={({ target }) => setExternalIdField(target.value)}
-        value={externalIdField || ''}
-        placeholder={current.value ? 'No external id present' : 'Insert external id'}
-        tooltip={`${resourceType} external id`}
-      />
-    </div>
+        labelWidth={14}
+        tooltip={`${resourceType} external Id`}
+      >
+        <Input
+          id={`external-id-${query.refId}`}
+          type="text"
+          value={externalIdField || ''}
+          placeholder={current.value ? 'No external id present' : 'Insert external id'}
+          onBlur={(e: ChangeEvent<HTMLInputElement>) => onExternalIdField(e.target.value || '')}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setExternalIdField(e.target.value)}
+          width={40}
+        />
+      </InlineField>
+    </InlineFieldRow>
   );
 }
