@@ -40,10 +40,6 @@
           "type": "cognitedata-datasource",
           "uid": "42"
         },
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
         "gridPos": {
           "h": 8,
           "w": 12,
@@ -116,6 +112,101 @@
         "fieldConfig": {
           "defaults": {
             "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "id": 3,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true
+        },
+        "pluginVersion": "10.2.9",
+        "targets": [
+          {
+            "aggregation": "average",
+            "datasource": {
+              "type": "cognitedata-datasource",
+              "uid": "42"
+            },
+            "eventQuery": {
+              "activeAtTimeRange": true,
+              "advancedFilter": "",
+              "aggregate": {
+                "name": "uniqueValues",
+                "properties": [],
+                "withAggregate": false
+              },
+              "columns": [
+                "externalId",
+                "description",
+                "startTime",
+                "endTime"
+              ],
+              "expr": "events{}",
+              "sort": [
+                {
+                  "order": "asc",
+                  "property": "startTime"
+                }
+              ]
+            },
+            "expr": "",
+            "granularity": "",
+            "label": "",
+            "latestValue": false,
+            "refId": "A",
+            "tab": "Event",
+            "target": ""
+          }
+        ],
+        "title": "Events table",
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "cognitedata-datasource",
+          "uid": "42"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
               "mode": "palette-classic"
             },
             "custom": {
@@ -125,7 +216,6 @@
               "axisLabel": "",
               "axisPlacement": "auto",
               "barAlignment": 0,
-              "barWidthFactor": 0.6,
               "drawStyle": "line",
               "fillOpacity": 0,
               "gradientMode": "none",
@@ -173,7 +263,7 @@
           "h": 9,
           "w": 24,
           "x": 0,
-          "y": 0
+          "y": 8
         },
         "id": 1,
         "options": {
