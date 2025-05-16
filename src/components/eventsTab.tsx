@@ -1,13 +1,19 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, ChangeEvent } from 'react';
 import {
   Button,
   CodeEditor,
   InlineFormLabel,
-  LegacyForms,
+  Label,
+  InlineField,
+  InlineFieldRow,
+  FieldSet,
   Segment,
   Tooltip,
   Select,
   InlineSwitch,
+  Input,
+  InlineSegmentGroup,
+  Icon,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
 import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
@@ -16,11 +22,10 @@ import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
 import { InlineButton } from './inlineButton';
 
-const { FormField } = LegacyForms;
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form gf-form-inline">
+    <InlineFieldRow>
       <InlineFormLabel
         htmlFor={`active-at-time-range-${query.refId}`}
         tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
@@ -41,7 +46,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
           })
         }
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
@@ -64,16 +69,16 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
   };
 
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel
         tooltip="Choose which columns to display. To access metadata property, use 'metadata.propertyName'"
         width={7}
       >
         Columns
       </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+      <InlineSegmentGroup>
         {columns.map((val, key) => (
-          <>
+          <React.Fragment key={key}>
             <Segment
               value={val}
               options={options}
@@ -92,7 +97,7 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
               }}
               iconName="times"
             />
-          </>
+          </React.Fragment>
         ))}
         <InlineButton
           onClick={() => {
@@ -102,8 +107,8 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
           }}
           iconName="plus-circle"
         />
-      </div>
-    </div>
+      </InlineSegmentGroup>
+    </InlineFieldRow>
   );
 };
 
@@ -111,10 +116,9 @@ const OrderDirectionEditor = (
   { onChange, direction = "asc" }:
   { direction: EventsOrderDirection, onChange: (val: EventsOrderDirection) => void }
 ) => {
-  const options = [{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }]
-  
+  const options = [{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }];
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel width={6}>Order</InlineFormLabel>
       <Select
         onChange={({ value }) => onChange(value as  EventsOrderDirection)}
@@ -123,7 +127,7 @@ const OrderDirectionEditor = (
         value={direction}
         className="cog-mr-4 width-10"
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 
@@ -142,16 +146,16 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
   };
 
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel
         tooltip="Property to sort on. To access metadata property, use 'metadata.propertyName'"
         width={7}
       >
         Sort by
       </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+      <InlineSegmentGroup>
         {sort.map((val, key) => (
-          <>
+          <React.Fragment key={key}>
             <Segment
               value={val.property}
               options={options}
@@ -175,7 +179,7 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
               }}
               iconName="times"
             />
-          </>
+          </React.Fragment>
         ))}
         {sort?.length < 2 ? <InlineButton
           onClick={() => {
@@ -185,14 +189,14 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
           }}
           iconName="plus-circle"
         /> : null}
-      </div>
-    </div>
+      </InlineSegmentGroup>
+    </InlineFieldRow>
   );
 };
 
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
-    <div className="gf-form gf-form-inline">
+    <InlineFieldRow>
       <InlineFormLabel htmlFor={`with-aggregate-${query.refId}`} tooltip="Fetch with Aggregate count " width={10}>
         With Aggregate
       </InlineFormLabel>
@@ -212,7 +216,7 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
           })
         }
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
@@ -241,13 +245,13 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
     });
   };
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel tooltip="Choose which fields properties" width={10}>
         Field properties
       </InlineFormLabel>
-      <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+      <InlineSegmentGroup>
         {properties.map(({ property }, key) => (
-          <>
+          <React.Fragment key={key}>
             <Segment
               value={property}
               options={options}
@@ -272,7 +276,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
               }}
               iconName="times"
             />
-          </>
+          </React.Fragment>
         ))}
         <InlineButton
           onClick={() => {
@@ -285,8 +289,8 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
           }}
           iconName="plus-circle"
         />
-      </div>
-    </div>
+      </InlineSegmentGroup>
+    </InlineFieldRow>
   );
 };
 const AdvancedEventFilter = (props) => {
@@ -316,33 +320,37 @@ const AdvancedEventFilter = (props) => {
 
   return (
     <>
-      <div className="gf-form gf-form--grow">
-        <Tooltip content="click here for more information">
-          <Button
-            variant="secondary"
-            icon="question-circle"
-            onClick={() => setShowHelp(!showHelp)}
+      <FieldSet style={{ marginBottom: 8 }}>
+        <Label
+          title='Advanced filter'
+          htmlFor={`advanced-filter-${query.refId}`}
+          style={{ margin: 10 }}
+        >
+          <>
+            Advanced filter
+            <Tooltip content="click here for more information">
+              <Icon style={{ margin: 5 }} name="question-circle" onClick={() => setShowHelp(!showHelp)} />
+            </Tooltip>
+          </>
+        </Label>
+        {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
+        <InlineFieldRow aria-labelledby={`advanced-filter-${query.refId}`}>
+          <CodeEditor
+            value={query.eventQuery.advancedFilter ?? ''}
+            language="json"
+            height={200}
+            width="80rem"
+            showLineNumbers
+            showMiniMap
+            onBlur={onChange}
+            onSave={onChange}
           />
-        </Tooltip>
-        <span className="gf-form-label query-keyword fix-query-keyword width-8">
-          Advanced Query
-        </span>
-        <CodeEditor
-          value={query.eventQuery.advancedFilter ?? ''}
-          language="json"
-          height={200}
-          width="80rem"
-          showLineNumbers
-          showMiniMap
-          onBlur={onChange}
-          onSave={onChange}
-        />
-      </div>
+        </InlineFieldRow>
+      </FieldSet>
       <ActiveAggregateCheckbox {...{ query, onQueryChange }} />
       {query.eventQuery.aggregate?.withAggregate && (
         <FieldsTypeColumnsPicker {...{ query, onQueryChange }} />
       )}
-      {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
 };
@@ -355,27 +363,31 @@ export function EventsTab(
 
   return (
     <>
-      <div className="gf-form">
-        <FormField
+      <InlineFieldRow>
+        <InlineField
           label="Query"
-          labelWidth={7}
-          inputWidth={30}
-          className="custom-query"
-          onChange={({ target }) => setValue(target.value)}
-          placeholder="events{}"
-          onBlur={() =>
-            onQueryChange({
-              eventQuery: {
-                ...query.eventQuery,
-                expr: value,
-              },
-            })
-          }
-          value={value}
+          labelWidth={14}
           tooltip="Click [?] button for help."
-        />
+        >
+          <Input
+            value={value}
+            id={`event-query-${query.refId}`}
+            width={30}
+            placeholder="events{}"
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
+            onBlur={() =>
+              onQueryChange({
+                eventQuery: {
+                  ...query.eventQuery,
+                  expr: value,
+                },
+              })
+            }
+            className="custom-query"
+          />
+        </InlineField>
         <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
-      </div>
+      </InlineFieldRow>
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
       <SortByPicker {...{ query, onQueryChange }} />
