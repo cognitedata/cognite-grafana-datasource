@@ -145,17 +145,21 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
 
   await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
 
-  await page.getByTestId('data-testid Code editor container').getByRole("textbox").first().fill(`
+  const query = `
     {
       "prefix": {
           "property": ["externalId"],
           "value": "test_event (1"
       }
-    }`
-  , { force: true });
+    }`;
+
+  if (semver.gte(grafanaVersion, '10.2.0')) {
+    await page.getByTestId(/Code editor container/).getByRole("textbox").first().fill(query, { force: true });
+  } else {
+    await page.getByLabel(/Code editor container/).getByRole("textbox").first().fill(query, { force: true });
+  }
 
   await waitForQueriesToFinish(page, grafanaVersion);
-
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
 
   await expect.poll(async () => {
