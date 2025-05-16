@@ -1,5 +1,5 @@
-import React from 'react';
-import { InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
+import React, { ChangeEvent } from 'react';
+import { InlineField, InlineSegmentGroup, InlineFieldRow, InlineFormLabel, Input, Select } from '@grafana/ui';
 import { SelectedProps } from '../types';
 
 const aggregateOptions = [
@@ -16,23 +16,28 @@ const aggregateOptions = [
   { value: 'totalVariation', label: 'Total Variation' },
 ];
 
-const { FormField } = LegacyForms;
 const GranularityEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     query.aggregation &&
     query.aggregation !== 'none' && (
-      <div className="gf-form">
-        <FormField
+      <InlineSegmentGroup>
+        <InlineField
           label="Granularity"
-          labelWidth={7}
-          inputWidth={6}
-          onChange={({ target }) => onQueryChange({ granularity: target.value })}
-          value={query.granularity}
-          placeholder="default"
-          tooltip="The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h."
-        />
-      </div>
+          labelWidth={14}
+          tooltip={
+            `The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`
+          }
+        >
+          <Input
+            value={query.granularity}
+            id={`granularity-${query.refId}`}
+            width={12}
+            placeholder="default"
+            onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ granularity: e.target.value })}
+          />
+        </InlineField>
+      </InlineSegmentGroup>
     )
   );
 };
@@ -40,40 +45,47 @@ const GranularityEditor = (props: SelectedProps) => {
 const AggregationEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form">
-      <InlineFormLabel width={6}>Aggregation</InlineFormLabel>
+    <InlineFieldRow>
+      <InlineFormLabel htmlFor={`aggregation-${query.refId}`} width={6}>Aggregation</InlineFormLabel>
       <Select
+        inputId={`aggregation-${query.refId}`}
         onChange={({ value }) => onQueryChange({ aggregation: value })}
         options={aggregateOptions}
         menuPosition="fixed"
         value={query.aggregation}
         className="cog-mr-4 width-10"
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 
 export const LabelEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form gf-form--grow">
-      <FormField
+    <InlineSegmentGroup grow={true}>
+      <InlineField
         label="Label"
-        labelWidth={5}
-        inputWidth={20}
-        onChange={({ target }) => onQueryChange({ label: target.value })}
-        value={query.label}
-        placeholder="default"
-        tooltip="Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}"
-      />
-    </div>
+        labelWidth={10}
+        tooltip={
+          'Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}'
+        }
+      >
+        <Input
+          id={`label-${query.refId}`}
+          value={query.label}
+          width={40}
+          placeholder="default"
+          onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ label: e.target.value })}
+        />
+      </InlineField>
+    </InlineSegmentGroup>
   );
 };
 
 export const CommonEditors = ({ onQueryChange, query, ...etc }: SelectedProps & any) => (
-  <div className="gf-form-inline">
+  <InlineFieldRow>
     <AggregationEditor {...{ onQueryChange, query }} />
     <GranularityEditor {...{ onQueryChange, query }} />
     {!etc?.visible && <LabelEditor {...{ onQueryChange, query }} />}
-  </div>
+  </InlineFieldRow>
 );

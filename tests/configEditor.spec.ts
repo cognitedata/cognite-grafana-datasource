@@ -25,14 +25,14 @@ test('"Save & test" should be successful when configuration is valid', async ({
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
-  await page.getByPlaceholder('api.cognitedata.com').fill(ds.jsonData.cogniteApiUrl ?? '');
+  await page.getByLabel('API Host').fill(ds.jsonData.cogniteApiUrl ?? '');
   
   await page.getByLabel('OAuth2 client credentials').click();
   
-  await page.getByPlaceholder('https://login.example.com').fill(ds.jsonData.oauthTokenUrl ?? '');
-  await page.getByPlaceholder('Your Application (client) ID').fill(ds.jsonData.oauthClientId ?? '');
-  await page.getByPlaceholder('******').fill(ds.secureJsonData?.oauthClientSecret ?? '');
-  await page.getByPlaceholder('E.g. https://api.cognitedata.com/.default').fill(ds.jsonData.oauthScope ?? '');
+  await page.getByLabel('Token URL').fill(ds.jsonData.oauthTokenUrl ?? '');
+  await page.getByLabel('Client ID').fill(ds.jsonData.oauthClientId ?? '');
+  await page.getByLabel('Client Secret').fill(ds.secureJsonData?.oauthClientSecret ?? '');
+  await page.getByLabel('Scope').fill(ds.jsonData.oauthScope ?? '');
 
   await page.getByTestId('data-testid Data source settings page Save and Test button').click();
   await expect(configPage).toHaveAlert('success', { hasText: 'Your Cognite credentials are valid' });
@@ -49,14 +49,15 @@ test('"Save & test" should fail when configuration is invalid', async ({
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
-  await page.getByPlaceholder('api.cognitedata.com').fill(ds.jsonData.cogniteApiUrl ?? '');
+  await page.getByLabel('API Host').fill(ds.jsonData.cogniteApiUrl ?? '');
   
   await page.getByLabel('OAuth2 client credentials').click();
   
-  await page.getByPlaceholder('https://login.example.com').fill(ds.jsonData.oauthTokenUrl ?? '');
-  await page.getByPlaceholder('Your Application (client) ID').fill(ds.jsonData.oauthClientId ?? '');
-  await page.getByPlaceholder('******').fill('invalid');
-  await page.getByPlaceholder('E.g. https://api.cognitedata.com/.default').fill(ds.jsonData.oauthScope ?? '');
+  await page.getByLabel('Token URL').fill(ds.jsonData.oauthTokenUrl ?? '');
+  await page.getByLabel('Client ID').fill(ds.jsonData.oauthClientId ?? '');
+  await page.getByLabel('Client Secret').fill('invalid');
+  await page.getByLabel('Scope').fill(ds.jsonData.oauthScope ?? '');
+  
 
   await page.getByTestId('data-testid Data source settings page Save and Test button').click();
   await expect(configPage).toHaveAlert('error', { hasText: 'Authentication to data source failed' });

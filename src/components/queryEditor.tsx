@@ -252,6 +252,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           grow
         >
           <Input
+            id={`custom-query-${query.refId}`}
             type="text"
             value={value}
             placeholder="ts{externalIdPrefix='PT_123'}"
