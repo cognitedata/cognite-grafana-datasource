@@ -79,17 +79,21 @@ export function ResourceSelect(props: {
 
   return (
     <InlineFieldRow>
-      <InlineFormLabel width={7} tooltip={`${resourceType} name`}>
-        {current.value ? 'Name' : 'Search'}
-      </InlineFormLabel>
-      <AsyncSelect
-        loadOptions={searchResource}
-        defaultOptions
-        value={current.value ? current : null}
-        placeholder={`Search ${resourceType.toLowerCase()} by name/description`}
-        className="cog-mr-4 width-20"
-        onChange={onDropdown}
-      />
+      <InlineField
+        label={current.value ? 'Name' : 'Search'}
+        labelWidth={14}
+        tooltip={`${resourceType} name`}
+      >
+        <AsyncSelect
+          loadOptions={searchResource}
+          defaultOptions
+          value={current.value ? current : null}
+          placeholder={`Search ${resourceType.toLowerCase()} by name/description`}
+          width={40}
+          inputId={`${resourceType}-search-${query.refId}`}
+          onChange={onDropdown}
+        />
+      </InlineField>
       <InlineField
         label="External Id"
         labelWidth={14}

@@ -46,15 +46,19 @@ const AggregationEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <InlineFieldRow>
-      <InlineFormLabel htmlFor={`aggregation-${query.refId}`} width={6}>Aggregation</InlineFormLabel>
-      <Select
-        inputId={`aggregation-${query.refId}`}
-        onChange={({ value }) => onQueryChange({ aggregation: value })}
-        options={aggregateOptions}
-        menuPosition="fixed"
-        value={query.aggregation}
-        className="cog-mr-4 width-10"
-      />
+      <InlineField
+        label="Aggregation"
+        labelWidth={14}
+      >
+        <Select
+          inputId={`aggregation-${query.refId}`}
+          onChange={({ value }) => onQueryChange({ aggregation: value })}
+          options={aggregateOptions}
+          menuPosition="fixed"
+          value={query.aggregation}
+          className="width-10"
+        />
+      </InlineField>
     </InlineFieldRow>
   );
 };

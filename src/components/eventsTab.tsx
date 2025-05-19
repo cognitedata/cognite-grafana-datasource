@@ -26,26 +26,25 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <InlineFieldRow>
-      <InlineFormLabel
-        htmlFor={`active-at-time-range-${query.refId}`}
+      <InlineField
+        label="Active only"
+        labelWidth={14}
         tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
-        width={7}
       >
-        Active only
-      </InlineFormLabel>
-      <InlineSwitch
-        label='Active only'
-        id={`active-at-time-range-${query.refId}`}
-        value={query.eventQuery.activeAtTimeRange}
-        onChange={({ currentTarget }) =>
-          onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              activeAtTimeRange: currentTarget.checked,
-            },
-          })
-        }
-      />
+        <InlineSwitch
+          label='Active only'
+          id={`active-at-time-range-${query.refId}`}
+          value={query.eventQuery.activeAtTimeRange}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                activeAtTimeRange: currentTarget.checked,
+              },
+            })
+          }
+        />
+      </InlineField>
     </InlineFieldRow>
   );
 };
@@ -97,6 +96,7 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
                 });
               }}
               icon="times"
+              className='cog-mr-4'
               data-testId={"event-remove-col-" + key}
             />
           </React.Fragment>
@@ -183,6 +183,7 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
                 });
               }}
               icon="times"
+              className='cog-mr-4'
               data-testId={"event-remove-sort-" + key}
             />
           </React.Fragment>
@@ -205,25 +206,28 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
     <InlineFieldRow>
-      <InlineFormLabel htmlFor={`with-aggregate-${query.refId}`} tooltip="Fetch with Aggregate count " width={10}>
-        With Aggregate
-      </InlineFormLabel>
-      <InlineSwitch
-        id={`with-aggregate-${query.refId}`}
-        label='With Aggregate'
-        value={query.eventQuery.aggregate?.withAggregate}
-        onChange={({ currentTarget }) =>
-          onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              aggregate: {
-                ...query.eventQuery.aggregate,
-                withAggregate: currentTarget.checked,
+      <InlineField
+        label="With Aggregate"
+        labelWidth={20}
+        tooltip="Fetch with Aggregate count "
+      >
+        <InlineSwitch
+          id={`with-aggregate-${query.refId}`}
+          label='With Aggregate'
+          value={query.eventQuery.aggregate?.withAggregate}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                aggregate: {
+                  ...query.eventQuery.aggregate,
+                  withAggregate: currentTarget.checked,
+                },
               },
-            },
-          })
-        }
-      />
+            })
+          }
+        />
+      </InlineField>
     </InlineFieldRow>
   );
 };
@@ -284,6 +288,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
                 });
               }}
               icon="times"
+              className='cog-mr-4'
               data-testId={"event-remove-aggr-field-" + key}
             />
           </React.Fragment>
