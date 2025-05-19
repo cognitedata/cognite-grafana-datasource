@@ -1,4 +1,4 @@
-import { Alert, TextLink } from '@grafana/ui';
+import { Alert, Icon } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 
@@ -14,9 +14,9 @@ const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) =
     onRemove={onDismiss}
   >
     <div className="help-panel">{children}</div>
-    {docsUrl ? <TextLink style={{ marginTop: 10 }} href={DOCS_URL} external icon="document-info">
-      Read more
-    </TextLink> : null}
+    {docsUrl ? <a href={DOCS_URL} target='_blank' rel='noreferrer' style={{ marginTop: 10, textDecoration: 'underline' }}>
+      Read more <Icon name="external-link-alt" />
+    </a> : null}
   </Alert>
 );
 
@@ -177,9 +177,9 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
 export const EventAdvancedFilterHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
   <HelpPanel title="Event advanced filter query syntax help" onDismiss={onDismiss} docsUrl={false}>
     Click
-    <TextLink external style={{ margin: 5 }} href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents">
+    <a href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents" style={{ margin: 5, textDecoration: 'underline' }} target="_blank" rel="noreferrer">
       here
-    </TextLink>
+    </a>
     for Advanced filter documentation
   </HelpPanel>
 );
