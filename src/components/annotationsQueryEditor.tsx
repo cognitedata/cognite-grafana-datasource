@@ -89,7 +89,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
     render () { 
       return <FieldSet>
         <InlineSegmentGroup grow={true}>
-          <InlineField label="Query" grow={true}>
+          <InlineField labelWidth={20} label="Query" grow={true}>
             <Input
               type="text"
               id='annotation-query'
