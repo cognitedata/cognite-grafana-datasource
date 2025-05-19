@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AsyncMultiSelect, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
+import { AsyncMultiSelect, Button, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT, ExtractionPipelinesFields } from '../constants';
-import { InlineButton } from './inlineButton';
 
 export const ExtractionPipelinesTab = (
   props: SelectedProps & { datasource: CogniteDatasource }
@@ -47,23 +46,27 @@ export const ExtractionPipelinesTab = (
                     }}
                     allowCustomValue
                   />
-                  <InlineButton
+                  <Button
+                    variant='secondary'
                     onClick={() => {
                       onExtractionPipelinesQueryChange({
                         columns: columns.filter((_, i) => i !== key),
                       });
                     }}
-                    iconName="times"
+                    icon="times"
+                    data-testId={"ext-pipes-remove-col-" + key}
                   />
                 </>
               ))}
-              <InlineButton
+              <Button
+                variant='secondary'
                 onClick={() => {
                   onExtractionPipelinesQueryChange({
                     columns: [...columns, `column${columns.length}`],
                   });
                 }}
-                iconName="plus-circle"
+                icon="plus-circle"
+                data-testId="ext-pipes-add-col"
               />
             </div>
           </Tooltip>

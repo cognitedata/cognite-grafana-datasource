@@ -167,3 +167,14 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
     return cellTexts.every(text => /test_event \(0/.test(text)) && !cellTexts.some(text => /test_event \(1-9/.test(text));
   }, { timeout: 10000 }).toBeTruthy();
 });
+
+test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, readProvisionedDashboard }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  
+  await dashboardPage.gotoPanelEditPage('3')
+
+  await page.getByTestId(/event-query-help/).click();
+
+  await expect(dashboardPage).toHaveAlert('info', { hasText: 'Event query syntax help' });
+});
