@@ -140,8 +140,8 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
 test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvisionedDashboard, grafanaVersion }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
-  
-  const panelEditPage = await dashboardPage.gotoPanelEditPage('3')
+  const EVENTS_QUERY_PANEL_ID = '3';
+  const panelEditPage = await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
 
   await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
 
@@ -154,9 +154,9 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
     }`;
 
   if (semver.gte(grafanaVersion, '10.2.0')) {
-    await page.getByTestId(/Code editor container/).getByRole("textbox").first().fill(query, { force: true });
+    await page.getByTestId(/Code editor container/).getByRole("textbox").first().fill(query);
   } else {
-    await page.getByLabel(/Code editor container/).getByRole("textbox").first().fill(query, { force: true });
+    await page.getByLabel(/Code editor container/).getByRole("textbox").first().fill(query);
   }
 
   await waitForQueriesToFinish(page, grafanaVersion);
