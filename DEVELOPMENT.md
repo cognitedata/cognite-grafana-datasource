@@ -1,5 +1,12 @@
 ## Developing
 
+### Prerequisites
+- [Node.js](https://nodejs.org/en/download/)
+- [Yarn](https://yarnpkg.com/getting-started/install)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Go](https://golang.org/doc/install)
+- [Mage](https://magefile.org/)
+
 The easiest way to work on this datasource is by using [docker compose](./docker-compose.yaml) approach. 
 First, run the connector:
 

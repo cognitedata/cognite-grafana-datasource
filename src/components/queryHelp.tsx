@@ -186,7 +186,7 @@ const HelpAlertPanel = ({ onDismiss, title, children }: HelpParams) => (
 
 export const EventAdvancedFilterHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
   <HelpAlertPanel title="Event advanced filter query syntax help" onDismiss={onDismiss}>
-    <a href="https://pr-ark-codegen-1444.specs.preview.cogniteapp.com/v1.json.html#operation/advancedListEvents">
+    <a href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents">
       Click here for Advanced filter documentation
     </a>
   </HelpAlertPanel>

@@ -18,7 +18,7 @@ const expectedTs = [
 ].sort();
 
 
-const isTsResponse = (path: string) => {
+const isCdfResponse = (path: string) => {
   return (response: Response) => {
     const isTsData = response.request().url().endsWith(path);
     const is200 = response.status() === 200;
@@ -63,7 +63,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
       timeout: 10000,
       waitForResponsePredicateCallback: async (response) => {
 
-        if (isTsResponse('/timeseries/data/latest')(response)) {
+        if (isCdfResponse('/timeseries/data/latest')(response)) {
           const json = await response.json();
           const externalIds = [...json.items?.map(({ externalId }) => externalId)].sort();
           const isEqualArr = JSON.stringify(externalIds) === JSON.stringify(expectedTs);
@@ -117,7 +117,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   }
 
   await waitForQueriesToFinish(page, grafanaVersion);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isTsResponse('/timeseries/synthetic/query') })).toBeOK();
+  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
   // transform into a single table, this is simpler to assert
   if (semver.gte(grafanaVersion, '11.5.4')) {
@@ -134,4 +134,49 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   
   const tsWithUnits = tsExternalIds.map((ts, i) => `${ts}-${units[i]}`);
   await expect(panelEditPage.panel.fieldNames).toContainText(tsWithUnits);
+});
+
+
+test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvisionedDashboard, grafanaVersion }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  const EVENTS_QUERY_PANEL_ID = '3';
+  const panelEditPage = await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
+
+  await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
+
+  const query = `
+    {
+      "prefix": {
+          "property": ["externalId"],
+          "value": "test_event (1"
+      }
+    }`;
+
+  if (semver.gte(grafanaVersion, '10.2.0')) {
+    await page.getByTestId(/Code editor container/).getByRole("textbox").first().fill(query);
+  } else {
+    await page.getByLabel(/Code editor container/).getByRole("textbox").first().fill(query);
+  }
+
+  await waitForQueriesToFinish(page, grafanaVersion);
+  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
+
+  // Check if the table contains the expected events
+  // Since we filtered the events by prefix, we can check if the table contains the events that start with "test_event (1"
+  // and do not contain the events that start with "test_event (2..9"
+  const ALL_EVENT_PREFIX_PATTERN = /^test_event/;
+  const EXPECTED_EVENT_PREFIX_PATTERN = /test_event \(1/;
+  const EXCLUDED_EVENT_PATTERN = /test_event \(2-9/;
+
+  const validateCellTexts = (cellTexts: string[]) => {
+    const hasExpectedEvents = cellTexts.every(text => EXPECTED_EVENT_PREFIX_PATTERN.test(text));
+    const hasNoExcludedEvents = !cellTexts.some(text => EXCLUDED_EVENT_PATTERN.test(text));
+    return cellTexts.length && hasExpectedEvents && hasNoExcludedEvents;
+  };
+
+  await expect.poll(async () => {
+    const cellTexts = await panelEditPage.panel.locator.getByRole('cell', { name: ALL_EVENT_PREFIX_PATTERN }).allTextContents();
+    return validateCellTexts(cellTexts);
+  }, { timeout: 10000 }).toBeTruthy();
 });
