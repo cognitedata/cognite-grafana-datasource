@@ -162,8 +162,21 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   await waitForQueriesToFinish(page, grafanaVersion);
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
 
+  // Check if the table contains the expected events
+  // Since we filtered the events by prefix, we can check if the table contains the events that start with "test_event (1"
+  // and do not contain the events that start with "test_event (2..9"
+  const ALL_EVENT_PREFIX_PATTERN = /^test_event/;
+  const EXPECTED_EVENT_PREFIX_PATTERN = /test_event \(1/;
+  const EXCLUDED_EVENT_PATTERN = /test_event \(2-9/;
+
+  const validateCellTexts = (cellTexts: string[]) => {
+    const hasExpectedEvents = cellTexts.every(text => EXPECTED_EVENT_PREFIX_PATTERN.test(text));
+    const hasNoExcludedEvents = !cellTexts.some(text => EXCLUDED_EVENT_PATTERN.test(text));
+    return cellTexts.length && hasExpectedEvents && hasNoExcludedEvents;
+  };
+
   await expect.poll(async () => {
-    const cellTexts = await panelEditPage.panel.data.getByRole('cell').allInnerTexts();
-    return cellTexts.every(text => /test_event \(0/.test(text)) && !cellTexts.some(text => /test_event \(1-9/.test(text));
+    const cellTexts = await panelEditPage.panel.locator.getByRole('cell', { name: ALL_EVENT_PREFIX_PATTERN }).allTextContents();
+    return validateCellTexts(cellTexts);
   }, { timeout: 10000 }).toBeTruthy();
 });
