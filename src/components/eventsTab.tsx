@@ -312,26 +312,20 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
 };
 const AdvancedEventFilter = (props) => {
   const { query, onQueryChange } = props;
-  const [eventQuery, setEventQuery] = useState(query.eventQuery);
   const [showHelp, setShowHelp] = useState(false);
-  const patchEventQuery = useCallback(
-    (eventQueryPatch: Partial<EventQuery>) => {
-      setEventQuery({ ...eventQuery, ...eventQueryPatch });
-    },
-    [eventQuery]
-  );
-  useEffect(() => {
-    onQueryChange({
-      eventQuery,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventQuery]);
+
   const valid = (advancedFilter): boolean => {
     return jsonlint.parse(advancedFilter) ?? false;
   };
+
   const onChange = (advancedFilter) => {
     if (valid(advancedFilter)) {
-      patchEventQuery({ advancedFilter });
+      onQueryChange({
+        eventQuery: {
+          ...query.eventQuery,
+          advancedFilter,
+        },
+      });
     }
   };
 
