@@ -31,8 +31,8 @@ export const ExtractionPipelinesTab = (
   return (
     <div style={{ marginTop: 8 }}>
       <div className="gf-form-inline">
-        <Field label="Collumns">
-          <Tooltip content="Add or remove columns">
+        <Field label="Columns" description="Add or remove columns">
+          <>
             <div className="gf-form" style={{ flexWrap: 'wrap' }}>
               {columns.map((val, key) => (
                 <>
@@ -53,6 +53,7 @@ export const ExtractionPipelinesTab = (
                         columns: columns.filter((_, i) => i !== key),
                       });
                     }}
+                    className='cog-mr-4'
                     icon="times"
                     data-testId={"ext-pipes-remove-col-" + key}
                   />
@@ -69,7 +70,7 @@ export const ExtractionPipelinesTab = (
                 data-testId="ext-pipes-add-col"
               />
             </div>
-          </Tooltip>
+          </>
         </Field>
       </div>
       <div className="gf-form-inline">
