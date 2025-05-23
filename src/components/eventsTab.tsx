@@ -339,9 +339,7 @@ const AdvancedEventFilter = (props) => {
         >
           <>
             Advanced filter
-            <Tooltip content="click here for more information">
-              <Icon style={{ margin: 5 }} name="question-circle" onClick={() => setShowHelp(!showHelp)} />
-            </Tooltip>
+            <Icon style={{ margin: 5, cursor: "pointer" }} name="question-circle" onClick={() => setShowHelp(!showHelp)} />
           </>
         </Label>
         {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
