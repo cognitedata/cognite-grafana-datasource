@@ -41,7 +41,7 @@ const extpipeErrorMessage = {
 };
 const noSelectedRunsError = {
   refId: 'A',
-  error: '[ERROR] Please select value for extraxtion pipelines runs',
+  error: '[ERROR] Please select value for extraction pipelines runs',
 };
 const columns = ['name', 'externalId', 'runId', 'status'];
 const baseTarget: QueryTargetLike = {

@@ -30,12 +30,12 @@ export const ExtractionPipelinesTab = (
   const { columns, selections, getRuns, limit } = extractionPipelinesQuery;
   return (
     <div style={{ marginTop: 8 }}>
-      <div className="gf-form-inline">
+      <div style={{ display: 'flex', gap: 8 }}>
         <Field label="Columns" description="Add or remove columns">
           <>
-            <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+            <div style={{ flexWrap: 'wrap', display: 'flex', gap: 4 }}>
               {columns.map((val, key) => (
-                <>
+                <div key={key}>
                   <Segment
                     value={val}
                     options={options}
@@ -53,11 +53,10 @@ export const ExtractionPipelinesTab = (
                         columns: columns.filter((_, i) => i !== key),
                       });
                     }}
-                    className='cog-mr-4'
                     icon="times"
                     data-testId={"ext-pipes-remove-col-" + key}
                   />
-                </>
+                </div>
               ))}
               <Button
                 variant='secondary'
@@ -73,8 +72,8 @@ export const ExtractionPipelinesTab = (
           </>
         </Field>
       </div>
-      <div className="gf-form-inline">
-        <Field label="Extraction Pipeline ExternalId" className="">
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Field label="Extraction Pipeline ExternalId">
           <Tooltip content="Enter or select Extraction Pipeline externalId">
             <AsyncMultiSelect
               loadOptions={() => {
@@ -107,7 +106,7 @@ export const ExtractionPipelinesTab = (
             />
           </Tooltip>
         </Field>
-        <Field label="Show Runs" className="gf-field-switch">
+        <Field label="Show Runs">
           <Tooltip content="Enable for Extraction Pipeline runs">
             <Switch
               value={getRuns}
@@ -120,7 +119,7 @@ export const ExtractionPipelinesTab = (
           </Tooltip>
         </Field>
         {getRuns && (
-          <Field label="Limit" className="limit-class">
+          <Field label="Limit">
             <Tooltip content="Change limit to response value between 1 and 1000, not working on filter-by id EP's">
               <Input
                 // disabled={}

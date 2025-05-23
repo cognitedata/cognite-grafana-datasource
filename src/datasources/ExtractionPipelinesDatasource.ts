@@ -175,7 +175,7 @@ export class ExtractionPipelinesDatasource {
     const { selections, getRuns, refId, columns } = query;
     try {
       if (getRuns && !selections?.length) {
-        handleError(new Error('Please select value for extraxtion pipelines runs'), refId);
+        handleError(new Error('Please select value for extraction pipelines runs'), refId);
         return [];
       }
       if (selections?.length) {
