@@ -21,32 +21,30 @@ import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '..
 import { EventFields, EventSortByFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
-import { InlineButton } from './inlineButton';
 
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
     <InlineFieldRow>
-      <InlineFormLabel
-        htmlFor={`active-at-time-range-${query.refId}`}
+      <InlineField
+        label="Active only"
+        labelWidth={14}
         tooltip="Fetch active events in the provided time range. This is essentially the same as writing the following query: events{activeAtTime={min=$__from, max=$__to}} "
-        width={7}
       >
-        Active only
-      </InlineFormLabel>
-      <InlineSwitch
-        label='Active only'
-        id={`active-at-time-range-${query.refId}`}
-        value={query.eventQuery.activeAtTimeRange}
-        onChange={({ currentTarget }) =>
-          onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              activeAtTimeRange: currentTarget.checked,
-            },
-          })
-        }
-      />
+        <InlineSwitch
+          label='Active only'
+          id={`active-at-time-range-${query.refId}`}
+          value={query.eventQuery.activeAtTimeRange}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                activeAtTimeRange: currentTarget.checked,
+              },
+            })
+          }
+        />
+      </InlineField>
     </InlineFieldRow>
   );
 };
@@ -90,23 +88,28 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
               }}
               allowCustomValue
             />
-            <InlineButton
+            <Button
+              variant='secondary'
               onClick={() => {
                 onEventQueryChange({
                   columns: columns.filter((_, i) => i !== key),
                 });
               }}
-              iconName="times"
+              icon="times"
+              className='cog-mr-4'
+              data-testId={"event-remove-col-" + key}
             />
           </React.Fragment>
         ))}
-        <InlineButton
+        <Button
+          variant='secondary'
           onClick={() => {
             onEventQueryChange({
               columns: [...columns, `column${columns.length}`],
             });
           }}
-          iconName="plus-circle"
+          icon="plus-circle"
+          data-testId={"event-add-col"}
         />
       </InlineSegmentGroup>
     </InlineFieldRow>
@@ -172,23 +175,28 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
                   sort: sort.map((old, i) => (i === key ? { ...old, order: value } : old)),
                 });
               }} />
-            <InlineButton
+            <Button
+              variant='secondary'
               onClick={() => {
                 onEventQueryChange({
                   sort: sort.filter((_, i) => i !== key),
                 });
               }}
-              iconName="times"
+              icon="times"
+              className='cog-mr-4'
+              data-testId={"event-remove-sort-" + key}
             />
           </React.Fragment>
         ))}
-        {sort?.length < 2 ? <InlineButton
+        {sort?.length < 2 ? <Button
+          variant='secondary'
           onClick={() => {
             onEventQueryChange({
               sort: [...sort, { property: 'type', order: 'asc' }],
             });
           }}
-          iconName="plus-circle"
+          icon="plus-circle"
+          data-testId={"event-add-sort"}
         /> : null}
       </InlineSegmentGroup>
     </InlineFieldRow>
@@ -198,25 +206,28 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
 const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   return (
     <InlineFieldRow>
-      <InlineFormLabel htmlFor={`with-aggregate-${query.refId}`} tooltip="Fetch with Aggregate count " width={10}>
-        With Aggregate
-      </InlineFormLabel>
-      <InlineSwitch
-        id={`with-aggregate-${query.refId}`}
-        label='With Aggregate'
-        value={query.eventQuery.aggregate?.withAggregate}
-        onChange={({ currentTarget }) =>
-          onQueryChange({
-            eventQuery: {
-              ...query.eventQuery,
-              aggregate: {
-                ...query.eventQuery.aggregate,
-                withAggregate: currentTarget.checked,
+      <InlineField
+        label="With Aggregate"
+        labelWidth={20}
+        tooltip="Fetch with Aggregate count "
+      >
+        <InlineSwitch
+          id={`with-aggregate-${query.refId}`}
+          label='With Aggregate'
+          value={query.eventQuery.aggregate?.withAggregate}
+          onChange={({ currentTarget }) =>
+            onQueryChange({
+              eventQuery: {
+                ...query.eventQuery,
+                aggregate: {
+                  ...query.eventQuery.aggregate,
+                  withAggregate: currentTarget.checked,
+                },
               },
-            },
-          })
-        }
-      />
+            })
+          }
+        />
+      </InlineField>
     </InlineFieldRow>
   );
 };
@@ -266,7 +277,8 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
               }}
               allowCustomValue
             />
-            <InlineButton
+            <Button
+              variant='secondary'
               onClick={() => {
                 onEventQueryChange({
                   aggregate: {
@@ -275,11 +287,14 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
                   },
                 });
               }}
-              iconName="times"
+              icon="times"
+              className='cog-mr-4'
+              data-testId={"event-remove-aggr-field-" + key}
             />
           </React.Fragment>
         ))}
-        <InlineButton
+        <Button
+          variant='secondary'
           onClick={() => {
             onEventQueryChange({
               aggregate: {
@@ -288,7 +303,8 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
               },
             });
           }}
-          iconName="plus-circle"
+          icon="plus-circle"
+          data-testId={"event-add-aggr-field"}
         />
       </InlineSegmentGroup>
     </InlineFieldRow>
@@ -296,26 +312,20 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
 };
 const AdvancedEventFilter = (props) => {
   const { query, onQueryChange } = props;
-  const [eventQuery, setEventQuery] = useState(query.eventQuery);
   const [showHelp, setShowHelp] = useState(false);
-  const patchEventQuery = useCallback(
-    (eventQueryPatch: Partial<EventQuery>) => {
-      setEventQuery({ ...eventQuery, ...eventQueryPatch });
-    },
-    [eventQuery]
-  );
-  useEffect(() => {
-    onQueryChange({
-      eventQuery,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventQuery]);
+
   const valid = (advancedFilter): boolean => {
     return jsonlint.parse(advancedFilter) ?? false;
   };
+
   const onChange = (advancedFilter) => {
     if (valid(advancedFilter)) {
-      patchEventQuery({ advancedFilter });
+      onQueryChange({
+        eventQuery: {
+          ...query.eventQuery,
+          advancedFilter,
+        },
+      });
     }
   };
 
@@ -329,9 +339,7 @@ const AdvancedEventFilter = (props) => {
         >
           <>
             Advanced filter
-            <Tooltip content="click here for more information">
-              <Icon style={{ margin: 5 }} name="question-circle" onClick={() => setShowHelp(!showHelp)} />
-            </Tooltip>
+            <Icon style={{ margin: 5, cursor: "pointer" }} name="question-circle" onClick={() => setShowHelp(!showHelp)} />
           </>
         </Label>
         {showHelp && <EventAdvancedFilterHelp onDismiss={() => setShowHelp(false)} />}
@@ -386,15 +394,16 @@ export function EventsTab(
             className="custom-query"
           />
         </InlineField>
-        <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
+        <Button
+          variant='secondary' icon="question-circle" onClick={() => setShowHelp(!showHelp)} data-testId="event-query-help" />
       </InlineFieldRow>
+      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
       <ActiveAtTimeRangeCheckbox {...{ query, onQueryChange }} />
       <ColumnsPicker {...{ query, onQueryChange }} />
       <SortByPicker {...{ query, onQueryChange }} />
       {datasource.connector.isEventsAdvancedFilteringEnabled() && (
         <AdvancedEventFilter {...{ query, onQueryChange }} />
       )}
-      {showHelp && <EventQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
 }

@@ -1,21 +1,23 @@
-import { Alert, InfoBox } from '@grafana/ui';
+import { Alert, Icon } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 
-type HelpParams = { onDismiss: () => void; title: string; children: React.ReactNode };
+type HelpParams = { onDismiss: () => void; title: string; children: React.ReactNode, docsUrl?: boolean };
 
 const Code = ({ children }) => <code className="query-keyword">{children}</code>;
 
-const HelpPanel = ({ onDismiss, title, children }: HelpParams) => (
-  <InfoBox
+const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) => (
+  <Alert
     style={{ marginTop: '10px' }}
     title={title}
     severity="info"
-    url={DOCS_URL}
-    onDismiss={onDismiss}
+    onRemove={onDismiss}
   >
-    <div className="gf-form--grow help-panel">{children}</div>
-  </InfoBox>
+    <div className="help-panel">{children}</div>
+    {docsUrl ? <a href={DOCS_URL} target='_blank' rel='noreferrer' style={{ marginTop: 10, textDecoration: 'underline' }}>
+      Read more <Icon name="external-link-alt" />
+    </a> : null}
+  </Alert>
 );
 
 export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
@@ -172,22 +174,12 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
   </HelpPanel>
 );
 
-const HelpAlertPanel = ({ onDismiss, title, children }: HelpParams) => (
-  <Alert
-    style={{ marginTop: '10px' }}
-    title={title}
-    severity="info"
-    // url={DOCS_URL}
-    onRemove={onDismiss}
-  >
-    <div className="gf-form--grow help-panel">{children}</div>
-  </Alert>
-);
-
 export const EventAdvancedFilterHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
-  <HelpAlertPanel title="Event advanced filter query syntax help" onDismiss={onDismiss}>
-    <a href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents">
-      Click here for Advanced filter documentation
+  <HelpPanel title="Event advanced filter query syntax help" onDismiss={onDismiss} docsUrl={false}>
+    Click
+    <a href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents" style={{ margin: 5, textDecoration: 'underline' }} target="_blank" rel="noreferrer">
+      here
     </a>
-  </HelpAlertPanel>
+    for Advanced filter documentation
+  </HelpPanel>
 );

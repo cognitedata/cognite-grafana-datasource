@@ -13,6 +13,7 @@ datasources:
       cogniteApiUrl: ${COGNITE_HOST}
       cogniteProject: ${COGNITE_PROJECT}
       enableEventsAdvancedFiltering: true
+      enableExtractionPipelines: true
       enableTemplates: false
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}

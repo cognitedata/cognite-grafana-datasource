@@ -144,6 +144,12 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   const panelEditPage = await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
 
   await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
+  
+  // Select only the first column (externalId)
+  const deleteColumnButtonPattern = /event-remove-col-/;
+  while (await page.getByTestId(deleteColumnButtonPattern).count() !== 1) {
+    await page.getByTestId(deleteColumnButtonPattern).last().click();
+  }
 
   const query = `
     {
@@ -162,10 +168,12 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   await waitForQueriesToFinish(page, grafanaVersion);
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
 
+  await expect(panelEditPage.panel.fieldNames).toHaveText("externalId");
+  await expect(panelEditPage.panel.fieldNames).not.toContainText(["description", "startTime", "endTime"]);
+
   // Check if the table contains the expected events
   // Since we filtered the events by prefix, we can check if the table contains the events that start with "test_event (1"
   // and do not contain the events that start with "test_event (2..9"
-  const ALL_EVENT_PREFIX_PATTERN = /^test_event/;
   const EXPECTED_EVENT_PREFIX_PATTERN = /test_event \(1/;
   const EXCLUDED_EVENT_PATTERN = /test_event \(2-9/;
 
@@ -176,7 +184,19 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   };
 
   await expect.poll(async () => {
-    const cellTexts = await panelEditPage.panel.locator.getByRole('cell', { name: ALL_EVENT_PREFIX_PATTERN }).allTextContents();
+    const cellTexts = await panelEditPage.panel.data.allInnerTexts();
     return validateCellTexts(cellTexts);
   }, { timeout: 10000 }).toBeTruthy();
+});
+
+test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, readProvisionedDashboard }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  const EVENTS_QUERY_PANEL_ID = '3';
+  
+  await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
+
+  await page.getByTestId(/event-query-help/).click();
+
+  await expect(dashboardPage).toHaveAlert('info', { hasText: 'Event query syntax help' });
 });

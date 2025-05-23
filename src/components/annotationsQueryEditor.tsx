@@ -1,8 +1,9 @@
 import React from 'react';
 import { AnnotationQuery, QueryEditorProps ,} from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
-import { AnnotationQueryData, CogniteQuery, Tab } from 'types';
+import { AnnotationQueryData, CogniteQuery } from 'types';
 import { parse } from '../parser/events-assets';
+import { FieldSet, InlineField, InlineSegmentGroup, Input } from '@grafana/ui';
 
 
 type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any, TQuery> & {
@@ -86,24 +87,24 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
     };
 
     render () { 
-      return <div>
-      <div className="gf-form gf-form--grow">
-        <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
-        <input
-          type="text"
-          className="gf-form-input"
-          value={this.state.expr}
-          placeholder="eg: events{type='example'}"
-          onChange={this.handleQueryChange}
-          onBlur={this.handleBlur}
-        />
-      </div>
-      <div className="gf-form--grow">
+      return <FieldSet>
+        <InlineSegmentGroup grow={true}>
+          <InlineField labelWidth={20} label="Query" grow={true}>
+            <Input
+              type="text"
+              id='annotation-query'
+              value={this.state.expr}
+              placeholder="eg: events{type='example'}"
+              onChange={this.handleQueryChange}
+              onBlur={this.handleBlur}
+            />
+          </InlineField>
+        </InlineSegmentGroup>
+        <div>
           {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
           {help}
-      </div>
-    </div>
-    
+        </div>
+      </FieldSet>
   }
 };
 

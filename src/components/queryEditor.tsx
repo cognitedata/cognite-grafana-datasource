@@ -41,42 +41,46 @@ import { eventBusService } from '../appEventHandler';
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
-    <div className="gf-form gf-form-inline">
-      <InlineFormLabel htmlFor={`latest-value-${query.refId}`} tooltip="Fetch the latest data point in the provided time range" width={7}>
-        Latest value
-      </InlineFormLabel>
-      <InlineSwitch
-        label='Latest value'
-        id={`latest-value-${query.refId}`}
-        value={query.latestValue}
-        onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
-      />
-    </div>
+    <InlineFieldRow>
+      <InlineField
+        label="Latest value"
+        labelWidth={14}
+        tooltip="Fetch the latest data point in the provided time range"
+      >
+        <InlineSwitch
+          label='Latest value'
+          id={`latest-value-${query.refId}`}
+          value={query.latestValue}
+          onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+        />
+      </InlineField>
+    </InlineFieldRow>
   );
 };
 const IncludeTimeseriesCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   const { includeSubTimeseries } = query.assetQuery;
   return (
-    <div className="gf-form">
-      <InlineFormLabel htmlFor={`include-sub-timeseries-${query.refId}`} width={11} tooltip="Fetch time series linked to the asset">
-        Include sub-timeseries
-      </InlineFormLabel>
-      <InlineSwitch
-        label='Include sub-timeseries'
-        id={`include-sub-timeseries-${query.refId}`}
-        value={includeSubTimeseries !== false}
-        onChange={({ currentTarget }) => {
-          const { checked } = currentTarget;
-          onQueryChange({
-            assetQuery: {
-              ...query.assetQuery,
-              includeSubTimeseries: checked,
-            },
-          });
-        }}
-      />
-    </div>
+    <InlineField
+        label="Include sub-timeseries"
+        labelWidth={22}
+        tooltip="Fetch time series linked to the asset"
+      >
+        <InlineSwitch
+          label='Include sub-timeseries'
+          id={`include-sub-timeseries-${query.refId}`}
+          value={includeSubTimeseries !== false}
+          onChange={({ currentTarget }) => {
+            const { checked } = currentTarget;
+            onQueryChange({
+              assetQuery: {
+                ...query.assetQuery,
+                includeSubTimeseries: checked,
+              },
+            });
+          }}
+        />
+    </InlineField>
   );
 };
 const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
@@ -93,7 +97,7 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
   };
 
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel htmlFor={`include-sub-assets-${query.refId}`} width={9}>Include sub-assets</InlineFormLabel>
       <InlineSwitch
         label='Include sub-assets'
@@ -101,7 +105,7 @@ const IncludeSubAssetsCheckbox = (props: SelectedProps) => {
         id={`include-sub-assets-${query.refId}`}
         onChange={({ currentTarget }) => onIncludeSubtreesChange(currentTarget.checked)}
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
@@ -118,7 +122,7 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
   };
 
   return (
-    <div className="gf-form">
+    <InlineFieldRow>
       <InlineFormLabel htmlFor={`include-relationships-${query.refId}`} tooltip="Fetch time series related to the asset" width={12}>
         Include relationships
       </InlineFormLabel>
@@ -128,7 +132,7 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
         value={withRelationships}
         onChange={({ currentTarget }) => onIncludeRelationshipsChange(currentTarget.checked)}
       />
-    </div>
+    </InlineFieldRow>
   );
 };
 function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
@@ -179,9 +183,12 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.externalId, query.assetQuery.withRelationships]);
   return (
-    <div className="gf-form-inline">
-      <div className="gf-form">
-        <InlineFormLabel htmlFor={`asset-select-dropdown-${query.refId}`} width={6}>Asset Tag</InlineFormLabel>
+    <InlineFieldRow>
+      <InlineField
+        label="Asset Tag"
+        labelWidth={14}
+        tooltip="Search asset by name/description"
+      >
         <AsyncSelect
           loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
           value={current}
@@ -189,11 +196,11 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           inputId={`asset-select-dropdown-${query.refId}`}
           data-testid='asset-select-dropdown'
           placeholder="Search asset by name/description"
-          className="cog-mr-4 width-20"
+          className="width-20"
           allowCustomValue
           onChange={setCurrent}
         />
-      </div>
+      </InlineField>
       <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
       <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
@@ -213,7 +220,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
           }}
         />
       )}
-    </div>
+    </InlineFieldRow>
   );
 }
 function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {

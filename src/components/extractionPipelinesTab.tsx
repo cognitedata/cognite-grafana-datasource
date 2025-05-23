@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AsyncMultiSelect, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
+import { AsyncMultiSelect, Button, Field, Input, Segment, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import { ExtractionPipelinesQuery, SelectedProps } from '../types';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT, ExtractionPipelinesFields } from '../constants';
-import { InlineButton } from './inlineButton';
 
 export const ExtractionPipelinesTab = (
   props: SelectedProps & { datasource: CogniteDatasource }
@@ -31,12 +30,12 @@ export const ExtractionPipelinesTab = (
   const { columns, selections, getRuns, limit } = extractionPipelinesQuery;
   return (
     <div style={{ marginTop: 8 }}>
-      <div className="gf-form-inline">
-        <Field label="Collumns">
-          <Tooltip content="Add or remove columns">
-            <div className="gf-form" style={{ flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Field label="Columns" description="Add or remove columns">
+          <>
+            <div style={{ flexWrap: 'wrap', display: 'flex', gap: 4 }}>
               {columns.map((val, key) => (
-                <>
+                <div key={key}>
                   <Segment
                     value={val}
                     options={options}
@@ -47,30 +46,34 @@ export const ExtractionPipelinesTab = (
                     }}
                     allowCustomValue
                   />
-                  <InlineButton
+                  <Button
+                    variant='secondary'
                     onClick={() => {
                       onExtractionPipelinesQueryChange({
                         columns: columns.filter((_, i) => i !== key),
                       });
                     }}
-                    iconName="times"
+                    icon="times"
+                    data-testId={"ext-pipes-remove-col-" + key}
                   />
-                </>
+                </div>
               ))}
-              <InlineButton
+              <Button
+                variant='secondary'
                 onClick={() => {
                   onExtractionPipelinesQueryChange({
                     columns: [...columns, `column${columns.length}`],
                   });
                 }}
-                iconName="plus-circle"
+                icon="plus-circle"
+                data-testId="ext-pipes-add-col"
               />
             </div>
-          </Tooltip>
+          </>
         </Field>
       </div>
-      <div className="gf-form-inline">
-        <Field label="Extraction Pipeline ExternalId" className="">
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Field label="Extraction Pipeline ExternalId">
           <Tooltip content="Enter or select Extraction Pipeline externalId">
             <AsyncMultiSelect
               loadOptions={() => {
@@ -103,7 +106,7 @@ export const ExtractionPipelinesTab = (
             />
           </Tooltip>
         </Field>
-        <Field label="Show Runs" className="gf-field-switch">
+        <Field label="Show Runs">
           <Tooltip content="Enable for Extraction Pipeline runs">
             <Switch
               value={getRuns}
@@ -116,7 +119,7 @@ export const ExtractionPipelinesTab = (
           </Tooltip>
         </Field>
         {getRuns && (
-          <Field label="Limit" className="limit-class">
+          <Field label="Limit">
             <Tooltip content="Change limit to response value between 1 and 1000, not working on filter-by id EP's">
               <Input
                 // disabled={}
