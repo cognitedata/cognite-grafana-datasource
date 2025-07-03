@@ -463,6 +463,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         templateQuery,
         relationshipsQuery,
         flexibleDataModellingQuery,
+        cogniteTimeSeriesSearchQuery,
       } = target;
       switch (tab) {
         case Tab.Event:
@@ -470,6 +471,12 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         case Tab.Asset: {
           return assetQuery?.target;
         }
+        case Tab.CogniteTimeSeriesSearch:
+          return (
+            cogniteTimeSeriesSearchQuery?.space &&
+            cogniteTimeSeriesSearchQuery?.externalId &&
+            cogniteTimeSeriesSearchQuery?.selectedTimeseries
+          );
         case Tab.Templates:
           return (
             templateQuery &&
@@ -525,6 +532,7 @@ function groupTargets(targets: CogniteQuery[]) {
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
+      ...(groupedByTab[Tab.CogniteTimeSeriesSearch] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
       ...(groupedByTab[Tab.Custom] ?? []),
     ],

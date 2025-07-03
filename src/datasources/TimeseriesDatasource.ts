@@ -99,7 +99,7 @@ export async function getDataQueryRequestItems(
   intervalMs: number,
   timeFrame
 ): Promise<QueriesDataItem> {
-  const { tab, expr, flexibleDataModellingQuery } = target;
+  const { tab, expr, flexibleDataModellingQuery, cogniteTimeSeriesSearchQuery } = target;
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
 
@@ -108,6 +108,22 @@ export async function getDataQueryRequestItems(
     case undefined:
     case Tab.Timeseries: {
       items = [targetToIdEither(target)];
+      break;
+    }
+    case Tab.CogniteTimeSeriesSearch: {
+      // For CogniteTimeSeriesSearch, we need to search DMS instances and return instanceId format
+      if (!cogniteTimeSeriesSearchQuery?.selectedTimeseries) {
+        items = [];
+        break;
+      }
+      
+      const { space, externalId } = cogniteTimeSeriesSearchQuery.selectedTimeseries;
+      items = [{
+        instanceId: {
+          space,
+          externalId,
+        },
+      }];
       break;
     }
     case Tab.Asset: {
