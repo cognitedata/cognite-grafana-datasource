@@ -11,6 +11,12 @@ import {
   CogniteRelationshipResponse,
   RelationshipsFilter,
   EventsFilterTimeParams,
+  DMSSpace,
+  DMSView,
+  DMSSearchRequest,
+  DMSSearchResponse,
+  DMSInstance,
+  DMSInstanceId,
 } from './types';
 import {
   Tab,
@@ -399,4 +405,58 @@ export function fetchRelationships(
       filter,
     },
   });
+}
+
+// DMS API functions
+export function fetchDMSSpaces(
+  connector: Connector,
+  limit = 1000
+): Promise<DMSSpace[]> {
+  return connector.fetchItems<DMSSpace>({
+    method: HttpMethod.GET,
+    path: '/models/spaces',
+    data: undefined,
+    params: { limit, includeGlobal: true },
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchDMSViews(
+  connector: Connector,
+  space?: string,
+  limit = 1000
+): Promise<DMSView[]> {
+  const params = space 
+    ? { space, limit, includeGlobal: true } 
+    : { limit, includeGlobal: true };
+  return connector.fetchItems<DMSView>({
+    method: HttpMethod.GET,
+    path: '/models/views',
+    data: undefined,
+    params,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function searchDMSInstances(
+  connector: Connector,
+  searchRequest: DMSSearchRequest
+): Promise<DMSInstance[]> {
+  return connector.fetchItems<DMSInstance>({
+    method: HttpMethod.POST,
+    path: '/models/instances/search',
+    data: searchRequest,
+  });
+}
+
+export function createInstanceDataQueryRequest(
+  instances: DMSInstanceId[],
+  options: QueryOptions & { timeZone: string }
+): DataQueryRequestItem[] {
+  return instances.map(({ space, externalId }) => ({
+    instanceId: {
+      space,
+      externalId,
+    },
+  }));
 }

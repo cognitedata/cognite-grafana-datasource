@@ -420,6 +420,10 @@ export type DataQueryRequestItem = {
   id?: number;
   externalId?: string;
   timeZone?: string;
+  instanceId?: {
+    space: string;
+    externalId: string;
+  };
 };
 
 export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
