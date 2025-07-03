@@ -34,6 +34,7 @@ import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
+import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
@@ -361,6 +362,7 @@ export function QueryEditor(props: EditorProps) {
       <TabContent>
         {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
+        {tab === Tabs.CogniteTimeSeriesSearch && <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />}
         {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
         {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {tab === Tabs.Relationships && (
