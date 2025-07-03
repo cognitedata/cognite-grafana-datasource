@@ -47,7 +47,7 @@ import { getLabelsForExpression } from '../parser/ts';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 
-const { Asset, Custom, Timeseries } = Tab;
+const { Asset, Custom, Timeseries, CogniteTimeSeriesSearch } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
 
 export function formQueryForItems(
@@ -114,6 +114,17 @@ export async function getLabelsForTarget(
     default:
     case Timeseries: {
       return [await getTimeseriesLabel(labelSrc, targetToIdEither(target), connector)];
+    }
+    case CogniteTimeSeriesSearch: {
+      // For CogniteTimeSeriesSearch, we use the name from the selected timeseries
+      // since instanceId format doesn't work with regular timeseries endpoints
+      if (target.cogniteTimeSeriesSearchQuery?.selectedTimeseries?.name) {
+        const selectedName = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.name;
+        // If we have a custom label with variables, we can't inject properties from regular timeseries metadata
+        // since this is a DMS instance, so we'll use the selected name as fallback
+        return labelSrc && !labelContainsVariableProps(labelSrc) ? [labelSrc] : [selectedName];
+      }
+      return [labelSrc || 'CogniteTimeSeries'];
     }
     case Asset: {
       const tsIds = queryList.map(({ id }) => ({ id }));
