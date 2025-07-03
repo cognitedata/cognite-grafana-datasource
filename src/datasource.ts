@@ -369,7 +369,13 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query, valueType }: VariableQueryData): Promise<MetricDescription[]> {
+  async metricFindQuery({ query, valueType, queryType, graphqlQuery, dataModel }: VariableQueryData): Promise<MetricDescription[]> {
+    // Handle GraphQL queries
+    if (queryType === 'graphql') {
+      return this.metricFindGraphqlQuery({ graphqlQuery, dataModel, valueType });
+    }
+
+    // Handle legacy assets queries
     let params: QueryCondition;
     let filters: ParsedFilter[];
     try {
@@ -396,6 +402,83 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         value: asset[valueType?.value] || asset.id,
       };
     });
+  }
+
+  /**
+   * Handle GraphQL queries for variables
+   */
+  private async metricFindGraphqlQuery({ 
+    graphqlQuery, 
+    dataModel, 
+    valueType 
+  }: { 
+    graphqlQuery?: string; 
+    dataModel?: { space?: string; externalId?: string; version?: string };
+    valueType?: { value: string; label: string };
+  }): Promise<MetricDescription[]> {
+    if (!graphqlQuery || !dataModel?.space || !dataModel?.externalId || !dataModel?.version) {
+      return [];
+    }
+
+    try {
+      const { data, errors } = await this.connector.fetchQuery({
+        path: `/userapis/spaces/${dataModel.space}/datamodels/${dataModel.externalId}/versions/${dataModel.version}/graphql`,
+        method: HttpMethod.POST,
+        data: JSON.stringify({ query: graphqlQuery }),
+      });
+
+      if (errors) {
+        console.error('GraphQL variable query errors:', errors);
+        return [];
+      }
+
+      // Extract items from the response
+      const items = this.extractItemsFromGraphqlResponse(data);
+      
+      // Map items to metric descriptions
+      const fieldName = valueType?.value || 'name';
+      return items.map((item) => ({
+        text: item[fieldName] || item.name || item.externalId || item.id || 'Unknown',
+        value: item[fieldName] || item.id || item.externalId,
+      }));
+    } catch (error) {
+      console.error('GraphQL variable query error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Extract items from GraphQL response - handles both 'items' and 'edges' formats
+   */
+  private extractItemsFromGraphqlResponse(data: any): any[] {
+    if (!data) {
+      return [];
+    }
+
+    // Look for the first non-null response in the data
+    const firstResponseKey = Object.keys(data).find(key => data[key] !== null);
+    if (!firstResponseKey) {
+      return [];
+    }
+
+    const firstResponse = data[firstResponseKey];
+    
+    // Handle 'items' format
+    if (firstResponse.items) {
+      return firstResponse.items;
+    }
+    
+    // Handle 'edges' format
+    if (firstResponse.edges) {
+      return firstResponse.edges.map((edge: any) => edge.node).filter(Boolean);
+    }
+
+    // Handle direct array
+    if (Array.isArray(firstResponse)) {
+      return firstResponse;
+    }
+
+    return [];
   }
 
   fetchSingleTimeseries = (id: IdEither) => {
