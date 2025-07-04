@@ -401,7 +401,34 @@
     "schemaVersion": 40,
     "tags": [],
     "templating": {
-      "list": []
+      "list": [
+        {
+          "current": {
+            "selected": false,
+            "text": "Oslo",
+            "value": "Oslo"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "name": "AllAssets",
+          "options": [],
+          "query": {
+            "query": "",
+            "valueType": "name"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        }
+      ]
     },
     "time": {
       "from": "now-1y",

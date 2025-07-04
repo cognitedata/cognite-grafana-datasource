@@ -48,3 +48,33 @@ test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readPro
       return nodes.sort();
     }, { timeout: 1000 }).toEqual(expectedElements);
 });
+
+test('AllAssets variable dropdown contains expected options', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  await gotoDashboardPage(dashboard);
+
+  // Expected options in the AllAssets variable dropdown based on the screenshot
+  const expectedOptions = ['Oslo', 'Locations'];
+
+  // Wait for the dashboard to load completely
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000); // Extra wait for variables to load
+
+  // Find and click the AllAssets variable input to open the dropdown
+  const allAssetsInput = page.locator('#var-AllAssets');
+  await expect(allAssetsInput).toBeVisible({ timeout: 10000 });
+  await allAssetsInput.click();
+
+  // Wait for the dropdown options to appear
+  const optionsContainer = page.locator('#options-AllAssets');
+  await expect(optionsContainer).toBeVisible({ timeout: 5000 });
+
+  // Check for expected options using the exact data-testid structure
+  for (const expectedOption of expectedOptions) {
+    const optionButton = page.getByTestId(`data-testid Dashboard template variables Variable Value DropDown option text ${expectedOption}`);
+    await expect(optionButton).toBeVisible({ timeout: 5000 });
+  }
+
+  // Close the dropdown by pressing Escape
+  await page.keyboard.press('Escape');
+});
