@@ -419,7 +419,7 @@
           "name": "AllAssets",
           "options": [],
           "query": {
-            "query": "",
+            "query": "assets{}",
             "valueType": "name"
           },
           "refresh": 1,
@@ -445,7 +445,7 @@
           "name": "Oslo",
           "options": [],
           "query": {
-            "query": "",
+            "query": "assetSubTree{externalIdPrefix: \"Oslo\"}",
             "valueType": "name"
           },
           "refresh": 1,
