@@ -1,226 +1,445 @@
-import { 
-  Tab, 
-  CogniteTimeSeriesSearchQuery, 
-  defaultCogniteTimeSeriesSearchQuery,
-} from '../types';
+import { getMockedDataSource } from '../test_utils';
+import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client';
+import { DMSSpace, DMSView, DMSInstance } from '../cdf/types';
+import { Connector } from '../connector';
 
-describe('CogniteTimeSeries Search', () => {
-  describe('Type Definitions', () => {
-    describe('defaultCogniteTimeSeriesSearchQuery', () => {
-      it('should have correct default values', () => {
-        const expected: CogniteTimeSeriesSearchQuery = {
+jest.mock('@grafana/runtime');
+
+describe('CogniteTimeSeriesSearch DMS Functions', () => {
+  let fetcher: { fetch: jest.Mock };
+  let ds: any;
+  let connector: Connector;
+
+  beforeEach(() => {
+    fetcher = { fetch: jest.fn() };
+    ds = getMockedDataSource(fetcher);
+    connector = ds.connector as Connector;
+  });
+
+  describe('fetchDMSSpaces', () => {
+    it('should fetch spaces successfully', async () => {
+      const mockSpaces: DMSSpace[] = [
+        {
           space: 'cdf_cdm',
-          version: 'v1',
-          externalId: 'CogniteTimeSeries',
-          selectedTimeseries: undefined,
-          limit: 1000
-        };
+          name: 'CDF CDM',
+          description: 'Common Data Model',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+        {
+          space: 'my_space',
+          name: 'My Space',
+          description: 'Custom space',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+      ];
 
-        expect(defaultCogniteTimeSeriesSearchQuery).toEqual(expected);
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockSpaces },
+        status: 200,
       });
+
+      const result = await fetchDMSSpaces(connector);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/spaces?includeGlobal=true&limit=1000',
+        method: 'GET',
+        data: undefined,
+        headers: undefined,
+      });
+      expect(result).toEqual(mockSpaces);
     });
 
-    describe('Tab enum', () => {
-      it('should include CogniteTimeSeriesSearch', () => {
-        expect(Tab.CogniteTimeSeriesSearch).toBe('CogniteTimeSeries');
+    it('should support custom limit', async () => {
+      const mockSpaces: DMSSpace[] = [];
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockSpaces },
+        status: 200,
+      });
+
+      await fetchDMSSpaces(connector, 500);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/spaces?includeGlobal=true&limit=500',
+        method: 'GET',
+        data: undefined,
+        headers: undefined,
       });
     });
   });
 
-  describe('Query Validation', () => {
-    it('should consider query with selectedTimeseries as valid', () => {
-      const validQuery: CogniteTimeSeriesSearchQuery = {
-        space: 'cdf_cdm',
-        version: 'v1',
-        externalId: 'CogniteTimeSeries',
-        selectedTimeseries: {
+  describe('fetchDMSViews', () => {
+    it('should fetch views for a space successfully', async () => {
+      const mockViews: DMSView[] = [
+        {
+          space: 'cdf_cdm',
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+          name: 'Cognite Time Series',
+          description: 'Time series view',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+        {
+          space: 'cdf_cdm',
+          externalId: 'CogniteAsset',
+          version: 'v1',
+          name: 'Cognite Asset',
+          description: 'Asset view',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+      ];
+
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockViews },
+        status: 200,
+      });
+
+      const result = await fetchDMSViews(connector, 'cdf_cdm');
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/views?includeGlobal=true&limit=1000&space=cdf_cdm',
+        method: 'GET',
+        data: undefined,
+        headers: undefined,
+      });
+      expect(result).toEqual(mockViews);
+    });
+
+    it('should fetch all views when no space is specified', async () => {
+      const mockViews: DMSView[] = [];
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockViews },
+        status: 200,
+      });
+
+      await fetchDMSViews(connector);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/views?includeGlobal=true&limit=1000',
+        method: 'GET',
+        data: undefined,
+        headers: undefined,
+      });
+    });
+
+    it('should support custom limit', async () => {
+      const mockViews: DMSView[] = [];
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockViews },
+        status: 200,
+      });
+
+      await fetchDMSViews(connector, 'cdf_cdm', 250);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/views?includeGlobal=true&limit=250&space=cdf_cdm',
+        method: 'GET',
+        data: undefined,
+        headers: undefined,
+      });
+    });
+  });
+
+  describe('searchDMSInstances', () => {
+    it('should search instances successfully', async () => {
+      const mockInstances: DMSInstance[] = [
+        {
+          instanceType: 'node',
           space: 'cdf_cdm',
           externalId: 'temperature_sensor_1',
-          name: 'Temperature Sensor 1'
+          version: 1,
+          lastUpdatedTime: 1640995200000,
+          createdTime: 1640995200000,
+          properties: {
+            cdf_cdm: {
+              'CogniteTimeSeries/v1': {
+                name: 'Temperature Sensor 1',
+                description: 'Building A temperature sensor',
+                type: 'numeric',
+              },
+            },
+          },
         },
-        limit: 10
-      };
-
-      // A query with selectedTimeseries should be considered valid
-      expect(validQuery.selectedTimeseries).toBeDefined();
-      expect(validQuery.selectedTimeseries?.space).toBe('cdf_cdm');
-      expect(validQuery.selectedTimeseries?.externalId).toBe('temperature_sensor_1');
-      expect(validQuery.selectedTimeseries?.name).toBe('Temperature Sensor 1');
-    });
-
-    it('should consider query without selectedTimeseries as incomplete', () => {
-      const incompleteQuery: CogniteTimeSeriesSearchQuery = {
-        space: 'cdf_cdm',
-        version: 'v1',
-        externalId: 'CogniteTimeSeries',
-        selectedTimeseries: undefined,
-        limit: 10
-      };
-
-      // A query without selectedTimeseries should be considered incomplete
-      expect(incompleteQuery.selectedTimeseries).toBeUndefined();
-    });
-
-    it('should support custom space and view configurations', () => {
-      const customQuery: CogniteTimeSeriesSearchQuery = {
-        space: 'my_custom_space',
-        version: 'v2',
-        externalId: 'MyTimeSeries',
-        selectedTimeseries: {
-          space: 'my_custom_space',
-          externalId: 'sensor_123'
+        {
+          instanceType: 'node',
+          space: 'cdf_cdm',
+          externalId: 'pressure_sensor_1',
+          version: 1,
+          lastUpdatedTime: 1640995200000,
+          createdTime: 1640995200000,
+          properties: {
+            cdf_cdm: {
+              'CogniteTimeSeries/v1': {
+                name: 'Pressure Sensor 1',
+                description: 'Building A pressure sensor',
+                type: 'numeric',
+              },
+            },
+          },
         },
-        limit: 500
-      };
+      ];
 
-      expect(customQuery.space).toBe('my_custom_space');
-      expect(customQuery.version).toBe('v2');
-      expect(customQuery.externalId).toBe('MyTimeSeries');
-      expect(customQuery.limit).toBe(500);
-    });
-  });
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockInstances },
+        status: 200,
+      });
 
-  describe('Instance ID Format', () => {
-    it('should create correct instanceId format', () => {
-      const space = 'cdf_cdm';
-      const externalId = 'temperature_sensor_01';
-      
-      const instanceId = {
-        space,
-        externalId
-      };
-
-      expect(instanceId.space).toBe('cdf_cdm');
-      expect(instanceId.externalId).toBe('temperature_sensor_01');
-      
-      // Test instanceId string representation for labels
-      const instanceIdString = `${space}:${externalId}`;
-      expect(instanceIdString).toBe('cdf_cdm:temperature_sensor_01');
-    });
-
-    it('should handle special characters in externalId', () => {
-      const space = 'my_space';
-      const externalId = 'sensor-01_temp.avg';
-      
-      const instanceIdString = `${space}:${externalId}`;
-      expect(instanceIdString).toBe('my_space:sensor-01_temp.avg');
-    });
-  });
-
-  describe('DMS Search Request Structure', () => {
-    it('should create proper DMS search request structure', () => {
       const searchRequest = {
         view: {
           type: 'view' as const,
           space: 'cdf_cdm',
           externalId: 'CogniteTimeSeries',
-          version: 'v1'
+          version: 'v1',
         },
         query: 'temperature',
-        limit: 10,
         filter: {
           not: {
             equals: {
               property: ['type'],
-              value: 'string'
-            }
-          }
-        }
+              value: 'string',
+            },
+          },
+        },
+        limit: 10,
       };
 
-      expect(searchRequest.view.type).toBe('view');
-      expect(searchRequest.view.space).toBe('cdf_cdm');
-      expect(searchRequest.view.externalId).toBe('CogniteTimeSeries');
-      expect(searchRequest.view.version).toBe('v1');
-      expect(searchRequest.query).toBe('temperature');
-      expect(searchRequest.limit).toBe(10);
-      expect(searchRequest.filter?.not?.equals?.property).toEqual(['type']);
-      expect(searchRequest.filter?.not?.equals?.value).toBe('string');
+      const result = await searchDMSInstances(connector, searchRequest);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/instances/search',
+        method: 'POST',
+        data: searchRequest,
+        headers: undefined,
+      });
+      expect(result).toEqual(mockInstances);
     });
 
-    it('should support empty query for browsing all instances', () => {
-      const browseRequest = {
+    it('should support search without query (browse all)', async () => {
+      const mockInstances: DMSInstance[] = [];
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockInstances },
+        status: 200,
+      });
+
+      const searchRequest = {
         view: {
           type: 'view' as const,
           space: 'cdf_cdm',
           externalId: 'CogniteTimeSeries',
-          version: 'v1'
+          version: 'v1',
         },
-        limit: 1000
+        limit: 1000,
       };
 
-      expect(browseRequest.view.type).toBe('view');
-      expect(browseRequest.limit).toBe(1000);
-      expect('query' in browseRequest).toBe(false);
+      await searchDMSInstances(connector, searchRequest);
+
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/instances/search',
+        method: 'POST',
+        data: searchRequest,
+        headers: undefined,
+      });
+    });
+
+    it('should filter out string-type timeseries', async () => {
+      const mockInstances: DMSInstance[] = [
+        {
+          instanceType: 'node',
+          space: 'cdf_cdm',
+          externalId: 'numeric_sensor',
+          version: 1,
+          lastUpdatedTime: 1640995200000,
+          createdTime: 1640995200000,
+          properties: {
+            cdf_cdm: {
+              'CogniteTimeSeries/v1': {
+                name: 'Numeric Sensor',
+                type: 'numeric',
+              },
+            },
+          },
+        },
+        {
+          instanceType: 'node',
+          space: 'cdf_cdm',
+          externalId: 'string_sensor',
+          version: 1,
+          lastUpdatedTime: 1640995200000,
+          createdTime: 1640995200000,
+          properties: {
+            cdf_cdm: {
+              'CogniteTimeSeries/v1': {
+                name: 'String Sensor',
+                type: 'string',
+              },
+            },
+          },
+        },
+      ];
+
+      fetcher.fetch.mockResolvedValue({
+        data: { items: mockInstances },
+        status: 200,
+      });
+
+      const searchRequest = {
+        view: {
+          type: 'view' as const,
+          space: 'cdf_cdm',
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+        },
+        query: 'sensor',
+        filter: {
+          not: {
+            equals: {
+              property: ['type'],
+              value: 'string',
+            },
+          },
+        },
+        limit: 10,
+      };
+
+      const result = await searchDMSInstances(connector, searchRequest);
+
+      expect(result).toEqual(mockInstances);
+      expect(fetcher.fetch).toHaveBeenCalledWith({
+        url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/instances/search',
+        method: 'POST',
+        data: searchRequest,
+        headers: undefined,
+      });
+    });
+
+    it('should handle search instances error', async () => {
+      const errorMessage = 'Search failed';
+      fetcher.fetch.mockRejectedValue(new Error(errorMessage));
+
+      const searchRequest = {
+        view: {
+          type: 'view' as const,
+          space: 'cdf_cdm',
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+        },
+        query: 'temperature',
+        limit: 10,
+      };
+
+      await expect(searchDMSInstances(connector, searchRequest)).rejects.toThrow(errorMessage);
     });
   });
 
-  describe('Tab Configuration', () => {
-    it('should have proper tab properties', () => {
-      // Test the tab enum value
-      expect(Tab.CogniteTimeSeriesSearch).toBe('CogniteTimeSeries');
-      
-      // Verify it's a string type (important for tab routing)
-      expect(typeof Tab.CogniteTimeSeriesSearch).toBe('string');
+  describe('API Workflow Integration', () => {
+    it('should complete spaces -> views -> search workflow', async () => {
+      // Create fresh fetcher and connector for this test
+      const integrationFetcher = { fetch: jest.fn() };
+      const integrationDs = getMockedDataSource(integrationFetcher);
+      const integrationConnector = integrationDs.connector as Connector;
+
+      // Mock data
+      const mockSpaces: DMSSpace[] = [
+        {
+          space: 'cdf_cdm',
+          name: 'CDF CDM',
+          description: 'Common Data Model',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+      ];
+
+      const mockViews: DMSView[] = [
+        {
+          space: 'cdf_cdm',
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+          name: 'Cognite Time Series',
+          description: 'Time series view',
+          createdTime: 1640995200000,
+          lastUpdatedTime: 1640995200000,
+        },
+      ];
+
+      const mockInstances: DMSInstance[] = [
+        {
+          instanceType: 'node',
+          space: 'cdf_cdm',
+          externalId: 'temperature_sensor_1',
+          version: 1,
+          lastUpdatedTime: 1640995200000,
+          createdTime: 1640995200000,
+          properties: {
+            cdf_cdm: {
+              'CogniteTimeSeries/v1': {
+                name: 'Temperature Sensor 1',
+                type: 'numeric',
+              },
+            },
+          },
+        },
+      ];
+
+      // Setup sequential mock responses
+      integrationFetcher.fetch
+        .mockResolvedValueOnce({ data: { items: mockSpaces }, status: 200 })
+        .mockResolvedValueOnce({ data: { items: mockViews }, status: 200 })
+        .mockResolvedValueOnce({ data: { items: mockInstances }, status: 200 });
+
+      // Test workflow
+      const spaces = await fetchDMSSpaces(integrationConnector);
+      expect(spaces).toEqual(mockSpaces);
+
+      const views = await fetchDMSViews(integrationConnector, 'cdf_cdm');
+      expect(views).toEqual(mockViews);
+
+      const instances = await searchDMSInstances(integrationConnector, {
+        view: {
+          type: 'view',
+          space: 'cdf_cdm',
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+        },
+        query: 'temperature',
+        limit: 10,
+      });
+      expect(instances).toEqual(mockInstances);
+
+      expect(integrationFetcher.fetch).toHaveBeenCalledTimes(3);
     });
 
-    it('should support standard timeseries options', () => {
-      const baseQuery = {
-        ...defaultCogniteTimeSeriesSearchQuery,
-        selectedTimeseries: {
+    it('should handle empty API responses', async () => {
+      // Create fresh fetcher and connector for this test
+      const emptyFetcher = { fetch: jest.fn() };
+      const emptyDs = getMockedDataSource(emptyFetcher);
+      const emptyConnector = emptyDs.connector as Connector;
+
+      // Setup empty responses
+      emptyFetcher.fetch.mockResolvedValue({
+        data: { items: [] },
+        status: 200,
+      });
+
+      const spaces = await fetchDMSSpaces(emptyConnector);
+      expect(spaces).toEqual([]);
+
+      const views = await fetchDMSViews(emptyConnector, 'nonexistent_space');
+      expect(views).toEqual([]);
+
+      const instances = await searchDMSInstances(emptyConnector, {
+        view: {
+          type: 'view',
           space: 'cdf_cdm',
-          externalId: 'ts1',
-          name: 'Test Sensor'
-        }
-      };
-
-      // Should be compatible with standard timeseries options
-      const extendedQuery = {
-        ...baseQuery,
-        aggregation: 'average',
-        granularity: '1h',
-        latestValue: false
-      };
-
-      expect(extendedQuery.aggregation).toBe('average');
-      expect(extendedQuery.granularity).toBe('1h');
-      expect(extendedQuery.latestValue).toBe(false);
-    });
-  });
-
-  describe('Label Generation', () => {
-    it('should prefer selectedTimeseries name for labels', () => {
-      const query: CogniteTimeSeriesSearchQuery = {
-        space: 'cdf_cdm',
-        version: 'v1',
-        externalId: 'CogniteTimeSeries',
-        selectedTimeseries: {
-          space: 'cdf_cdm',
-          externalId: 'temp_sensor_01',
-          name: 'Building A - Temperature Sensor'
-        }
-      };
-
-      // The label should prioritize the name field
-      const expectedLabel = query.selectedTimeseries?.name;
-      expect(expectedLabel).toBe('Building A - Temperature Sensor');
-    });
-
-    it('should fallback to instanceId format when name is not available', () => {
-      const query: CogniteTimeSeriesSearchQuery = {
-        space: 'cdf_cdm',
-        version: 'v1',
-        externalId: 'CogniteTimeSeries',
-        selectedTimeseries: {
-          space: 'cdf_cdm',
-          externalId: 'temp_sensor_01'
-          // No name field
-        }
-      };
-
-      // Should fallback to space:externalId format
-      const fallbackLabel = `${query.selectedTimeseries?.space}:${query.selectedTimeseries?.externalId}`;
-      expect(fallbackLabel).toBe('cdf_cdm:temp_sensor_01');
+          externalId: 'CogniteTimeSeries',
+          version: 'v1',
+        },
+        query: 'nonexistent_query',
+        limit: 10,
+      });
+      expect(instances).toEqual([]);
     });
   });
 }); 
