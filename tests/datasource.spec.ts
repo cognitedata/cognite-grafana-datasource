@@ -48,3 +48,36 @@ test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readPro
       return nodes.sort();
     }, { timeout: 1000 }).toEqual(expectedElements);
 });
+
+test('AllAssets variable dropdown contains expected options', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  await gotoDashboardPage(dashboard);
+
+  // Expected options in the AllAssets variable dropdown based on the screenshot
+  const expectedOptions = ['Oslo', 'Locations'];
+
+  // Wait for the dashboard to load completely
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(3000); // Extra wait for variables to load
+
+  // Find the AllAssets variable using data-testid (works across Grafana versions)
+  const allAssetsContainer = page.locator('[data-testid="data-testid template variable"]')
+    .filter({ has: page.locator('label:has-text("AllAssets")') });
+  
+  await expect(allAssetsContainer).toBeVisible({ timeout: 10000 });
+
+  // Click on the dropdown input to open it
+  const dropdownInput = allAssetsContainer.locator('input[role="combobox"]');
+  await expect(dropdownInput).toBeVisible({ timeout: 5000 });
+  await dropdownInput.click();
+
+  // Wait for dropdown options to appear and verify the expected options
+  for (const expectedOption of expectedOptions) {
+    // In newer Grafana versions, options appear as menu items
+    const optionLocator = page.locator(`[role="option"]:has-text("${expectedOption}"), [data-testid*="option"]:has-text("${expectedOption}")`);
+    await expect(optionLocator.first()).toBeVisible({ timeout: 10000 });
+  }
+
+  // Close the dropdown by pressing Escape
+  await page.keyboard.press('Escape');
+});
