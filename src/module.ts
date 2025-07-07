@@ -15,5 +15,4 @@ export const plugin = new DataSourcePlugin<
 >(CogniteDatasource)
   .setConfigEditor(ConfigEditor)
   .setVariableQueryEditor(CogniteVariableQueryEditor)
-  .setQueryEditor(QueryEditor)
-  
+  .setQueryEditor(QueryEditor);
