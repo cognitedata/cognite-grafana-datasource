@@ -39,6 +39,7 @@ import {
   ExtractionPipelinesDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
+import { CogniteVariableQueryEditor } from './components/variableQueryEditor';
 import { lastValueFrom, Observable, from, map, of } from 'rxjs';
 
 export default class CogniteDatasource extends DataSourceWithBackend<
@@ -116,6 +117,11 @@ export default class CogniteDatasource extends DataSourceWithBackend<
 
   annotations = {
     QueryEditor: AnnotationsQueryEditor,
+  }
+
+  // Support for template variables through variable editor
+  getVariableEditor() {
+    return CogniteVariableQueryEditor;
   }
 
   // Queries the backend by using `super.query`
@@ -369,7 +375,43 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query, valueType }: VariableQueryData): Promise<MetricDescription[]> {
+  async metricFindQuery(queryData: string | VariableQueryData): Promise<MetricDescription[]> {
+    // Handle both string and VariableQueryData formats
+    let query: string;
+    let valueType: { value: string; label: string } | undefined;
+    
+    if (typeof queryData === 'string') {
+      // New format: just the query string
+      query = queryData;
+      valueType = { value: 'id', label: 'Id' }; // Default valueType
+    } else if (queryData && typeof queryData === 'object') {
+      // Object format: VariableQueryData or legacy format
+      query = queryData.query || '';
+      valueType = queryData.valueType;
+      
+             // Enhanced legacy detection and handling
+       if (queryData.valueType && typeof queryData.valueType === 'string') {
+         // Convert legacy string valueType to object
+         const variableValueOptions = [
+           { value: 'id', label: 'Id' },
+           { value: 'externalId', label: 'External Id' },
+           { value: 'name', label: 'Name' },
+           { value: 'description', label: 'Description' },
+           { value: 'parentId', label: 'Parent Id' },
+           { value: 'parentExternalId', label: 'Parent External Id' },
+           { value: 'rootId', label: 'Root Id' },
+         ];
+         const legacyValueType = queryData.valueType as string;
+         valueType = variableValueOptions.find(option => option.value === legacyValueType) || 
+                    { value: 'id', label: 'Id' };
+       } else if (!valueType || typeof valueType === 'string') {
+         valueType = { value: 'id', label: 'Id' }; // Default
+       }
+    } else {
+      query = '';
+      valueType = { value: 'id', label: 'Id' };
+    }
+    
     let params: QueryCondition;
     let filters: ParsedFilter[];
     try {

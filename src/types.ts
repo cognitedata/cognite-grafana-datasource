@@ -471,10 +471,17 @@ export interface AnnotationQueryData extends DataQuery {
 }
 
 export interface VariableQueryProps {
-  query: string;
-  onChange: (query: VariableQueryData, description: string) => void;
+  query: string | VariableQueryData | LegacyVariableQueryData;
+  onChange: (query: string | VariableQueryData, description: string) => void;
   datasource: any;
   templateSrv: any;
+}
+
+// Legacy format where valueType was a string instead of an object
+export interface LegacyVariableQueryData {
+  query: string;
+  error?: string;
+  valueType?: string; // Legacy format: just the string value
 }
 
 export interface QueryRequestError {
