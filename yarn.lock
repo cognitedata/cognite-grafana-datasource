@@ -5320,9 +5320,9 @@ graphemer@^1.4.0:
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
 graphql-language-service@^5.1.2:
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/graphql-language-service/-/graphql-language-service-5.3.0.tgz#e99da78b129e30bc6e2a3fd897f7df4ab23b2fee"
-  integrity sha512-gCQIIy7lM9CB1KPLEb+DNZLczA9zuTLEOJE2hEQZTFYInogdmMDRa6RAkvM4LL0LcgcS+3uPs6KtHlcjCqRbUg==
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/graphql-language-service/-/graphql-language-service-5.4.0.tgz#c1f896a53875705b892849c560b0f75f005c9000"
+  integrity sha512-g4N5PKh4Dxow9zuHrzX6PHuWWL/aQPYgzZvZst1KkWYFW1H1rmOA/p0/eEJ2WVuoCCfy1tyAR91iG92MAKCILA==
   dependencies:
     debounce-promise "^3.1.2"
     nullthrows "^1.0.0"
