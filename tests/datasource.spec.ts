@@ -66,10 +66,10 @@ test('AllAssets variable dropdown contains expected options', async ({ gotoDashb
   
   await expect(allAssetsContainer).toBeVisible({ timeout: 10000 });
 
-  // Click on the dropdown input to open it
-  const dropdownInput = allAssetsContainer.locator('input[role="combobox"]');
-  await expect(dropdownInput).toBeVisible({ timeout: 5000 });
-  await dropdownInput.click();
+  // Click on the dropdown to open it (works with both button and input versions)
+  const dropdownTrigger = allAssetsContainer.locator('input[role="combobox"], button[data-testid*="Variable Value DropDown"]');
+  await expect(dropdownTrigger).toBeVisible({ timeout: 5000 });
+  await dropdownTrigger.click();
 
   // Wait for dropdown options to appear and verify the expected options
   for (const expectedOption of expectedOptions) {
