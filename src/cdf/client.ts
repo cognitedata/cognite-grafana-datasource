@@ -11,13 +11,14 @@ import {
   CogniteRelationshipResponse,
   RelationshipsFilter,
   EventsFilterTimeParams,
+} from './types';
+import {
   DMSSpace,
   DMSView,
   DMSSearchRequest,
   DMSSearchResponse,
   DMSInstance,
-  DMSInstanceId,
-} from './types';
+} from '../types/dms';
 import {
   Tab,
   QueryTarget,
@@ -125,13 +126,15 @@ export async function getLabelsForTarget(
       return timeseries.map((ts) => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Tab.CogniteTimeSeriesSearch: {
-      // For CogniteTimeSeriesSearch, we use the name from the selected timeseries
-      // since instanceId format doesn't work with regular timeseries endpoints
-      if (target.cogniteTimeSeriesSearchQuery?.selectedTimeseries?.name) {
-        const selectedName = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.name;
+      // For CogniteTimeSeriesSearch, we use the instanceId format as a fallback
+      // since name should be loaded at runtime, not persisted in JSON
+      if (target.cogniteTimeSeriesSearchQuery?.selectedTimeseries) {
+        const space = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.space;
+        const externalId = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId;
+        const instanceId = `${space}:${externalId}`;
         // If we have a custom label with variables, we can't inject properties from regular timeseries metadata
-        // since this is a DMS instance, so we'll use the selected name as fallback
-        return labelSrc && !labelContainsVariableProps(labelSrc) ? [labelSrc] : [selectedName];
+        // since this is a DMS instance, so we'll use the instanceId as fallback
+        return labelSrc && !labelContainsVariableProps(labelSrc) ? [labelSrc] : [instanceId];
       }
       return [labelSrc || 'CogniteTimeSeries'];
     }
@@ -460,14 +463,4 @@ export function searchDMSInstances(
   });
 }
 
-export function createInstanceDataQueryRequest(
-  instances: DMSInstanceId[],
-  options: QueryOptions & { timeZone: string }
-): DataQueryRequestItem[] {
-  return instances.map(({ space, externalId }) => ({
-    instanceId: {
-      space,
-      externalId,
-    },
-  }));
-}
+
