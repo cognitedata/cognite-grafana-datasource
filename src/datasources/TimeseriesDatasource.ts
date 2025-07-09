@@ -126,16 +126,13 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.CogniteTimeSeriesSearch: {
-      if (cogniteTimeSeriesSearchQuery.selectedTimeseries) {
-        items = [{
-          instanceId: {
-            space: cogniteTimeSeriesSearchQuery.selectedTimeseries.space,
-            externalId: cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId,
-          },
-        }];
-      } else {
-        items = [];
-      }
+      // By this point, filterEmptyQueryTargets should have already filtered out empty queries
+      items = [{
+        instanceId: {
+          space: cogniteTimeSeriesSearchQuery.selectedTimeseries.space,
+          externalId: cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId,
+        },
+      }];
       break;
     }
   }
