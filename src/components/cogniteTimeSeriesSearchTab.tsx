@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, Input, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client';
-import { DMSSpace, DMSView, DMSInstance } from '../cdf/types';
+import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances, stringifyError } from '../cdf/client';
+import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
@@ -54,7 +54,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       setSpaces(spaceOptions);
       setError(null);
     } catch (err) {
-      setError(`Failed to load spaces: ${err instanceof Error ? err.message : String(err)}`);
+      setError(`Failed to load spaces: ${stringifyError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       setViews(viewOptions);
       setError(null);
     } catch (err) {
-      setError(`Failed to load views for space ${space}: ${err instanceof Error ? err.message : String(err)}`);
+      setError(`Failed to load views for space ${space}: ${stringifyError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             },
           },
         },
-        limit: cogniteTimeSeriesSearchQuery.limit || 1000,
+        limit: 1000,
       };
 
       const instances = await searchDMSInstances(connector, searchRequest);
@@ -117,10 +117,10 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       });
       return tsOptions;
     } catch (err) {
-      setError(`Search failed: ${err instanceof Error ? err.message : String(err)}`);
+      setError(`Search failed: ${stringifyError(err)}`);
       return [];
     }
-  }, [connector, cogniteTimeSeriesSearchQuery.space, cogniteTimeSeriesSearchQuery.externalId, cogniteTimeSeriesSearchQuery.version, cogniteTimeSeriesSearchQuery.limit]);
+  }, [connector, cogniteTimeSeriesSearchQuery.space, cogniteTimeSeriesSearchQuery.externalId, cogniteTimeSeriesSearchQuery.version]);
 
   useEffect(() => {
     loadSpaces();
@@ -132,11 +132,11 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }
   }, [cogniteTimeSeriesSearchQuery.space, loadViews]);
 
-  const handleSpaceChange = (selectedSpace: SelectableValue) => {
+  const handleSpaceChange = (selectedSpace: SelectableValue | null) => {
     onQueryChange({
       cogniteTimeSeriesSearchQuery: {
         ...cogniteTimeSeriesSearchQuery,
-        space: selectedSpace.value,
+        space: selectedSpace?.value || '',
         externalId: '', // Reset external ID when space changes
         selectedTimeseries: undefined, // Reset selected timeseries
       },
@@ -148,28 +148,31 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       cogniteTimeSeriesSearchQuery: {
         ...cogniteTimeSeriesSearchQuery,
         version: event.target.value,
+        selectedTimeseries: undefined, // Reset selected timeseries when version changes
       },
     });
   };
 
-  const handleExternalIdChange = (selectedView: SelectableValue) => {
+  const handleExternalIdChange = (selectedView: SelectableValue | null) => {
     onQueryChange({
       cogniteTimeSeriesSearchQuery: {
         ...cogniteTimeSeriesSearchQuery,
-        externalId: selectedView.value,
+        externalId: selectedView?.value || '',
         selectedTimeseries: undefined, // Reset selected timeseries
       },
     });
   };
 
-  const handleTimeseriesSelection = (selectedTimeseries: SelectableValue) => {
+  const handleTimeseriesSelection = (selectedTimeseries: SelectableValue | null) => {
     onQueryChange({
       cogniteTimeSeriesSearchQuery: {
         ...cogniteTimeSeriesSearchQuery,
         selectedTimeseries: selectedTimeseries ? {
+          // PR Feedback: We need space field here because top-level space (e.g., "cdf_cdm") 
+          // is used for searching/listing in DMS view, while selectedTimeseries.space 
+          // (e.g., "cdm_try") is where the actual selected instance lives for data queries
           space: selectedTimeseries.space,
           externalId: selectedTimeseries.externalId,
-          name: selectedTimeseries.name,
         } : undefined,
       },
     });
@@ -177,12 +180,15 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   const getCurrentTimeseriesValue = () => {
     if (cogniteTimeSeriesSearchQuery.selectedTimeseries) {
+      // Use the space from selectedTimeseries since that's where the instance actually lives
+      const space = cogniteTimeSeriesSearchQuery.selectedTimeseries.space;
+      const externalId = cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId;
       return {
-        label: cogniteTimeSeriesSearchQuery.selectedTimeseries.name,
-        value: `${cogniteTimeSeriesSearchQuery.selectedTimeseries.space}:${cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId}`,
-        space: cogniteTimeSeriesSearchQuery.selectedTimeseries.space,
-        externalId: cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId,
-        name: cogniteTimeSeriesSearchQuery.selectedTimeseries.name,
+        label: externalId, // Fallback to externalId since name will be loaded at runtime
+        value: `${space}:${externalId}`,
+        space: space,
+        externalId: externalId,
+        name: externalId, // Fallback to externalId for now
       };
     }
     return null;
@@ -249,6 +255,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             tooltip="Search for timeseries by name or description"
           >
             <AsyncSelect
+              key={`${cogniteTimeSeriesSearchQuery.space}-${cogniteTimeSeriesSearchQuery.version}-${cogniteTimeSeriesSearchQuery.externalId}`}
               loadOptions={searchTimeseries}
               value={getCurrentTimeseriesValue()}
               onChange={handleTimeseriesSelection}
@@ -261,18 +268,19 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </InlineField>
         </InlineFieldRow>
 
+        <LatestValueCheckbox {...{ query, onQueryChange }} />
+        {!query.latestValue && (
+          <CommonEditors {...{ query, onQueryChange }} />
+        )}
+
         {error && (
-          <Alert title="Error" severity="error">
+          <Alert title="Information" severity="info">
             {error}
           </Alert>
         )}
       </div>
-
-      <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {query.latestValue ? (
+      {query.latestValue && (
         <LabelEditor {...{ onQueryChange, query }} />
-      ) : (
-        <CommonEditors {...{ query, onQueryChange }} />
       )}
     </div>
   );
