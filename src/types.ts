@@ -108,9 +108,7 @@ export interface CogniteTimeSeriesSearchQuery {
   selectedTimeseries?: {
     space: string;
     externalId: string;
-    name?: string;
   };
-  limit?: number;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
@@ -157,7 +155,6 @@ export const defaultCogniteTimeSeriesSearchQuery: CogniteTimeSeriesSearchQuery =
   version: 'v1',
   externalId: 'CogniteTimeSeries',
   selectedTimeseries: undefined,
-  limit: 1000,
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
