@@ -1,6 +1,6 @@
 import { getMockedDataSource } from '../test_utils';
 import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client';
-import { DMSSpace, DMSView, DMSInstance } from '../cdf/types';
+import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 import { Connector } from '../connector';
 
 jest.mock('@grafana/runtime');
