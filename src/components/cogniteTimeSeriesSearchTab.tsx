@@ -105,7 +105,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
       const instances = await searchDMSInstances(connector, searchRequest);
       const tsOptions = instances.map((instance: DMSInstance) => {
-        const name = instance.properties?.cdf_cdm?.[`${cogniteTimeSeriesSearchQuery.externalId}/${cogniteTimeSeriesSearchQuery.version}`]?.name || instance.externalId;
+        const name = instance.properties?.[cogniteTimeSeriesSearchQuery.space]?.[`${cogniteTimeSeriesSearchQuery.externalId}/${cogniteTimeSeriesSearchQuery.version}`]?.name || instance.externalId;
         return {
           label: name,
           value: `${instance.space}:${instance.externalId}`,
