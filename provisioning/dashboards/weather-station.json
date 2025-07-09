@@ -480,11 +480,9 @@
           "aggregation": "average",
           "cogniteTimeSeriesSearchQuery": {
             "externalId": "CogniteTimeSeries",
-            "limit": 1000,
             "selectedTimeseries": {
-              "externalId": "59.9139-10.7522-current.temp",
-              "name": "59.9139-10.7522-current.temp",
-              "space": "cdm_try"
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.temp"
             },
             "space": "cdf_cdm",
             "version": "v1"
@@ -505,11 +503,9 @@
           "aggregation": "average",
           "cogniteTimeSeriesSearchQuery": {
             "externalId": "CogniteTimeSeries",
-            "limit": 1000,
             "selectedTimeseries": {
-              "externalId": "59.9139-10.7522-current.pressure",
-              "name": "59.9139-10.7522-current.pressure",
-              "space": "cdm_try"
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.pressure"
             },
             "space": "cdf_cdm",
             "version": "v1"
@@ -531,11 +527,9 @@
           "aggregation": "average",
           "cogniteTimeSeriesSearchQuery": {
             "externalId": "CogniteTimeSeries",
-            "limit": 1000,
             "selectedTimeseries": {
-              "externalId": "59.9139-10.7522-current.feels_like",
-              "name": "59.9139-10.7522-current.feels_like",
-              "space": "cdm_try"
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.feels_like"
             },
             "space": "cdf_cdm",
             "version": "v1"
@@ -574,11 +568,9 @@
           },
           "cogniteTimeSeriesSearchQuery": {
             "externalId": "CogniteTimeSeries",
-            "limit": 1000,
             "selectedTimeseries": {
-              "externalId": "59.9139-10.7522-current.humidity",
-              "name": "59.9139-10.7522-current.humidity",
-              "space": "cdm_try"
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.humidity"
             },
             "space": "cdf_cdm",
             "version": "v1"
@@ -600,11 +592,9 @@
           "aggregation": "average",
           "cogniteTimeSeriesSearchQuery": {
             "externalId": "CogniteTimeSeries",
-            "limit": 1000,
             "selectedTimeseries": {
-              "externalId": "59.9139-10.7522-current.wind_speed",
-              "name": "59.9139-10.7522-current.wind_speed",
-              "space": "cdm_try"
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.wind_speed"
             },
             "space": "cdf_cdm",
             "version": "v1"
