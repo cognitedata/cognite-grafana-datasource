@@ -478,9 +478,9 @@
       "targets": [
         {
           "aggregation": "average",
-          "cogniteTimeSeriesSearchQuery": {
+          "cogniteTimeSeries": {
             "externalId": "CogniteTimeSeries",
-            "selectedTimeseries": {
+            "instanceId": {
               "space": "cdm_try",
               "externalId": "59.9139-10.7522-current.temp"
             },
@@ -501,9 +501,9 @@
         },
         {
           "aggregation": "average",
-          "cogniteTimeSeriesSearchQuery": {
+          "cogniteTimeSeries": {
             "externalId": "CogniteTimeSeries",
-            "selectedTimeseries": {
+            "instanceId": {
               "space": "cdm_try",
               "externalId": "59.9139-10.7522-current.pressure"
             },
@@ -525,9 +525,9 @@
         },
         {
           "aggregation": "average",
-          "cogniteTimeSeriesSearchQuery": {
+          "cogniteTimeSeries": {
             "externalId": "CogniteTimeSeries",
-            "selectedTimeseries": {
+            "instanceId": {
               "space": "cdm_try",
               "externalId": "59.9139-10.7522-current.feels_like"
             },
@@ -566,9 +566,9 @@
             "target": "",
             "withRelationships": false
           },
-          "cogniteTimeSeriesSearchQuery": {
+          "cogniteTimeSeries": {
             "externalId": "CogniteTimeSeries",
-            "selectedTimeseries": {
+            "instanceId": {
               "space": "cdm_try",
               "externalId": "59.9139-10.7522-current.humidity"
             },
@@ -590,9 +590,9 @@
         },
         {
           "aggregation": "average",
-          "cogniteTimeSeriesSearchQuery": {
+          "cogniteTimeSeries": {
             "externalId": "CogniteTimeSeries",
-            "selectedTimeseries": {
+            "instanceId": {
               "space": "cdm_try",
               "externalId": "59.9139-10.7522-current.wind_speed"
             },

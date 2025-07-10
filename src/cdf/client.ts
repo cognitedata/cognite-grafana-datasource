@@ -128,9 +128,9 @@ export async function getLabelsForTarget(
     case Tab.CogniteTimeSeriesSearch: {
       // For CogniteTimeSeriesSearch, we use the instanceId format as a fallback
       // since name should be loaded at runtime, not persisted in JSON
-      if (target.cogniteTimeSeriesSearchQuery?.selectedTimeseries) {
-        const space = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.space;
-        const externalId = target.cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId;
+      if (target.cogniteTimeSeries?.instanceId) {
+        const space = target.cogniteTimeSeries.instanceId.space;
+        const externalId = target.cogniteTimeSeries.instanceId.externalId;
         const instanceId = `${space}:${externalId}`;
         // If we have a custom label with variables, we can't inject properties from regular timeseries metadata
         // since this is a DMS instance, so we'll use the instanceId as fallback

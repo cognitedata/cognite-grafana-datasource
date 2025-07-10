@@ -100,7 +100,7 @@ export async function getDataQueryRequestItems(
   intervalMs: number,
   timeFrame
 ): Promise<QueriesDataItem> {
-  const { tab, expr, flexibleDataModellingQuery, cogniteTimeSeriesSearchQuery } = target;
+  const { tab, expr, flexibleDataModellingQuery, cogniteTimeSeries } = target;
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
 
@@ -129,8 +129,8 @@ export async function getDataQueryRequestItems(
       // By this point, filterEmptyQueryTargets should have already filtered out empty queries
       items = [{
         instanceId: {
-          space: cogniteTimeSeriesSearchQuery.selectedTimeseries.space,
-          externalId: cogniteTimeSeriesSearchQuery.selectedTimeseries.externalId,
+          space: cogniteTimeSeries.instanceId.space,
+          externalId: cogniteTimeSeries.instanceId.externalId,
         },
       }];
       break;

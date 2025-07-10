@@ -463,7 +463,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         templateQuery,
         relationshipsQuery,
         flexibleDataModellingQuery,
-        cogniteTimeSeriesSearchQuery,
+        cogniteTimeSeries,
       } = target;
       switch (tab) {
         case Tab.Event:
@@ -491,7 +491,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
         case Tab.CogniteTimeSeriesSearch:
-          return !!cogniteTimeSeriesSearchQuery?.selectedTimeseries;
+          return !!cogniteTimeSeries?.instanceId;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:

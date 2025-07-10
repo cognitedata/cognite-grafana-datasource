@@ -101,11 +101,11 @@ export interface FlexibleDataModellingQuery {
   targets?: string[];
 }
 
-export interface CogniteTimeSeriesSearchQuery {
+export interface CogniteTimeSeries {
   space: string;
   version: string;
   externalId: string;
-  selectedTimeseries?: {
+  instanceId?: {
     space: string;
     externalId: string;
   };
@@ -150,11 +150,11 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   limit: 1000,
 };
 
-export const defaultCogniteTimeSeriesSearchQuery: CogniteTimeSeriesSearchQuery = {
+export const defaultCogniteTimeSeries: CogniteTimeSeries = {
   space: 'cdf_cdm',
   version: 'v1',
   externalId: 'CogniteTimeSeries',
-  selectedTimeseries: undefined,
+  instanceId: undefined,
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
@@ -171,7 +171,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   templateQuery: defaultTemplateQuery,
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
-  cogniteTimeSeriesSearchQuery: defaultCogniteTimeSeriesSearchQuery,
+  cogniteTimeSeries: defaultCogniteTimeSeries,
 };
 
 /**
@@ -290,7 +290,7 @@ export interface CogniteQueryBase extends DataQuery {
   relationshipsQuery: RelationshipsQuery;
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
-  cogniteTimeSeriesSearchQuery: CogniteTimeSeriesSearchQuery;
+  cogniteTimeSeries: CogniteTimeSeries;
 }
 
 export type TemplateQuery = {
