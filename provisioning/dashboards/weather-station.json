@@ -1,86 +1,63 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        {
-          "datasource": {
-            "type": "cognitedata-datasource",
-            "uid": "42"
-          },
-          "enable": true,
-          "hide": false,
-          "iconColor": "red",
-          "name": "events",
-          "target": {
-            "query": "events{}",
-            "refId": "Anno"
-          }
-        }
-      ]
-    },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 1,
-    "links": [],
-    "panels": [
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
       {
         "datasource": {
           "type": "cognitedata-datasource",
           "uid": "42"
         },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 0
-        },
-        "id": 2,
-        "options": {
-          "edges": {},
-          "nodes": {}
-        },
-        "pluginVersion": "11.4.3",
-        "targets": [
-          {
-            "aggregation": "average",
-            "assetQuery": {
-              "includeSubTimeseries": true,
-              "includeSubtrees": false,
-              "relationshipsQuery": {
-                "dataSetIds": [
-                  {
-                    "label": "openweathermap",
-                    "value": 5657360878312999
-                  }
-                ],
-                "depth": 1,
-                "isActiveAtTime": false,
-                "isTypeTimeseries": false,
-                "labels": {
-                  "containsAny": []
-                },
-                "limit": 1000,
-                "sourceExternalIds": []
-              },
-              "target": "",
-              "withRelationships": false
-            },
-            "granularity": "",
-            "label": "",
-            "latestValue": false,
-            "refId": "A",
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "events",
+        "target": {
+          "query": "events{}",
+          "refId": "Anno"
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "edges": {},
+        "nodes": {}
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "aggregation": "average",
+          "assetQuery": {
+            "includeSubTimeseries": true,
+            "includeSubtrees": false,
             "relationshipsQuery": {
               "dataSetIds": [
                 {
@@ -97,320 +74,563 @@
               "limit": 1000,
               "sourceExternalIds": []
             },
-            "tab": "Relationships",
-            "target": ""
-          }
-        ],
-        "title": "Relationships",
-        "type": "nodeGraph"
-      },
-      {
-        "datasource": {
-          "type": "cognitedata-datasource",
-          "uid": "42"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "custom": {
-              "align": "auto",
-              "cellOptions": {
-                "type": "auto"
-              },
-              "inspect": false
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
+            "target": "",
+            "withRelationships": false
           },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 0
-        },
-        "id": 3,
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "countRows": false,
-            "fields": "",
-            "reducer": [
-              "sum"
-            ],
-            "show": false
-          },
-          "showHeader": true
-        },
-        "pluginVersion": "10.2.9",
-        "targets": [
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "eventQuery": {
-              "activeAtTimeRange": true,
-              "advancedFilter": "",
-              "aggregate": {
-                "name": "uniqueValues",
-                "properties": [],
-                "withAggregate": false
-              },
-              "columns": [
-                "externalId",
-                "description",
-                "startTime",
-                "endTime"
-              ],
-              "expr": "events{}",
-              "sort": [
-                {
-                  "order": "asc",
-                  "property": "startTime"
-                }
-              ]
-            },
-            "expr": "",
-            "granularity": "",
-            "label": "",
-            "latestValue": false,
-            "refId": "A",
-            "tab": "Event",
-            "target": ""
-          }
-        ],
-        "title": "Events table",
-        "type": "table"
-      },
-      {
-        "datasource": {
-          "type": "cognitedata-datasource",
-          "uid": "42"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "log": 2,
-                "type": "log"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
+          "granularity": "",
+          "label": "",
+          "latestValue": false,
+          "refId": "A",
+          "relationshipsQuery": {
+            "dataSetIds": [
+              {
+                "label": "openweathermap",
+                "value": 5657360878312999
               }
+            ],
+            "depth": 1,
+            "isActiveAtTime": false,
+            "isTypeTimeseries": false,
+            "labels": {
+              "containsAny": []
             },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
+            "limit": 1000,
+            "sourceExternalIds": []
+          },
+          "tab": "Relationships",
+          "target": ""
+        }
+      ],
+      "title": "Relationships",
+      "type": "nodeGraph"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "eventQuery": {
+            "activeAtTimeRange": true,
+            "advancedFilter": "",
+            "aggregate": {
+              "name": "uniqueValues",
+              "properties": [],
+              "withAggregate": false
+            },
+            "columns": [
+              "externalId",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "expr": "events{}",
+            "sort": [
+              {
+                "order": "asc",
+                "property": "startTime"
+              }
+            ]
+          },
+          "expr": "",
+          "granularity": "",
+          "label": "",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "Event",
+          "target": ""
+        }
+      ],
+      "title": "Events table",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 9,
-          "w": 24,
-          "x": 0,
-          "y": 8
-        },
-        "id": 1,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "maxHeight": 600,
-            "mode": "single",
-            "sort": "none"
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           }
         },
-        "pluginVersion": "11.4.3",
-        "targets": [
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "A",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.clouds",
-            "targetRefType": "externalId"
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "B",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.feels_like",
-            "targetRefType": "externalId"
+          "expr": "",
+          "granularity": "",
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.clouds",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "C",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.humidity",
-            "targetRefType": "externalId"
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "B",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.feels_like",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "D",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.pressure",
-            "targetRefType": "externalId"
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "C",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.humidity",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "E",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.temp",
-            "targetRefType": "externalId"
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "D",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.pressure",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
-            },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "F",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.wind_speed",
-            "targetRefType": "externalId"
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "E",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.temp",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
           },
-          {
-            "aggregation": "average",
-            "datasource": {
-              "type": "cognitedata-datasource",
-              "uid": "42"
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "F",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.wind_speed",
+          "targetRefType": "externalId"
+        },
+        {
+          "aggregation": "average",
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "{{externalId}} {{unit}}",
+          "latestValue": false,
+          "refId": "G",
+          "tab": "Timeseries",
+          "target": "59.9139-10.7522-current.uvi",
+          "targetRefType": "externalId"
+        }
+      ],
+      "title": "Current weather",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "expr": "",
-            "granularity": "",
-            "hide": false,
-            "label": "{{externalId}} {{unit}}",
-            "latestValue": false,
-            "refId": "G",
-            "tab": "Timeseries",
-            "target": "59.9139-10.7522-current.uvi",
-            "targetRefType": "externalId"
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           }
-        ],
-        "title": "Current weather",
-        "type": "timeseries"
-      }
-    ],
-    "preload": false,
-    "schemaVersion": 40,
-    "tags": [],
-    "templating": {
-      "list": []
-    },
-    "time": {
-      "from": "now-1y",
-      "to": "now"
-    },
-    "timepicker": {},
-    "timezone": "browser",
-    "title": "weather station",
-    "uid": "42",
-    "version": 3,
-    "weekStart": ""
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "aggregation": "average",
+          "cogniteTimeSeries": {
+            "externalId": "CogniteTimeSeries",
+            "instanceId": {
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.temp"
+            },
+            "space": "cdf_cdm",
+            "version": "v1"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "label": "CDMTS temp",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "CogniteTimeSeries",
+          "target": ""
+        },
+        {
+          "aggregation": "average",
+          "cogniteTimeSeries": {
+            "externalId": "CogniteTimeSeries",
+            "instanceId": {
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.pressure"
+            },
+            "space": "cdf_cdm",
+            "version": "v1"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "CDMTS pressure",
+          "latestValue": false,
+          "refId": "B",
+          "tab": "CogniteTimeSeries",
+          "target": ""
+        },
+        {
+          "aggregation": "average",
+          "cogniteTimeSeries": {
+            "externalId": "CogniteTimeSeries",
+            "instanceId": {
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.feels_like"
+            },
+            "space": "cdf_cdm",
+            "version": "v1"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "CDMTS feels like",
+          "latestValue": false,
+          "refId": "C",
+          "tab": "CogniteTimeSeries",
+          "target": ""
+        },
+        {
+          "aggregation": "average",
+          "assetQuery": {
+            "includeSubTimeseries": true,
+            "includeSubtrees": false,
+            "relationshipsQuery": {
+              "dataSetIds": [],
+              "depth": 1,
+              "isActiveAtTime": false,
+              "isTypeTimeseries": false,
+              "labels": {
+                "containsAny": []
+              },
+              "limit": 1000,
+              "sourceExternalIds": []
+            },
+            "target": "",
+            "withRelationships": false
+          },
+          "cogniteTimeSeries": {
+            "externalId": "CogniteTimeSeries",
+            "instanceId": {
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.humidity"
+            },
+            "space": "cdf_cdm",
+            "version": "v1"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "CDMTS humidity",
+          "latestValue": false,
+          "refId": "D",
+          "tab": "CogniteTimeSeries",
+          "target": ""
+        },
+        {
+          "aggregation": "average",
+          "cogniteTimeSeries": {
+            "externalId": "CogniteTimeSeries",
+            "instanceId": {
+              "space": "cdm_try",
+              "externalId": "59.9139-10.7522-current.wind_speed"
+            },
+            "space": "cdf_cdm",
+            "version": "v1"
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "expr": "",
+          "granularity": "",
+          "hide": false,
+          "label": "CDMTS wind speed",
+          "latestValue": false,
+          "refId": "E",
+          "tab": "CogniteTimeSeries",
+          "target": ""
+        }
+      ],
+      "title": "CogniteTimeSeries",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1y",
+    "to": "now"
+  },
+  "timeRangeUpdatedDuringEditOrView": false,
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "weather station",
+  "uid": "42",
+  "version": 1,
+  "weekStart": ""
 }
