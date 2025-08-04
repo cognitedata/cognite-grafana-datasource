@@ -200,3 +200,159 @@ test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, read
 
   await expect(dashboardPage).toHaveAlert('info', { hasText: 'Event query syntax help' });
 });
+
+test('"CogniteTimeSeries" tab can be selected and search works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Test that search AsyncSelect is visible - use the input element with the specific id
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await expect(searchInput).toBeVisible();
+
+  // Test space selector (should already be set to cdf_cdm)
+  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
+  const spaceValue = spaceField.getByText('cdf_cdm');
+  await expect(spaceValue).toBeVisible();
+
+  // Test version input (should already be set to v1)
+  const versionInput = editorRow.locator('input[value="v1"]');
+  await expect(versionInput).toBeVisible();
+
+  // Test view selector (should be set to Time series)  
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewValue = viewField.getByText('Time series');
+  await expect(viewValue).toBeVisible();
+
+  // Test aggregation selector (should be set to Average)
+  const aggregationField = editorRow.locator('label:has-text("Aggregation")').locator('..');
+  const aggregationValue = aggregationField.getByText('Average');
+  await expect(aggregationValue).toBeVisible();
+
+  // Test granularity input
+  const granularityInput = editorRow.locator('input[id="granularity-A"]');
+  await expect(granularityInput).toBeVisible();
+
+  // Test label input  
+  const labelInput = editorRow.locator('input[id="label-A"]');
+  await expect(labelInput).toBeVisible();
+});
+
+test('"CogniteTimeSeries" query with selection works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Space and version should already be set to cdf_cdm and v1 by default
+  // Verify they are set correctly
+  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
+  await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
+  await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+
+  // Click on the search AsyncSelect and type '59.9139'
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139');
+
+  // Wait for search results
+  await waitForQueriesToFinish(page, grafanaVersion);
+  
+  // Look for the timeseries option in the dropdown
+  const option = selectors.components.Select.option;
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139/i }).first();
+  await expect(tsOption).toBeVisible({ timeout: 10000 });
+  
+  // Click on the first result to select it
+  await tsOption.click();
+
+  // Verify that a timeseries name appears in the search box (it should replace the placeholder)
+  await expect(searchInput).not.toHaveText('Search timeseries by name/description');
+
+  // Test label input - find the textbox that contains 'default' for label
+  const labelInput = editorRow.locator('input[id="label-A"]');
+  await labelInput.clear();
+  await labelInput.fill('CDMTS Data');
+
+  await waitForQueriesToFinish(page, grafanaVersion);
+});
+
+test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const searchTerms = ['59.9139-10.7522-current.temp', '59.9139-10.7522-current.pressure', '59.9139-10.7522-current.humidity'];
+  const expectedLabels = ['temperature', 'pressure', 'humidity'];
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+
+  for (const [index, searchTerm] of searchTerms.entries()) {
+    if (index > 0) {
+      await page.getByTestId(/query-tab-add-query/).click();
+    }
+    
+    const queryLetter = String.fromCharCode(65 + index); // A, B, C
+    const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
+
+    // Click on CogniteTimeSeries tab
+    await editorRow.getByText('CogniteTimeSeries').click();
+
+    // Space and version should already be set to cdf_cdm and v1 by default
+    const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
+    await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
+    await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+
+    // Click on the search AsyncSelect and type the search term
+    const searchInput = editorRow.locator(`input[id="cognite-timeseries-search-${queryLetter}"]`);
+    await searchInput.click();
+    await searchInput.fill(searchTerm);
+
+    // Wait for search results
+    await waitForQueriesToFinish(page, grafanaVersion);
+    
+    // Select first result from dropdown
+    const option = selectors.components.Select.option;
+    const searchOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: new RegExp(searchTerm.replace('.', '\\.'), 'i') }).first();
+    await expect(searchOption).toBeVisible({ timeout: 10000 });
+    await searchOption.click();
+
+    // Set custom label - find the label textbox (last textbox with 'default')
+    const labelInput = editorRow.locator(`input[id="label-${queryLetter}"]`);
+    await labelInput.clear();
+    await labelInput.fill(`TST ${expectedLabels[index]}`);
+  }
+
+  await waitForQueriesToFinish(page, grafanaVersion);
+
+  // Check that all labels appear in the legend
+  for (const label of expectedLabels) {
+    const legendText = panelEditPage.panel.locator.getByText(`TST ${label}`);
+    await expect(legendText).toBeVisible({ timeout: 10000 });
+  }
+});
