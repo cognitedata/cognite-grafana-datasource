@@ -13,6 +13,7 @@ import CogniteDatasource from './datasource';
 
 export enum Tab {
   Timeseries = 'Timeseries',
+  CogniteTimeSeriesSearch = 'CogniteTimeSeries',
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
@@ -25,6 +26,7 @@ export enum Tab {
 
 export const TabTitles = {
   [Tab.Timeseries]: 'Time series search',
+  [Tab.CogniteTimeSeriesSearch]: 'CogniteTimeSeries',
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
@@ -99,6 +101,16 @@ export interface FlexibleDataModellingQuery {
   targets?: string[];
 }
 
+export interface CogniteTimeSeries {
+  space: string;
+  version: string;
+  externalId: string;
+  instanceId?: {
+    space: string;
+    externalId: string;
+  };
+}
+
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -138,6 +150,13 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   limit: 1000,
 };
 
+export const defaultCogniteTimeSeries: CogniteTimeSeries = {
+  space: 'cdf_cdm',
+  version: 'v1',
+  externalId: 'CogniteTimeSeries',
+  instanceId: undefined,
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -152,6 +171,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   templateQuery: defaultTemplateQuery,
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
+  cogniteTimeSeries: defaultCogniteTimeSeries,
 };
 
 /**
@@ -270,6 +290,7 @@ export interface CogniteQueryBase extends DataQuery {
   relationshipsQuery: RelationshipsQuery;
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
+  cogniteTimeSeries: CogniteTimeSeries;
 }
 
 export type TemplateQuery = {
@@ -419,6 +440,10 @@ export type DataQueryRequestItem = {
   aggregates?: string[];
   id?: number;
   externalId?: string;
+  instanceId?: {
+    space: string;
+    externalId: string;
+  };
   timeZone?: string;
 };
 

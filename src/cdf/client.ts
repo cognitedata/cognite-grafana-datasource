@@ -13,6 +13,13 @@ import {
   EventsFilterTimeParams,
 } from './types';
 import {
+  DMSSpace,
+  DMSView,
+  DMSSearchRequest,
+  DMSSearchResponse,
+  DMSInstance,
+} from '../types/dms';
+import {
   Tab,
   QueryTarget,
   CDFDataQueryRequest,
@@ -117,6 +124,19 @@ export async function getLabelsForTarget(
        */
       const timeseries = await getTimeseries({ items: tsIds }, connector, false);
       return timeseries.map((ts) => getLabelWithInjectedProps(labelSrc, ts));
+    }
+    case Tab.CogniteTimeSeriesSearch: {
+      // For CogniteTimeSeriesSearch, we use the instanceId format as a fallback
+      // since name should be loaded at runtime, not persisted in JSON
+      if (target.cogniteTimeSeries?.instanceId) {
+        const space = target.cogniteTimeSeries.instanceId.space;
+        const externalId = target.cogniteTimeSeries.instanceId.externalId;
+        const instanceId = `${space}:${externalId}`;
+        // If we have a custom label with variables, we can't inject properties from regular timeseries metadata
+        // since this is a DMS instance, so we'll use the instanceId as fallback
+        return labelSrc && !labelContainsVariableProps(labelSrc) ? [labelSrc] : [instanceId];
+      }
+      return [labelSrc || 'CogniteTimeSeries'];
     }
     case Custom: {
       if (!labelSrc || labelContainsVariableProps(labelSrc)) {
@@ -400,3 +420,47 @@ export function fetchRelationships(
     },
   });
 }
+
+// DMS API functions
+export function fetchDMSSpaces(
+  connector: Connector,
+  limit = 1000
+): Promise<DMSSpace[]> {
+  return connector.fetchItems<DMSSpace>({
+    method: HttpMethod.GET,
+    path: '/models/spaces',
+    data: undefined,
+    params: { limit, includeGlobal: true },
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchDMSViews(
+  connector: Connector,
+  space?: string,
+  limit = 1000
+): Promise<DMSView[]> {
+  const params = space 
+    ? { space, limit, includeGlobal: true } 
+    : { limit, includeGlobal: true };
+  return connector.fetchItems<DMSView>({
+    method: HttpMethod.GET,
+    path: '/models/views',
+    data: undefined,
+    params,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function searchDMSInstances(
+  connector: Connector,
+  searchRequest: DMSSearchRequest
+): Promise<DMSInstance[]> {
+  return connector.fetchItems<DMSInstance>({
+    method: HttpMethod.POST,
+    path: '/models/instances/search',
+    data: searchRequest,
+  });
+}
+
+
