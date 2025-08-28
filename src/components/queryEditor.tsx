@@ -37,6 +37,7 @@ import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
+import { RecordsTab } from './recordsTab';
 import { eventBusService } from '../appEventHandler';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
@@ -378,6 +379,9 @@ export function QueryEditor(props: EditorProps) {
         )}
         {tab === Tabs.CogniteTimeSeriesSearch && (
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
+        )}
+        {tab === Tabs.Records && (
+          <RecordsTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
