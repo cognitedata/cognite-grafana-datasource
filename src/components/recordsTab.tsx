@@ -10,8 +10,8 @@ interface RecordsTabProps extends SelectedProps {
 
 const sampleJsonQuery = `{
   "lastUpdatedTime": {
-    "gt": \${__from},
-    "lt": \${__to}
+    "gt": "\${__from}",
+    "lt": "\${__to}"
   },
   "aggregates": {
     "rate": {
