@@ -463,4 +463,62 @@ export function searchDMSInstances(
   });
 }
 
+// Streams API functions
+export interface Stream {
+  externalId: string;
+  name?: string;
+  description?: string;
+  settings?: {
+    template?: {
+      name: string;
+    };
+  };
+}
+
+export interface StreamRecordsAggregateRequest {
+  lastUpdatedTime?: {
+    gt?: string | number;
+    lt?: string | number;
+  };
+  filter?: {
+    and?: any[];
+  };
+  aggregates?: {
+    [key: string]: any;
+  };
+}
+
+export interface StreamRecordsAggregateResponse {
+  aggregates: {
+    [key: string]: any;
+  };
+}
+
+export function fetchStreams(
+  connector: Connector,
+  limit = 1000
+): Promise<Stream[]> {
+  return connector.fetchItems<Stream>({
+    method: HttpMethod.GET,
+    path: '/streams',
+    data: undefined,
+    params: { limit },
+    headers: { 'cdf-version': 'beta' },
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchStreamRecordsAggregate(
+  connector: Connector,
+  streamId: string,
+  aggregateRequest: StreamRecordsAggregateRequest
+): Promise<StreamRecordsAggregateResponse> {
+  return connector.fetchData<StreamRecordsAggregateResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/aggregate`,
+    data: aggregateRequest,
+    headers: { 'cdf-version': 'beta' },
+  });
+}
+
 

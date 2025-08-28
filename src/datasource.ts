@@ -37,6 +37,7 @@ import {
   TimeseriesDatasource,
   EventsDatasource,
   ExtractionPipelinesDatasource,
+  RecordsDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
 import { lastValueFrom, Observable, from, map, of } from 'rxjs';
@@ -61,6 +62,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   extractionPipelinesDatasource: ExtractionPipelinesDatasource;
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
+  recordsDatasource: RecordsDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -108,6 +110,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     this.eventsDatasource = new EventsDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
     this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(this.connector);
+    this.recordsDatasource = new RecordsDatasource(this.connector);
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
       this.connector,
       this.timeseriesDatasource
@@ -147,6 +150,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       relationshipsTargets,
       extractionPipelinesTargets,
       flexibleDataModellingTargets,
+      recordsTargets,
     } = groupTargets(queryTargets);
 
     let observables: Array<Observable<DataQueryResponse>> = [];
@@ -219,6 +223,16 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(flexibleDataModellingObservable);
       }
+
+      if (recordsTargets.length) {
+        const recordsObservable = from(
+          this.recordsDatasource.query({
+            ...options,
+            targets: recordsTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(recordsObservable);
+      }
     }
 
     return this.mergeObservables(observables);
@@ -269,7 +283,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   }
 
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
+    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery, recordsQuery } =
       target;
 
     const [
@@ -280,6 +294,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       eventExprTemplated,
       templategraphQlQueryTemplated,
       flexibleDataModellinggraphQlQueryTemplated,
+      recordsJsonQueryTemplated,
     ] = this.replaceVariablesArr(
       [
         expr,
@@ -289,6 +304,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         eventQuery?.expr,
         templateQuery?.graphQlQuery,
         flexibleDataModellingQuery?.graphQlQuery,
+        recordsQuery?.jsonQuery,
       ],
       scopedVars
     );
@@ -318,12 +334,19 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         graphQlQuery: flexibleDataModellinggraphQlQueryTemplated,
       },
     };
+    const templatedRecordsQuery = recordsQuery && {
+      recordsQuery: {
+        ...recordsQuery,
+        jsonQuery: recordsJsonQueryTemplated,
+      },
+    };
     return {
       ...target,
       ...templatedAssetQuery,
       ...templatedEventQuery,
       ...templatedTemplateQuery,
       ...templatedflexibleDataModellingQuery,
+      ...templatedRecordsQuery,
       query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
@@ -464,6 +487,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         relationshipsQuery,
         flexibleDataModellingQuery,
         cogniteTimeSeries,
+        recordsQuery,
       } = target;
       switch (tab) {
         case Tab.Event:
@@ -492,6 +516,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           );
         case Tab.CogniteTimeSeriesSearch:
           return !!cogniteTimeSeries?.instanceId;
+        case Tab.Records:
+          // Records query is valid when it has both a streamId and a JSON query
+          return !!recordsQuery?.streamId && !!recordsQuery?.jsonQuery?.trim();
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -526,6 +553,7 @@ function groupTargets(targets: CogniteQuery[]) {
     relationshipsTargets: groupedByTab[Tab.Relationships] ?? [],
     extractionPipelinesTargets: groupedByTab[Tab.ExtractionPipelines] ?? [],
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
+    recordsTargets: groupedByTab[Tab.Records] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
