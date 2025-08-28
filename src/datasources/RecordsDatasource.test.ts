@@ -51,7 +51,7 @@ describe('RecordsDatasource', () => {
       const result = (datasource as any).convertRecordsToDataFrame(mockApiResponse, 'A');
 
       // Log basic results for debugging
-      console.log('✅ Parsing SUCCESS: Created', result.fields.length, 'fields from timeHistogramBuckets');
+
 
       // Assertions
       expect(result.name).toBe('Records-A');
@@ -178,7 +178,7 @@ describe('RecordsDatasource', () => {
 
       const result = (datasource as any).convertRecordsToDataFrame(fullPayload, 'A');
 
-      console.log('✅ Full payload SUCCESS: Created', result.fields.length, 'fields with', result.length, 'data points');
+
 
       // The test should not result in the "No data found" error
       const errorField = result.fields.find((f: any) => f.name === 'message');
@@ -220,13 +220,60 @@ describe('RecordsDatasource', () => {
 
       const result = (datasource as any).convertRecordsToDataFrame(wrappedPayload, 'A');
 
-      console.log('✅ HTTP Wrapped payload SUCCESS: Created', result.fields.length, 'fields');
+
 
       // Should extract data from the wrapper correctly
       expect(result.fields.length).toBe(4); // time, count, avgPower, maxPower
       expect(result.fields.find((f: any) => f.name === 'rate.avgPower')).toBeDefined();
       expect(result.fields.find((f: any) => f.name === 'rate.maxPower')).toBeDefined();
       expect(result.fields.find((f: any) => f.name === 'message')).toBeUndefined(); // No error message
+    });
+
+    it('should handle filter results with timestamp fields correctly', () => {
+      const mockFilterResponse = {
+        items: [
+          {
+            createdTime: 1640995200, // 2022-01-01 00:00:00 UTC (in seconds)
+            lastUpdatedTime: 1640995200000, // 2022-01-01 00:00:00 UTC (in milliseconds)
+            meterModel: 'Model123',
+            powerValue: 42.5
+          },
+          {
+            createdTime: 1641081600, // 2022-01-02 00:00:00 UTC (in seconds)
+            lastUpdatedTime: 1641081600000, // 2022-01-02 00:00:00 UTC (in milliseconds)
+            meterModel: 'Model456',
+            powerValue: 55.3
+          }
+        ]
+      };
+
+      const result = (datasource as any).convertRecordsToDataFrame(mockFilterResponse, 'A');
+
+      expect(result.name).toBe('Records-A');
+      expect(result.fields).toHaveLength(4);
+      expect(result.length).toBe(2);
+
+      // Check field types
+      const createdTimeField = result.fields.find((f: any) => f.name === 'createdTime');
+      const lastUpdatedTimeField = result.fields.find((f: any) => f.name === 'lastUpdatedTime');
+      const meterModelField = result.fields.find((f: any) => f.name === 'meterModel');
+      const powerValueField = result.fields.find((f: any) => f.name === 'powerValue');
+
+      expect(createdTimeField?.type).toBe('time');
+      expect(lastUpdatedTimeField?.type).toBe('time');
+      expect(meterModelField?.type).toBe('string');
+      expect(powerValueField?.type).toBe('number');
+
+      // Check timestamp conversion (seconds to milliseconds)
+      expect(createdTimeField?.values).toEqual([1640995200000, 1641081600000]);
+      // lastUpdatedTime should stay in milliseconds
+      expect(lastUpdatedTimeField?.values).toEqual([1640995200000, 1641081600000]);
+      
+      // Check other values
+      expect(meterModelField?.values).toEqual(['Model123', 'Model456']);
+      expect(powerValueField?.values).toEqual([42.5, 55.3]);
+
+
     });
   });
 });

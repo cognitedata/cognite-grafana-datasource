@@ -1,18 +1,25 @@
 import { DataQueryRequest, DataQueryResponse, DataFrame, FieldType } from '@grafana/data';
-import { CogniteQuery, HttpMethod, Tuple } from '../types';
+import { CogniteQuery, HttpMethod, Tuple, RecordsMode } from '../types';
 import { Connector } from '../connector';
 import { getRange, toGranularityWithLowerBound } from '../utils';
-import { fetchStreamRecordsAggregate, StreamRecordsAggregateRequest, StreamRecordsAggregateResponse } from '../cdf/client';
+import { 
+  fetchStreamRecordsAggregate, 
+  fetchStreamRecordsFilter,
+  StreamRecordsAggregateRequest, 
+  StreamRecordsAggregateResponse,
+  StreamRecordsFilterRequest,
+  StreamRecordsFilterResponse
+} from '../cdf/client';
 import { handleError } from '../appEventHandler';
 
 export class RecordsDatasource {
   constructor(private connector: Connector) {}
 
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
-    console.log('RecordsDatasource.query called with targets:', options.targets.length);
+
     const timeRange = getRange(options.range);
     const recordResults = await this.fetchRecordTargets(options.targets, timeRange, options);
-    console.log('RecordsDatasource query results:', recordResults.length);
+
     return { data: recordResults };
   }
 
@@ -58,13 +65,10 @@ export class RecordsDatasource {
     target: CogniteQuery,
     [rangeStart, rangeEnd]: Tuple<number>,
     options: DataQueryRequest<CogniteQuery>
-  ): Promise<StreamRecordsAggregateResponse> {
+  ): Promise<StreamRecordsAggregateResponse | StreamRecordsFilterResponse> {
     const { refId, recordsQuery } = target;
     
-    console.log('fetchRecordsForTarget called for target:', refId, 'recordsQuery:', recordsQuery);
-    console.log('Time range:', rangeStart, 'to', rangeEnd, 'interval:', options.intervalMs);
-    
-    console.log('=== DEBUGGING API RESPONSE ===');
+
     
     if (!recordsQuery?.streamId) {
       console.warn('No streamId provided for Records query');
@@ -79,7 +83,7 @@ export class RecordsDatasource {
         try {
           // The jsonQuery should already have template variables replaced by replaceVariablesInTarget
           aggregateRequest = JSON.parse(recordsQuery.jsonQuery);
-          console.log('Using JSON query (variables should be replaced):', aggregateRequest);
+
         } catch (parseError) {
           throw new Error(`Invalid JSON query: ${parseError.message}`);
         }
@@ -88,23 +92,22 @@ export class RecordsDatasource {
         throw new Error('JSON query is required for Records aggregation');
       }
 
-      console.log('Making streams aggregate request to:', recordsQuery.streamId);
-      const result = await fetchStreamRecordsAggregate(
-        this.connector,
-        recordsQuery.streamId,
-        aggregateRequest
-      );
+      const mode = recordsQuery.mode || RecordsMode.Aggregate;
+      let result: StreamRecordsAggregateResponse | StreamRecordsFilterResponse;
       
-      console.log('RAW API Response size:', JSON.stringify(result).length, 'characters');
-      console.log('API Response structure check:');
-      const actualData = (result as any)?.data || result;
-      console.log('- Response type:', typeof result);
-      console.log('- Has data property:', !!(result as any)?.data);
-      console.log('- Actual data has aggregates:', !!actualData?.aggregates);
-      console.log('- Aggregates keys:', actualData?.aggregates ? Object.keys(actualData.aggregates) : 'NONE');
-      console.log('- Has timeHistogramBuckets:', !!actualData?.aggregates?.rate?.timeHistogramBuckets);
-      console.log('- Buckets count:', actualData?.aggregates?.rate?.timeHistogramBuckets?.length);
-      console.log('=== END API RESPONSE DEBUG ===');
+      if (mode === RecordsMode.Filter) {
+        result = await fetchStreamRecordsFilter(
+          this.connector,
+          recordsQuery.streamId,
+          aggregateRequest as StreamRecordsFilterRequest
+        );
+      } else {
+        result = await fetchStreamRecordsAggregate(
+          this.connector,
+          recordsQuery.streamId,
+          aggregateRequest as StreamRecordsAggregateRequest
+        );
+      }
       
       return result;
     } catch (e) {
@@ -113,27 +116,24 @@ export class RecordsDatasource {
     }
   }
 
-  private convertRecordsToDataFrame(data: StreamRecordsAggregateResponse, refId: string): DataFrame {
-    console.log('convertRecordsToDataFrame called with data:', data, 'refId:', refId);
+  private convertRecordsToDataFrame(data: StreamRecordsAggregateResponse | StreamRecordsFilterResponse, refId: string): DataFrame {
     const fields = [];
     const values = [];
 
-    // Handle different types of aggregate results
+    // Handle different types of responses
     // API response might be wrapped in an HTTP response object with data property
     const actualData = (data as any)?.data || data;
     
     if (actualData && actualData.aggregates) {
-      console.log('Processing aggregates:', Object.keys(actualData.aggregates));
+      // Handle aggregate response
       this.processAggregateResults(actualData.aggregates, '', fields, values);
-      console.log('After processing aggregates, fields created:', fields.length);
-    } else {
-      console.warn('No aggregates found in data. Full structure:', data);
-      console.warn('Actual data extracted:', actualData);
+    } else if (actualData && actualData.items) {
+      // Handle filter response
+      this.processFilterResults(actualData.items, fields);
     }
 
     // If no data was processed, create empty fields
     if (fields.length === 0) {
-      console.warn('No fields were created from the response data');
       fields.push({
         name: 'message',
         type: FieldType.string,
@@ -148,7 +148,6 @@ export class RecordsDatasource {
       length: Math.max(...fields.map(f => f.values.length), 1),
     };
     
-    console.log('Created DataFrame:', dataFrame);
     return dataFrame;
   }
 
@@ -158,31 +157,30 @@ export class RecordsDatasource {
     fields: any[],
     values: any[]
   ): void {
-    console.log('processAggregateResults called with aggregates keys:', Object.keys(aggregates), 'prefix:', prefix);
     
     for (const [key, value] of Object.entries(aggregates)) {
       const fieldName = prefix ? `${prefix}.${key}` : key;
-      console.log(`Processing aggregate key: ${key}, fieldName: ${fieldName}, value type:`, typeof value);
+
       
       if (value && typeof value === 'object') {
         // Handle timeHistogramBuckets (time series data)
         if (Array.isArray((value as any).timeHistogramBuckets)) {
-          console.log(`Found timeHistogramBuckets for ${key}, buckets count:`, (value as any).timeHistogramBuckets.length);
+
           this.processTimeHistogramBuckets((value as any).timeHistogramBuckets, fieldName, fields);
         }
         // Handle uniqueValueBuckets
         else if (Array.isArray((value as any).uniqueValueBuckets)) {
-          console.log(`Found uniqueValueBuckets for ${key}, buckets count:`, (value as any).uniqueValueBuckets.length);
+
           this.processUniqueValueBuckets((value as any).uniqueValueBuckets, fieldName, fields);
         }
         // Handle nested aggregates
         else if ((value as any).aggregates) {
-          console.log(`Found nested aggregates for ${key}`);
+
           this.processAggregateResults((value as any).aggregates, fieldName, fields, values);
         }
         // Handle simple aggregate values (avg, min, max, etc.)
         else {
-          console.log(`Processing simple aggregate values for ${key}:`, Object.keys(value));
+
           for (const [subKey, subValue] of Object.entries(value)) {
             if (typeof subValue === 'number') {
               fields.push({
@@ -202,7 +200,7 @@ export class RecordsDatasource {
           }
         }
       } else if (typeof value === 'number') {
-        console.log(`Adding direct numeric field: ${fieldName} = ${value}`);
+
         fields.push({
           name: fieldName,
           type: FieldType.number,
@@ -210,7 +208,7 @@ export class RecordsDatasource {
           config: {},
         });
       } else if (typeof value === 'string') {
-        console.log(`Adding direct string field: ${fieldName} = ${value}`);
+
         fields.push({
           name: fieldName,
           type: FieldType.string,
@@ -222,7 +220,7 @@ export class RecordsDatasource {
   }
 
   private processTimeHistogramBuckets(buckets: any[], fieldName: string, fields: any[]): void {
-    console.log('Processing timeHistogramBuckets:', buckets.length, 'buckets for field:', fieldName);
+
     
     const timeField = {
       name: `${fieldName}.time`,
@@ -265,12 +263,12 @@ export class RecordsDatasource {
             // Handle direct numeric value like { avg: 1.23 } or { max: 3.73 }
             if (typeof firstValue === 'number') {
               numericValue = firstValue;
-              console.log(`Extracted direct numeric value for ${aggKey}:`, numericValue);
+
             }
             // Handle nested structure like { avg: { parsedValue: 1.23, source: "1.23" } }
             else if (firstValue && typeof firstValue === 'object' && (firstValue as any).parsedValue !== undefined) {
               numericValue = (firstValue as any).parsedValue;
-              console.log(`Extracted parsedValue for ${aggKey}:`, numericValue);
+
             } else {
               console.warn(`Could not extract numeric value for ${aggKey}, firstValue:`, firstValue, 'type:', typeof firstValue, 'aggValue:', aggValue);
             }
@@ -286,12 +284,7 @@ export class RecordsDatasource {
     fields.push(countField);
     Object.values(aggregateFields).forEach(field => fields.push(field));
     
-    console.log('Created fields from timeHistogramBuckets:', fields.map(f => ({
-      name: f.name,
-      type: f.type,
-      valueCount: f.values.length,
-      sampleValues: f.values.slice(0, 3)
-    })));
+
   }
 
   private processUniqueValueBuckets(buckets: any[], fieldName: string, fields: any[]): void {
@@ -318,5 +311,178 @@ export class RecordsDatasource {
     fields.push(countField);
   }
 
+  private processFilterResults(items: any[], fields: any[]): void {
+
+    
+    if (items.length === 0) {
+      return;
+    }
+    
+    // Create fields based on the structure of the first item
+    const sampleItem = items[0];
+    const propertyNames = new Set<string>();
+    
+    // Collect all property names from all items to handle varying structures
+    items.forEach(item => {
+      this.collectPropertyNames(item, '', propertyNames);
+    });
+    
+
+    
+    // Create fields for each property
+    const fieldMap: { [key: string]: any } = {};
+    
+    propertyNames.forEach(propName => {
+      // Determine field type based on first non-null value
+      let fieldType = FieldType.string;
+      let sampleValue = null;
+      
+      for (const item of items) {
+        const value = this.getNestedProperty(item, propName);
+        if (value != null) {
+          sampleValue = value;
+          if (typeof value === 'number') {
+            // Check if this is likely an epoch timestamp based on field name or value
+            if (this.isTimestampField(propName) || this.isEpochTimestamp(value)) {
+              fieldType = FieldType.time;
+            } else {
+              fieldType = FieldType.number;
+            }
+          } else if (typeof value === 'boolean') {
+            fieldType = FieldType.boolean;
+          } else if (value instanceof Date) {
+            fieldType = FieldType.time;
+          } else if (typeof value === 'string' && this.isTimestampString(value)) {
+            fieldType = FieldType.time;
+          }
+          // Default to string for everything else
+          break;
+        }
+      }
+      
+      fieldMap[propName] = {
+        name: propName,
+        type: fieldType,
+        values: [],
+        config: {},
+      };
+      
+
+    });
+    
+    // Populate field values
+    items.forEach(item => {
+      propertyNames.forEach(propName => {
+        const value = this.getNestedProperty(item, propName);
+        const field = fieldMap[propName];
+        
+        if (field.type === FieldType.time && value) {
+          // Convert to timestamp if it's a time field
+          if (typeof value === 'string') {
+            const timestamp = new Date(value).getTime();
+            field.values.push(isNaN(timestamp) ? value : timestamp);
+          } else if (typeof value === 'number') {
+            // Handle epoch timestamps - convert to milliseconds if needed
+            const timestamp = this.convertEpochToMilliseconds(value);
+            field.values.push(timestamp);
+          } else {
+            field.values.push(value);
+          }
+        } else {
+          field.values.push(value != null ? value : null);
+        }
+      });
+    });
+    
+    // Add fields to the main fields array
+    Object.values(fieldMap).forEach(field => {
+      fields.push(field);
+    });
+    
+
+  }
+  
+  private collectPropertyNames(obj: any, prefix: string, propertyNames: Set<string>): void {
+    if (obj == null || typeof obj !== 'object') {
+      return;
+    }
+    
+    Object.keys(obj).forEach(key => {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+      
+      if (value != null && typeof value === 'object' && !Array.isArray(value)) {
+        // Recursively collect nested properties
+        this.collectPropertyNames(value, fullKey, propertyNames);
+      } else {
+        // This is a leaf property
+        propertyNames.add(fullKey);
+      }
+    });
+  }
+  
+  private getNestedProperty(obj: any, path: string): any {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : null;
+    }, obj);
+  }
+
+  private isTimestampString(value: string): boolean {
+    // Only treat as timestamp if it matches common timestamp patterns
+    // ISO 8601 format (with or without timezone)
+    const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
+    // Unix timestamp (10 or 13 digits)
+    const unixTimestampRegex = /^\d{10}$|^\d{13}$/;
+    // Date-like strings with full date format
+    const fullDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    
+    return iso8601Regex.test(value) || 
+           unixTimestampRegex.test(value) || 
+           fullDateRegex.test(value) ||
+           // Additional check: if it contains specific time/date keywords and is parseable
+           (value.includes('Time') || value.includes('Date')) && !isNaN(Date.parse(value));
+  }
+
+  private isTimestampField(fieldName: string): boolean {
+    // Check if field name indicates it's a timestamp
+    const timestampFieldPatterns = [
+      /time$/i,           // ends with 'time' (case insensitive)
+      /Time$/,           // ends with 'Time' (case sensitive)
+      /date$/i,          // ends with 'date' 
+      /Date$/,           // ends with 'Date'
+      /timestamp$/i,     // ends with 'timestamp'
+      /created/i,        // contains 'created'
+      /updated/i,        // contains 'updated'
+      /modified/i,       // contains 'modified'
+      /expired/i,        // contains 'expired'
+      /deleted/i,        // contains 'deleted'
+    ];
+    
+    return timestampFieldPatterns.some(pattern => pattern.test(fieldName));
+  }
+
+  private isEpochTimestamp(value: number): boolean {
+    // Check if numeric value looks like an epoch timestamp
+    // Unix timestamp in seconds (10 digits, roughly 1970-2050)
+    const isUnixSeconds = value >= 946684800 && value <= 2524608000;
+    // Unix timestamp in milliseconds (13 digits, roughly 1970-2050)  
+    const isUnixMillis = value >= 946684800000 && value <= 2524608000000;
+    
+    return isUnixSeconds || isUnixMillis;
+  }
+
+  private convertEpochToMilliseconds(value: number): number {
+    // Convert epoch timestamp to milliseconds for Grafana
+    if (value >= 946684800 && value <= 2524608000) {
+      // Looks like seconds since epoch, convert to milliseconds
+      return value * 1000;
+    } else if (value >= 946684800000 && value <= 2524608000000) {
+      // Already in milliseconds
+      return value;
+    } else {
+      // Not a recognizable timestamp, return as-is
+      return value;
+    }
+  }
 
 }

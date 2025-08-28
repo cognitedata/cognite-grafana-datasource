@@ -494,6 +494,37 @@ export interface StreamRecordsAggregateResponse {
   };
 }
 
+export interface StreamRecordsFilterRequest {
+  lastUpdatedTime?: {
+    gt?: string | number;
+    lt?: string | number;
+  };
+  filter?: {
+    and?: any[];
+    or?: any[];
+    [key: string]: any;
+  };
+  sources?: Array<{
+    source: {
+      type: string;
+      space: string;
+      externalId: string;
+    };
+    properties: string[];
+  }>;
+  limit?: number;
+  sort?: Array<{
+    property: string[];
+    direction: 'ascending' | 'descending';
+  }>;
+}
+
+export interface StreamRecordsFilterResponse {
+  items: Array<{
+    [key: string]: any;
+  }>;
+}
+
 export function fetchStreams(
   connector: Connector,
   limit = 1000
@@ -517,6 +548,19 @@ export function fetchStreamRecordsAggregate(
     method: HttpMethod.POST,
     path: `/streams/${streamId}/records/aggregate`,
     data: aggregateRequest,
+    headers: { 'cdf-version': 'beta' },
+  });
+}
+
+export function fetchStreamRecordsFilter(
+  connector: Connector,
+  streamId: string,
+  filterRequest: StreamRecordsFilterRequest
+): Promise<StreamRecordsFilterResponse> {
+  return connector.fetchData<StreamRecordsFilterResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/filter`,
+    data: filterRequest,
     headers: { 'cdf-version': 'beta' },
   });
 }

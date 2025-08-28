@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AsyncSelect, Alert, InlineFieldRow, InlineField, CodeEditor, Field } from '@grafana/ui';
+import { AsyncSelect, Alert, InlineFieldRow, InlineField, CodeEditor, Field, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SelectedProps } from '../types';
+import { SelectedProps, RecordsMode } from '../types';
 import { stringifyError, fetchStreams, Stream } from '../cdf/client';
 
 interface RecordsTabProps extends SelectedProps {
   connector: any;
 }
 
-const sampleJsonQuery = `{
+const sampleAggregateQuery = `{
   "lastUpdatedTime": {
     "gt": "\${__from}",
     "lt": "\${__to}"
@@ -40,6 +40,14 @@ const sampleJsonQuery = `{
   }
 }`;
 
+const sampleFilterQuery = `{
+  "lastUpdatedTime": {
+    "gt": "\${__from}",
+    "lt": "\${__to}"
+  },
+  "limit": 100
+}`;
+
 
 
 export const RecordsTab: React.FC<RecordsTabProps> = ({
@@ -50,10 +58,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { recordsQuery = { streamId: '', jsonQuery: '' } } = query;
+  const { recordsQuery = { streamId: '', jsonQuery: '', mode: RecordsMode.Aggregate } } = query;
   
-  // Initialize with sample query if empty
-  const jsonQueryValue = recordsQuery.jsonQuery || sampleJsonQuery;
+  // Initialize with appropriate sample query based on mode if empty
+  const getSampleQuery = () => {
+    return recordsQuery.mode === RecordsMode.Filter ? sampleFilterQuery : sampleAggregateQuery;
+  };
+  
+  const jsonQueryValue = recordsQuery.jsonQuery || getSampleQuery();
 
   const searchStreams = useCallback(async (searchQuery: string) => {
     try {
@@ -101,6 +113,16 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     });
   };
 
+  const handleModeChange = (isFilter: boolean) => {
+    onQueryChange({
+      recordsQuery: {
+        ...recordsQuery,
+        mode: isFilter ? RecordsMode.Filter : RecordsMode.Aggregate,
+        jsonQuery: '', // Reset query when mode changes
+      },
+    });
+  };
+
 
 
   const getCurrentStreamValue = () => {
@@ -138,6 +160,20 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
           </InlineField>
         </InlineFieldRow>
 
+        <InlineFieldRow>
+          <InlineField
+            label="Query Type"
+            labelWidth={14}
+            tooltip="Aggregate queries return statistical summaries (avg, max, min). Filter queries return raw records."
+          >
+            <InlineSwitch
+              label="Use Filter (Raw Records)"
+              value={recordsQuery.mode === RecordsMode.Filter}
+              onChange={(e) => handleModeChange(e.currentTarget.checked)}
+            />
+          </InlineField>
+        </InlineFieldRow>
+
         <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
           <Field 
             label="Query"
@@ -168,19 +204,31 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
             />
           </Field>
           
-          <div style={{ 
-            minWidth: '300px',
-            padding: '16px', 
-            border: '1px solid var(--border-weak)',
-            borderRadius: '2px', 
-            fontSize: '13px',
-            backgroundColor: 'var(--background-secondary)',
-            color: 'var(--text-primary)',
-            marginTop: '30px' // Align with the code editor content
-          }}>
-            <div style={{ fontWeight: 600, marginBottom: '12px', color: 'var(--text-primary)' }}>
-              Template Variables
-            </div>
+                        <div style={{ 
+                minWidth: '300px',
+                padding: '16px', 
+                border: '1px solid var(--border-weak)',
+                borderRadius: '2px', 
+                fontSize: '13px',
+                backgroundColor: 'var(--background-secondary)',
+                color: 'var(--text-primary)',
+                marginTop: '30px' // Align with the code editor content
+              }}>
+                <div style={{ fontWeight: 600, marginBottom: '12px', color: 'var(--text-primary)' }}>
+                  {recordsQuery.mode === RecordsMode.Filter ? 'Filter Query Help' : 'Aggregate Query Help'}
+                </div>
+                {recordsQuery.mode === RecordsMode.Filter ? (
+                  <div style={{ marginBottom: '12px', lineHeight: '1.5', color: 'var(--text-secondary)' }}>
+                    <strong>Filter queries</strong> return raw record data. Use filters, sources, sorting, and limits to retrieve specific records.
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: '12px', lineHeight: '1.5', color: 'var(--text-secondary)' }}>
+                    <strong>Aggregate queries</strong> return statistical summaries like averages, min/max values, and time histograms.
+                  </div>
+                )}
+                <div style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                  Template Variables
+                </div>
             <div style={{ lineHeight: '1.5' }}>
               <div style={{ marginBottom: '8px' }}>
                 <code style={{ 

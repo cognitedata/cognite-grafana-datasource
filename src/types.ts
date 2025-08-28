@@ -113,9 +113,15 @@ export interface CogniteTimeSeries {
   };
 }
 
+export enum RecordsMode {
+  Aggregate = 'aggregate',
+  Filter = 'filter'
+}
+
 export interface RecordsQuery {
   streamId: string;
   jsonQuery?: string;
+  mode: RecordsMode;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
@@ -167,6 +173,7 @@ export const defaultCogniteTimeSeries: CogniteTimeSeries = {
 export const defaultRecordsQuery: RecordsQuery = {
   streamId: '',
   jsonQuery: '',
+  mode: RecordsMode.Aggregate,
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
