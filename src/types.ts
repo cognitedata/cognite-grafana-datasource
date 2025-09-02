@@ -118,6 +118,15 @@ export enum RecordsMode {
   Filter = 'filter'
 }
 
+export interface Container {
+  space: string;
+  externalId: string;
+  name?: string;
+  description?: string;
+  usedFor?: 'node' | 'edge';
+  properties?: { [key: string]: any };
+}
+
 export interface RecordsQuery {
   streamId: string;
   jsonQuery?: string;

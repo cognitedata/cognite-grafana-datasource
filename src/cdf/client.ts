@@ -41,6 +41,7 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
+  Container,
 } from '../types';
 import { toGranularityWithLowerBound, getRange } from '../utils';
 import { Connector } from '../connector';
@@ -562,6 +563,67 @@ export function fetchStreamRecordsFilter(
     path: `/streams/${streamId}/records/filter`,
     data: filterRequest,
     headers: { 'cdf-version': 'beta' },
+  });
+}
+
+export function fetchStreamSpaces(
+  connector: Connector,
+  streamId: string,
+  timeRange?: { from?: string | number; to?: string | number }
+): Promise<string[]> {
+  // Use provided time range or fallback to a recent period
+  const fromTime = timeRange?.from || "${__from}";
+  const toTime = timeRange?.to || "${__to}";
+  
+  const spacesQuery: StreamRecordsAggregateRequest = {
+    lastUpdatedTime: {
+      gt: fromTime,
+      lt: toTime
+    },
+    aggregates: {
+      spaces: {
+        uniqueValues: {
+          property: ["space"],
+          size: "1000"
+        }
+      }
+    }
+  };
+
+  return connector.fetchData<StreamRecordsAggregateResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/aggregate`,
+    data: spacesQuery,
+    headers: { 'cdf-version': 'beta' },
+  }).then(response => {
+    // Extract spaces from uniqueValueBuckets
+    const actualData = (response as any)?.data || response;
+    const spacesAggregate = actualData?.aggregates?.spaces;
+    
+    if (spacesAggregate?.uniqueValueBuckets) {
+      return spacesAggregate.uniqueValueBuckets.map((bucket: any) => bucket.value).filter((value: any) => typeof value === 'string');
+    }
+    
+    return [];
+  });
+}
+
+export function fetchContainers(
+  connector: Connector,
+  space?: string,
+  limit = 1000
+): Promise<Container[]> {
+  const params: any = { limit };
+  if (space) {
+    params.space = space;
+  }
+
+  return connector.fetchItems<Container>({
+    method: HttpMethod.GET,
+    path: '/models/containers',
+    data: undefined,
+    params,
+    cacheTime: CacheTime.ResourceByIds,
   });
 }
 

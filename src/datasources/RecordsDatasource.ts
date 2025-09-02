@@ -15,6 +15,8 @@ import { handleError } from '../appEventHandler';
 export class RecordsDatasource {
   constructor(private connector: Connector) {}
 
+
+
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
 
     const timeRange = getRange(options.range);
@@ -76,31 +78,33 @@ export class RecordsDatasource {
     }
 
     try {
-      // Parse JSON query - template variables should already be replaced by now
+      // Parse JSON query - template variables and query builder JSON should already be processed by datasource.ts
+      if (!recordsQuery.jsonQuery?.trim()) {
+        throw new Error('Query is required for Records execution');
+      }
+
       let aggregateRequest: StreamRecordsAggregateRequest;
       
-      if (recordsQuery.jsonQuery && recordsQuery.jsonQuery.trim()) {
-        try {
-          // The jsonQuery should already have template variables replaced by replaceVariablesInTarget
-          aggregateRequest = JSON.parse(recordsQuery.jsonQuery);
+      try {
+        // The jsonQuery should already have template variables replaced by replaceVariablesInTarget
+        aggregateRequest = JSON.parse(recordsQuery.jsonQuery);
 
-        } catch (parseError) {
-          throw new Error(`Invalid JSON query: ${parseError.message}`);
-        }
-      } else {
-        // This shouldn't happen since validation should prevent execution without jsonQuery
-        throw new Error('JSON query is required for Records aggregation');
+      } catch (parseError) {
+        throw new Error(`Invalid JSON query: ${parseError.message}`);
       }
 
       const mode = recordsQuery.mode || RecordsMode.Aggregate;
       let result: StreamRecordsAggregateResponse | StreamRecordsFilterResponse;
       
       if (mode === RecordsMode.Filter) {
+        console.log('Executing filter query for stream:', recordsQuery.streamId);
+        console.log('Filter request body:', JSON.stringify(aggregateRequest, null, 2));
         result = await fetchStreamRecordsFilter(
           this.connector,
           recordsQuery.streamId,
           aggregateRequest as StreamRecordsFilterRequest
         );
+        console.log('Filter result:', result);
       } else {
         result = await fetchStreamRecordsAggregate(
           this.connector,

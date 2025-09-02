@@ -381,7 +381,7 @@ export function QueryEditor(props: EditorProps) {
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
         {tab === Tabs.Records && (
-          <RecordsTab {...{ onQueryChange, query, connector: datasource.connector }} />
+          <RecordsTab {...{ onQueryChange, query, connector: datasource.connector, datasource }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

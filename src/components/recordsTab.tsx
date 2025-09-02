@@ -114,11 +114,39 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   };
 
   const handleModeChange = (isFilter: boolean) => {
+    const newMode = isFilter ? RecordsMode.Filter : RecordsMode.Aggregate;
+    const currentQuery = recordsQuery.jsonQuery || '';
+    const newModeSample = newMode === RecordsMode.Filter ? sampleFilterQuery : sampleAggregateQuery;
+    
+    // Determine if current query looks like a sample query by checking for key indicators
+    const hasAggregates = currentQuery.includes('"aggregates"');
+    const hasLimit = currentQuery.includes('"limit"');
+    const isCurrentlyAggregate = recordsQuery.mode === RecordsMode.Aggregate;
+    const isCurrentlyFilter = recordsQuery.mode === RecordsMode.Filter;
+    
+    let newJsonQuery;
+    
+    // Use sample query if:
+    // 1. Query is empty/whitespace only, OR 
+    // 2. Switching from Aggregate mode and query has aggregates (likely sample), OR
+    // 3. Switching from Filter mode and query has limit but no aggregates (likely sample)
+    if (!currentQuery.trim() ||
+        (isCurrentlyAggregate && hasAggregates && newMode === RecordsMode.Filter) ||
+        (isCurrentlyFilter && hasLimit && !hasAggregates && newMode === RecordsMode.Aggregate)) {
+      newJsonQuery = newModeSample;
+      console.log('[RECORDS DEBUG] Mode change - using sample query for', newMode);
+    } else {
+      newJsonQuery = currentQuery;
+      console.log('[RECORDS DEBUG] Mode change - preserving user query');
+    }
+    
+    console.log('[RECORDS DEBUG] Mode change:', recordsQuery.mode, '->', newMode, 'hasAggregates:', hasAggregates, 'hasLimit:', hasLimit);
+    
     onQueryChange({
       recordsQuery: {
         ...recordsQuery,
-        mode: isFilter ? RecordsMode.Filter : RecordsMode.Aggregate,
-        jsonQuery: '', // Reset query when mode changes
+        mode: newMode,
+        jsonQuery: newJsonQuery,
       },
     });
   };
