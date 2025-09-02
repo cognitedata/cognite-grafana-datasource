@@ -18,7 +18,6 @@ export class RecordsDatasource {
 
 
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
-
     const timeRange = getRange(options.range);
     const recordResults = await this.fetchRecordTargets(options.targets, timeRange, options);
 
@@ -32,7 +31,6 @@ export class RecordsDatasource {
           const resultData = await this.fetchRecordsForTarget(target, timeRange, options);
           return this.convertRecordsToDataFrame(resultData, target.refId);
         } catch (error) {
-          console.error('Error processing Records target:', target.refId, error);
           
           // Extract a meaningful error message from the API response
           let errorMessage = 'Unknown error occurred';
@@ -69,25 +67,29 @@ export class RecordsDatasource {
     options: DataQueryRequest<CogniteQuery>
   ): Promise<StreamRecordsAggregateResponse | StreamRecordsFilterResponse> {
     const { refId, recordsQuery } = target;
-    
 
     
     if (!recordsQuery?.streamId) {
-      console.warn('No streamId provided for Records query');
       throw new Error('Please select a stream to query records');
     }
 
     try {
+      // Get the appropriate query for the current mode, falling back to legacy jsonQuery
+      const currentModeQuery = recordsQuery.mode === RecordsMode.Filter 
+        ? recordsQuery.filterQuery 
+        : recordsQuery.aggregateQuery;
+      const queryToUse = currentModeQuery || recordsQuery.jsonQuery;
+      
       // Parse JSON query - template variables and query builder JSON should already be processed by datasource.ts
-      if (!recordsQuery.jsonQuery?.trim()) {
+      if (!queryToUse?.trim()) {
         throw new Error('Query is required for Records execution');
       }
 
       let aggregateRequest: StreamRecordsAggregateRequest;
       
       try {
-        // The jsonQuery should already have template variables replaced by replaceVariablesInTarget
-        aggregateRequest = JSON.parse(recordsQuery.jsonQuery);
+        // The query should already have template variables replaced by replaceVariablesInTarget
+        aggregateRequest = JSON.parse(queryToUse);
 
       } catch (parseError) {
         throw new Error(`Invalid JSON query: ${parseError.message}`);
@@ -97,14 +99,11 @@ export class RecordsDatasource {
       let result: StreamRecordsAggregateResponse | StreamRecordsFilterResponse;
       
       if (mode === RecordsMode.Filter) {
-        console.log('Executing filter query for stream:', recordsQuery.streamId);
-        console.log('Filter request body:', JSON.stringify(aggregateRequest, null, 2));
         result = await fetchStreamRecordsFilter(
           this.connector,
           recordsQuery.streamId,
           aggregateRequest as StreamRecordsFilterRequest
         );
-        console.log('Filter result:', result);
       } else {
         result = await fetchStreamRecordsAggregate(
           this.connector,
@@ -115,7 +114,6 @@ export class RecordsDatasource {
       
       return result;
     } catch (e) {
-      console.error('Error in fetchRecordsForTarget:', e);
       throw e; // Re-throw to be caught by fetchRecordTargets
     }
   }
@@ -273,11 +271,7 @@ export class RecordsDatasource {
             else if (firstValue && typeof firstValue === 'object' && (firstValue as any).parsedValue !== undefined) {
               numericValue = (firstValue as any).parsedValue;
 
-            } else {
-              console.warn(`Could not extract numeric value for ${aggKey}, firstValue:`, firstValue, 'type:', typeof firstValue, 'aggValue:', aggValue);
             }
-          } else {
-            console.warn(`AggValue is not an object for ${aggKey}:`, aggValue);
           }
           aggregateFields[aggKey].values.push(numericValue);
         }

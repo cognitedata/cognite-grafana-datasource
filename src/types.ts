@@ -129,7 +129,9 @@ export interface Container {
 
 export interface RecordsQuery {
   streamId: string;
-  jsonQuery?: string;
+  jsonQuery?: string; // Backward compatibility - will be migrated to mode-specific queries
+  aggregateQuery?: string; // Query specific to aggregate mode
+  filterQuery?: string; // Query specific to filter mode
   mode: RecordsMode;
 }
 

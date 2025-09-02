@@ -28,6 +28,7 @@ import {
   QueryTarget,
   Tab,
   VariableQueryData,
+  RecordsMode,
 } from './types';
 import { applyFilters, isAnnotationTarget } from './utils';
 import {
@@ -295,6 +296,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       templategraphQlQueryTemplated,
       flexibleDataModellinggraphQlQueryTemplated,
       recordsJsonQueryTemplated,
+      recordsAggregateQueryTemplated,
+      recordsFilterQueryTemplated,
     ] = this.replaceVariablesArr(
       [
         expr,
@@ -305,6 +308,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         templateQuery?.graphQlQuery,
         flexibleDataModellingQuery?.graphQlQuery,
         recordsQuery?.jsonQuery,
+        recordsQuery?.aggregateQuery,
+        recordsQuery?.filterQuery,
       ],
       scopedVars
     );
@@ -338,6 +343,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       recordsQuery: {
         ...recordsQuery,
         jsonQuery: recordsJsonQueryTemplated,
+        aggregateQuery: recordsAggregateQueryTemplated,
+        filterQuery: recordsFilterQueryTemplated,
       },
     };
     return {
@@ -517,8 +524,14 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         case Tab.CogniteTimeSeriesSearch:
           return !!cogniteTimeSeries?.instanceId;
         case Tab.Records:
-          // Records query is valid when it has both a streamId and a JSON query
-          return !!recordsQuery?.streamId && !!recordsQuery?.jsonQuery?.trim();
+          // Records query is valid when it has both a streamId and the appropriate mode's query
+          const currentModeQuery = recordsQuery?.mode === RecordsMode.Filter 
+            ? recordsQuery?.filterQuery 
+            : recordsQuery?.aggregateQuery;
+          // Fall back to legacy jsonQuery for backward compatibility
+          const queryToValidate = currentModeQuery || recordsQuery?.jsonQuery;
+          const isValid = !!recordsQuery?.streamId && !!queryToValidate?.trim();
+          return isValid;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:

@@ -58,21 +58,45 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { recordsQuery = { streamId: '', jsonQuery: '', mode: RecordsMode.Aggregate } } = query;
+  const { recordsQuery = { streamId: '', mode: RecordsMode.Aggregate } } = query;
+  
+  // Handle backward compatibility and migration
+  const migrateQuery = () => {
+    if (recordsQuery.jsonQuery && !recordsQuery.aggregateQuery && !recordsQuery.filterQuery) {
+      // Migrate old jsonQuery to appropriate mode-specific query
+      const migrated = {
+        ...recordsQuery,
+        [recordsQuery.mode === RecordsMode.Filter ? 'filterQuery' : 'aggregateQuery']: recordsQuery.jsonQuery,
+      };
+      onQueryChange({ recordsQuery: migrated });
+      return migrated;
+    }
+    return recordsQuery;
+  };
+  
+  const currentRecordsQuery = migrateQuery();
+  
+  // Get the current query for the active mode
+  const getCurrentModeQuery = () => {
+    if (currentRecordsQuery.mode === RecordsMode.Filter) {
+      return currentRecordsQuery.filterQuery || '';
+    } else {
+      return currentRecordsQuery.aggregateQuery || '';
+    }
+  };
   
   // Initialize with appropriate sample query based on mode if empty
   const getSampleQuery = () => {
-    return recordsQuery.mode === RecordsMode.Filter ? sampleFilterQuery : sampleAggregateQuery;
+    return currentRecordsQuery.mode === RecordsMode.Filter ? sampleFilterQuery : sampleAggregateQuery;
   };
   
-  const jsonQueryValue = recordsQuery.jsonQuery || getSampleQuery();
+  const currentModeQuery = getCurrentModeQuery();
+  const jsonQueryValue = currentModeQuery || getSampleQuery();
 
   const searchStreams = useCallback(async (searchQuery: string) => {
     try {
       setLoading(true);
-      console.log('Loading streams, search query:', searchQuery);
       const streams = await fetchStreams(connector);
-      console.log('Loaded streams:', streams.length);
 
       // If no search query, return all streams (first 50 for performance)
       const filteredStreams = searchQuery.trim() 
@@ -92,11 +116,9 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       }));
       
       setError(null);
-      console.log('Stream options:', streamOptions.length);
       return streamOptions;
     } catch (err) {
       const errorMsg = `Stream search failed: ${stringifyError(err)}`;
-      console.error('Stream loading error:', err);
       setError(errorMsg);
       return [];
     } finally {
@@ -104,49 +126,66 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     }
   }, [connector]);
 
+  // Auto-trigger query when recordsQuery has valid data (similar to TemplatesTab)
+  useEffect(() => {
+    // Only trigger if we have both streamId and current mode's query (valid query)
+    const currentModeQueryValue = getCurrentModeQuery();
+    if (currentRecordsQuery.streamId && currentModeQueryValue?.trim()) {
+      onQueryChange({
+        recordsQuery: currentRecordsQuery,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRecordsQuery]);
+
   const handleStreamSelection = (selectedStream: SelectableValue | null) => {
+    // If current mode's query is empty, populate it with the sample query
+    const currentModeQueryValue = getCurrentModeQuery();
+    const queryToUse = currentModeQueryValue?.trim() || getSampleQuery();
+    
+    // Update the appropriate mode-specific query field
+    const modeQueryField = currentRecordsQuery.mode === RecordsMode.Filter ? 'filterQuery' : 'aggregateQuery';
+    
+    const updatedRecordsQuery = {
+      ...currentRecordsQuery,
+      streamId: selectedStream?.value || '',
+      [modeQueryField]: queryToUse,
+    };
+    
+    // Pass only the patch to onQueryChange, similar to other tabs
     onQueryChange({
-      recordsQuery: {
-        ...recordsQuery,
-        streamId: selectedStream?.value || '',
-      },
+      recordsQuery: updatedRecordsQuery,
     });
   };
 
   const handleModeChange = (isFilter: boolean) => {
     const newMode = isFilter ? RecordsMode.Filter : RecordsMode.Aggregate;
-    const currentQuery = recordsQuery.jsonQuery || '';
     const newModeSample = newMode === RecordsMode.Filter ? sampleFilterQuery : sampleAggregateQuery;
     
-    // Determine if current query looks like a sample query by checking for key indicators
-    const hasAggregates = currentQuery.includes('"aggregates"');
-    const hasLimit = currentQuery.includes('"limit"');
-    const isCurrentlyAggregate = recordsQuery.mode === RecordsMode.Aggregate;
-    const isCurrentlyFilter = recordsQuery.mode === RecordsMode.Filter;
+    // Get the query for the new mode
+    const newModeQuery = newMode === RecordsMode.Filter 
+      ? currentRecordsQuery.filterQuery || '' 
+      : currentRecordsQuery.aggregateQuery || '';
     
-    let newJsonQuery;
+    let queryForNewMode;
     
-    // Use sample query if:
-    // 1. Query is empty/whitespace only, OR 
-    // 2. Switching from Aggregate mode and query has aggregates (likely sample), OR
-    // 3. Switching from Filter mode and query has limit but no aggregates (likely sample)
-    if (!currentQuery.trim() ||
-        (isCurrentlyAggregate && hasAggregates && newMode === RecordsMode.Filter) ||
-        (isCurrentlyFilter && hasLimit && !hasAggregates && newMode === RecordsMode.Aggregate)) {
-      newJsonQuery = newModeSample;
-      console.log('[RECORDS DEBUG] Mode change - using sample query for', newMode);
+    // Use sample query if the new mode's query is empty or exactly matches the sample
+    const isUnmodifiedSample = newModeQuery === newModeSample;
+    
+    if (!newModeQuery.trim() || isUnmodifiedSample) {
+      queryForNewMode = newModeSample;
     } else {
-      newJsonQuery = currentQuery;
-      console.log('[RECORDS DEBUG] Mode change - preserving user query');
+      queryForNewMode = newModeQuery;
     }
     
-    console.log('[RECORDS DEBUG] Mode change:', recordsQuery.mode, '->', newMode, 'hasAggregates:', hasAggregates, 'hasLimit:', hasLimit);
+    // Update the appropriate mode-specific query field
+    const newModeQueryField = newMode === RecordsMode.Filter ? 'filterQuery' : 'aggregateQuery';
     
     onQueryChange({
       recordsQuery: {
-        ...recordsQuery,
+        ...currentRecordsQuery,
         mode: newMode,
-        jsonQuery: newJsonQuery,
+        [newModeQueryField]: queryForNewMode,
       },
     });
   };
@@ -212,18 +251,22 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
               language="json"
               height={300}
               onBlur={(value) => {
+                // Update the appropriate mode-specific query field
+                const modeQueryField = currentRecordsQuery.mode === RecordsMode.Filter ? 'filterQuery' : 'aggregateQuery';
                 onQueryChange({
                   recordsQuery: {
-                    ...recordsQuery,
-                    jsonQuery: value,
+                    ...currentRecordsQuery,
+                    [modeQueryField]: value,
                   },
                 });
               }}
               onSave={(value) => {
+                // Update the appropriate mode-specific query field
+                const modeQueryField = currentRecordsQuery.mode === RecordsMode.Filter ? 'filterQuery' : 'aggregateQuery';
                 onQueryChange({
                   recordsQuery: {
-                    ...recordsQuery,
-                    jsonQuery: value,
+                    ...currentRecordsQuery,
+                    [modeQueryField]: value,
                   },
                 });
               }}
