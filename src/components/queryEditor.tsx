@@ -34,6 +34,7 @@ import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
+import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
@@ -374,6 +375,9 @@ export function QueryEditor(props: EditorProps) {
         )}
         {tab === Tabs.FlexibleDataModelling && (
           <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+        )}
+        {tab === Tabs.CogniteTimeSeriesSearch && (
+          <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

@@ -463,6 +463,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         templateQuery,
         relationshipsQuery,
         flexibleDataModellingQuery,
+        cogniteTimeSeries,
       } = target;
       switch (tab) {
         case Tab.Event:
@@ -489,6 +490,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.version &&
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
+        case Tab.CogniteTimeSeriesSearch:
+          return !!cogniteTimeSeries?.instanceId;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -527,6 +530,7 @@ function groupTargets(targets: CogniteQuery[]) {
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
       ...(groupedByTab[Tab.Custom] ?? []),
+      ...(groupedByTab[Tab.CogniteTimeSeriesSearch] ?? []),
     ],
   };
 }

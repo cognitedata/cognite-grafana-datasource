@@ -25,6 +25,35 @@ test('Panel with multiple time series queries rendered OK', async ({ gotoDashboa
   }
 });
 
+test('Panel with multiple CogniteTimeSeries queries rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all panels are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  await gotoDashboardPage(dashboard);
+
+  // Wait for network requests to complete
+  await page.waitForLoadState('networkidle');
+  
+  var expectedTs = [
+    'CDMTS wind speed',
+    'CDMTS feels like',
+    'CDMTS humidity',
+    'CDMTS pressure',
+    'CDMTS temp',
+  ];
+
+  // Scroll down to ensure CDMTS panel is visible
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+  const buttons = await page.getByRole('button', { name: /CDMTS.*/ });
+  
+  for (const expectedTsName of expectedTs) {
+    const button = buttons.locator(`text=${expectedTsName}`);
+    await expect(button).toBeVisible();
+  }
+});
+
 
 test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
