@@ -3,11 +3,12 @@ import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, Input, InlineS
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
 import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances, stringifyError } from '../cdf/client';
-import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
+import { DMSSpace, DMSView, DMSInstance, DMSSearchRequest } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
+import { Connector } from '../connector';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
-  connector: any;
+  connector: Connector;
 }
 
 const LatestValueCheckbox = (props: SelectedProps) => {
@@ -84,7 +85,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }
 
     try {
-      const searchRequest = {
+      const searchRequest: DMSSearchRequest = {
         view: {
           type: 'view' as const,
           space: cogniteTimeSeries.space,
