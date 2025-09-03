@@ -1,4 +1,4 @@
-import { DMSSpace, DMSView, DMSInstance } from '../../types/dms';
+import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 
 export const mockSpaces: DMSSpace[] = [
   {
