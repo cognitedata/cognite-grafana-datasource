@@ -87,7 +87,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     try {
       const searchRequest: DMSSearchRequest = {
         view: {
-          type: 'view' as const,
+          type: 'view',
           space: cogniteTimeSeries.space,
           externalId: cogniteTimeSeries.externalId,
           version: cogniteTimeSeries.version,
