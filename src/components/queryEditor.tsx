@@ -10,7 +10,8 @@ import {
   InlineField,
   InlineFieldRow,
   Input,
-  InlineSwitch
+  InlineSwitch,
+  useTheme2,
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
@@ -278,6 +279,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 export function QueryEditor(props: EditorProps) {
+  const theme = useTheme2();
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
@@ -320,6 +322,66 @@ export function QueryEditor(props: EditorProps) {
     appEvents.on(responseWarningEvent, handleWarning);
   };
 
+  // Check if a tab feature is disabled by feature flags
+  const isTabDisabled = (t) => {
+    // Core Data Model features
+    if (t === Tabs.CogniteTimeSeriesSearch) {
+      return !datasource.connector.isCogniteTimeSeriesEnabled();
+    }
+    if (t === Tabs.FlexibleDataModelling) {
+      return !datasource.connector.isFlexibleDataModellingEnabled();
+    }
+    
+    // Legacy data model features
+    if (t === Tabs.Timeseries) {
+      return !datasource.connector.isTimeseriesSearchEnabled();
+    }
+    if (t === Tabs.Asset) {
+      return !datasource.connector.isTimeseriesFromAssetEnabled();
+    }
+    if (t === Tabs.Custom) {
+      return !datasource.connector.isTimeseriesCustomQueryEnabled();
+    }
+    if (t === Tabs.Event) {
+      return !datasource.connector.isEventsEnabled();
+    }
+    
+    // Deprecated features
+    if (t === Tabs.Relationships) {
+      return !datasource.connector.isRelationshipsEnabled();
+    }
+    if (t === Tabs.Templates) {
+      return !datasource.connector.isTemplatesEnabled();
+    }
+    if (t === Tabs.ExtractionPipelines) {
+      return !datasource.connector.isExtractionPipelinesEnabled();
+    }
+    
+    return false;
+  };
+
+  // Determine if a tab should be hidden from the tab bar
+  // Note: This function controls UI visibility of tabs in the query editor.
+  // For backward compatibility, we show disabled tabs if they're already selected
+  // in an existing visualization, but hide them for new selections.
+  const hiddenTab = (t) => {
+    const tabIsDisabled = isTabDisabled(t);
+    
+    // If tab is not disabled, always show it
+    if (!tabIsDisabled) {
+      return false;
+    }
+    
+    // If tab is disabled but currently selected (existing visualization), show it
+    // This ensures backward compatibility - users can still see their existing dashboards
+    if (t === tab) {
+      return false;
+    }
+    
+    // Otherwise, hide disabled tabs to prevent new selections
+    return true;
+  };
+
   useEffect(() => {
     eventsSubscribe();
     return () => {
@@ -328,55 +390,82 @@ export function QueryEditor(props: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  const hiddenTab = (t) => {
-    if (t === Tabs.Templates) {
-      return !datasource.connector.isTemplatesEnabled();
+  // Get the first available (not hidden) tab based on natural tab order
+  // Note: Relies on the insertion order of the string enum `Tabs`.
+  // Maintaining the declaration order in `src/types.ts` preserves the UI order.
+  const getFirstAvailableTab = (): Tabs => {
+    // Use the same order as the tabs appear in the UI (Object.values maintains enum order)
+    const allTabs = Object.values(Tabs);
+    for (const t of allTabs) {
+      if (!hiddenTab(t)) {
+        return t;
+      }
     }
-    if (t === Tabs.FlexibleDataModelling) {
-      return !datasource.connector.isFlexibleDataModellingEnabled();
-    }
-    if (t === Tabs.ExtractionPipelines) {
-      return !datasource.connector.isExtractionPipelinesEnabled();
-    }
-    return false;
+    // Fallback to Timeseries if somehow all tabs are hidden (shouldn't happen)
+    return Tabs.Timeseries;
   };
+
+  // Ensure we have a valid tab selected
+  // For backward compatibility: if current tab is disabled but selected, keep it
+  // Otherwise, if current tab is hidden, get first available tab
+  const activeTab = hiddenTab(tab) ? getFirstAvailableTab() : tab;
+
+  // If we needed to change the tab, update the query
+  // Note: We only auto-switch if the tab is truly hidden (not just disabled but showing for compatibility)
+  React.useEffect(() => {
+    if (activeTab !== tab) {
+      onQueryChange({ tab: activeTab }, false); // Don't run query on tab switch
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, tab]); // Only run when activeTab calculation changes (onQueryChange changes are expected)
   return (
     <div>
       <TabsBar>
-        {Object.values(Tabs).map((t) => (
-          <Tab
-            hidden={hiddenTab(t)}
-            label={TabTitles[t]}
-            key={t}
-            active={tab === t}
-            onChangeTab={onSelectTab(t)}
-            style={{ display: 'flex' }}
-            suffix={
-              t === Tabs.Templates || t === Tabs.ExtractionPipelines
-                ? () => <p className="preview-label">Preview</p>
-                : undefined
-            }
-          />
-        ))}
+        {Object.values(Tabs).map((t) => {
+          const tabIsDisabled = isTabDisabled(t);
+          const isCurrentlySelected = t === tab;
+          const showingDisabledTab = tabIsDisabled && isCurrentlySelected;
+          
+          return (
+            <Tab
+              hidden={hiddenTab(t)}
+              label={TabTitles[t]}
+              key={t}
+              active={activeTab === t}
+              onChangeTab={onSelectTab(t)}
+              style={{ display: 'flex' }}
+              suffix={
+                // Show "Disabled" label for tabs that are disabled but shown for backward compatibility
+                showingDisabledTab
+                  ? () => (
+                      <p className="preview-label" style={{ color: theme.colors.error.text }}>Disabled</p>
+                    )
+                  : t === Tabs.Templates || t === Tabs.ExtractionPipelines
+                  ? () => <p className="preview-label">Preview</p>
+                  : undefined
+              }
+            />
+          );
+        })}
       </TabsBar>
       <TabContent>
-        {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
-        {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
-        {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
-        {tab === Tabs.Relationships && (
+        {activeTab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
+        {activeTab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
+        {activeTab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
+        {activeTab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
+        {activeTab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}
-        {tab === Tabs.ExtractionPipelines && (
+        {activeTab === Tabs.ExtractionPipelines && (
           <ExtractionPipelinesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.Templates && (
+        {activeTab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.FlexibleDataModelling && (
+        {activeTab === Tabs.FlexibleDataModelling && (
           <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.CogniteTimeSeriesSearch && (
+        {activeTab === Tabs.CogniteTimeSeriesSearch && (
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
       </TabContent>
