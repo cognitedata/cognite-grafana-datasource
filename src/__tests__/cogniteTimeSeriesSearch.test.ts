@@ -3,6 +3,16 @@ import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client
 import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 import { Connector } from '../connector';
 
+import {
+  mockSpaces,
+  mockViews,
+  mockInstances,
+  mockInstancesWithStringType,
+  mockSingleSpace,
+  mockSingleView,
+  mockSingleInstance,
+} from '../__mocks__/dmsTestData';
+
 jest.mock('@grafana/runtime');
 
 describe('CogniteTimeSeriesSearch DMS Functions', () => {
@@ -18,22 +28,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('fetchDMSSpaces', () => {
     it('should fetch spaces successfully', async () => {
-      const mockSpaces: DMSSpace[] = [
-        {
-          space: 'cdf_cdm',
-          name: 'CDF CDM',
-          description: 'Common Data Model',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-        {
-          space: 'my_space',
-          name: 'My Space',
-          description: 'Custom space',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-      ];
 
       fetcher.fetch.mockResolvedValue({
         data: { items: mockSpaces },
@@ -52,9 +46,9 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should support custom limit', async () => {
-      const mockSpaces: DMSSpace[] = [];
+      const emptySpaces: DMSSpace[] = [];
       fetcher.fetch.mockResolvedValue({
-        data: { items: mockSpaces },
+        data: { items: emptySpaces },
         status: 200,
       });
 
@@ -71,27 +65,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('fetchDMSViews', () => {
     it('should fetch views for a space successfully', async () => {
-      const mockViews: DMSView[] = [
-        {
-          space: 'cdf_cdm',
-          externalId: 'CogniteTimeSeries',
-          version: 'v1',
-          name: 'Cognite Time Series',
-          description: 'Time series view',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-        {
-          space: 'cdf_cdm',
-          externalId: 'CogniteAsset',
-          version: 'v1',
-          name: 'Cognite Asset',
-          description: 'Asset view',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-      ];
-
       fetcher.fetch.mockResolvedValue({
         data: { items: mockViews },
         status: 200,
@@ -109,9 +82,10 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should fetch all views when no space is specified', async () => {
-      const mockViews: DMSView[] = [];
+
+      const emptyViews: DMSView[] = [];
       fetcher.fetch.mockResolvedValue({
-        data: { items: mockViews },
+        data: { items: emptyViews },
         status: 200,
       });
 
@@ -126,9 +100,9 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should support custom limit', async () => {
-      const mockViews: DMSView[] = [];
+      const emptyViews: DMSView[] = [];
       fetcher.fetch.mockResolvedValue({
-        data: { items: mockViews },
+        data: { items: emptyViews },
         status: 200,
       });
 
@@ -145,43 +119,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('searchDMSInstances', () => {
     it('should search instances successfully', async () => {
-      const mockInstances: DMSInstance[] = [
-        {
-          instanceType: 'node',
-          space: 'cdf_cdm',
-          externalId: 'temperature_sensor_1',
-          version: 1,
-          lastUpdatedTime: 1640995200000,
-          createdTime: 1640995200000,
-          properties: {
-            cdf_cdm: {
-              'CogniteTimeSeries/v1': {
-                name: 'Temperature Sensor 1',
-                description: 'Building A temperature sensor',
-                type: 'numeric',
-              },
-            },
-          },
-        },
-        {
-          instanceType: 'node',
-          space: 'cdf_cdm',
-          externalId: 'pressure_sensor_1',
-          version: 1,
-          lastUpdatedTime: 1640995200000,
-          createdTime: 1640995200000,
-          properties: {
-            cdf_cdm: {
-              'CogniteTimeSeries/v1': {
-                name: 'Pressure Sensor 1',
-                description: 'Building A pressure sensor',
-                type: 'numeric',
-              },
-            },
-          },
-        },
-      ];
-
       fetcher.fetch.mockResolvedValue({
         data: { items: mockInstances },
         status: 200,
@@ -218,9 +155,9 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should support search without query (browse all)', async () => {
-      const mockInstances: DMSInstance[] = [];
+      const emptyInstances: DMSInstance[] = [];
       fetcher.fetch.mockResolvedValue({
-        data: { items: mockInstances },
+        data: { items: emptyInstances },
         status: 200,
       });
 
@@ -245,43 +182,9 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should filter out string-type timeseries', async () => {
-      const mockInstances: DMSInstance[] = [
-        {
-          instanceType: 'node',
-          space: 'cdf_cdm',
-          externalId: 'numeric_sensor',
-          version: 1,
-          lastUpdatedTime: 1640995200000,
-          createdTime: 1640995200000,
-          properties: {
-            cdf_cdm: {
-              'CogniteTimeSeries/v1': {
-                name: 'Numeric Sensor',
-                type: 'numeric',
-              },
-            },
-          },
-        },
-        {
-          instanceType: 'node',
-          space: 'cdf_cdm',
-          externalId: 'string_sensor',
-          version: 1,
-          lastUpdatedTime: 1640995200000,
-          createdTime: 1640995200000,
-          properties: {
-            cdf_cdm: {
-              'CogniteTimeSeries/v1': {
-                name: 'String Sensor',
-                type: 'string',
-              },
-            },
-          },
-        },
-      ];
 
       fetcher.fetch.mockResolvedValue({
-        data: { items: mockInstances },
+        data: { items: mockInstancesWithStringType },
         status: 200,
       });
 
@@ -306,7 +209,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
       const result = await searchDMSInstances(connector, searchRequest);
 
-      expect(result).toEqual(mockInstances);
+      expect(result).toEqual(mockInstancesWithStringType);
       expect(fetcher.fetch).toHaveBeenCalledWith({
         url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/instances/search',
         method: 'POST',
@@ -341,60 +244,18 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
       const integrationDs = getMockedDataSource(integrationFetcher);
       const integrationConnector = integrationDs.connector as Connector;
 
-      // Mock data
-      const mockSpaces: DMSSpace[] = [
-        {
-          space: 'cdf_cdm',
-          name: 'CDF CDM',
-          description: 'Common Data Model',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-      ];
-
-      const mockViews: DMSView[] = [
-        {
-          space: 'cdf_cdm',
-          externalId: 'CogniteTimeSeries',
-          version: 'v1',
-          name: 'Cognite Time Series',
-          description: 'Time series view',
-          createdTime: 1640995200000,
-          lastUpdatedTime: 1640995200000,
-        },
-      ];
-
-      const mockInstances: DMSInstance[] = [
-        {
-          instanceType: 'node',
-          space: 'cdf_cdm',
-          externalId: 'temperature_sensor_1',
-          version: 1,
-          lastUpdatedTime: 1640995200000,
-          createdTime: 1640995200000,
-          properties: {
-            cdf_cdm: {
-              'CogniteTimeSeries/v1': {
-                name: 'Temperature Sensor 1',
-                type: 'numeric',
-              },
-            },
-          },
-        },
-      ];
-
       // Setup sequential mock responses
       integrationFetcher.fetch
-        .mockResolvedValueOnce({ data: { items: mockSpaces }, status: 200 })
-        .mockResolvedValueOnce({ data: { items: mockViews }, status: 200 })
-        .mockResolvedValueOnce({ data: { items: mockInstances }, status: 200 });
+        .mockResolvedValueOnce({ data: { items: mockSingleSpace }, status: 200 })
+        .mockResolvedValueOnce({ data: { items: mockSingleView }, status: 200 })
+        .mockResolvedValueOnce({ data: { items: mockSingleInstance }, status: 200 });
 
       // Test workflow
       const spaces = await fetchDMSSpaces(integrationConnector);
-      expect(spaces).toEqual(mockSpaces);
+      expect(spaces).toEqual(mockSingleSpace);
 
       const views = await fetchDMSViews(integrationConnector, 'cdf_cdm');
-      expect(views).toEqual(mockViews);
+      expect(views).toEqual(mockSingleView);
 
       const instances = await searchDMSInstances(integrationConnector, {
         view: {
@@ -406,7 +267,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
         query: 'temperature',
         limit: 10,
       });
-      expect(instances).toEqual(mockInstances);
+      expect(instances).toEqual(mockSingleInstance);
 
       expect(integrationFetcher.fetch).toHaveBeenCalledTimes(3);
     });
