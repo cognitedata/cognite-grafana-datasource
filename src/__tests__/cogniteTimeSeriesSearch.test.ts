@@ -2,7 +2,6 @@ import { getMockedDataSource } from '../test_utils';
 import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client';
 import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 import { Connector } from '../connector';
-
 import {
   mockSpaces,
   mockViews,
@@ -28,7 +27,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('fetchDMSSpaces', () => {
     it('should fetch spaces successfully', async () => {
-
       fetcher.fetch.mockResolvedValue({
         data: { items: mockSpaces },
         status: 200,
@@ -82,7 +80,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should fetch all views when no space is specified', async () => {
-
       const emptyViews: DMSView[] = [];
       fetcher.fetch.mockResolvedValue({
         data: { items: emptyViews },
@@ -182,7 +179,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should filter out string-type timeseries', async () => {
-
       fetcher.fetch.mockResolvedValue({
         data: { items: mockInstancesWithStringType },
         status: 200,
