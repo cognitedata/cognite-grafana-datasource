@@ -183,7 +183,7 @@ export class Connector {
   }
 
   isFlexibleDataModellingEnabled() {
-    return this.enableFlexibleDataModelling;
+    return this.enableCoreDataModelFeatures && this.enableFlexibleDataModelling;
   }
   
   isExtractionPipelinesEnabled() {
