@@ -12,9 +12,22 @@ datasources:
     jsonData:
       cogniteApiUrl: ${COGNITE_HOST}
       cogniteProject: ${COGNITE_PROJECT}
+      # Master toggles for feature sections
+      enableCoreDataModelFeatures: true
+      enableLegacyDataModelFeatures: true
+      # Core Data Model features
+      enableCogniteTimeSeries: true
+      # Legacy data model features (already enabled by default, but explicit for clarity)
+      enableTimeseriesSearch: true
+      enableTimeseriesFromAsset: true
+      enableTimeseriesCustomQuery: true
+      enableEvents: true
+      # Deprecated features
       enableEventsAdvancedFiltering: true
       enableExtractionPipelines: true
       enableTemplates: false
+      enableRelationships: true
+      enableFlexibleDataModelling: true
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
