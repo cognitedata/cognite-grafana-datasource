@@ -290,7 +290,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
             id='enable-core-data-model-features'
             label='Enable Core Data Model features'
             value={enableCoreDataModelFeatures}
-            onChange={onMasterToggleChange('enableCoreDataModelFeatures', ['enableCogniteTimeSeries'])}
+            onChange={onMasterToggleChange('enableCoreDataModelFeatures', ['enableCogniteTimeSeries', 'enableFlexibleDataModelling'])}
           />
         </InlineFieldRow>
         {enableCoreDataModelFeatures && (
