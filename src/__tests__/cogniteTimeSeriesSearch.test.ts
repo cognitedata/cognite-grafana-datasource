@@ -27,7 +27,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('fetchDMSSpaces', () => {
     it('should fetch spaces successfully', async () => {
-      
+
       fetcher.fetch.mockResolvedValue({
         data: { items: mockSpaces },
         status: 200,
@@ -64,7 +64,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('fetchDMSViews', () => {
     it('should fetch views for a space successfully', async () => {
-      
+
       fetcher.fetch.mockResolvedValue({
         data: { items: mockViews },
         status: 200,
@@ -118,7 +118,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('searchDMSInstances', () => {
     it('should search instances successfully', async () => {
-      
+
       fetcher.fetch.mockResolvedValue({
         data: { items: mockInstances },
         status: 200,
@@ -182,6 +182,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
     });
 
     it('should filter out string-type timeseries', async () => {
+
       fetcher.fetch.mockResolvedValue({
         data: { items: mockInstancesWithStringType },
         status: 200,
@@ -238,7 +239,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
 
   describe('API Workflow Integration', () => {
     it('should complete spaces -> views -> search workflow', async () => {
-      
       // Create fresh fetcher and connector for this test
       const integrationFetcher = { fetch: jest.fn() };
       const integrationDs = getMockedDataSource(integrationFetcher);
