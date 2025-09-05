@@ -88,8 +88,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a much larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1920, height: 1400 });
+    // Set same viewport as queryEditor.spec.ts for consistency
+    await page.setViewportSize({ width: 1920, height: 1080 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -171,8 +171,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a much larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1920, height: 1400 });
+    // Set same viewport as queryEditor.spec.ts for consistency
+    await page.setViewportSize({ width: 1920, height: 1080 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -244,8 +244,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a much larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1920, height: 1400 });
+    // Set same viewport as queryEditor.spec.ts for consistency
+    await page.setViewportSize({ width: 1920, height: 1080 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -287,8 +287,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a much larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1920, height: 1400 });
+    // Set same viewport as queryEditor.spec.ts for consistency
+    await page.setViewportSize({ width: 1920, height: 1080 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -334,8 +334,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a much larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1920, height: 1400 });
+    // Set same viewport as queryEditor.spec.ts for consistency
+    await page.setViewportSize({ width: 1920, height: 1080 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
