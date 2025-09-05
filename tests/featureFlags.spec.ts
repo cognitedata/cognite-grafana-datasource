@@ -88,8 +88,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1600, height: 1200 });
+    // Set a much larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1920, height: 1400 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -117,16 +117,21 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).toBeVisible();
     await expect(page.locator('#enable-events')).toBeVisible();
 
-    // Turn off legacy features
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
-    // Ensure element is fully in viewport before clicking
+    // Turn off legacy features - use more aggressive scrolling strategy
     await page.evaluate(() => {
       const element = document.querySelector('#enable-legacy-data-model-features');
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Force scroll to top of page first, then scroll element into view
+        window.scrollTo(0, 0);
+        element.scrollIntoView({ behavior: 'instant', block: 'start' });
+        // Additional scroll to ensure it's well within viewport
+        const rect = element.getBoundingClientRect();
+        if (rect.top < 100) {
+          window.scrollBy(0, -200);
+        }
       }
     });
-    await page.waitForTimeout(500); // Wait for scroll to complete
+    await page.waitForTimeout(1000); // Wait longer for scroll to complete
     await legacyMasterToggle.uncheck({ force: true });
     await expect(legacyMasterToggle).not.toBeChecked();
 
@@ -136,16 +141,21 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).not.toBeChecked();
     await expect(page.locator('#enable-events')).not.toBeChecked();
 
-    // Turn legacy features back on
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
-    // Ensure element is fully in viewport before clicking
+    // Turn legacy features back on - use more aggressive scrolling strategy
     await page.evaluate(() => {
       const element = document.querySelector('#enable-legacy-data-model-features');
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Force scroll to top of page first, then scroll element into view
+        window.scrollTo(0, 0);
+        element.scrollIntoView({ behavior: 'instant', block: 'start' });
+        // Additional scroll to ensure it's well within viewport
+        const rect = element.getBoundingClientRect();
+        if (rect.top < 100) {
+          window.scrollBy(0, -200);
+        }
       }
     });
-    await page.waitForTimeout(500); // Wait for scroll to complete
+    await page.waitForTimeout(1000); // Wait longer for scroll to complete
     await legacyMasterToggle.check({ force: true });
     await expect(legacyMasterToggle).toBeChecked();
 
@@ -161,8 +171,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1600, height: 1200 });
+    // Set a much larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1920, height: 1400 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -184,16 +194,21 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).toBeVisible();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeVisible();
 
-    // Turn off core features
-    await coreMasterToggle.scrollIntoViewIfNeeded();
-    // Ensure element is fully in viewport before clicking
+    // Turn off core features - use more aggressive scrolling strategy
     await page.evaluate(() => {
       const element = document.querySelector('#enable-core-data-model-features');
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Force scroll to top of page first, then scroll element into view
+        window.scrollTo(0, 0);
+        element.scrollIntoView({ behavior: 'instant', block: 'start' });
+        // Additional scroll to ensure it's well within viewport
+        const rect = element.getBoundingClientRect();
+        if (rect.top < 100) {
+          window.scrollBy(0, -200);
+        }
       }
     });
-    await page.waitForTimeout(500); // Wait for scroll to complete
+    await page.waitForTimeout(1000); // Wait longer for scroll to complete
     await coreMasterToggle.uncheck({ force: true });
     await expect(coreMasterToggle).not.toBeChecked();
 
@@ -201,16 +216,21 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).not.toBeChecked();
 
-    // Turn core features back on
-    await coreMasterToggle.scrollIntoViewIfNeeded();
-    // Ensure element is fully in viewport before clicking
+    // Turn core features back on - use more aggressive scrolling strategy
     await page.evaluate(() => {
       const element = document.querySelector('#enable-core-data-model-features');
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Force scroll to top of page first, then scroll element into view
+        window.scrollTo(0, 0);
+        element.scrollIntoView({ behavior: 'instant', block: 'start' });
+        // Additional scroll to ensure it's well within viewport
+        const rect = element.getBoundingClientRect();
+        if (rect.top < 100) {
+          window.scrollBy(0, -200);
+        }
       }
     });
-    await page.waitForTimeout(500); // Wait for scroll to complete
+    await page.waitForTimeout(1000); // Wait longer for scroll to complete
     await coreMasterToggle.check({ force: true });
     await expect(coreMasterToggle).toBeChecked();
 
@@ -224,8 +244,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1600, height: 1200 });
+    // Set a much larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1920, height: 1400 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -267,8 +287,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1600, height: 1200 });
+    // Set a much larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1920, height: 1400 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
@@ -314,8 +334,8 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
-    // Set a larger viewport to ensure all elements are visible in CI
-    await page.setViewportSize({ width: 1600, height: 1200 });
+    // Set a much larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1920, height: 1400 });
     
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
