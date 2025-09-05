@@ -3,6 +3,24 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
+// Helper function for aggressive scrolling to ensure elements are in viewport
+const scrollElementIntoView = async (page: any, selector: string) => {
+  await page.evaluate((sel: string) => {
+    const element = document.querySelector(sel);
+    if (element) {
+      // Force scroll to top of page first, then scroll element into view
+      window.scrollTo(0, 0);
+      element.scrollIntoView({ behavior: 'instant', block: 'start' });
+      // Additional scroll to ensure it's well within viewport
+      const rect = element.getBoundingClientRect();
+      if (rect.top < 100) {
+        window.scrollBy(0, -200);
+      }
+    }
+  }, selector);
+  await page.waitForTimeout(500); // Wait for scroll to complete
+};
+
 test.describe('Feature Flags - Tab Visibility', () => {
   test('Legacy-only dashboard should show only legacy tabs', async ({
     readProvisionedDataSource,
@@ -97,9 +115,11 @@ test.describe('Feature Flags - Config Editor', () => {
     // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
 
-    // Scroll to the feature flags section at the bottom
+    // Get the legacy master toggle element
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    
+    // Use aggressive scrolling to ensure element is visible
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await expect(legacyMasterToggle).toBeVisible();
 
     // Check the initial state (may vary based on provisioned config)
@@ -117,21 +137,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).toBeVisible();
     await expect(page.locator('#enable-events')).toBeVisible();
 
-    // Turn off legacy features - use more aggressive scrolling strategy
-    await page.evaluate(() => {
-      const element = document.querySelector('#enable-legacy-data-model-features');
-      if (element) {
-        // Force scroll to top of page first, then scroll element into view
-        window.scrollTo(0, 0);
-        element.scrollIntoView({ behavior: 'instant', block: 'start' });
-        // Additional scroll to ensure it's well within viewport
-        const rect = element.getBoundingClientRect();
-        if (rect.top < 100) {
-          window.scrollBy(0, -200);
-        }
-      }
-    });
-    await page.waitForTimeout(1000); // Wait longer for scroll to complete
+    // Turn off legacy features - use aggressive scrolling strategy
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await legacyMasterToggle.uncheck({ force: true });
     await expect(legacyMasterToggle).not.toBeChecked();
 
@@ -141,21 +148,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).not.toBeChecked();
     await expect(page.locator('#enable-events')).not.toBeChecked();
 
-    // Turn legacy features back on - use more aggressive scrolling strategy
-    await page.evaluate(() => {
-      const element = document.querySelector('#enable-legacy-data-model-features');
-      if (element) {
-        // Force scroll to top of page first, then scroll element into view
-        window.scrollTo(0, 0);
-        element.scrollIntoView({ behavior: 'instant', block: 'start' });
-        // Additional scroll to ensure it's well within viewport
-        const rect = element.getBoundingClientRect();
-        if (rect.top < 100) {
-          window.scrollBy(0, -200);
-        }
-      }
-    });
-    await page.waitForTimeout(1000); // Wait longer for scroll to complete
+    // Turn legacy features back on - use aggressive scrolling strategy
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await legacyMasterToggle.check({ force: true });
     await expect(legacyMasterToggle).toBeChecked();
 
@@ -177,10 +171,14 @@ test.describe('Feature Flags - Config Editor', () => {
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Wait for the page to fully load and scroll to feature flags
+    // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
+    
+    // Get the core master toggle element
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
-    await coreMasterToggle.scrollIntoViewIfNeeded();
+    
+    // Use aggressive scrolling to ensure element is visible
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await expect(coreMasterToggle).toBeVisible();
 
     // Check the initial state and ensure it's enabled for testing
@@ -194,21 +192,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).toBeVisible();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeVisible();
 
-    // Turn off core features - use more aggressive scrolling strategy
-    await page.evaluate(() => {
-      const element = document.querySelector('#enable-core-data-model-features');
-      if (element) {
-        // Force scroll to top of page first, then scroll element into view
-        window.scrollTo(0, 0);
-        element.scrollIntoView({ behavior: 'instant', block: 'start' });
-        // Additional scroll to ensure it's well within viewport
-        const rect = element.getBoundingClientRect();
-        if (rect.top < 100) {
-          window.scrollBy(0, -200);
-        }
-      }
-    });
-    await page.waitForTimeout(1000); // Wait longer for scroll to complete
+    // Turn off core features - use aggressive scrolling strategy
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await coreMasterToggle.uncheck({ force: true });
     await expect(coreMasterToggle).not.toBeChecked();
 
@@ -216,21 +201,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).not.toBeChecked();
 
-    // Turn core features back on - use more aggressive scrolling strategy
-    await page.evaluate(() => {
-      const element = document.querySelector('#enable-core-data-model-features');
-      if (element) {
-        // Force scroll to top of page first, then scroll element into view
-        window.scrollTo(0, 0);
-        element.scrollIntoView({ behavior: 'instant', block: 'start' });
-        // Additional scroll to ensure it's well within viewport
-        const rect = element.getBoundingClientRect();
-        if (rect.top < 100) {
-          window.scrollBy(0, -200);
-        }
-      }
-    });
-    await page.waitForTimeout(1000); // Wait longer for scroll to complete
+    // Turn core features back on - use aggressive scrolling strategy
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await coreMasterToggle.check({ force: true });
     await expect(coreMasterToggle).toBeChecked();
 
@@ -253,7 +225,7 @@ test.describe('Feature Flags - Config Editor', () => {
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     
     // Ensure legacy master toggle is enabled
     await legacyMasterToggle.check({ force: true });
@@ -263,21 +235,21 @@ test.describe('Feature Flags - Config Editor', () => {
     const eventsToggle = page.locator('#enable-events');
 
     // Turn off individual features
-    await timeseriesSearchToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-timeseries-search');
     await timeseriesSearchToggle.uncheck({ force: true });
     await expect(timeseriesSearchToggle).not.toBeChecked();
     await expect(legacyMasterToggle).toBeChecked(); // Master should remain on
 
-    await eventsToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-events');
     await eventsToggle.uncheck({ force: true });
     await expect(eventsToggle).not.toBeChecked();
 
     // Turn them back on
-    await timeseriesSearchToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-timeseries-search');
     await timeseriesSearchToggle.check({ force: true });
     await expect(timeseriesSearchToggle).toBeChecked();
 
-    await eventsToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-events');
     await eventsToggle.check({ force: true });
     await expect(eventsToggle).toBeChecked();
   });
@@ -295,7 +267,7 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
-    await page.locator('#enable-relationships').scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-relationships');
 
     // Deprecated features should be visible and toggleable independently
     await expect(page.locator('#enable-relationships')).toBeVisible();
@@ -307,11 +279,11 @@ test.describe('Feature Flags - Config Editor', () => {
     const templatesToggle = page.locator('#enable-templates');
 
     // Toggle deprecated features independently
-    await relationshipsToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-relationships');
     await relationshipsToggle.uncheck({ force: true });
     await expect(relationshipsToggle).not.toBeChecked();
 
-    await templatesToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-templates');
     await templatesToggle.check({ force: true });
     await expect(templatesToggle).toBeChecked();
 
@@ -319,9 +291,9 @@ test.describe('Feature Flags - Config Editor', () => {
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
 
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await legacyMasterToggle.uncheck({ force: true });
-    await coreMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await coreMasterToggle.uncheck({ force: true });
 
     // Deprecated features should maintain their state
@@ -343,14 +315,14 @@ test.describe('Feature Flags - Config Editor', () => {
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
 
     // Change some feature flags
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
 
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await legacyMasterToggle.uncheck({ force: true });
-    await coreMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await coreMasterToggle.uncheck({ force: true });
 
     // Save the configuration
@@ -369,9 +341,9 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
 
     // Reset to original state for cleanup
-    await legacyMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await legacyMasterToggle.check({ force: true });
-    await coreMasterToggle.scrollIntoViewIfNeeded();
+    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await coreMasterToggle.check({ force: true });
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
