@@ -206,9 +206,9 @@ test.describe('Feature Flags - Config Editor', () => {
     await coreMasterToggle.check({ force: true });
     await expect(coreMasterToggle).toBeChecked();
 
-    // Individual toggles should return to their default values (core features default to false)
-    await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
-    await expect(page.locator('#enable-flexible-data-modelling')).not.toBeChecked();
+    // Individual toggles should be enabled when core master toggle is enabled
+    await expect(page.locator('#enable-cognite-timeseries')).toBeChecked();
+    await expect(page.locator('#enable-flexible-data-modelling')).toBeChecked();
   });
 
   test('Should allow individual feature toggles when master is enabled', async ({
