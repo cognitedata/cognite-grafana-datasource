@@ -10,15 +10,15 @@ const scrollElementIntoView = async (page: any, selector: string) => {
     if (element) {
       // Force scroll to top of page first, then scroll element into view
       window.scrollTo(0, 0);
-      element.scrollIntoView({ behavior: 'instant', block: 'start' });
+      element.scrollIntoView({ behavior: 'instant', block: 'center' });
       // Additional scroll to ensure it's well within viewport
       const rect = element.getBoundingClientRect();
-      if (rect.top < 100) {
-        window.scrollBy(0, -200);
+      if (rect.top < 150 || rect.bottom > window.innerHeight - 150) {
+        element.scrollIntoView({ behavior: 'instant', block: 'center' });
       }
     }
   }, selector);
-  await page.waitForTimeout(500); // Wait for scroll to complete
+  await page.waitForTimeout(1000); // Wait longer for scroll to complete
 };
 
 test.describe('Feature Flags - Tab Visibility', () => {
