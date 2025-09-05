@@ -2,7 +2,14 @@ import React, { ChangeEvent, useState } from 'react';
 import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
-import { FEATURE_DEFAULTS } from '../featureDefaults';
+import { FEATURE_DEFAULTS, FeatureKey } from '../featureDefaults';
+import { 
+  stringValueHandler, 
+  boolValueHandler, 
+  secretValueHandler, 
+  resetSecretHandler,
+  masterToggleHandler
+} from '../configEditorUtils';
 import '../css/common.css';
 
 
@@ -54,7 +61,6 @@ const enableCoreDataModelFeaturesTooltip = `Master toggle for Core Data Model fe
 const enableLegacyDataModelFeaturesTooltip = `Master toggle for Legacy Data Model features section. When disabled, all Legacy Data Model features will be hidden.`;
 
 // Feature keys are derived from FEATURE_DEFAULTS to ensure only boolean feature flags are handled
-type FeatureKey = keyof typeof FEATURE_DEFAULTS;
 
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
@@ -99,64 +105,20 @@ export function ConfigEditor(props: ConfigEditorProps) {
     });
   };
 
-  const onJsonStringValueChange =
-    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
-      onJsonDataChange({ [key]: event.target.value });
+  const onJsonStringValueChange = (key: keyof CogniteDataSourceOptions) =>
+    stringValueHandler(key, onJsonDataChange);
 
-  const onJsonBoolValueChange =
-    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
-      onJsonDataChange({ [key]: event.currentTarget.checked });
+  const onJsonBoolValueChange = (key: keyof CogniteDataSourceOptions) =>
+    boolValueHandler(key, onJsonDataChange);
 
-  // Handler for master toggle - manages underlying feature toggles based on master state
-  const onMasterToggleChange = (
-    masterKey: FeatureKey,
-    dependentKeys: FeatureKey[]
-  ) => (event: ChangeEvent<HTMLInputElement>) => {
-    const isEnabled = event.currentTarget.checked;
-    
-    // Type-safe patch object for boolean feature flags
-    const patch: Partial<Pick<CogniteDataSourceOptions, FeatureKey>> = {
-      [masterKey]: isEnabled,
-    };
-    
-    if (!isEnabled) {
-      // If master toggle is turned off, disable all dependent features
-      dependentKeys.forEach(key => {
-        patch[key] = false;
-      });
-    } else {
-      // If master toggle is turned on, set dependent features to their defaults from FEATURE_DEFAULTS
-      dependentKeys.forEach(key => {
-        const defaultValue = FEATURE_DEFAULTS[key];
-        patch[key] = defaultValue;
-      });
-    }
-    
-    onJsonDataChange(patch as Partial<CogniteDataSourceOptions>);
-  };
+  const onMasterToggleChange = (masterKey: FeatureKey, dependentKeys: FeatureKey[]) =>
+    masterToggleHandler(masterKey, dependentKeys, onJsonDataChange);
 
-  // Secure field (only sent to the backend)
-  const onChangeSecretValue =
-    (secretKey: keyof CogniteSecureJsonData) => (event: ChangeEvent<HTMLInputElement>) =>
-      onOptionsChange({
-        ...options,
-        secureJsonData: {
-          [secretKey]: event.target.value,
-        },
-      });
+  const onChangeSecretValue = (secretKey: keyof CogniteSecureJsonData) =>
+    secretValueHandler(secretKey, options, onOptionsChange);
 
-  const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) => () =>
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        [secretKey]: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        [secretKey]: '',
-      },
-    });
+  const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) =>
+    resetSecretHandler(secretKey, options, onOptionsChange);
 
   return (
     <>

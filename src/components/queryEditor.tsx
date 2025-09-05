@@ -39,6 +39,7 @@ import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
+import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -322,65 +323,8 @@ export function QueryEditor(props: EditorProps) {
     appEvents.on(responseWarningEvent, handleWarning);
   };
 
-  // Check if a tab feature is disabled by feature flags
-  const isTabDisabled = (t) => {
-    // Core Data Model features
-    if (t === Tabs.CogniteTimeSeriesSearch) {
-      return !datasource.connector.isCogniteTimeSeriesEnabled();
-    }
-    if (t === Tabs.FlexibleDataModelling) {
-      return !datasource.connector.isFlexibleDataModellingEnabled();
-    }
-    
-    // Legacy data model features
-    if (t === Tabs.Timeseries) {
-      return !datasource.connector.isTimeseriesSearchEnabled();
-    }
-    if (t === Tabs.Asset) {
-      return !datasource.connector.isTimeseriesFromAssetEnabled();
-    }
-    if (t === Tabs.Custom) {
-      return !datasource.connector.isTimeseriesCustomQueryEnabled();
-    }
-    if (t === Tabs.Event) {
-      return !datasource.connector.isEventsEnabled();
-    }
-    
-    // Deprecated features
-    if (t === Tabs.Relationships) {
-      return !datasource.connector.isRelationshipsEnabled();
-    }
-    if (t === Tabs.Templates) {
-      return !datasource.connector.isTemplatesEnabled();
-    }
-    if (t === Tabs.ExtractionPipelines) {
-      return !datasource.connector.isExtractionPipelinesEnabled();
-    }
-    
-    return false;
-  };
-
-  // Determine if a tab should be hidden from the tab bar
-  // Note: This function controls UI visibility of tabs in the query editor.
-  // For backward compatibility, we show disabled tabs if they're already selected
-  // in an existing visualization, but hide them for new selections.
-  const hiddenTab = (t) => {
-    const tabIsDisabled = isTabDisabled(t);
-    
-    // If tab is not disabled, always show it
-    if (!tabIsDisabled) {
-      return false;
-    }
-    
-    // If tab is disabled but currently selected (existing visualization), show it
-    // This ensures backward compatibility - users can still see their existing dashboards
-    if (t === tab) {
-      return false;
-    }
-    
-    // Otherwise, hide disabled tabs to prevent new selections
-    return true;
-  };
+  // Use utility functions for tab logic
+  const hiddenTab = (t: Tabs) => isTabHidden(t, tab, datasource);
 
   useEffect(() => {
     eventsSubscribe();
@@ -390,25 +334,8 @@ export function QueryEditor(props: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Get the first available (not hidden) tab based on natural tab order
-  // Note: Relies on the insertion order of the string enum `Tabs`.
-  // Maintaining the declaration order in `src/types.ts` preserves the UI order.
-  const getFirstAvailableTab = (): Tabs => {
-    // Use the same order as the tabs appear in the UI (Object.values maintains enum order)
-    const allTabs = Object.values(Tabs);
-    for (const t of allTabs) {
-      if (!hiddenTab(t)) {
-        return t;
-      }
-    }
-    // Fallback to Timeseries if somehow all tabs are hidden (shouldn't happen)
-    return Tabs.Timeseries;
-  };
-
-  // Ensure we have a valid tab selected
-  // For backward compatibility: if current tab is disabled but selected, keep it
-  // Otherwise, if current tab is hidden, get first available tab
-  const activeTab = hiddenTab(tab) ? getFirstAvailableTab() : tab;
+  // Ensure we have a valid tab selected using utility function
+  const activeTab = getActiveTab(tab, datasource);
 
   // If we needed to change the tab, update the query
   // Note: We only auto-switch if the tab is truly hidden (not just disabled but showing for compatibility)
@@ -422,7 +349,7 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => {
-          const tabIsDisabled = isTabDisabled(t);
+          const tabIsDisabled = isTabDisabled(t, datasource);
           const isCurrentlySelected = t === tab;
           const showingDisabledTab = tabIsDisabled && isCurrentlySelected;
           

@@ -24,3 +24,8 @@ export const FEATURE_DEFAULTS = {
   enableExtractionPipelines: false, // Disabled by default
   enableRelationships: true, // Default enabled for backward compatibility
 } as const;
+
+/**
+ * Type representing all available feature flag keys
+ */
+export type FeatureKey = keyof typeof FEATURE_DEFAULTS;
