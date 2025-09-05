@@ -119,6 +119,14 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Turn off legacy features
     await legacyMasterToggle.scrollIntoViewIfNeeded();
+    // Ensure element is fully in viewport before clicking
+    await page.evaluate(() => {
+      const element = document.querySelector('#enable-legacy-data-model-features');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    await page.waitForTimeout(500); // Wait for scroll to complete
     await legacyMasterToggle.uncheck({ force: true });
     await expect(legacyMasterToggle).not.toBeChecked();
 
@@ -130,6 +138,14 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Turn legacy features back on
     await legacyMasterToggle.scrollIntoViewIfNeeded();
+    // Ensure element is fully in viewport before clicking
+    await page.evaluate(() => {
+      const element = document.querySelector('#enable-legacy-data-model-features');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    await page.waitForTimeout(500); // Wait for scroll to complete
     await legacyMasterToggle.check({ force: true });
     await expect(legacyMasterToggle).toBeChecked();
 
@@ -170,6 +186,14 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Turn off core features
     await coreMasterToggle.scrollIntoViewIfNeeded();
+    // Ensure element is fully in viewport before clicking
+    await page.evaluate(() => {
+      const element = document.querySelector('#enable-core-data-model-features');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    await page.waitForTimeout(500); // Wait for scroll to complete
     await coreMasterToggle.uncheck({ force: true });
     await expect(coreMasterToggle).not.toBeChecked();
 
@@ -179,6 +203,14 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Turn core features back on
     await coreMasterToggle.scrollIntoViewIfNeeded();
+    // Ensure element is fully in viewport before clicking
+    await page.evaluate(() => {
+      const element = document.querySelector('#enable-core-data-model-features');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    await page.waitForTimeout(500); // Wait for scroll to complete
     await coreMasterToggle.check({ force: true });
     await expect(coreMasterToggle).toBeChecked();
 
