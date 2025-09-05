@@ -2,6 +2,14 @@ import React, { ChangeEvent, useState } from 'react';
 import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
+import { FEATURE_DEFAULTS, FeatureKey } from '../featureDefaults';
+import { 
+  stringValueHandler, 
+  boolValueHandler, 
+  secretValueHandler, 
+  resetSecretHandler,
+  masterToggleHandler
+} from '../configEditorUtils';
 import '../css/common.css';
 
 
@@ -28,13 +36,31 @@ const oAuthClientSecretTooltip = `A secret string that the application uses to p
 
 const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. E.g. https://api.cognitedata.com/.default.`;
 
-const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature.`;
+const enableCogniteTimeSeriesTooltip = `Enable the Cognite TimeSeries tab for exploring time series from the Core Data Model.`;
+
+const enableTimeseriesSearchTooltip = `Enable the Time series search tab for searching and selecting time series.`;
+
+const enableTimeseriesFromAssetTooltip = `Enable the Time series from asset tab for finding time series linked to assets.`;
+
+const enableTimeseriesCustomQueryTooltip = `Enable the Time series custom query tab for advanced time series querying.`;
+
+const enableEventsTooltip = `Enable the Events tab for querying CDF events.`;
+
+const enableRelationshipsTooltip = `Enable the Relationships tab (deprecated - use Data Models instead).`;
+
+const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature (deprecated).`;
 
 const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering (preview)`;
 
 const enableFlexibleDataModellingTooltip = 'Enable Data Models';
 
-const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview)';
+const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview) - deprecated feature.';
+
+const enableCoreDataModelFeaturesTooltip = `Master toggle for Core Data Model features section. When disabled, all Core Data Model features will be hidden.`;
+
+const enableLegacyDataModelFeaturesTooltip = `Master toggle for Legacy Data Model features section. When disabled, all Legacy Data Model features will be hidden.`;
+
+// Feature keys are derived from FEATURE_DEFAULTS to ensure only boolean feature flags are handled
 
 export function ConfigEditor(props: ConfigEditorProps) {
   const [showHelp, setShowHelp] = useState(false);
@@ -51,10 +77,22 @@ export function ConfigEditor(props: ConfigEditorProps) {
     oauthClientId,
     oauthTokenUrl,
     oauthScope,
-    enableTemplates,
-    enableEventsAdvancedFiltering,
-    enableFlexibleDataModelling,
-    enableExtractionPipelines,
+    // Master toggles for feature sections
+    enableCoreDataModelFeatures = FEATURE_DEFAULTS.enableCoreDataModelFeatures,
+    enableLegacyDataModelFeatures = FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
+    // Core Data Model features
+    enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
+    // Legacy data model features
+    enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
+    enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
+    enableTimeseriesCustomQuery = FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
+    enableEvents = FEATURE_DEFAULTS.enableEvents,
+    // Deprecated features
+    enableTemplates = FEATURE_DEFAULTS.enableTemplates,
+    enableEventsAdvancedFiltering = FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
+    enableFlexibleDataModelling = FEATURE_DEFAULTS.enableFlexibleDataModelling,
+    enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
+    enableRelationships = FEATURE_DEFAULTS.enableRelationships,
   } = jsonData;
 
   const onJsonDataChange = (patch: Partial<ConfigEditorProps['options']['jsonData']>) => {
@@ -67,36 +105,20 @@ export function ConfigEditor(props: ConfigEditorProps) {
     });
   };
 
-  const onJsonStringValueChange =
-    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
-      onJsonDataChange({ [key]: event.target.value });
+  const onJsonStringValueChange = (key: keyof CogniteDataSourceOptions) =>
+    stringValueHandler(key, onJsonDataChange);
 
-  const onJsonBoolValueChange =
-    (key: keyof CogniteDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) =>
-      onJsonDataChange({ [key]: event.currentTarget.checked });
+  const onJsonBoolValueChange = (key: keyof CogniteDataSourceOptions) =>
+    boolValueHandler(key, onJsonDataChange);
 
-  // Secure field (only sent to the backend)
-  const onChangeSecretValue =
-    (secretKey: keyof CogniteSecureJsonData) => (event: ChangeEvent<HTMLInputElement>) =>
-      onOptionsChange({
-        ...options,
-        secureJsonData: {
-          [secretKey]: event.target.value,
-        },
-      });
+  const onMasterToggleChange = (masterKey: FeatureKey, dependentKeys: FeatureKey[]) =>
+    masterToggleHandler(masterKey, dependentKeys, onJsonDataChange);
 
-  const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) => () =>
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        [secretKey]: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        [secretKey]: '',
-      },
-    });
+  const onChangeSecretValue = (secretKey: keyof CogniteSecureJsonData) =>
+    secretValueHandler(secretKey, options, onOptionsChange);
+
+  const onResetSecretValue = (secretKey: keyof CogniteSecureJsonData) =>
+    resetSecretHandler(secretKey, options, onOptionsChange);
 
   return (
     <>
@@ -221,42 +243,139 @@ export function ConfigEditor(props: ConfigEditorProps) {
         )}
       </FieldSet>
 
-      <FieldSet label="Opt-in features">
+      <FieldSet label="Core Data Model features">
         <InlineFieldRow style={{ marginBottom: '4px' }}>
-          <InlineFormLabel htmlFor='enable-templates' tooltip={enableTemplatesTooltip} width={12}>
-            Cognite Templates
+          <InlineFormLabel htmlFor='enable-core-data-model-features' tooltip={enableCoreDataModelFeaturesTooltip} width={20}>
+            Enable Core Data Model features
           </InlineFormLabel>
           <InlineSwitch
-            id='enable-templates'
-            label='Cognite Templates'
-            value={enableTemplates}
-            onChange={onJsonBoolValueChange('enableTemplates')}
+            id='enable-core-data-model-features'
+            label='Enable Core Data Model features'
+            value={enableCoreDataModelFeatures}
+            onChange={onMasterToggleChange('enableCoreDataModelFeatures', ['enableCogniteTimeSeries', 'enableFlexibleDataModelling'])}
+          />
+        </InlineFieldRow>
+        {enableCoreDataModelFeatures && (
+          <>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-cognite-timeseries' tooltip={enableCogniteTimeSeriesTooltip} width={20}>
+                Cognite Timeseries
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-cognite-timeseries'
+                label='Cognite Timeseries'
+                value={enableCogniteTimeSeries}
+                onChange={onJsonBoolValueChange('enableCogniteTimeSeries')}
+              />
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-flexible-data-modelling' tooltip={enableFlexibleDataModellingTooltip} width={20}>
+                Data Models
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-flexible-data-modelling'
+                label='Data Models'
+                value={enableFlexibleDataModelling}
+                onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
+              />
+            </InlineFieldRow>
+          </>
+        )}
+      </FieldSet>
+
+      <FieldSet label="Legacy data model features">
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-legacy-data-model-features' tooltip={enableLegacyDataModelFeaturesTooltip} width={20}>
+            Enable Legacy data model features
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-legacy-data-model-features'
+            label='Enable Legacy data model features'
+            value={enableLegacyDataModelFeatures}
+            onChange={onMasterToggleChange('enableLegacyDataModelFeatures', [
+              'enableTimeseriesSearch',
+              'enableTimeseriesFromAsset', 
+              'enableTimeseriesCustomQuery',
+              'enableEvents',
+              'enableEventsAdvancedFiltering'
+            ])}
+          />
+        </InlineFieldRow>
+        {enableLegacyDataModelFeatures && (
+          <>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-timeseries-search' tooltip={enableTimeseriesSearchTooltip} width={20}>
+                Time series search
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-timeseries-search'
+                label='Time series search'
+                value={enableTimeseriesSearch}
+                onChange={onJsonBoolValueChange('enableTimeseriesSearch')}
+              />
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-timeseries-from-asset' tooltip={enableTimeseriesFromAssetTooltip} width={20}>
+                Time series from asset
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-timeseries-from-asset'
+                label='Time series from asset'
+                value={enableTimeseriesFromAsset}
+                onChange={onJsonBoolValueChange('enableTimeseriesFromAsset')}
+              />
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-timeseries-custom-query' tooltip={enableTimeseriesCustomQueryTooltip} width={20}>
+                Time series custom query
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-timeseries-custom-query'
+                label='Time series custom query'
+                value={enableTimeseriesCustomQuery}
+                onChange={onJsonBoolValueChange('enableTimeseriesCustomQuery')}
+              />
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-events' tooltip={enableEventsTooltip} width={20}>
+                Events
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-events'
+                label='Events'
+                value={enableEvents}
+                onChange={onJsonBoolValueChange('enableEvents')}
+              />
+            </InlineFieldRow>
+            <InlineFieldRow style={{ marginBottom: '4px' }}>
+              <InlineFormLabel htmlFor='enable-events-advanced-filtering' tooltip={enableEventsAdvancedFilteringTooltip} width={20}>
+                Advanced Filtering
+              </InlineFormLabel>
+              <InlineSwitch
+                id='enable-events-advanced-filtering'
+                label='Advanced Filtering'
+                value={enableEventsAdvancedFiltering}
+                onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
+              />
+            </InlineFieldRow>
+          </>
+        )}
+      </FieldSet>
+
+      <FieldSet label="Deprecated features">
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-relationships' tooltip={enableRelationshipsTooltip} width={20}>
+            Relationships
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-relationships'
+            label='Relationships'
+            value={enableRelationships}
+            onChange={onJsonBoolValueChange('enableRelationships')}
           />
         </InlineFieldRow>
         <InlineFieldRow style={{ marginBottom: '4px' }}>
-          <InlineFormLabel htmlFor='enable-events-advanced-filtering' tooltip={enableEventsAdvancedFilteringTooltip} width={12}>
-            Advanced Filtering
-          </InlineFormLabel>
-          <InlineSwitch
-            id='enable-events-advanced-filtering'
-            label='Advanced Filtering'
-            value={enableEventsAdvancedFiltering}
-            onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
-          />
-        </InlineFieldRow>
-        <InlineFieldRow style={{ marginBottom: '4px' }}>
-          <InlineFormLabel htmlFor='enable-flexible-data-modelling' tooltip={enableFlexibleDataModellingTooltip} width={12}>
-            Data Models
-          </InlineFormLabel>
-          <InlineSwitch
-            id='enable-flexible-data-modelling'
-            label='Data Models'
-            value={enableFlexibleDataModelling}
-            onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
-          />
-        </InlineFieldRow>
-        <InlineFieldRow style={{ marginBottom: '4px' }}>
-          <InlineFormLabel htmlFor='enable-extraction-pipelines' tooltip={enableExtractionPipelinesTooltip} width={12}>
+          <InlineFormLabel htmlFor='enable-extraction-pipelines' tooltip={enableExtractionPipelinesTooltip} width={20}>
             Extraction Pipelines
           </InlineFormLabel>
           <InlineSwitch
@@ -264,6 +383,17 @@ export function ConfigEditor(props: ConfigEditorProps) {
             label='Extraction Pipelines'
             value={enableExtractionPipelines}
             onChange={onJsonBoolValueChange('enableExtractionPipelines')}
+          />
+        </InlineFieldRow>
+        <InlineFieldRow style={{ marginBottom: '4px' }}>
+          <InlineFormLabel htmlFor='enable-templates' tooltip={enableTemplatesTooltip} width={20}>
+            Cognite Templates
+          </InlineFormLabel>
+          <InlineSwitch
+            id='enable-templates'
+            label='Cognite Templates'
+            value={enableTemplates}
+            onChange={onJsonBoolValueChange('enableTemplates')}
           />
         </InlineFieldRow>
       </FieldSet>

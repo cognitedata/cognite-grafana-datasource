@@ -188,10 +188,26 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthTokenUrl?: string;
   oauthClientId?: string;
   oauthScope?: string;
+  // Master toggles for feature sections
+  enableCoreDataModelFeatures?: boolean; // Master toggle for Core Data Model section
+  enableLegacyDataModelFeatures?: boolean; // Master toggle for Legacy Data Model section
+  // Core Data Model features
+  // Note: These default to false (opt-in) since they are new features
+  enableCogniteTimeSeries?: boolean;
+  // Legacy data model features  
+  // Note: These default to true for backward compatibility with existing configs
+  enableTimeseriesSearch?: boolean;
+  enableTimeseriesFromAsset?: boolean;
+  enableTimeseriesCustomQuery?: boolean;
+  enableEvents?: boolean;
+  // Deprecated features
+  // Note: enableRelationships defaults to true for backward compatibility,
+  // others keep their original behavior (undefined = disabled by default)
   enableTemplates?: boolean;
   enableEventsAdvancedFiltering?: boolean;
   enableFlexibleDataModelling?: boolean;
   enableExtractionPipelines?: boolean;
+  enableRelationships?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
