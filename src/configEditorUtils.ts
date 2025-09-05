@@ -70,10 +70,21 @@ export const masterToggleHandler = (
     [masterKey]: isEnabled,
   };
   
-  // When enabling master toggle, set dependent features to their defaults
+  // When enabling master toggle, enable all dependent features
   // When disabling master toggle, set dependent features to false
   dependentKeys.forEach((key) => {
-    patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
+    if (isEnabled) {
+      // For core data model features, enable them when master is enabled
+      if (masterKey === 'enableCoreDataModelFeatures') {
+        patch[key] = true;
+      } else {
+        // For other master toggles, use their defaults
+        patch[key] = FEATURE_DEFAULTS[key];
+      }
+    } else {
+      // When disabling master toggle, disable all dependent features
+      patch[key] = false;
+    }
   });
   
   onJsonDataChange(patch as Partial<CogniteDataSourceOptions>);

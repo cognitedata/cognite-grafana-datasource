@@ -190,8 +190,8 @@ describe('ConfigEditor Utility Functions', () => {
 
       const call = mockOnJsonDataChange.mock.calls[0][0];
       expect(call.enableCoreDataModelFeatures).toBe(true);
-      expect(call.enableCogniteTimeSeries).toBe(FEATURE_DEFAULTS.enableCogniteTimeSeries);
-      expect(call.enableFlexibleDataModelling).toBe(FEATURE_DEFAULTS.enableFlexibleDataModelling);
+      expect(call.enableCogniteTimeSeries).toBe(true); // Core features are enabled when master is enabled
+      expect(call.enableFlexibleDataModelling).toBe(true); // Core features are enabled when master is enabled
     });
 
     it('should create a handler that disables master toggle and sets dependent features to false', () => {
@@ -243,6 +243,25 @@ describe('ConfigEditor Utility Functions', () => {
       // Verify that enableEventsAdvancedFiltering is false by default
       expect(call.enableEventsAdvancedFiltering).toBe(false);
       expect(FEATURE_DEFAULTS.enableEventsAdvancedFiltering).toBe(false);
+    });
+
+    it('should create a handler for legacy features that uses defaults when enabling', () => {
+      const handler = masterToggleHandler(
+        'enableLegacyDataModelFeatures',
+        ['enableTimeseriesSearch', 'enableEvents'],
+        mockOnJsonDataChange
+      );
+
+      const mockEvent = {
+        currentTarget: { checked: true }
+      } as React.ChangeEvent<HTMLInputElement>;
+
+      handler(mockEvent);
+
+      const call = mockOnJsonDataChange.mock.calls[0][0];
+      expect(call.enableLegacyDataModelFeatures).toBe(true);
+      expect(call.enableTimeseriesSearch).toBe(FEATURE_DEFAULTS.enableTimeseriesSearch); // Legacy uses defaults
+      expect(call.enableEvents).toBe(FEATURE_DEFAULTS.enableEvents); // Legacy uses defaults
     });
   });
 });
