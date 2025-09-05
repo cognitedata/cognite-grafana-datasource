@@ -88,6 +88,9 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
+    // Set a larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
@@ -142,6 +145,9 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
+    // Set a larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
@@ -186,6 +192,9 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
+    // Set a larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
@@ -226,6 +235,9 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
+    // Set a larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
@@ -270,6 +282,9 @@ test.describe('Feature Flags - Config Editor', () => {
     gotoDataSourceConfigPage,
     page,
   }) => {
+    // Set a larger viewport to ensure all elements are visible in CI
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
