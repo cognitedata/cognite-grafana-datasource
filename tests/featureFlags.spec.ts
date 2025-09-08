@@ -3,12 +3,18 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
-// Helper function for simple scrolling to ensure elements are in viewport
+// Helper function for scrolling to ensure elements are clickable in CI
 const scrollElementIntoView = async (page: any, selector: string) => {
   try {
+    // Wait for element to exist first
+    await page.waitForSelector(selector, { timeout: 5000 });
+    
+    // Use Playwright's built-in scrollIntoViewIfNeeded which is more reliable
     const element = page.locator(selector);
     await element.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(100); // Short wait
+    
+    // Small wait for scroll to complete
+    await page.waitForTimeout(100);
   } catch (error) {
     // If scrolling fails, continue - element might still be accessible
     console.log(`Scrolling failed for ${selector}, continuing...`);
@@ -106,36 +112,15 @@ test.describe('Feature Flags - Config Editor', () => {
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Save original state of all toggles for cleanup
-    let originalState: Record<string, boolean> = {};
-
     // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
-
+    
     // Get the legacy master toggle element
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
     
     // Use aggressive scrolling to ensure element is visible
     await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await expect(legacyMasterToggle).toBeVisible();
-
-    // Capture original state of all relevant toggles
-    const toggleIds = [
-      'enable-legacy-data-model-features',
-      'enable-timeseries-search', 
-      'enable-timeseries-from-asset',
-      'enable-timeseries-custom-query',
-      'enable-events',
-      'enable-events-advanced-filtering',
-      'enable-extraction-pipelines',
-      'enable-templates',
-      'enable-relationships'
-    ];
-    
-    for (const id of toggleIds) {
-      await scrollElementIntoView(page, `#${id}`);
-      originalState[id] = await page.locator(`#${id}`).isChecked();
-    }
 
     // Check the initial state (may vary based on provisioned config)
     const initiallyChecked = await legacyMasterToggle.isChecked();
@@ -173,25 +158,6 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-from-asset')).toBeChecked();
     await expect(page.locator('#enable-timeseries-custom-query')).toBeChecked();
     await expect(page.locator('#enable-events')).toBeChecked();
-
-    // Restore original state of all toggles
-    for (const [id, originalValue] of Object.entries(originalState)) {
-      await scrollElementIntoView(page, `#${id}`);
-      const toggle = page.locator(`#${id}`);
-      const currentValue = await toggle.isChecked();
-      
-      if (currentValue !== originalValue) {
-        if (originalValue) {
-          await toggle.check({ force: true });
-        } else {
-          await toggle.uncheck({ force: true });
-        }
-      }
-    }
-
-    // Save the configuration to persist changes
-    await page.getByRole('button', { name: 'Save & test' }).click();
-    await page.waitForLoadState('networkidle');
   });
 
   test('Should toggle core data model features on/off', async ({
@@ -205,9 +171,6 @@ test.describe('Feature Flags - Config Editor', () => {
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Save original state of all toggles for cleanup
-    let originalState: Record<string, boolean> = {};
-
     // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
     
@@ -217,27 +180,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Use aggressive scrolling to ensure element is visible
     await scrollElementIntoView(page, '#enable-core-data-model-features');
     await expect(coreMasterToggle).toBeVisible();
-
-    // Capture original state of all relevant toggles
-    const toggleIds = [
-      'enable-core-data-model-features',
-      'enable-cognite-timeseries',
-      'enable-flexible-data-modelling',
-      'enable-legacy-data-model-features',
-      'enable-timeseries-search', 
-      'enable-timeseries-from-asset',
-      'enable-timeseries-custom-query',
-      'enable-events',
-      'enable-events-advanced-filtering',
-      'enable-extraction-pipelines',
-      'enable-templates',
-      'enable-relationships'
-    ];
-    
-    for (const id of toggleIds) {
-      await scrollElementIntoView(page, `#${id}`);
-      originalState[id] = await page.locator(`#${id}`).isChecked();
-    }
 
     // Check the initial state and ensure it's enabled for testing
     const initiallyChecked = await coreMasterToggle.isChecked();
@@ -267,25 +209,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Individual toggles should be enabled when core master toggle is enabled
     await expect(page.locator('#enable-cognite-timeseries')).toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeChecked();
-
-    // Restore original state of all toggles
-    for (const [id, originalValue] of Object.entries(originalState)) {
-      await scrollElementIntoView(page, `#${id}`);
-      const toggle = page.locator(`#${id}`);
-      const currentValue = await toggle.isChecked();
-      
-      if (currentValue !== originalValue) {
-        if (originalValue) {
-          await toggle.check({ force: true });
-        } else {
-          await toggle.uncheck({ force: true });
-        }
-      }
-    }
-
-    // Save the configuration to persist changes
-    await page.getByRole('button', { name: 'Save & test' }).click();
-    await page.waitForLoadState('networkidle');
   });
 
   test('Should allow individual feature toggles when master is enabled', async ({
