@@ -3,16 +3,22 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
-// Helper function for simple scrolling to ensure elements are in viewport
+// Helper function for aggressive scrolling to ensure elements are in viewport
 const scrollElementIntoView = async (page: any, selector: string) => {
-  try {
-    const element = page.locator(selector);
-    await element.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(100); // Short wait
-  } catch (error) {
-    // If scrolling fails, continue - element might still be accessible
-    console.log(`Scrolling failed for ${selector}, continuing...`);
-  }
+  await page.evaluate((sel: string) => {
+    const element = document.querySelector(sel);
+    if (element) {
+      // Force scroll to top of page first, then scroll element into view
+      window.scrollTo(0, 0);
+      element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      // Additional scroll to ensure it's well within viewport
+      const rect = element.getBoundingClientRect();
+      if (rect.top < 150 || rect.bottom > window.innerHeight - 150) {
+        element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      }
+    }
+  }, selector);
+  await page.waitForTimeout(1000); // Wait longer for scroll to complete
 };
 
 test.describe('Feature Flags - Tab Visibility', () => {
@@ -22,7 +28,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     gotoDashboardPage,
     page,
   }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Legacy Only' });
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: 'legacy-only' });
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-legacy.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
@@ -60,7 +66,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     gotoDashboardPage,
     page,
   }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Core Only' });
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: 'core-only' });
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
@@ -103,11 +109,8 @@ test.describe('Feature Flags - Config Editor', () => {
     // Set same viewport as queryEditor.spec.ts for consistency
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
+    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
-
-    // Save original state of all toggles for cleanup
-    let originalState: Record<string, boolean> = {};
 
     // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
@@ -118,24 +121,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Use aggressive scrolling to ensure element is visible
     await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     await expect(legacyMasterToggle).toBeVisible();
-
-    // Capture original state of all relevant toggles
-    const toggleIds = [
-      'enable-legacy-data-model-features',
-      'enable-timeseries-search', 
-      'enable-timeseries-from-asset',
-      'enable-timeseries-custom-query',
-      'enable-events',
-      'enable-events-advanced-filtering',
-      'enable-extraction-pipelines',
-      'enable-templates',
-      'enable-relationships'
-    ];
-    
-    for (const id of toggleIds) {
-      await scrollElementIntoView(page, `#${id}`);
-      originalState[id] = await page.locator(`#${id}`).isChecked();
-    }
 
     // Check the initial state (may vary based on provisioned config)
     const initiallyChecked = await legacyMasterToggle.isChecked();
@@ -173,25 +158,6 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-from-asset')).toBeChecked();
     await expect(page.locator('#enable-timeseries-custom-query')).toBeChecked();
     await expect(page.locator('#enable-events')).toBeChecked();
-
-    // Restore original state of all toggles
-    for (const [id, originalValue] of Object.entries(originalState)) {
-      await scrollElementIntoView(page, `#${id}`);
-      const toggle = page.locator(`#${id}`);
-      const currentValue = await toggle.isChecked();
-      
-      if (currentValue !== originalValue) {
-        if (originalValue) {
-          await toggle.check({ force: true });
-        } else {
-          await toggle.uncheck({ force: true });
-        }
-      }
-    }
-
-    // Save the configuration to persist changes
-    await page.getByRole('button', { name: 'Save & test' }).click();
-    await page.waitForLoadState('networkidle');
   });
 
   test('Should toggle core data model features on/off', async ({
@@ -202,11 +168,8 @@ test.describe('Feature Flags - Config Editor', () => {
     // Set same viewport as queryEditor.spec.ts for consistency
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
+    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
-
-    // Save original state of all toggles for cleanup
-    let originalState: Record<string, boolean> = {};
 
     // Wait for the page to fully load
     await page.waitForLoadState('networkidle');
@@ -217,27 +180,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Use aggressive scrolling to ensure element is visible
     await scrollElementIntoView(page, '#enable-core-data-model-features');
     await expect(coreMasterToggle).toBeVisible();
-
-    // Capture original state of all relevant toggles
-    const toggleIds = [
-      'enable-core-data-model-features',
-      'enable-cognite-timeseries',
-      'enable-flexible-data-modelling',
-      'enable-legacy-data-model-features',
-      'enable-timeseries-search', 
-      'enable-timeseries-from-asset',
-      'enable-timeseries-custom-query',
-      'enable-events',
-      'enable-events-advanced-filtering',
-      'enable-extraction-pipelines',
-      'enable-templates',
-      'enable-relationships'
-    ];
-    
-    for (const id of toggleIds) {
-      await scrollElementIntoView(page, `#${id}`);
-      originalState[id] = await page.locator(`#${id}`).isChecked();
-    }
 
     // Check the initial state and ensure it's enabled for testing
     const initiallyChecked = await coreMasterToggle.isChecked();
@@ -267,25 +209,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Individual toggles should be enabled when core master toggle is enabled
     await expect(page.locator('#enable-cognite-timeseries')).toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeChecked();
-
-    // Restore original state of all toggles
-    for (const [id, originalValue] of Object.entries(originalState)) {
-      await scrollElementIntoView(page, `#${id}`);
-      const toggle = page.locator(`#${id}`);
-      const currentValue = await toggle.isChecked();
-      
-      if (currentValue !== originalValue) {
-        if (originalValue) {
-          await toggle.check({ force: true });
-        } else {
-          await toggle.uncheck({ force: true });
-        }
-      }
-    }
-
-    // Save the configuration to persist changes
-    await page.getByRole('button', { name: 'Save & test' }).click();
-    await page.waitForLoadState('networkidle');
   });
 
   test('Should allow individual feature toggles when master is enabled', async ({
@@ -296,7 +219,7 @@ test.describe('Feature Flags - Config Editor', () => {
     // Set same viewport as queryEditor.spec.ts for consistency
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
+    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
@@ -339,7 +262,7 @@ test.describe('Feature Flags - Config Editor', () => {
     // Set same viewport as queryEditor.spec.ts for consistency
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
+    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
@@ -386,7 +309,7 @@ test.describe('Feature Flags - Config Editor', () => {
     // Set same viewport as queryEditor.spec.ts for consistency
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
+    const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', uid: '42' });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
