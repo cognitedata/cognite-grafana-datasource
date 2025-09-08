@@ -5,20 +5,25 @@ const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSour
 
 // Helper function for aggressive scrolling to ensure elements are in viewport
 const scrollElementIntoView = async (page: any, selector: string) => {
-  await page.evaluate((sel: string) => {
-    const element = document.querySelector(sel);
-    if (element) {
-      // Force scroll to top of page first, then scroll element into view
-      window.scrollTo(0, 0);
-      element.scrollIntoView({ behavior: 'instant', block: 'center' });
-      // Additional scroll to ensure it's well within viewport
-      const rect = element.getBoundingClientRect();
-      if (rect.top < 150 || rect.bottom > window.innerHeight - 150) {
+  try {
+    await page.evaluate((sel: string) => {
+      const element = document.querySelector(sel);
+      if (element) {
+        // Force scroll to top of page first, then scroll element into view
+        window.scrollTo(0, 0);
         element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        // Additional scroll to ensure it's well within viewport
+        const rect = element.getBoundingClientRect();
+        if (rect.top < 150 || rect.bottom > window.innerHeight - 150) {
+          element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
       }
-    }
-  }, selector);
-  await page.waitForTimeout(1000); // Wait longer for scroll to complete
+    }, selector);
+    await page.waitForTimeout(200); // Reduced wait time to prevent timeouts
+  } catch (error) {
+    // If scrolling fails, continue - element might still be accessible
+    console.log(`Scrolling failed for ${selector}, continuing...`);
+  }
 };
 
 test.describe('Feature Flags - Tab Visibility', () => {
