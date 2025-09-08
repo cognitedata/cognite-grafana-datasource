@@ -41,6 +41,9 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   const combobox = await editorRow.getByRole('combobox', { name: 'Asset Tag' });
   await combobox.click();
+  
+  // Wait for dropdown to populate
+  await page.waitForTimeout(2000);
 
   const option = selectors.components.Select.option;
   await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Locations' }).click();
@@ -211,6 +214,9 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
@@ -259,6 +265,9 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
@@ -311,6 +320,9 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
 
   for (const [index, searchTerm] of searchTerms.entries()) {
     if (index > 0) {
