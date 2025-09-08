@@ -12,12 +12,131 @@ datasources:
     jsonData:
       cogniteApiUrl: ${COGNITE_HOST}
       cogniteProject: ${COGNITE_PROJECT}
+      # Master toggles for feature sections
+      enableCoreDataModelFeatures: true
+      enableLegacyDataModelFeatures: true
+      # Core Data Model features
+      enableCogniteTimeSeries: true
+      # Legacy data model features (already enabled by default, but explicit for clarity)
+      enableTimeseriesSearch: true
+      enableTimeseriesFromAsset: true
+      enableTimeseriesCustomQuery: true
+      enableEvents: true
+      # Deprecated features
       enableEventsAdvancedFiltering: true
       enableExtractionPipelines: true
       enableTemplates: false
+      enableRelationships: true
+      enableFlexibleDataModelling: true
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
       oauthTokenUrl: ${TOKEN_URL}
     secureJsonData:
       oauthClientSecret: ${CLIENT_SECRET}
+
+
+  - name: 'Cognite Data Fusion - Legacy Only'
+    uid: legacy-only
+    type: 'cognitedata-datasource'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      cogniteApiUrl: ${COGNITE_HOST}
+      cogniteProject: ${COGNITE_PROJECT}
+      # Master toggles for feature sections
+      enableCoreDataModelFeatures: false
+      enableLegacyDataModelFeatures: true
+      # Core Data Model features (disabled)
+      enableCogniteTimeSeries: false
+      # Legacy data model features (enabled)
+      enableTimeseriesSearch: true
+      enableTimeseriesFromAsset: true
+      enableTimeseriesCustomQuery: true
+      enableEvents: true
+      # Deprecated features
+      enableEventsAdvancedFiltering: true
+      enableExtractionPipelines: true
+      enableTemplates: false
+      enableRelationships: true
+      enableFlexibleDataModelling: false
+      oauthClientCreds: true
+      oauthClientId: ${CLIENT_ID}
+      oauthScope: https://${COGNITE_HOST}/.default
+      oauthTokenUrl: ${TOKEN_URL}
+    secureJsonData:
+      oauthClientSecret: ${CLIENT_SECRET}
+
+
+  - name: 'Cognite Data Fusion - Core Only'
+    uid: core-only
+    type: 'cognitedata-datasource'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      cogniteApiUrl: ${COGNITE_HOST}
+      cogniteProject: ${COGNITE_PROJECT}
+      # Master toggles for feature sections
+      enableCoreDataModelFeatures: true
+      enableLegacyDataModelFeatures: false
+      # Core Data Model features (enabled)
+      enableCogniteTimeSeries: true
+      # Legacy data model features (disabled)
+      enableTimeseriesSearch: false
+      enableTimeseriesFromAsset: false
+      enableTimeseriesCustomQuery: false
+      enableEvents: false
+      # Deprecated features
+      enableEventsAdvancedFiltering: false
+      enableExtractionPipelines: false
+      enableTemplates: false
+      enableRelationships: false
+      enableFlexibleDataModelling: true
+      oauthClientCreds: true
+      oauthClientId: ${CLIENT_ID}
+      oauthScope: https://${COGNITE_HOST}/.default
+      oauthTokenUrl: ${TOKEN_URL}
+    secureJsonData:
+      oauthClientSecret: ${CLIENT_SECRET}
+
+
+  - name: 'Cognite Data Fusion - Config Test'
+    uid: 1337
+    type: 'cognitedata-datasource'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      cogniteApiUrl: ${COGNITE_HOST}
+      cogniteProject: ${COGNITE_PROJECT}
+      # Master toggles for feature sections
+      enableCoreDataModelFeatures: true
+      enableLegacyDataModelFeatures: true
+      # Core Data Model features
+      enableCogniteTimeSeries: true
+      # Legacy data model features
+      enableTimeseriesSearch: true
+      enableTimeseriesFromAsset: true
+      enableTimeseriesCustomQuery: true
+      enableEvents: true
+      # Deprecated features
+      enableEventsAdvancedFiltering: true
+      enableExtractionPipelines: true
+      enableTemplates: false
+      enableRelationships: true
+      enableFlexibleDataModelling: true
+      oauthClientCreds: true
+      oauthClientId: ${CLIENT_ID}
+      oauthScope: https://${COGNITE_HOST}/.default
+      oauthTokenUrl: ${TOKEN_URL}
+    secureJsonData:
+      oauthClientSecret: ${CLIENT_SECRET}
+

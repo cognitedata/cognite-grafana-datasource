@@ -24,10 +24,22 @@ export class Connector {
     private fetcher: Fetcher,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
+    // Master toggles for feature sections
+    private enableCoreDataModelFeatures?: boolean,
+    private enableLegacyDataModelFeatures?: boolean,
+    // Core Data Model features
+    private enableCogniteTimeSeries?: boolean,
+    // Legacy data model features
+    private enableTimeseriesSearch?: boolean,
+    private enableTimeseriesFromAsset?: boolean,
+    private enableTimeseriesCustomQuery?: boolean,
+    private enableEvents?: boolean,
+    // Deprecated features
     private enableTemplates?: boolean,
     private enableEventsAdvancedFiltering?: boolean,
     private enableFlexibleDataModelling?: boolean,
-    private enableExtractionPipelines?: boolean
+    private enableExtractionPipelines?: boolean,
+    private enableRelationships?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -135,6 +147,33 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
+  // Core Data Model features
+  isCogniteTimeSeriesEnabled() {
+    return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
+  }
+
+  // Legacy data model features
+  isTimeseriesSearchEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesSearch;
+  }
+
+  isTimeseriesFromAssetEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesFromAsset;
+  }
+
+  isTimeseriesCustomQueryEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesCustomQuery;
+  }
+
+  isEventsEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableEvents;
+  }
+
+  // Deprecated features
+  isRelationshipsEnabled() {
+    return this.enableRelationships;
+  }
+
   isTemplatesEnabled() {
     return this.enableTemplates;
   }
@@ -144,8 +183,9 @@ export class Connector {
   }
 
   isFlexibleDataModellingEnabled() {
-    return this.enableFlexibleDataModelling;
+    return this.enableCoreDataModelFeatures && this.enableFlexibleDataModelling;
   }
+  
   isExtractionPipelinesEnabled() {
     return this.enableExtractionPipelines;
   }
