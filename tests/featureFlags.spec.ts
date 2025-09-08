@@ -27,19 +27,15 @@ test.describe('Feature Flags - Tab Visibility', () => {
     readProvisionedDashboard,
     gotoDashboardPage,
     page,
+    grafanaVersion,
   }) => {
     const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Legacy Only' });
-    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-legacy.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
     // Add a new panel to test tab visibility
     const panelEditPage = await dashboardPage.addPanel();
-    
-    // Manually select the legacy-only data source by typing in the selector
-    const dataSourceSelector = page.getByTestId('data-testid Select a data source');
-    await dataSourceSelector.click();
-    await dataSourceSelector.fill('Cognite Data Fusion - Legacy Only');
-    await page.keyboard.press('Enter');
+    await panelEditPage.datasource.set('Cognite Data Fusion - Legacy Only');
     
     // Wait for the data source to be properly selected and query editor to update
     await page.waitForTimeout(1000);
@@ -65,6 +61,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     readProvisionedDashboard,
     gotoDashboardPage,
     page,
+    grafanaVersion,
   }) => {
     const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Core Only' });
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
@@ -72,12 +69,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     // Add a new panel to test tab visibility
     const panelEditPage = await dashboardPage.addPanel();
-    
-    // Manually select the core-only data source by typing in the selector
-    const dataSourceSelector = page.getByTestId('data-testid Select a data source');
-    await dataSourceSelector.click();
-    await dataSourceSelector.fill('Cognite Data Fusion - Core Only');
-    await page.keyboard.press('Enter');
+    await panelEditPage.datasource.set('Cognite Data Fusion - Core Only');
     
     // Wait for the data source to be properly selected and query editor to update
     await page.waitForTimeout(1000);
