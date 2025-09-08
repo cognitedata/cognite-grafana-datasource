@@ -18,6 +18,7 @@ import {
 } from './cdf/types';
 import { Connector } from './connector';
 import { CacheTime } from './constants';
+import { FEATURE_DEFAULTS } from './featureDefaults';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import {
@@ -78,10 +79,22 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       defaultProject,
       oauthPassThru,
       oauthClientCreds,
-      enableTemplates,
-      enableEventsAdvancedFiltering,
-      enableFlexibleDataModelling,
-      enableExtractionPipelines,
+      // Master toggles for feature sections
+      enableCoreDataModelFeatures = FEATURE_DEFAULTS.enableCoreDataModelFeatures,
+      enableLegacyDataModelFeatures = FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
+      // Core Data Model features
+      enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
+      // Legacy data model features
+      enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
+      enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
+      enableTimeseriesCustomQuery = FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
+      enableEvents = FEATURE_DEFAULTS.enableEvents,
+      // Deprecated features
+      enableTemplates = FEATURE_DEFAULTS.enableTemplates,
+      enableEventsAdvancedFiltering = FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
+      enableFlexibleDataModelling = FEATURE_DEFAULTS.enableFlexibleDataModelling,
+      enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
+      enableRelationships = FEATURE_DEFAULTS.enableRelationships,
     } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
@@ -93,10 +106,22 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       defaultFetcher,
       oauthPassThru,
       oauthClientCreds,
+      // Master toggles for feature sections
+      enableCoreDataModelFeatures,
+      enableLegacyDataModelFeatures,
+      // Core Data Model features
+      enableCogniteTimeSeries,
+      // Legacy data model features
+      enableTimeseriesSearch,
+      enableTimeseriesFromAsset,
+      enableTimeseriesCustomQuery,
+      enableEvents,
+      // Deprecated features
       enableTemplates,
       enableEventsAdvancedFiltering,
       enableFlexibleDataModelling,
-      enableExtractionPipelines
+      enableExtractionPipelines,
+      enableRelationships
     );
     this.initSources(connector);
   }
