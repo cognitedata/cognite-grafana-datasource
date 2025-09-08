@@ -3,21 +3,21 @@ import { readProvisionedDataSource } from '../playwright/fixtures/readProvisione
 
 const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
-// Helper function for scrolling to ensure elements are clickable in CI
-const scrollElementIntoView = async (page: any, selector: string) => {
+// Helper function to toggle checkboxes using JavaScript for older Grafana versions
+const toggleCheckbox = async (page: any, selector: string, shouldBeChecked: boolean) => {
   try {
-    // Wait for element to exist first
     await page.waitForSelector(selector, { timeout: 5000 });
     
-    // Use Playwright's built-in scrollIntoViewIfNeeded which is more reliable
-    const element = page.locator(selector);
-    await element.scrollIntoViewIfNeeded();
+    await page.evaluate(({ sel, checked }) => {
+      const checkbox = document.querySelector(sel) as HTMLInputElement;
+      if (checkbox && checkbox.checked !== checked) {
+        checkbox.click();
+      }
+    }, { sel: selector, checked: shouldBeChecked });
     
-    // Small wait for scroll to complete
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(300);
   } catch (error) {
-    // If scrolling fails, continue - element might still be accessible
-    console.log(`Scrolling failed for ${selector}, continuing...`);
+    console.log(`Failed to toggle checkbox ${selector}:`, error.message);
   }
 };
 
@@ -118,8 +118,7 @@ test.describe('Feature Flags - Config Editor', () => {
     // Get the legacy master toggle element
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
     
-    // Use aggressive scrolling to ensure element is visible
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
+    // Element should be accessible via JavaScript
     await expect(legacyMasterToggle).toBeVisible();
 
     // Check the initial state (may vary based on provisioned config)
@@ -137,9 +136,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).toBeVisible();
     await expect(page.locator('#enable-events')).toBeVisible();
 
-    // Turn off legacy features - use aggressive scrolling strategy
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
-    await legacyMasterToggle.uncheck({ force: true });
+    // Turn off legacy features - use JavaScript approach for Grafana 10.x compatibility
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', false);
     await expect(legacyMasterToggle).not.toBeChecked();
 
     // Individual toggles should be disabled/hidden
@@ -148,9 +146,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-custom-query')).not.toBeChecked();
     await expect(page.locator('#enable-events')).not.toBeChecked();
 
-    // Turn legacy features back on - use aggressive scrolling strategy
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
-    await legacyMasterToggle.check({ force: true });
+    // Turn legacy features back on
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await expect(legacyMasterToggle).toBeChecked();
 
     // Individual toggles should be enabled again (with their default values)
@@ -178,7 +175,6 @@ test.describe('Feature Flags - Config Editor', () => {
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
     
     // Use aggressive scrolling to ensure element is visible
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
     await expect(coreMasterToggle).toBeVisible();
 
     // Check the initial state and ensure it's enabled for testing
@@ -192,18 +188,16 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).toBeVisible();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeVisible();
 
-    // Turn off core features - use aggressive scrolling strategy
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
-    await coreMasterToggle.uncheck({ force: true });
+    // Turn off core features - use JavaScript approach
+    await toggleCheckbox(page, '#enable-core-data-model-features', false);
     await expect(coreMasterToggle).not.toBeChecked();
 
     // Individual toggles should be disabled
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).not.toBeChecked();
 
-    // Turn core features back on - use aggressive scrolling strategy
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
-    await coreMasterToggle.check({ force: true });
+    // Turn core features back on - use JavaScript approach
+    await toggleCheckbox(page, '#enable-core-data-model-features', true);
     await expect(coreMasterToggle).toBeChecked();
 
     // Individual toggles should be enabled when core master toggle is enabled
@@ -225,7 +219,6 @@ test.describe('Feature Flags - Config Editor', () => {
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
     
     // Ensure legacy master toggle is enabled
     await legacyMasterToggle.check({ force: true });
@@ -235,22 +228,18 @@ test.describe('Feature Flags - Config Editor', () => {
     const eventsToggle = page.locator('#enable-events');
 
     // Turn off individual features
-    await scrollElementIntoView(page, '#enable-timeseries-search');
-    await timeseriesSearchToggle.uncheck({ force: true });
+    await toggleCheckbox(page, '#enable-timeseries-search', false);
     await expect(timeseriesSearchToggle).not.toBeChecked();
     await expect(legacyMasterToggle).toBeChecked(); // Master should remain on
 
-    await scrollElementIntoView(page, '#enable-events');
-    await eventsToggle.uncheck({ force: true });
+    await toggleCheckbox(page, '#enable-events', false);
     await expect(eventsToggle).not.toBeChecked();
 
     // Turn them back on
-    await scrollElementIntoView(page, '#enable-timeseries-search');
-    await timeseriesSearchToggle.check({ force: true });
+    await toggleCheckbox(page, '#enable-timeseries-search', true);
     await expect(timeseriesSearchToggle).toBeChecked();
 
-    await scrollElementIntoView(page, '#enable-events');
-    await eventsToggle.check({ force: true });
+    await toggleCheckbox(page, '#enable-events', true);
     await expect(eventsToggle).toBeChecked();
   });
 
@@ -267,7 +256,6 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
-    await scrollElementIntoView(page, '#enable-relationships');
 
     // Deprecated features should be visible and toggleable independently
     await expect(page.locator('#enable-relationships')).toBeVisible();
@@ -279,22 +267,18 @@ test.describe('Feature Flags - Config Editor', () => {
     const templatesToggle = page.locator('#enable-templates');
 
     // Toggle deprecated features independently
-    await scrollElementIntoView(page, '#enable-relationships');
-    await relationshipsToggle.uncheck({ force: true });
+    await toggleCheckbox(page, '#enable-relationships', false);
     await expect(relationshipsToggle).not.toBeChecked();
 
-    await scrollElementIntoView(page, '#enable-templates');
-    await templatesToggle.check({ force: true });
+    await toggleCheckbox(page, '#enable-templates', true);
     await expect(templatesToggle).toBeChecked();
 
     // Master toggles should not affect deprecated features
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
 
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
-    await legacyMasterToggle.uncheck({ force: true });
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
-    await coreMasterToggle.uncheck({ force: true });
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', false);
+    await toggleCheckbox(page, '#enable-core-data-model-features', false);
 
     // Deprecated features should maintain their state
     await expect(relationshipsToggle).not.toBeChecked();
@@ -315,15 +299,12 @@ test.describe('Feature Flags - Config Editor', () => {
     // Wait for the page to fully load and scroll to feature flags
     await page.waitForLoadState('networkidle');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
 
     // Change some feature flags
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
 
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
-    await legacyMasterToggle.uncheck({ force: true });
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
-    await coreMasterToggle.uncheck({ force: true });
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', false);
+    await toggleCheckbox(page, '#enable-core-data-model-features', false);
 
     // Save the configuration
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
@@ -341,10 +322,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
 
     // Reset to original state for cleanup
-    await scrollElementIntoView(page, '#enable-legacy-data-model-features');
-    await legacyMasterToggle.check({ force: true });
-    await scrollElementIntoView(page, '#enable-core-data-model-features');
-    await coreMasterToggle.check({ force: true });
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
+    await toggleCheckbox(page, '#enable-core-data-model-features', true);
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
   });

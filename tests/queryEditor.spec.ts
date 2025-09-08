@@ -41,6 +41,9 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   const combobox = await editorRow.getByRole('combobox', { name: 'Asset Tag' });
   await combobox.click();
+  
+  // Wait for dropdown to populate
+  await page.waitForTimeout(2000);
 
   const option = selectors.components.Select.option;
   await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Locations' }).click();
