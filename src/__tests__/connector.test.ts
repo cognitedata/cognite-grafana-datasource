@@ -24,7 +24,7 @@ describe('connector', () => {
     const reqBase = { url, method };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, fetcher, false);
+      connector = new Connector(project, protocol, fetcher, false, false, true, true, true, true, true, true, true, true, true, true, true, true);
     });
 
     it('should not chunk under the limit', async () => {
@@ -83,7 +83,7 @@ describe('connector', () => {
     };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, fetcher, false);
+      connector = new Connector(project, protocol, fetcher, false, false, true, true, true, true, true, true, true, true, true, true, true, true);
     });
 
     it('returns all 10k elements', async () => {
@@ -123,7 +123,7 @@ describe('connector', () => {
     const response = async () => ({ data: { items: [1] } });
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, fetcher, false);
+      connector = new Connector(project, protocol, fetcher, false, false, true, true, true, true, true, true, true, true, true, true, true, true);
       jest.useFakeTimers();
     });
 
@@ -189,7 +189,7 @@ describe('connector', () => {
     const request = { path: '' };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, fetcher, true);
+      connector = new Connector(project, protocol, fetcher, true, false, true, true, true, true, true, true, true, true, true, true, true, true);
     });
 
     it('uses cdf-oauth route when oauthPassThru=true', async () => {
@@ -206,7 +206,7 @@ describe('connector', () => {
     const request = { path: '' };
 
     beforeEach(() => {
-      connector = new Connector(project, protocol, fetcher, false, true);
+      connector = new Connector(project, protocol, fetcher, false, true, true, true, true, true, true, true, true, true, true, true, true, true);
     });
 
     it('uses cdf-cc-oauth route when oauthClientCreds=true', async () => {

@@ -55,7 +55,29 @@ const instanceSettings = ({ oauthPassThru }) =>
 export const getMockedDataSource = (fetcher: Fetcher, options = { oauthPassThru: false }) => {
   const instanceProps = instanceSettings(options)
   const ds = new CogniteDatasource(instanceProps);
-  const connector = new Connector(instanceProps.jsonData.cogniteProject, instanceProps.url, fetcher, options.oauthPassThru);
+  const connector = new Connector(
+    instanceProps.jsonData.cogniteProject, 
+    instanceProps.url, 
+    fetcher, 
+    options.oauthPassThru,
+    false, // oauthClientCredentials
+    // Master toggles - enabled for tests
+    true,  // enableCoreDataModelFeatures
+    true,  // enableLegacyDataModelFeatures
+    // Core Data Model features - enabled for tests (default is false in production)
+    true,  // enableCogniteTimeSeries
+    // Legacy data model features - default to enabled for tests
+    true,  // enableTimeseriesSearch
+    true,  // enableTimeseriesFromAsset
+    true,  // enableTimeseriesCustomQuery
+    true,  // enableEvents
+    // Deprecated features - default to enabled for tests
+    true,  // enableTemplates
+    true,  // enableEventsAdvancedFiltering
+    true,  // enableFlexibleDataModelling
+    true,  // enableExtractionPipelines
+    true   // enableRelationships
+  );
   ds.initSources(connector);
   return ds;
 }
