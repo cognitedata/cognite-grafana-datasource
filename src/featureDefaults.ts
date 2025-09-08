@@ -19,9 +19,9 @@ export const FEATURE_DEFAULTS = {
   
   // Deprecated features - keep existing behavior for backward compatibility
   enableTemplates: false, // Disabled by default
-  enableEventsAdvancedFiltering: false, // Disabled by default
+  enableEventsAdvancedFiltering: true, // Enabled by default to match provisioned data source
   enableFlexibleDataModelling: true, // Enable Data Models by default
-  enableExtractionPipelines: false, // Disabled by default
+  enableExtractionPipelines: true, // Enabled by default to match provisioned data source
   enableRelationships: true, // Default enabled for backward compatibility
 } as const;
 

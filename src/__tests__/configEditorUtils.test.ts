@@ -240,9 +240,9 @@ describe('ConfigEditor Utility Functions', () => {
       expect(call.enableEvents).toBe(FEATURE_DEFAULTS.enableEvents);
       expect(call.enableEventsAdvancedFiltering).toBe(FEATURE_DEFAULTS.enableEventsAdvancedFiltering);
       
-      // Verify that enableEventsAdvancedFiltering is false by default
-      expect(call.enableEventsAdvancedFiltering).toBe(false);
-      expect(FEATURE_DEFAULTS.enableEventsAdvancedFiltering).toBe(false);
+      // Verify that enableEventsAdvancedFiltering matches the default
+      expect(call.enableEventsAdvancedFiltering).toBe(true);
+      expect(FEATURE_DEFAULTS.enableEventsAdvancedFiltering).toBe(true);
     });
 
     it('should create a handler for legacy features that uses defaults when enabling', () => {
