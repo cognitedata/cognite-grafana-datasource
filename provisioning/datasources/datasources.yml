@@ -17,17 +17,17 @@ datasources:
       enableLegacyDataModelFeatures: true
       # Core Data Model features
       enableCogniteTimeSeries: true
+      enableFlexibleDataModelling: true
       # Legacy data model features (already enabled by default, but explicit for clarity)
       enableTimeseriesSearch: true
       enableTimeseriesFromAsset: true
       enableTimeseriesCustomQuery: true
       enableEvents: true
-      # Deprecated features
       enableEventsAdvancedFiltering: true
+      # Deprecated features
       enableExtractionPipelines: true
       enableTemplates: false
       enableRelationships: true
-      enableFlexibleDataModelling: true
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
@@ -52,17 +52,17 @@ datasources:
       enableLegacyDataModelFeatures: true
       # Core Data Model features (disabled)
       enableCogniteTimeSeries: false
+      enableFlexibleDataModelling: false
       # Legacy data model features (enabled)
       enableTimeseriesSearch: true
       enableTimeseriesFromAsset: true
       enableTimeseriesCustomQuery: true
       enableEvents: true
-      # Deprecated features
       enableEventsAdvancedFiltering: true
+      # Deprecated features
       enableExtractionPipelines: true
       enableTemplates: false
       enableRelationships: true
-      enableFlexibleDataModelling: false
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
@@ -87,17 +87,17 @@ datasources:
       enableLegacyDataModelFeatures: false
       # Core Data Model features (enabled)
       enableCogniteTimeSeries: true
+      enableFlexibleDataModelling: true
       # Legacy data model features (disabled)
       enableTimeseriesSearch: false
       enableTimeseriesFromAsset: false
       enableTimeseriesCustomQuery: false
       enableEvents: false
-      # Deprecated features
       enableEventsAdvancedFiltering: false
+      # Deprecated features
       enableExtractionPipelines: false
       enableTemplates: false
       enableRelationships: false
-      enableFlexibleDataModelling: true
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default
@@ -122,17 +122,17 @@ datasources:
       enableLegacyDataModelFeatures: true
       # Core Data Model features
       enableCogniteTimeSeries: true
+      enableFlexibleDataModelling: true
       # Legacy data model features
       enableTimeseriesSearch: true
       enableTimeseriesFromAsset: true
       enableTimeseriesCustomQuery: true
       enableEvents: true
-      # Deprecated features
       enableEventsAdvancedFiltering: true
+      # Deprecated features
       enableExtractionPipelines: true
       enableTemplates: false
       enableRelationships: true
-      enableFlexibleDataModelling: true
       oauthClientCreds: true
       oauthClientId: ${CLIENT_ID}
       oauthScope: https://${COGNITE_HOST}/.default

@@ -6,7 +6,7 @@ import semver from 'semver';
 // Some of the queries are cached, so the API call is not made.
 // In such cases standard page.waitForResponse does not work.
 // We need to wait at least a second to get a new time range that is not cached.
-export const waitForQueriesToFinish = async (page: Page, grafanaVersion: string) => {
+export const waitForQueriesToFinish = async (page: Page) => {
   // Try to detect the actual UI elements available instead of relying on version detection
   // which can be unreliable in Docker environments
   

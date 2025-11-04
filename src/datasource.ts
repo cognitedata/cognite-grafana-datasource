@@ -111,15 +111,15 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       enableLegacyDataModelFeatures,
       // Core Data Model features
       enableCogniteTimeSeries,
+      enableFlexibleDataModelling,
       // Legacy data model features
       enableTimeseriesSearch,
       enableTimeseriesFromAsset,
       enableTimeseriesCustomQuery,
       enableEvents,
+      enableEventsAdvancedFiltering,
       // Deprecated features
       enableTemplates,
-      enableEventsAdvancedFiltering,
-      enableFlexibleDataModelling,
       enableExtractionPipelines,
       enableRelationships
     );

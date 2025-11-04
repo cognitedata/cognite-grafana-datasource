@@ -78,35 +78,34 @@ export function isTabHidden(tab: Tabs, currentTab: Tabs, datasource: CogniteData
 }
 
 /**
- * Gets the first available (not hidden) tab based on natural tab order
- * Note: Relies on the insertion order of the string enum `Tabs`.
- * Maintaining the declaration order in `src/types.ts` preserves the UI order.
- * @param currentTab The currently selected tab
+ * Gets the first available (not disabled) tab based on natural tab order.
+ * This function finds the first tab that is not disabled.
  * @param datasource The datasource instance with connector
  * @returns The first available tab
  */
-export function getFirstAvailableTab(currentTab: Tabs, datasource: CogniteDatasource): Tabs {
+export function getFirstAvailableTab(datasource: CogniteDatasource): Tabs {
   // Use the same order as the tabs appear in the UI (Object.values maintains enum order)
   const allTabs = Object.values(Tabs);
   for (const tab of allTabs) {
-    if (!isTabHidden(tab, currentTab, datasource)) {
+    if (!isTabDisabled(tab, datasource)) {
       return tab;
     }
   }
-  // Fallback to Timeseries if somehow all tabs are hidden (shouldn't happen)
-  return Tabs.Timeseries;
+  // Fallback to DataModellingV2 which is always enabled (no feature flag)
+  return Tabs.DataModellingV2;
 }
 
 /**
- * Determines the active tab, handling auto-switching logic
- * For backward compatibility: if current tab is disabled but selected, keep it
- * Otherwise, if current tab is hidden, get first available tab
+ * Determines the active tab, handling auto-switching logic.
+ * If the current tab is disabled, it switches to the first available tab.
+ * Note: The component using this needs to handle backward compatibility
+ * (i.e., not calling this or ignoring its result for existing saved queries).
  * @param currentTab The currently selected tab
  * @param datasource The datasource instance with connector
  * @returns The tab that should be active
  */
 export function getActiveTab(currentTab: Tabs, datasource: CogniteDatasource): Tabs {
-  return isTabHidden(currentTab, currentTab, datasource) 
-    ? getFirstAvailableTab(currentTab, datasource) 
+  return isTabDisabled(currentTab, datasource)
+    ? getFirstAvailableTab(datasource)
     : currentTab;
 }

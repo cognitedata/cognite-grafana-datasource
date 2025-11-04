@@ -87,5 +87,5 @@ export const masterToggleHandler = (
     }
   });
   
-  onJsonDataChange(patch as Partial<CogniteDataSourceOptions>);
+  onJsonDataChange(patch);
 };

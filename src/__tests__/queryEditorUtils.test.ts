@@ -117,8 +117,8 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isExtractionPipelinesEnabled = jest.fn().mockReturnValue(false);
 
-      // Use a different current tab so the disabled tabs are actually hidden
-      const result = getFirstAvailableTab(Tabs.Event, mockDataSource);
+      // Find first available tab
+      const result = getFirstAvailableTab(mockDataSource);
       expect(result).toBe(Tabs.Asset);
     });
 
@@ -128,7 +128,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(true);
 
-      const result = getFirstAvailableTab(Tabs.Asset, mockDataSource);
+      const result = getFirstAvailableTab(mockDataSource);
       expect(result).toBe(Tabs.Timeseries); // First in enum order
     });
 
@@ -145,7 +145,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isExtractionPipelinesEnabled = jest.fn().mockReturnValue(false);
 
       // Use a non-existent tab as current so no backward compatibility applies
-      const result = getFirstAvailableTab('NonExistentTab' as Tabs, mockDataSource);
+      const result = getFirstAvailableTab(mockDataSource);
       expect(result).toBe(Tabs.DataModellingV2); // DataModellingV2 is always enabled, so it's the fallback
     });
 
@@ -162,7 +162,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isExtractionPipelinesEnabled = jest.fn().mockReturnValue(false);
 
-      const result = getFirstAvailableTab(Tabs.Event, mockDataSource);
+      const result = getFirstAvailableTab(mockDataSource);
       expect(result).toBe(Tabs.Event);
     });
   });
@@ -175,12 +175,13 @@ describe('QueryEditor Utility Functions', () => {
       expect(result).toBe(Tabs.Timeseries);
     });
 
-    it('should return current tab when disabled but selected (backward compatibility)', () => {
+    it('should switch to first available tab when current tab is disabled', () => {
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
 
-      // Tab is disabled but currently selected - should remain active for backward compatibility
+      // Tab is disabled - should switch to first available tab
       const result = getActiveTab(Tabs.Timeseries, mockDataSource);
-      expect(result).toBe(Tabs.Timeseries);
+      expect(result).toBe(Tabs.CogniteTimeSeriesSearch); // First available tab
     });
 
     it('should handle auto-switching from disabled Core Data Model tab', () => {
@@ -195,9 +196,9 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isExtractionPipelinesEnabled = jest.fn().mockReturnValue(false);
 
-      // CogniteTimeSeriesSearch is disabled, but since it's the current tab, it should remain for backward compatibility
+      // CogniteTimeSeriesSearch is disabled, should switch to first available tab
       const result = getActiveTab(Tabs.CogniteTimeSeriesSearch, mockDataSource);
-      expect(result).toBe(Tabs.CogniteTimeSeriesSearch); // Backward compatibility - disabled but current tab remains
+      expect(result).toBe(Tabs.Timeseries); // First available tab
     });
 
     it('should handle complex scenario with mixed enabled/disabled tabs', () => {
@@ -213,9 +214,9 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isExtractionPipelinesEnabled = jest.fn().mockReturnValue(false);
 
-      // Starting with disabled Timeseries tab, but since it's the current tab, it should remain for backward compatibility
+      // Starting with disabled Timeseries tab, should switch to first available tab (Events)
       const result = getActiveTab(Tabs.Timeseries, mockDataSource);
-      expect(result).toBe(Tabs.Timeseries); // Backward compatibility - disabled but current tab remains
+      expect(result).toBe(Tabs.Event); // First available tab
     });
   });
 });

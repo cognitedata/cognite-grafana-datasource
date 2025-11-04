@@ -287,14 +287,14 @@ export function QueryEditor(props: EditorProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
-  const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
+  const onQueryChange: OnQueryChange = React.useCallback((patch, shouldRunQuery = true) => {
     onChange({ ...query, ...patch } as CogniteQuery);
     if (shouldRunQuery) {
       setErrorMessage('');
       setWarningMessage('');
       onRunQuery();
     }
-  };
+  }, [query, onChange, onRunQuery]);
 
   const onSelectTab = (tab: Tabs) => () => {
     onQueryChange({ tab });
@@ -335,7 +335,8 @@ export function QueryEditor(props: EditorProps) {
   }, [tab]);
 
   // Ensure we have a valid tab selected using utility function
-  const activeTab = getActiveTab(tab, datasource);
+  // Use useMemo to prevent infinite loops and unnecessary recalculations
+  const activeTab = React.useMemo(() => getActiveTab(tab, datasource), [tab, datasource]);
 
   // If we needed to change the tab, update the query
   // Note: We only auto-switch if the tab is truly hidden (not just disabled but showing for compatibility)
@@ -343,8 +344,7 @@ export function QueryEditor(props: EditorProps) {
     if (activeTab !== tab) {
       onQueryChange({ tab: activeTab }, false); // Don't run query on tab switch
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, tab]); // Only run when activeTab calculation changes (onQueryChange changes are expected)
+  }, [activeTab, tab, onQueryChange]); // Include onQueryChange in dependencies
   return (
     <div>
       <TabsBar>
