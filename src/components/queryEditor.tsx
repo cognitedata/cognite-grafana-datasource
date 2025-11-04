@@ -39,7 +39,7 @@ import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
-import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
+import { isTabDisabled, isTabHidden } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -339,17 +339,8 @@ export function QueryEditor(props: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Ensure we have a valid tab selected using utility function
-  // Use useMemo to prevent infinite loops and unnecessary recalculations
-  const activeTab = React.useMemo(() => getActiveTab(tab, datasource), [tab, datasource]);
-
-  // If we needed to change the tab, update the query
-  // Note: We only auto-switch if the tab is truly hidden (not just disabled but showing for compatibility)
-  React.useEffect(() => {
-    if (activeTab !== tab) {
-      onQueryChange({ tab: activeTab }, false); // Don't run query on tab switch
-    }
-  }, [activeTab, tab, onQueryChange]); // Include onQueryChange in dependencies
+  // Use the selected tab directly - no automatic switching to avoid infinite loops
+  const activeTab = tab;
   return (
     <div>
       <TabsBar>
