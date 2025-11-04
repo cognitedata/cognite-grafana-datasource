@@ -287,14 +287,19 @@ export function QueryEditor(props: EditorProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
+  // At the top of the component, after defining `query`
+  const queryRef = React.useRef(query);
+  queryRef.current = query;
+
+  // Then, update onQueryChange to use the ref
   const onQueryChange: OnQueryChange = React.useCallback((patch, shouldRunQuery = true) => {
-    onChange({ ...query, ...patch } as CogniteQuery);
+    onChange({ ...queryRef.current, ...patch } as CogniteQuery);
     if (shouldRunQuery) {
       setErrorMessage('');
       setWarningMessage('');
       onRunQuery();
     }
-  }, [query, onChange, onRunQuery]);
+  }, [onChange, onRunQuery]); // Dependencies are now stable
 
   const onSelectTab = (tab: Tabs) => () => {
     onQueryChange({ tab });
