@@ -74,6 +74,20 @@ const dataModelingHelp = (
 }`}</code>
     <br />
     <br />
+    Variable interpolation is supported using <code className="query-keyword">$variable_name</code> or{' '}
+    <code className="query-keyword">${`{variable_name}`}</code> syntax.
+    <br />
+    Example with variables:{' '}
+    <code className="query-keyword">{`query MyQuery {
+  listCogniteAsset(filter: {externalId: "\${assetId}"}) {
+    items {
+      name
+      externalId
+    }
+  }
+}`}</code>
+    <br />
+    <br />
     The Value Field dropdown will automatically populate with the fields from your GraphQL query.
     The variable will extract values from the selected field in the query results.
   </pre>

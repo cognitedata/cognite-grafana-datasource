@@ -421,10 +421,13 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     }
 
     try {
+      // Interpolate template variables in the GraphQL query
+      const interpolatedQuery = this.templateSrv.replace(graphqlQuery);
+      
       const { data, errors } = await this.connector.fetchQuery({
         path: `/userapis/spaces/${dataModel.space}/datamodels/${dataModel.externalId}/versions/${dataModel.version}/graphql`,
         method: HttpMethod.POST,
-        data: JSON.stringify({ query: graphqlQuery }),
+        data: JSON.stringify({ query: interpolatedQuery }),
       });
 
       if (errors) {
