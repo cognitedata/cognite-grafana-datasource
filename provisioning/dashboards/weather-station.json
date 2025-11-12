@@ -617,10 +617,66 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "Oslo",
+          "value": "Oslo"
+        },
+        "datasource": {
+          "type": "cognitedata-datasource",
+          "uid": "42"
+        },
+        "definition": "",
+        "name": "LocationsDM",
+        "options": [],
+        "query": {
+          "dataModel": {
+            "externalId": "cdm_try",
+            "space": "cdm_try",
+            "version": "1"
+          },
+          "graphqlQuery": "query MyQuery {\n  listLocation(filter: {externalId: {eq: \"$Assets\"}}) {\n    edges {\n      node {\n        lon\n        lat\n        externalId\n        createdTime\n      }\n    }\n  }\n}",
+          "query": "",
+          "queryType": "graphql",
+          "valueType": {
+            "label": "ExternalId",
+            "value": "externalId"
+          }
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "Oslo",
+          "value": "Oslo"
+        },
+        "datasource": {
+          "type": "cognitedata-datasource",
+          "uid": "42"
+        },
+        "definition": "assets{name=\"Oslo\"}",
+        "name": "Assets",
+        "options": [],
+        "query": {
+          "query": "assets{name=\"Oslo\"}",
+          "queryType": "assets",
+          "valueType": {
+            "label": "Name",
+            "value": "name"
+          }
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-1y",
@@ -631,6 +687,6 @@
   "timezone": "browser",
   "title": "weather station",
   "uid": "42",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
