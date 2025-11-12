@@ -10,7 +10,8 @@ import {
   InlineField,
   InlineFieldRow,
   Input,
-  InlineSwitch
+  InlineSwitch,
+  useTheme2,
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
@@ -38,6 +39,7 @@ import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
+import { isTabDisabled, isTabHidden } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -278,20 +280,26 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
   );
 }
 export function QueryEditor(props: EditorProps) {
+  const theme = useTheme2();
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
   const [errorMessage, setErrorMessage] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
 
-  const onQueryChange: OnQueryChange = (patch, shouldRunQuery = true) => {
-    onChange({ ...query, ...patch } as CogniteQuery);
+  // At the top of the component, after defining `query`
+  const queryRef = React.useRef(query);
+  queryRef.current = query;
+
+  // Then, update onQueryChange to use the ref
+  const onQueryChange: OnQueryChange = React.useCallback((patch, shouldRunQuery = true) => {
+    onChange({ ...queryRef.current, ...patch } as CogniteQuery);
     if (shouldRunQuery) {
       setErrorMessage('');
       setWarningMessage('');
       onRunQuery();
     }
-  };
+  }, [onChange, onRunQuery]); // Dependencies are now stable
 
   const onSelectTab = (tab: Tabs) => () => {
     onQueryChange({ tab });
@@ -320,6 +328,9 @@ export function QueryEditor(props: EditorProps) {
     appEvents.on(responseWarningEvent, handleWarning);
   };
 
+  // Use utility functions for tab logic
+  const hiddenTab = (t: Tabs) => isTabHidden(t, tab, datasource);
+
   useEffect(() => {
     eventsSubscribe();
     return () => {
@@ -328,55 +339,56 @@ export function QueryEditor(props: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  const hiddenTab = (t) => {
-    if (t === Tabs.Templates) {
-      return !datasource.connector.isTemplatesEnabled();
-    }
-    if (t === Tabs.FlexibleDataModelling) {
-      return !datasource.connector.isFlexibleDataModellingEnabled();
-    }
-    if (t === Tabs.ExtractionPipelines) {
-      return !datasource.connector.isExtractionPipelinesEnabled();
-    }
-    return false;
-  };
+  // Use the selected tab directly - no automatic switching to avoid infinite loops
+  const activeTab = tab;
   return (
     <div>
       <TabsBar>
-        {Object.values(Tabs).map((t) => (
-          <Tab
-            hidden={hiddenTab(t)}
-            label={TabTitles[t]}
-            key={t}
-            active={tab === t}
-            onChangeTab={onSelectTab(t)}
-            style={{ display: 'flex' }}
-            suffix={
-              t === Tabs.Templates || t === Tabs.ExtractionPipelines
-                ? () => <p className="preview-label">Preview</p>
-                : undefined
-            }
-          />
-        ))}
+        {Object.values(Tabs).map((t) => {
+          const tabIsDisabled = isTabDisabled(t, datasource);
+          const isCurrentlySelected = t === tab;
+          const showingDisabledTab = tabIsDisabled && isCurrentlySelected;
+          
+          return (
+            <Tab
+              hidden={hiddenTab(t)}
+              label={TabTitles[t]}
+              key={t}
+              active={activeTab === t}
+              onChangeTab={onSelectTab(t)}
+              style={{ display: 'flex' }}
+              suffix={
+                // Show "Disabled" label for tabs that are disabled but shown for backward compatibility
+                showingDisabledTab
+                  ? () => (
+                      <p className="preview-label" style={{ color: theme.colors.error.text }}>Disabled</p>
+                    )
+                  : t === Tabs.Templates || t === Tabs.ExtractionPipelines
+                  ? () => <p className="preview-label">Preview</p>
+                  : undefined
+              }
+            />
+          );
+        })}
       </TabsBar>
       <TabContent>
-        {tab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
-        {tab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
-        {tab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
-        {tab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
-        {tab === Tabs.Relationships && (
+        {activeTab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
+        {activeTab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
+        {activeTab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
+        {activeTab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
+        {activeTab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
         )}
-        {tab === Tabs.ExtractionPipelines && (
+        {activeTab === Tabs.ExtractionPipelines && (
           <ExtractionPipelinesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.Templates && (
+        {activeTab === Tabs.Templates && (
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.FlexibleDataModelling && (
+        {activeTab === Tabs.FlexibleDataModelling && (
           <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
-        {tab === Tabs.CogniteTimeSeriesSearch && (
+        {activeTab === Tabs.CogniteTimeSeriesSearch && (
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
       </TabContent>
