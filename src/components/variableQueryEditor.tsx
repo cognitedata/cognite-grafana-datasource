@@ -237,7 +237,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   };
 
   handleGraphqlQueryChange = (graphqlQuery: string) => {
-    this.setState({ graphqlQuery, error: '' });
+    this.setState({ graphqlQuery, error: '' }, this.handleBlur);
     this.updateAvailableFields(graphqlQuery);
   };
 
