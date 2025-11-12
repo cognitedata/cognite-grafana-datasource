@@ -18,6 +18,7 @@ import {
 } from './cdf/types';
 import { Connector } from './connector';
 import { CacheTime } from './constants';
+import { FEATURE_DEFAULTS } from './featureDefaults';
 import { parse as parseQuery } from './parser/events-assets';
 import { ParsedFilter, QueryCondition } from './parser/types';
 import {
@@ -78,10 +79,22 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       defaultProject,
       oauthPassThru,
       oauthClientCreds,
-      enableTemplates,
-      enableEventsAdvancedFiltering,
-      enableFlexibleDataModelling,
-      enableExtractionPipelines,
+      // Master toggles for feature sections
+      enableCoreDataModelFeatures = FEATURE_DEFAULTS.enableCoreDataModelFeatures,
+      enableLegacyDataModelFeatures = FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
+      // Core Data Model features
+      enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
+      // Legacy data model features
+      enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
+      enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
+      enableTimeseriesCustomQuery = FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
+      enableEvents = FEATURE_DEFAULTS.enableEvents,
+      // Deprecated features
+      enableTemplates = FEATURE_DEFAULTS.enableTemplates,
+      enableEventsAdvancedFiltering = FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
+      enableFlexibleDataModelling = FEATURE_DEFAULTS.enableFlexibleDataModelling,
+      enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
+      enableRelationships = FEATURE_DEFAULTS.enableRelationships,
     } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
@@ -93,10 +106,22 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       defaultFetcher,
       oauthPassThru,
       oauthClientCreds,
-      enableTemplates,
-      enableEventsAdvancedFiltering,
+      // Master toggles for feature sections
+      enableCoreDataModelFeatures,
+      enableLegacyDataModelFeatures,
+      // Core Data Model features
+      enableCogniteTimeSeries,
       enableFlexibleDataModelling,
-      enableExtractionPipelines
+      // Legacy data model features
+      enableTimeseriesSearch,
+      enableTimeseriesFromAsset,
+      enableTimeseriesCustomQuery,
+      enableEvents,
+      enableEventsAdvancedFiltering,
+      // Deprecated features
+      enableTemplates,
+      enableExtractionPipelines,
+      enableRelationships
     );
     this.initSources(connector);
   }
@@ -549,6 +574,7 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
         templateQuery,
         relationshipsQuery,
         flexibleDataModellingQuery,
+        cogniteTimeSeries,
       } = target;
       switch (tab) {
         case Tab.Event:
@@ -575,6 +601,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
             !!flexibleDataModellingQuery?.version &&
             !!flexibleDataModellingQuery?.graphQlQuery.length
           );
+        case Tab.CogniteTimeSeriesSearch:
+          return !!cogniteTimeSeries?.instanceId;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -613,6 +641,7 @@ function groupTargets(targets: CogniteQuery[]) {
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
       ...(groupedByTab[Tab.Custom] ?? []),
+      ...(groupedByTab[Tab.CogniteTimeSeriesSearch] ?? []),
     ],
   };
 }

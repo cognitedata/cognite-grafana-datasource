@@ -29,6 +29,7 @@ import {
   getTimeseries,
   reduceTimeseries,
   targetToIdEither,
+
 } from '../cdf/client';
 import { emitEvent, handleError, showWarnings } from '../appEventHandler';
 import { TimeSeriesResponseItem } from '../cdf/types';
@@ -99,7 +100,7 @@ export async function getDataQueryRequestItems(
   intervalMs: number,
   timeFrame
 ): Promise<QueriesDataItem> {
-  const { tab, expr, flexibleDataModellingQuery } = target;
+  const { tab, expr, flexibleDataModellingQuery, cogniteTimeSeries } = target;
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
 
@@ -122,6 +123,16 @@ export async function getDataQueryRequestItems(
     }
     case Tab.FlexibleDataModelling: {
       items = _.map(flexibleDataModellingQuery.targets, (externalId) => ({ externalId }));
+      break;
+    }
+    case Tab.CogniteTimeSeriesSearch: {
+      // By this point, filterEmptyQueryTargets should have already filtered out empty queries
+      items = [{
+        instanceId: {
+          space: cogniteTimeSeries.instanceId.space,
+          externalId: cogniteTimeSeries.instanceId.externalId,
+        },
+      }];
       break;
     }
   }
@@ -171,7 +182,6 @@ export class TimeseriesDatasource {
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
       const { target, type } = metadata;
       const chunkSize = type === 'synthetic' ? 10 : 100;
-
       const request = {
         data,
         path: datapointsPath(type),
