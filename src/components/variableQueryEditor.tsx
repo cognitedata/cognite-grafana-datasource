@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { InlineFormLabel, Select, Switch, Tab, TabsBar, TabContent, CodeEditor, Field, Stack } from '@grafana/ui';
+import React from 'react';
+import { InlineFormLabel, Select, Tab, TabsBar, TabContent, CodeEditor, Field, Stack } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { VariableQueryData, VariableQueryProps } from '../types';
 import { parse } from '../parser/events-assets';
 import { variableValueOptions } from '../constants';
 import CogniteDatasource from '../datasource';
 import { getFirstSelection } from '../utils';
-import gql from 'graphql-tag';
 
 const assetsHelp = (
   <pre>
