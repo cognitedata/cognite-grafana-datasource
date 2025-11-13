@@ -3,6 +3,18 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.4.0 - November 12th, 2025
+
+### Features
+
+- Added CogniteTimeSeries Search Tab for improved time series discovery and selection
+- Reorganized feature flags UI with master toggles and improved query editor experience
+- Added GraphQL variables support with tabbed interface for enhanced data model querying capabilities
+
+### Bug fixes
+
+- Updated plugin dependencies to address security vulnerabilities and compatibility issues
+
 ## 4.3.0 - April 24th, 2025
 
 ### Features
