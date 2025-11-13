@@ -187,4 +187,79 @@ describe('Metrics Query', () => {
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
   });
+
+  describe('Given a GraphQL variable query with interpolation', () => {
+    const variableQuery: VariableQueryData = {
+      query: '',
+      queryType: 'graphql',
+      graphqlQuery: 'query MyQuery { listCogniteAsset(filter: {externalId: "$AssetVariable"}) { items { name externalId } } }',
+      dataModel: {
+        space: 'test-space',
+        externalId: 'test-model',
+        version: '1',
+      },
+      valueType: {
+        value: 'externalId',
+        label: 'External ID',
+      },
+    };
+
+    const mockGraphqlResponse = {
+      data: {
+        listCogniteAsset: {
+          items: [
+            { name: 'Asset 1', externalId: 'asset-1' },
+            { name: 'Asset 2', externalId: 'asset-2' },
+          ],
+        },
+      },
+    };
+
+    beforeEach(() => {
+      // Mock the connector's fetchQuery method for GraphQL queries
+      ds.connector.fetchQuery = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(mockGraphqlResponse));
+      
+      // Also mock the regular fetch for other tests
+      fetcher.fetch = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(mockGraphqlResponse));
+    });
+
+    it('should interpolate variables in GraphQL query', async () => {
+      await ds.metricFindQuery(variableQuery);
+      
+      expect(ds.connector.fetchQuery).toBeCalledTimes(1);
+      const call = (ds.connector.fetchQuery as Mock).mock.calls[0][0];
+      const requestBody = JSON.parse(call.data);
+      
+      // The interpolated query should have the variable replaced with the actual value
+      expect(requestBody.query).toContain('123'); // From the mock template service (AssetVariable.current.value)
+      expect(requestBody.query).not.toContain('$AssetVariable');
+    });
+
+    it('should generate the correct GraphQL endpoint request', async () => {
+      await ds.metricFindQuery(variableQuery);
+      
+      expect(ds.connector.fetchQuery).toBeCalledTimes(1);
+      const call = (ds.connector.fetchQuery as Mock).mock.calls[0][0];
+      expect(call.path).toBe('/userapis/spaces/test-space/datamodels/test-model/versions/1/graphql');
+      expect(call.method).toBe('POST');
+    });
+
+    it('should return the correct values based on valueType', async () => {
+      const result = await ds.metricFindQuery(variableQuery);
+      
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        text: 'asset-1', // externalId used as text since it's the selected field
+        value: 'asset-1', // externalId used as value
+      });
+      expect(result[1]).toEqual({
+        text: 'asset-2',
+        value: 'asset-2',
+      });
+    });
+  });
 });

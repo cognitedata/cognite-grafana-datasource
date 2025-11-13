@@ -188,10 +188,22 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   oauthTokenUrl?: string;
   oauthClientId?: string;
   oauthScope?: string;
-  enableTemplates?: boolean;
-  enableEventsAdvancedFiltering?: boolean;
+  // Master toggles for feature sections
+  enableCoreDataModelFeatures?: boolean;
+  enableLegacyDataModelFeatures?: boolean;
+  // Core Data Model features
+  enableCogniteTimeSeries?: boolean;
   enableFlexibleDataModelling?: boolean;
+  // Legacy data model features
+  enableTimeseriesSearch?: boolean;
+  enableTimeseriesFromAsset?: boolean;
+  enableTimeseriesCustomQuery?: boolean;
+  enableEvents?: boolean;
+  enableEventsAdvancedFiltering?: boolean;
+  // Deprecated features
+  enableTemplates?: boolean;
   enableExtractionPipelines?: boolean;
+  enableRelationships?: boolean;
   featureFlags: { [s: string]: boolean };
 }
 
@@ -488,6 +500,13 @@ export interface VariableQueryData {
     label: string;
     value: string;
   };
+  queryType?: 'assets' | 'graphql';
+  graphqlQuery?: string;
+  dataModel?: {
+    space?: string;
+    externalId?: string;
+    version?: string;
+  };
 }
 
 export interface AnnotationQueryData extends DataQuery {
@@ -496,7 +515,7 @@ export interface AnnotationQueryData extends DataQuery {
 }
 
 export interface VariableQueryProps {
-  query: string;
+  query: string | VariableQueryData;
   onChange: (query: VariableQueryData, description: string) => void;
   datasource: any;
   templateSrv: any;

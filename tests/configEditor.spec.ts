@@ -9,7 +9,7 @@ test('"Save & test" should be successful on provisioned data source', async ({
   gotoDataSourceConfigPage,
   page,
 }) => {
-  const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
   const configPage = await gotoDataSourceConfigPage(datasource.uid);
   
   await page.getByTestId('data-testid Data source settings page Save and Test button').click();
@@ -21,7 +21,7 @@ test('"Save & test" should be successful when configuration is valid', async ({
   readProvisionedDataSource,
   page,
 }) => {
-  const ds = await readProvisionedDataSource<CogniteDataSourceOptions, CogniteSecureJsonData>({ fileName: 'datasources.yml' });
+  const ds = await readProvisionedDataSource<CogniteDataSourceOptions, CogniteSecureJsonData>({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
@@ -45,7 +45,7 @@ test('"Save & test" should fail when configuration is invalid', async ({
   readProvisionedDataSource,
   page,
 }) => {
-  const ds = await readProvisionedDataSource<CogniteDataSourceOptions, CogniteSecureJsonData>({ fileName: 'datasources.yml' });
+  const ds = await readProvisionedDataSource<CogniteDataSourceOptions, CogniteSecureJsonData>({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
