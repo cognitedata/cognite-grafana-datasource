@@ -485,7 +485,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * Extract items from GraphQL response - handles both 'items' and 'edges' formats
    */
-  private extractItemsFromGraphqlResponse(data: Record<string, unknown>): Record<string, unknown>[] {
+  private extractItemsFromGraphqlResponse(data: Record<string, unknown>): Array<Record<string, unknown>> {
     if (!data) {
       return [];
     }
@@ -500,7 +500,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     
     // Handle 'items' format
     if (firstResponse && typeof firstResponse === 'object' && 'items' in firstResponse && Array.isArray(firstResponse.items)) {
-      return firstResponse.items as Record<string, unknown>[];
+      return firstResponse.items as Array<Record<string, unknown>>;
     }
     
     // Handle 'edges' format (GraphQL Relay connection)
@@ -512,7 +512,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
 
     // Handle direct array
     if (Array.isArray(firstResponse)) {
-      return firstResponse as Record<string, unknown>[];
+      return firstResponse as Array<Record<string, unknown>>;
     }
 
     return [];
