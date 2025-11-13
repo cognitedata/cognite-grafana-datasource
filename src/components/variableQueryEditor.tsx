@@ -181,7 +181,7 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
     // Handle the case where query is a string (legacy) vs object with queryType
     const queryData = typeof query === 'string' ? { query } : query;
     const activeTab = (queryData as VariableQueryData)?.queryType === 'graphql' ? 1 : 0;
-    this.state = Object.assign(this.defaults, queryData, { activeTab });
+    this.state = { ...this.defaults, ...queryData, activeTab };
   }
 
   componentDidMount() {
