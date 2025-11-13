@@ -465,10 +465,17 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       
       // Map items to metric descriptions
       const fieldName = valueType?.value || 'name';
-      return items.map((item) => ({
-        text: item[fieldName] || item.name || item.externalId || item.id || 'Unknown',
-        value: item[fieldName] || item.id || item.externalId,
-      }));
+      return items.map((item) => {
+        const getValue = (key: string): string => {
+          const val = item[key];
+          return typeof val === 'string' ? val : String(val || '');
+        };
+        
+        return {
+          text: getValue(fieldName) || getValue('name') || getValue('externalId') || getValue('id') || 'Unknown',
+          value: getValue(fieldName) || getValue('id') || getValue('externalId'),
+        };
+      });
     } catch (error) {
       console.error('GraphQL variable query error:', error);
       return [];
