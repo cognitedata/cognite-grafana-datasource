@@ -478,7 +478,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * Extract items from GraphQL response - handles both 'items' and 'edges' formats
    */
-  private extractItemsFromGraphqlResponse(data: any): any[] {
+  private extractItemsFromGraphqlResponse(data: Record<string, unknown>): Record<string, unknown>[] {
     if (!data) {
       return [];
     }
@@ -489,21 +489,23 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       return [];
     }
 
-    const firstResponse = data[firstResponseKey];
+    const firstResponse = data[firstResponseKey] as Record<string, unknown>;
     
     // Handle 'items' format
-    if (firstResponse.items) {
-      return firstResponse.items;
+    if (firstResponse && typeof firstResponse === 'object' && 'items' in firstResponse && Array.isArray(firstResponse.items)) {
+      return firstResponse.items as Record<string, unknown>[];
     }
     
-    // Handle 'edges' format
-    if (firstResponse.edges) {
-      return firstResponse.edges.map((edge: any) => edge.node).filter(Boolean);
+    // Handle 'edges' format (GraphQL Relay connection)
+    if (firstResponse && typeof firstResponse === 'object' && 'edges' in firstResponse && Array.isArray(firstResponse.edges)) {
+      return (firstResponse.edges as Array<{ node?: Record<string, unknown> }>)
+        .map(edge => edge.node)
+        .filter((node): node is Record<string, unknown> => node !== undefined);
     }
 
     // Handle direct array
     if (Array.isArray(firstResponse)) {
-      return firstResponse;
+      return firstResponse as Record<string, unknown>[];
     }
 
     return [];
