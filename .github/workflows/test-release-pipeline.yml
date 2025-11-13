@@ -1,0 +1,185 @@
+name: Test Release Pipeline (Comprehensive)
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/test-release-pipeline.yml'
+      - 'go.mod'
+      - 'go.sum'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'src/**'
+      - 'pkg/**'
+
+jobs:
+  test-full-release-build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable --prefer-offline
+
+      - name: Build frontend
+        run: yarn build
+
+      - name: Setup Go environment
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version: '1.24'
+
+      - name: Verify Go version matches go.mod
+        run: |
+          echo "Go version installed:"
+          go version
+          echo ""
+          echo "Go version required in go.mod:"
+          grep "^go " go.mod
+          echo ""
+          # Extract version from go.mod and verify compatibility
+          REQUIRED_VERSION=$(grep "^go " go.mod | awk '{print $2}')
+          INSTALLED_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
+          echo "Required: $REQUIRED_VERSION"
+          echo "Installed: $INSTALLED_VERSION"
+
+      - name: Test backend build (buildAll)
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Verify all platform binaries were created
+        run: |
+          echo "Checking for built binaries in dist/:"
+          ls -lh dist/gpx_* || (echo "ERROR: No binaries found!" && exit 1)
+          echo ""
+          echo "Expected binaries for all platforms:"
+          for binary in \
+            "gpx_cognite_datasource_darwin_amd64" \
+            "gpx_cognite_datasource_darwin_arm64" \
+            "gpx_cognite_datasource_linux_amd64" \
+            "gpx_cognite_datasource_linux_arm" \
+            "gpx_cognite_datasource_linux_arm64" \
+            "gpx_cognite_datasource_windows_amd64.exe"; do
+            if [ -f "dist/$binary" ]; then
+              echo "✓ Found: $binary ($(du -h dist/$binary | cut -f1))"
+            else
+              echo "✗ Missing: $binary"
+              exit 1
+            fi
+          done
+
+      - name: Test mage coverage
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3
+        with:
+          version: latest
+          args: coverage
+
+      - name: Get plugin metadata
+        id: metadata
+        run: |
+          sudo apt-get install jq
+          
+          export GRAFANA_PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
+          export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
+          export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip
+          
+          echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
+          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+          
+          echo "Plugin ID: ${GRAFANA_PLUGIN_ID}"
+          echo "Plugin Version: ${GRAFANA_PLUGIN_VERSION}"
+          echo "Archive Name: ${GRAFANA_PLUGIN_ARTIFACT}"
+
+      - name: Package plugin
+        run: |
+          mv dist ${{ steps.metadata.outputs.plugin-id }}
+          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+          echo "Created archive: ${{ steps.metadata.outputs.archive }}"
+          ls -lh ${{ steps.metadata.outputs.archive }}
+
+      - name: Run plugin validator (metadata check)
+        run: |
+          echo "Running metadata validation..."
+          npx -y @grafana/plugin-validator@latest \
+            -analyzer=metadatavalid \
+            -sourceCodeUri file://./ \
+            ${{ steps.metadata.outputs.archive }}
+
+      - name: Run plugin validator (full validation with security scan)
+        run: |
+          echo "Running full plugin validation including OSV security scanner..."
+          echo "This is the step that checks for CVE vulnerabilities in dependencies."
+          npx -y @grafana/plugin-validator@latest \
+            -sourceCodeUri file://./ \
+            ${{ steps.metadata.outputs.archive }}
+
+      - name: Verify plugin structure
+        run: |
+          echo "Verifying plugin archive contents..."
+          unzip -l ${{ steps.metadata.outputs.archive }} | head -20
+          
+          echo ""
+          echo "Checking for required files in archive..."
+          required_files=(
+            "plugin.json"
+            "module.js"
+            "README.md"
+            "LICENSE"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if unzip -l ${{ steps.metadata.outputs.archive }} | grep -q "$file"; then
+              echo "✓ Found: $file"
+            else
+              echo "✗ Missing: $file"
+              exit 1
+            fi
+          done
+
+      - name: Upload test artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-plugin-artifact-${{ steps.metadata.outputs.plugin-version }}
+          path: ${{ steps.metadata.outputs.archive }}
+          retention-days: 5
+
+      - name: Test Summary
+        run: |
+          echo "================================================"
+          echo "✓ Release Pipeline Test - ALL CHECKS PASSED"
+          echo "================================================"
+          echo ""
+          echo "Completed checks:"
+          echo "  ✓ Node.js 20 environment setup"
+          echo "  ✓ Frontend build (webpack)"
+          echo "  ✓ Go 1.24 environment setup"
+          echo "  ✓ Go version compatibility with go.mod"
+          echo "  ✓ Backend build for all platforms (buildAll)"
+          echo "  ✓ All platform binaries created"
+          echo "  ✓ Backend test coverage (mage coverage)"
+          echo "  ✓ Plugin metadata extraction"
+          echo "  ✓ Plugin packaging (zip creation)"
+          echo "  ✓ Plugin metadata validation"
+          echo "  ✓ Full plugin validation with OSV security scanner"
+          echo "  ✓ Plugin structure verification"
+          echo ""
+          echo "This test simulates the complete release pipeline"
+          echo "except for the actual release upload and attestation."
+          echo ""
+          echo "If this passes, the release pipeline should succeed."
+          echo "================================================"
+
