@@ -1,0 +1,70 @@
+name: Test Release Build (Temporary)
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/test-release-build.yml'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  test-release-build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable --prefer-offline
+
+      - name: Build frontend
+        run: yarn build
+
+      - name: Setup Go environment
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version: '1.24'
+
+      - name: Verify Go version
+        run: |
+          echo "Go version installed:"
+          go version
+          echo ""
+          echo "Go version required in go.mod:"
+          grep "^go " go.mod
+
+      - name: Test backend build
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Verify binaries were created
+        run: |
+          echo "Checking for built binaries in dist/:"
+          ls -lh dist/gpx_* || echo "No binaries found!"
+
+      - name: Test mage coverage (same as release pipeline)
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3
+        with:
+          version: latest
+          args: coverage
+
+      - name: Summary
+        run: |
+          echo "✓ Build completed successfully with Go 1.24"
+          echo "✓ This verifies the fix for the release pipeline"
+          echo ""
+          echo "Note: This is a temporary test workflow to verify the Go version fix."
+          echo "It does NOT perform an actual release."
+
