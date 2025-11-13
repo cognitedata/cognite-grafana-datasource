@@ -299,6 +299,10 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   };
 
   handleDataModelSelect = (selectedOption: SelectableValue<{ space: string; externalId: string; version: string; dml: string }>) => {
+    if (!selectedOption?.value) {
+      return;
+    }
+    
     const { space, externalId, version } = selectedOption.value;
     this.setState({
       dataModel: {
@@ -313,6 +317,10 @@ export class CogniteVariableQueryEditor extends React.PureComponent<
   };
 
   handleVersionSelect = (selectedOption: SelectableValue<{ version: string; dml: string }>) => {
+    if (!selectedOption?.value) {
+      return;
+    }
+    
     const { version } = selectedOption.value;
     this.setState({
       dataModel: {
