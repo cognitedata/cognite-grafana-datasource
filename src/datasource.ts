@@ -394,7 +394,13 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query, valueType }: VariableQueryData): Promise<MetricDescription[]> {
+  async metricFindQuery({ query, valueType, queryType, graphqlQuery, dataModel }: VariableQueryData): Promise<MetricDescription[]> {
+    // Handle GraphQL queries
+    if (queryType === 'graphql') {
+      return this.metricFindGraphqlQuery({ graphqlQuery, dataModel, valueType });
+    }
+
+    // Handle legacy assets queries
     let params: QueryCondition;
     let filters: ParsedFilter[];
     try {
@@ -421,6 +427,95 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         value: asset[valueType?.value] || asset.id,
       };
     });
+  }
+
+  /**
+   * Handle GraphQL queries for variables
+   */
+  private async metricFindGraphqlQuery({ 
+    graphqlQuery, 
+    dataModel, 
+    valueType 
+  }: { 
+    graphqlQuery?: string; 
+    dataModel?: { space?: string; externalId?: string; version?: string };
+    valueType?: { value: string; label: string };
+  }): Promise<MetricDescription[]> {
+    if (!graphqlQuery || !dataModel?.space || !dataModel?.externalId || !dataModel?.version) {
+      return [];
+    }
+
+    try {
+      // Interpolate template variables in the GraphQL query
+      const interpolatedQuery = this.templateSrv.replace(graphqlQuery);
+      
+      const { data, errors } = await this.connector.fetchQuery({
+        path: `/userapis/spaces/${dataModel.space}/datamodels/${dataModel.externalId}/versions/${dataModel.version}/graphql`,
+        method: HttpMethod.POST,
+        data: JSON.stringify({ query: interpolatedQuery }),
+      });
+
+      if (errors) {
+        console.error('GraphQL variable query errors:', errors);
+        return [];
+      }
+
+      // Extract items from the response
+      const items = this.extractItemsFromGraphqlResponse(data);
+      
+      // Map items to metric descriptions
+      const fieldName = valueType?.value || 'name';
+      return items.map((item) => {
+        const getValue = (key: string): string => {
+          const val = item[key];
+          return typeof val === 'string' ? val : String(val || '');
+        };
+        
+        return {
+          text: getValue(fieldName) || getValue('name') || getValue('externalId') || getValue('id') || 'Unknown',
+          value: getValue(fieldName) || getValue('id') || getValue('externalId'),
+        };
+      });
+    } catch (error) {
+      console.error('GraphQL variable query error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Extract items from GraphQL response - handles both 'items' and 'edges' formats
+   */
+  private extractItemsFromGraphqlResponse(data: Record<string, unknown>): Array<Record<string, unknown>> {
+    if (!data) {
+      return [];
+    }
+
+    // Look for the first non-null response in the data
+    const firstResponseKey = Object.keys(data).find(key => data[key] !== null);
+    if (!firstResponseKey) {
+      return [];
+    }
+
+    const firstResponse = data[firstResponseKey] as Record<string, unknown>;
+    
+    // Handle 'items' format
+    if (firstResponse && typeof firstResponse === 'object' && 'items' in firstResponse && Array.isArray(firstResponse.items)) {
+      return firstResponse.items as Array<Record<string, unknown>>;
+    }
+    
+    // Handle 'edges' format (GraphQL Relay connection)
+    if (firstResponse && typeof firstResponse === 'object' && 'edges' in firstResponse && Array.isArray(firstResponse.edges)) {
+      return (firstResponse.edges as Array<{ node?: Record<string, unknown> }>)
+        .map(edge => edge.node)
+        .filter((node): node is Record<string, unknown> => node !== undefined);
+    }
+
+    // Handle direct array
+    if (Array.isArray(firstResponse)) {
+      return firstResponse as Array<Record<string, unknown>>;
+    }
+
+    return [];
   }
 
   fetchSingleTimeseries = (id: IdEither) => {

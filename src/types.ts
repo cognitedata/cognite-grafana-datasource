@@ -500,6 +500,13 @@ export interface VariableQueryData {
     label: string;
     value: string;
   };
+  queryType?: 'assets' | 'graphql';
+  graphqlQuery?: string;
+  dataModel?: {
+    space?: string;
+    externalId?: string;
+    version?: string;
+  };
 }
 
 export interface AnnotationQueryData extends DataQuery {
@@ -508,7 +515,7 @@ export interface AnnotationQueryData extends DataQuery {
 }
 
 export interface VariableQueryProps {
-  query: string;
+  query: string | VariableQueryData;
   onChange: (query: VariableQueryData, description: string) => void;
   datasource: any;
   templateSrv: any;
