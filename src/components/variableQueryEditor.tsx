@@ -101,8 +101,21 @@ const defaultGraphqlQuery = `query MyQuery {
   }
 }`;
 
+// GraphQL AST types for field selections
+interface GraphQLField {
+  kind: 'Field';
+  name: { value: string };
+  selectionSet?: { selections: readonly GraphQLSelection[] };
+}
+
+interface GraphQLSelection {
+  kind: string;
+  name?: { value: string };
+  selectionSet?: { selections: readonly GraphQLSelection[] };
+}
+
 // Extract field names from GraphQL query selections
-const extractFieldNamesFromSelections = (selections: readonly any[]): string[] => {
+const extractFieldNamesFromSelections = (selections: readonly GraphQLSelection[]): string[] => {
   const fieldNames: string[] = [];
   
   if (!selections || !Array.isArray(selections)) {
@@ -110,7 +123,7 @@ const extractFieldNamesFromSelections = (selections: readonly any[]): string[] =
   }
   
   selections.forEach((selection) => {
-    if (selection.kind === 'Field') {
+    if (selection.kind === 'Field' && selection.name) {
       const fieldName = selection.name.value;
       
       // Skip GraphQL introspection fields
