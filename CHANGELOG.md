@@ -9,6 +9,7 @@ Data Source for Grafana**.
 
 - Added CogniteTimeSeries Search Tab for improved time series discovery and selection
 - Reorganized feature flags UI with master toggles and improved query editor experience
+- Added GraphQL variables support with tabbed interface for enhanced data model querying capabilities
 
 ### Bug fixes
 
