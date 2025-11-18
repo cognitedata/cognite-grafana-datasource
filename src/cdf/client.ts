@@ -470,14 +470,10 @@ async function retryOnRateLimit<T>(
   maxRetries = 3,
   baseDelay = 1000
 ): Promise<T> {
-  let lastError: any;
-  
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error: any) {
-      lastError = error;
-      
       // Only retry on 429 (rate limit) errors
       if (error?.status !== 429 || attempt === maxRetries) {
         throw error;
@@ -495,7 +491,8 @@ async function retryOnRateLimit<T>(
     }
   }
   
-  throw lastError;
+  // This path is logically unreachable, but TypeScript needs it for control flow analysis
+  throw new Error('Exited retry loop unexpectedly.');
 }
 
 export function searchDMSInstances(
