@@ -18,6 +18,9 @@ import {
   DMSSearchRequest,
   DMSSearchResponse,
   DMSInstance,
+  DMSListRequest,
+  DMSListResponse,
+  CogniteUnit,
 } from '../types/dms';
 import {
   Tab,
@@ -55,7 +58,7 @@ export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
   { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
 ): CDFDataQueryRequest {
-  const { aggregation, granularity } = target;
+  const { aggregation, granularity, cogniteTimeSeries } = target;
   const [start, end] = getRange(range);
 
   switch (type) {
@@ -81,11 +84,20 @@ export function formQueryForItems(
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
+      
+      // Add targetUnit to items if specified for CogniteTimeSeries queries
+      const itemsWithUnit = items.map((item) => {
+        if (cogniteTimeSeries?.targetUnit && item.instanceId) {
+          return { ...item, targetUnit: cogniteTimeSeries.targetUnit };
+        }
+        return item;
+      });
+      
       return {
         ...aggregations,
         end,
         start,
-        items,
+        items: itemsWithUnit,
         limit
       };
     }
@@ -452,15 +464,158 @@ export function fetchDMSViews(
   });
 }
 
+// Helper function to retry DMS API calls with exponential backoff and jitter on 429 errors
+async function retryOnRateLimit<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Only retry on 429 (rate limit) errors
+      if (error?.status !== 429 || attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Calculate delay with exponential backoff and jitter
+      const exponentialDelay = baseDelay * Math.pow(2, attempt);
+      const jitter = Math.random() * exponentialDelay * 0.5; // Add up to 50% jitter
+      const delay = exponentialDelay + jitter;
+      
+      console.warn(`Rate limited (429), retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})...`);
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
 export function searchDMSInstances(
   connector: Connector,
   searchRequest: DMSSearchRequest
 ): Promise<DMSInstance[]> {
-  return connector.fetchItems<DMSInstance>({
-    method: HttpMethod.POST,
-    path: '/models/instances/search',
-    data: searchRequest,
-  });
+  return retryOnRateLimit(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/search',
+      data: searchRequest,
+    })
+  );
+}
+
+export async function listDMSInstances(
+  connector: Connector,
+  listRequest: DMSListRequest
+): Promise<DMSInstance[]> {
+  return retryOnRateLimit(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/list',
+      data: listRequest,
+    })
+  );
+}
+
+export async function fetchCogniteUnits(
+  connector: Connector
+): Promise<CogniteUnit[]> {
+  try {
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/list',
+        data: {
+          sources: [{
+            source: {
+              type: 'view',
+              space: 'cdf_cdm',
+              externalId: 'CogniteUnit',
+              version: 'v1',
+            },
+          }],
+          instanceType: 'node',
+          limit: 1000,
+          filter: {
+            equals: {
+              property: ['node', 'space'],
+              value: 'cdf_cdm_units',
+            },
+          },
+        },
+      })
+    );
+    
+    return instances.map((instance) => {
+      const unitProps = instance.properties?.['cdf_cdm']?.['CogniteUnit/v1'] || {};
+      return {
+        space: instance.space,
+        externalId: instance.externalId,
+        name: unitProps.name || instance.externalId,
+        description: unitProps.description,
+        symbol: unitProps.symbol,
+        quantity: unitProps.quantity,
+        source: unitProps.source,
+        sourceReference: unitProps.sourceReference,
+      };
+    });
+  } catch (err) {
+    console.warn('Failed to fetch units:', err);
+    return [];
+  }
+}
+
+export async function getTimeSeriesUnit(
+  connector: Connector,
+  instanceId: { space: string; externalId: string }
+): Promise<string | undefined> {
+  try {
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/byids',
+        data: {
+          sources: [{
+            source: {
+              type: 'view',
+              space: 'cdf_cdm',
+              externalId: 'CogniteTimeSeries',
+              version: 'v1',
+            },
+          }],
+          items: [{
+            instanceType: 'node',
+            space: instanceId.space,
+            externalId: instanceId.externalId,
+          }],
+          includeTyping: false,
+        },
+      })
+    );
+
+    if (instances.length > 0) {
+      const tsProps = instances[0].properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
+      // Try both 'unit' and 'sourceUnit' properties
+      const unit = tsProps?.unit || tsProps?.sourceUnit;
+      
+      // Handle both string and object formats
+      if (typeof unit === 'string') {
+        return unit;
+      } else if (unit && typeof unit === 'object' && 'externalId' in unit) {
+        return unit.externalId;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch timeseries unit:', err);
+  }
+  return undefined;
 }
 
 
