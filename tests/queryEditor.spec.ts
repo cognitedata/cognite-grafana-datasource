@@ -348,6 +348,120 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await waitForQueriesToFinish(page);
 });
 
+test('"CogniteTimeSeries" unit conversion is available for timeseries with units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Space and version should already be set to cdf_cdm and v1 by default
+  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
+  await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
+  await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+
+  // Search for a timeseries that has a unit (temperature)
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.temp');
+
+  // Wait for search results
+  await waitForQueriesToFinish(page);
+  
+  // Select the temperature timeseries
+  const option = selectors.components.Select.option;
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
+  await expect(tsOption).toBeVisible({ timeout: 10000 });
+  await tsOption.click();
+
+  // Wait for unit information to load
+  await page.waitForTimeout(2000);
+
+  // Check that the current unit is displayed (should show "Unit: Degree Celsius (°C)" or similar)
+  const unitLabel = editorRow.getByText(/Unit:/i);
+  await expect(unitLabel).toBeVisible({ timeout: 5000 });
+
+  // Check that the Target Unit field is visible
+  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  await expect(targetUnitField).toBeVisible();
+
+  // Click on the Target Unit dropdown
+  const targetUnitInput = targetUnitField.locator('..').locator('input').first();
+  await targetUnitInput.click();
+
+  // Wait for unit options to load
+  await page.waitForTimeout(1000);
+
+  // Check that unit options are available (should show other temperature units)
+  const unitOptions = panelEditPage.getByGrafanaSelector(option);
+  await expect(unitOptions.first()).toBeVisible({ timeout: 5000 });
+
+  // Verify that at least one temperature unit option is available
+  const fahrenheitOption = unitOptions.filter({ hasText: /Fahrenheit|°F/i });
+  const kelvinOption = unitOptions.filter({ hasText: /Kelvin|K/i });
+  
+  // At least one of these should be visible
+  const hasTemperatureUnits = await fahrenheitOption.count() > 0 || await kelvinOption.count() > 0;
+  expect(hasTemperatureUnits).toBeTruthy();
+});
+
+test('"CogniteTimeSeries" unit conversion not shown for timeseries without units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Search for a timeseries that doesn't have a unit (clouds)
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.clouds');
+
+  // Wait for search results
+  await waitForQueriesToFinish(page);
+  
+  // Select the clouds timeseries
+  const option = selectors.components.Select.option;
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.clouds/i }).first();
+  await expect(tsOption).toBeVisible({ timeout: 10000 });
+  await tsOption.click();
+
+  // Wait a bit for any unit information to potentially load
+  await page.waitForTimeout(2000);
+
+  // Check that the Target Unit field is NOT visible (timeseries has no unit)
+  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  await expect(targetUnitField).not.toBeVisible();
+
+  // Check that no unit label is displayed
+  const unitLabel = editorRow.getByText(/Unit:/i);
+  await expect(unitLabel).not.toBeVisible();
+});
+
 test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   // Set a larger viewport to ensure all UI elements are visible
   await page.setViewportSize({ width: 1920, height: 1080 });

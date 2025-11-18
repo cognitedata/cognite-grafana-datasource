@@ -1,7 +1,10 @@
 import { fetchCogniteUnits, getTimeSeriesUnit, formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
 import { CogniteUnit, DMSInstance } from '../types/dms';
-import { HttpMethod } from '../types';
+import { HttpMethod, defaultQuery, CogniteQuery, QueryOptions } from '../types';
+import { dateTime } from '@grafana/data';
+
+const defaultCogniteQuery = defaultQuery as CogniteQuery;
 
 describe('Unit Conversion', () => {
   let mockConnector: jest.Mocked<Connector>;
@@ -293,6 +296,12 @@ describe('Unit Conversion', () => {
   });
 
   describe('formQueryForItems with targetUnit', () => {
+    const queryOptions: QueryOptions & { timeZone: string } = {
+      range: { from: dateTime(1000), to: dateTime(2000) },
+      intervalMs: 60000,
+      timeZone: 'UTC',
+    } as QueryOptions & { timeZone: string };
+
     it('should add targetUnit to items when specified', () => {
       const queryData = {
         items: [
@@ -303,10 +312,9 @@ describe('Unit Conversion', () => {
             },
           },
         ],
-        type: 'default' as const,
+        type: 'data' as const,
         target: {
-          aggregation: 'average',
-          granularity: '1h',
+          ...defaultCogniteQuery,
           cogniteTimeSeries: {
             space: 'cdf_cdm',
             version: 'v1',
@@ -314,16 +322,6 @@ describe('Unit Conversion', () => {
             targetUnit: 'temperature:deg_f',
           },
         },
-      };
-
-      const queryOptions = {
-        range: {
-          from: { valueOf: () => 1000 } as any,
-          to: { valueOf: () => 2000 } as any,
-          raw: { from: 'now-1h', to: 'now' },
-        },
-        intervalMs: 60000,
-        timeZone: 'UTC',
       };
 
       const result = formQueryForItems(queryData, queryOptions);
@@ -341,26 +339,15 @@ describe('Unit Conversion', () => {
             },
           },
         ],
-        type: 'default' as const,
+        type: 'data' as const,
         target: {
-          aggregation: 'average',
-          granularity: '1h',
+          ...defaultCogniteQuery,
           cogniteTimeSeries: {
             space: 'cdf_cdm',
             version: 'v1',
             externalId: 'CogniteTimeSeries',
           },
         },
-      };
-
-      const queryOptions = {
-        range: {
-          from: { valueOf: () => 1000 } as any,
-          to: { valueOf: () => 2000 } as any,
-          raw: { from: 'now-1h', to: 'now' },
-        },
-        intervalMs: 60000,
-        timeZone: 'UTC',
       };
 
       const result = formQueryForItems(queryData, queryOptions);
@@ -375,10 +362,9 @@ describe('Unit Conversion', () => {
             externalId: 'test-ts',
           },
         ],
-        type: 'default' as const,
+        type: 'data' as const,
         target: {
-          aggregation: 'average',
-          granularity: '1h',
+          ...defaultCogniteQuery,
           cogniteTimeSeries: {
             space: 'cdf_cdm',
             version: 'v1',
@@ -386,16 +372,6 @@ describe('Unit Conversion', () => {
             targetUnit: 'temperature:deg_f',
           },
         },
-      };
-
-      const queryOptions = {
-        range: {
-          from: { valueOf: () => 1000 } as any,
-          to: { valueOf: () => 2000 } as any,
-          raw: { from: 'now-1h', to: 'now' },
-        },
-        intervalMs: 60000,
-        timeZone: 'UTC',
       };
 
       const result = formQueryForItems(queryData, queryOptions);
