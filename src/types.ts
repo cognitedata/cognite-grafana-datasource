@@ -109,6 +109,8 @@ export interface CogniteTimeSeries {
     space: string;
     externalId: string;
   };
+  targetUnit?: string;
+  targetUnitSystem?: string;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {
@@ -457,6 +459,7 @@ export type DataQueryRequestItem = {
     externalId: string;
   };
   timeZone?: string;
+  targetUnit?: string;
 };
 
 export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
