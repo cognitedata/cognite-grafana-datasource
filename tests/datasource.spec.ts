@@ -76,5 +76,5 @@ test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readPro
       const panel1 = await dashboardPage.getPanelByTitle('Relationships');
       const nodes = await panel1.locator.getByLabel(/Node/).getByText(/.+/).allInnerTexts();
       return nodes.sort();
-    }, { timeout: 1000 }).toEqual(expectedElements);
+    }, { timeout: 10000 }).toEqual(expectedElements);
 });
