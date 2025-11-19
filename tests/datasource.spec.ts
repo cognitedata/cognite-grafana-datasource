@@ -1,7 +1,8 @@
 import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
+import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
 
-const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
 test('Panel with multiple time series queries rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
@@ -32,8 +33,8 @@ test('Panel with multiple CogniteTimeSeries queries rendered OK', async ({ gotoD
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   await gotoDashboardPage(dashboard);
 
-  // Wait for network requests to complete
-  await page.waitForLoadState('networkidle');
+  // Wait for dashboard panels to be ready
+  await page.waitForSelector('.react-grid-layout', { timeout: 30000 });
   
   var expectedTs = [
     'CDMTS wind speed',

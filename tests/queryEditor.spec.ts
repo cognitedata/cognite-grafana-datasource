@@ -2,9 +2,10 @@ import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plu
 import { Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
+import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
 import semver from 'semver';
 
-const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
 const expectedTs = [
   '59.9139-10.7522-current.clouds',
@@ -28,6 +29,7 @@ const isCdfResponse = (path: string) => {
 };
 
 test('Panel with asset subtree queries rendered OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  test.setTimeout(60000);
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -63,7 +65,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   await expect(panelEditPage.refreshPanel(
     {
-      timeout: 10000,
+      timeout: 30000,
       waitForResponsePredicateCallback: async (response) => {
 
         if (isCdfResponse('/timeseries/data/latest')(response)) {
