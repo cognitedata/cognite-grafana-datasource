@@ -1,4 +1,4 @@
-import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
 import { Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';

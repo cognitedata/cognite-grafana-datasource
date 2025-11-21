@@ -86,12 +86,10 @@ export function formQueryForItems(
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
       
       // Add targetUnit to items if specified for CogniteTimeSeries queries
-      const itemsWithUnit = items.map((item) => {
-        if (cogniteTimeSeries?.targetUnit && item.instanceId) {
-          return { ...item, targetUnit: cogniteTimeSeries.targetUnit };
-        }
-        return item;
-      });
+      const targetUnit = cogniteTimeSeries?.targetUnit;
+      const itemsWithUnit = targetUnit
+        ? items.map((item) => item.instanceId ? { ...item, targetUnit } : item)
+        : items;
       
       return {
         ...aggregations,
@@ -470,29 +468,36 @@ async function retryOnRateLimit<T>(
   maxRetries = 3,
   baseDelay = 1000
 ): Promise<T> {
+  let lastError: any;
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error: any) {
+      lastError = error;
+
       // Only retry on 429 (rate limit) errors
-      if (error?.status !== 429 || attempt === maxRetries) {
+      const isRateLimitError = error?.status === 429;
+      const hasRetriesLeft = attempt < maxRetries;
+
+      if (!isRateLimitError || !hasRetriesLeft) {
         throw error;
       }
-      
-      // Calculate delay with exponential backoff and jitter
+
       const exponentialDelay = baseDelay * Math.pow(2, attempt);
-      const jitter = Math.random() * exponentialDelay * 0.5; // Add up to 50% jitter
+      const jitter = Math.random() * exponentialDelay * 0.5;
       const delay = exponentialDelay + jitter;
-      
-      console.warn(`Rate limited (429), retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})...`);
-      
-      // Wait before retrying
+
+      console.warn(
+        `Rate limited (429). Retrying in ${Math.round(delay)}ms ` +
+        `(attempt ${attempt + 1}/${maxRetries})`
+      );
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
-  // This path is logically unreachable, but TypeScript needs it for control flow analysis
-  throw new Error('Exited retry loop unexpectedly.');
+
+  throw lastError;
 }
 
 export function searchDMSInstances(

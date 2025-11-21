@@ -1,5 +1,5 @@
 import semver from 'semver';
-import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
 const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
