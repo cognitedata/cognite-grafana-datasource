@@ -1,7 +1,8 @@
-import { test as base, expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
+import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
 
-const test = base.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
 // Helper function to toggle checkboxes using JavaScript for older Grafana versions
 const toggleCheckbox = async (page: any, selector: string, shouldBeChecked: boolean) => {
@@ -105,7 +106,7 @@ test.describe('Feature Flags - Config Editor', () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     
     // Get the legacy master toggle element
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
@@ -161,7 +162,7 @@ test.describe('Feature Flags - Config Editor', () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     
     // Get the core master toggle element
     const coreMasterToggle = page.locator('#enable-core-data-model-features');
@@ -209,7 +210,7 @@ test.describe('Feature Flags - Config Editor', () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
     
     // Ensure legacy master toggle is enabled
@@ -247,7 +248,7 @@ test.describe('Feature Flags - Config Editor', () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Deprecated features should be visible and toggleable independently
     await expect(page.locator('#enable-relationships')).toBeVisible();
@@ -289,7 +290,7 @@ test.describe('Feature Flags - Config Editor', () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     // Wait for the page to fully load and scroll to feature flags
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
 
     // Change some feature flags

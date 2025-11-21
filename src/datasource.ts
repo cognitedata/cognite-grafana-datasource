@@ -294,7 +294,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   }
 
   private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery } =
+    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery, cogniteTimeSeries } =
       target;
 
     const [
@@ -305,6 +305,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       eventExprTemplated,
       templategraphQlQueryTemplated,
       flexibleDataModellinggraphQlQueryTemplated,
+      cogniteTimeSeriesTargetUnitTemplated,
+      cogniteTimeSeriesTargetUnitSystemTemplated,
     ] = this.replaceVariablesArr(
       [
         expr,
@@ -314,6 +316,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         eventQuery?.expr,
         templateQuery?.graphQlQuery,
         flexibleDataModellingQuery?.graphQlQuery,
+        cogniteTimeSeries?.targetUnit,
+        cogniteTimeSeries?.targetUnitSystem,
       ],
       scopedVars
     );
@@ -343,12 +347,20 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         graphQlQuery: flexibleDataModellinggraphQlQueryTemplated,
       },
     };
+    const templatedCogniteTimeSeries = cogniteTimeSeries && {
+      cogniteTimeSeries: {
+        ...cogniteTimeSeries,
+        targetUnit: cogniteTimeSeriesTargetUnitTemplated,
+        targetUnitSystem: cogniteTimeSeriesTargetUnitSystemTemplated,
+      },
+    };
     return {
       ...target,
       ...templatedAssetQuery,
       ...templatedEventQuery,
       ...templatedTemplateQuery,
       ...templatedflexibleDataModellingQuery,
+      ...templatedCogniteTimeSeries,
       query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
