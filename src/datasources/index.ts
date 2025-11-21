@@ -4,3 +4,4 @@ export { FlexibleDataModellingDatasource } from './FlexibleDataModellingDatasour
 export { TimeseriesDatasource } from './TimeseriesDatasource';
 export { EventsDatasource } from './EventsDatasource';
 export { ExtractionPipelinesDatasource } from './ExtractionPipelinesDatasource';
+export { RecordsDatasource } from './RecordsDatasource';

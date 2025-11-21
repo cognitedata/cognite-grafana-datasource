@@ -17,6 +17,7 @@ export enum Tab {
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
+  Records = 'Records',
   Relationships = 'Relationships',
   Templates = 'Templates',
   ExtractionPipelines = 'Extraction Pipelines',
@@ -30,6 +31,7 @@ export const TabTitles = {
   [Tab.Asset]: 'Time series from asset',
   [Tab.Custom]: 'Time series custom query',
   [Tab.Event]: 'Events',
+  [Tab.Records]: 'Records',
   [Tab.ExtractionPipelines]: 'Extraction Pipelines',
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
@@ -113,6 +115,28 @@ export interface CogniteTimeSeries {
   targetUnitSystem?: string;
 }
 
+export enum RecordsMode {
+  Aggregate = 'aggregate',
+  Filter = 'filter'
+}
+
+export interface Container {
+  space: string;
+  externalId: string;
+  name?: string;
+  description?: string;
+  usedFor?: 'node' | 'edge';
+  properties?: { [key: string]: any };
+}
+
+export interface RecordsQuery {
+  streamId: string;
+  jsonQuery?: string; // Backward compatibility - will be migrated to mode-specific queries
+  aggregateQuery?: string; // Query specific to aggregate mode
+  filterQuery?: string; // Query specific to filter mode
+  mode: RecordsMode;
+}
+
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -159,6 +183,12 @@ export const defaultCogniteTimeSeries: CogniteTimeSeries = {
   instanceId: undefined,
 };
 
+export const defaultRecordsQuery: RecordsQuery = {
+  streamId: '',
+  jsonQuery: '',
+  mode: RecordsMode.Aggregate,
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -174,6 +204,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
   cogniteTimeSeries: defaultCogniteTimeSeries,
+  recordsQuery: defaultRecordsQuery,
 };
 
 /**
@@ -305,6 +336,7 @@ export interface CogniteQueryBase extends DataQuery {
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
   cogniteTimeSeries: CogniteTimeSeries;
+  recordsQuery: RecordsQuery;
 }
 
 export type TemplateQuery = {
