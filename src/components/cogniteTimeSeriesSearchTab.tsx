@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, Input, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances, stringifyError } from '../cdf/client';
-import { DMSSpace, DMSView, DMSInstance, DMSSearchRequest } from '../types/dms';
+import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError } from '../cdf/client';
+import { DMSSpace, DMSView, DMSInstance, DMSSearchRequest, CogniteUnit } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
 
@@ -40,8 +40,19 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [views, setViews] = useState<SelectableValue[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [units, setUnits] = useState<CogniteUnit[]>([]);
+  const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
   const { cogniteTimeSeries } = query;
+
+  // Create a stable key for instanceId to trigger useEffect
+  const instanceIdKey = useMemo(
+    () => cogniteTimeSeries.instanceId
+      ? `${cogniteTimeSeries.instanceId.space}:${cogniteTimeSeries.instanceId.externalId}`
+      : undefined,
+    [cogniteTimeSeries.instanceId]
+  );
 
   const loadSpaces = useCallback(async () => {
     try {
@@ -133,6 +144,44 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }
   }, [cogniteTimeSeries.space, loadViews]);
 
+  // Load available units
+  useEffect(() => {
+    const loadUnits = async () => {
+      try {
+        setLoadingUnits(true);
+        const unitsData = await fetchCogniteUnits(connector);
+        setUnits(unitsData);
+      } catch (err) {
+        console.warn('Failed to load units:', stringifyError(err));
+      } finally {
+        setLoadingUnits(false);
+      }
+    };
+    loadUnits();
+  }, [connector]);
+
+  // Fetch the unit of the selected timeseries
+  useEffect(() => {
+    const fetchUnit = async () => {
+      const instanceId = cogniteTimeSeries.instanceId;
+      if (instanceId?.space && instanceId?.externalId) {
+        setLoadingUnits(true);
+        try {
+          const unit = await getTimeSeriesUnit(connector, instanceId);
+          setTimeSeriesUnit(unit);
+        } catch (err) {
+          console.warn('Failed to fetch timeseries unit:', stringifyError(err));
+          setTimeSeriesUnit(undefined);
+        } finally {
+          setLoadingUnits(false);
+        }
+      } else {
+        setTimeSeriesUnit(undefined);
+      }
+    };
+    fetchUnit();
+  }, [connector, instanceIdKey, cogniteTimeSeries.instanceId]);
+
   const handleSpaceChange = (selectedSpace: SelectableValue | null) => {
     onQueryChange({
       cogniteTimeSeries: {
@@ -194,6 +243,50 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }
     return null;
   };
+
+  const handleTargetUnitChange = (selectedUnit: SelectableValue | null) => {
+    onQueryChange({
+      cogniteTimeSeries: {
+        ...cogniteTimeSeries,
+        targetUnit: selectedUnit?.value,
+      },
+    });
+  };
+
+  // Get the display name for a unit
+  const getUnitDisplayName = (unitExternalId: string): string => {
+    const unit = units.find(u => u.externalId === unitExternalId);
+    if (!unit) {
+      return unitExternalId;
+    }
+    const displayName = unit.description || unit.name;
+    return unit.symbol ? `${displayName} (${unit.symbol})` : displayName;
+  };
+
+  // Get units filtered by selected quantity
+  const getFilteredUnits = (): SelectableValue[] => {
+    if (!timeSeriesUnit) {
+      return [];
+    }
+
+    let filteredUnits = units;
+    const tsUnit = units.find((u) => u.externalId === timeSeriesUnit);
+    if (tsUnit?.quantity) {
+      filteredUnits = units.filter((u) => u.quantity === tsUnit.quantity);
+    }
+
+    const options = filteredUnits.map((unit) => {
+      const label = unit.symbol ? `${unit.description || unit.name} (${unit.symbol})` : (unit.description || unit.name);
+      return {
+        label,
+        value: unit.externalId,
+        description: unit.description,
+      };
+    });
+    return options;
+  };
+
+  const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
 
   return (
     <div>
@@ -267,7 +360,39 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               inputId={`cognite-timeseries-search-${query.refId}`}
             />
           </InlineField>
+          {timeSeriesUnit && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginLeft: '8px',
+              color: 'rgba(204, 204, 220, 0.65)',
+              fontSize: '12px',
+              whiteSpace: 'nowrap'
+            }}>
+              Unit: {getUnitDisplayName(timeSeriesUnit)}
+            </div>
+          )}
         </InlineFieldRow>
+
+        {cogniteTimeSeries.instanceId && isUnitConversionEnabled && (
+          <InlineFieldRow>
+            <InlineField
+              label="Target Unit"
+              labelWidth={14}
+              tooltip={`Convert data to target unit. Current unit: ${getUnitDisplayName(timeSeriesUnit)}`}
+            >
+              <Select
+                options={getFilteredUnits()}
+                value={cogniteTimeSeries.targetUnit || timeSeriesUnit}
+                onChange={handleTargetUnitChange}
+                placeholder="Select target unit"
+                isClearable
+                isLoading={loadingUnits}
+                width={40}
+              />
+            </InlineField>
+          </InlineFieldRow>
+        )}
 
         <LatestValueCheckbox {...{ query, onQueryChange }} />
         {!query.latestValue && (

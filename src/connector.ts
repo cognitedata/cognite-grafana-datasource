@@ -24,10 +24,22 @@ export class Connector {
     private fetcher: Fetcher,
     private oauthPassThru?: boolean,
     private oauthClientCredentials?: boolean,
-    private enableTemplates?: boolean,
-    private enableEventsAdvancedFiltering?: boolean,
+    // Master toggles for feature sections
+    private enableCoreDataModelFeatures?: boolean,
+    private enableLegacyDataModelFeatures?: boolean,
+    // Core Data Model features
+    private enableCogniteTimeSeries?: boolean,
     private enableFlexibleDataModelling?: boolean,
-    private enableExtractionPipelines?: boolean
+    // Legacy data model features
+    private enableTimeseriesSearch?: boolean,
+    private enableTimeseriesFromAsset?: boolean,
+    private enableTimeseriesCustomQuery?: boolean,
+    private enableEvents?: boolean,
+    private enableEventsAdvancedFiltering?: boolean,
+    // Deprecated features
+    private enableTemplates?: boolean,
+    private enableExtractionPipelines?: boolean,
+    private enableRelationships?: boolean
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -135,17 +147,46 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
+  // Core Data Model features
+  isCogniteTimeSeriesEnabled() {
+    return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
+  }
+
+  isFlexibleDataModellingEnabled() {
+    return this.enableCoreDataModelFeatures && this.enableFlexibleDataModelling;
+  }
+
+  // Legacy data model features
+  isTimeseriesSearchEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesSearch;
+  }
+
+  isTimeseriesFromAssetEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesFromAsset;
+  }
+
+  isTimeseriesCustomQueryEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableTimeseriesCustomQuery;
+  }
+
+  isEventsEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableEvents;
+  }
+
+  isEventsAdvancedFilteringEnabled() {
+    return this.enableLegacyDataModelFeatures && this.enableEventsAdvancedFiltering;
+  }
+
+  // Deprecated features
+  isRelationshipsEnabled() {
+    return this.enableRelationships;
+  }
+
   isTemplatesEnabled() {
     return this.enableTemplates;
   }
 
-  isEventsAdvancedFilteringEnabled() {
-    return this.enableEventsAdvancedFiltering;
-  }
-
-  isFlexibleDataModellingEnabled() {
-    return this.enableFlexibleDataModelling;
-  }
+  
   isExtractionPipelinesEnabled() {
     return this.enableExtractionPipelines;
   }

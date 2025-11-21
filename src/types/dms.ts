@@ -76,3 +76,34 @@ export interface DMSInstance {
     };
   };
 }
+
+export interface DMSListRequest {
+  sources: Array<{
+    source: {
+      type: 'view';
+      space: string;
+      externalId: string;
+      version: string;
+    };
+  }>;
+  instanceType?: 'node' | 'edge';
+  limit?: number;
+  cursor?: string;
+  filter?: DMSFilter;
+}
+
+export interface DMSListResponse {
+  items: DMSInstance[];
+  nextCursor?: string;
+}
+
+export interface CogniteUnit {
+  space: string;
+  externalId: string;
+  name: string;
+  description?: string;
+  symbol?: string;
+  quantity?: string;
+  source?: string;
+  sourceReference?: string;
+}

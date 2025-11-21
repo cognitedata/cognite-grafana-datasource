@@ -2,11 +2,11 @@ module github.com/cognitedata/cognite-grafana-datasource
 
 go 1.24.1
 
-toolchain go1.24.5
+toolchain go1.25.4
 
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.278.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
