@@ -374,6 +374,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         jsonQuery: recordsJsonQueryTemplated,
         aggregateQuery: recordsAggregateQueryTemplated,
         filterQuery: recordsFilterQueryTemplated,
+      },
+    };
     const templatedCogniteTimeSeries = cogniteTimeSeries && {
       cogniteTimeSeries: {
         ...cogniteTimeSeries,
