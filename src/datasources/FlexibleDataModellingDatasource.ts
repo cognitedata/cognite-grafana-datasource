@@ -65,37 +65,37 @@ export class FlexibleDataModellingDatasource {
     }>
   > {
     try {
-      const { data } = await this.connector.fetchQuery<{
+      // Use REST API instead of GraphQL to support includeGlobal parameter
+      // https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels
+      const items = await this.connector.fetchItems<{
         space: string;
         externalId: string;
         version: string;
         name: string;
         description: string;
-        graphQlDml: string;
+        isGlobal?: boolean;
       }>({
-        path: '/dml/graphql',
-        method: HttpMethod.POST,
-        data: JSON.stringify({
-          query: `
-             query listDataModelVersions($limit: Int) {
-               listGraphQlDmlVersions(limit: $limit) {
-                 items {
-                    space
-                    externalId
-                    version
-                    name
-                    description
-                    graphQlDml
-                    createdTime
-                    lastUpdatedTime
-                 }
-               }
-             }
-             `,
-          variables: { limit: 1000 },
-        }),
+        path: '/models/datamodels',
+        method: HttpMethod.GET,
+        data: undefined,
+        params: { limit: 1000, includeGlobal: true },
       });
-      return data;
+      
+      // Map to expected format (graphQlDml will be fetched separately when needed)
+      const mappedItems = items.map((item) => ({
+        space: item.space,
+        externalId: item.externalId,
+        version: item.version,
+        name: item.name || item.externalId,
+        description: item.description || '',
+        graphQlDml: '', // Will be fetched when a specific model is selected
+      }));
+      
+      return {
+        listGraphQlDmlVersions: {
+          items: mappedItems,
+        },
+      };
     } catch (error) {
       handleError(error, refId);
       return {

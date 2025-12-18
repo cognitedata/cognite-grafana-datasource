@@ -21,6 +21,8 @@ import {
   DMSListRequest,
   DMSListResponse,
   CogniteUnit,
+  InvolvedView,
+  ContainerInspectResponse,
 } from '../types/dms';
 import {
   Tab,
@@ -618,6 +620,47 @@ export async function getTimeSeriesUnit(
     console.warn('Failed to fetch timeseries unit:', err);
   }
   return undefined;
+}
+
+// Fetch views that implement the CogniteTimeSeries container
+export async function fetchCogniteTimeSeriesViews(
+  connector: Connector
+): Promise<InvolvedView[]> {
+  try {
+    const response = await retryOnRateLimit(() =>
+      connector.fetchData<{ data: ContainerInspectResponse }>({
+        method: HttpMethod.POST,
+        path: '/models/containers/inspect',
+        data: {
+          items: [
+            {
+              space: 'cdf_cdm',
+              externalId: 'CogniteTimeSeries',
+            },
+          ],
+          inspectionOperations: {
+            involvedViews: {
+              allVersions: true,
+            },
+            totalInvolvedViewCount: {
+              allVersions: true,
+              includeUnavailableViews: true,
+            },
+          },
+        },
+        cacheTime: CacheTime.ResourceByIds,
+      })
+    );
+
+    const item = response.data?.items?.[0];
+    if (item?.inspectionResults?.involvedViews) {
+      return item.inspectionResults.involvedViews;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Failed to fetch CogniteTimeSeries views:', err);
+    return [];
+  }
 }
 
 

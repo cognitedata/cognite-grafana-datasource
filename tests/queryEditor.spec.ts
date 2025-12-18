@@ -266,23 +266,28 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
   // Click on CogniteTimeSeries tab
   await editorRow.getByText('CogniteTimeSeries').click();
 
+  // Test that the View dropdown is visible (single dropdown with views from container inspect API)
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  await expect(viewField).toBeVisible();
+
+  // Click on the View dropdown to see available options
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  
+  // Wait for view options to load from the container inspect API
+  await page.waitForTimeout(2000);
+  
+  // Check that at least one CogniteTimeSeries view option is available
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await expect(cogniteTimeSeriesOption.first()).toBeVisible({ timeout: 10000 });
+  
+  // Select the CogniteTimeSeries view
+  await cogniteTimeSeriesOption.first().click();
+
   // Test that search AsyncSelect is visible - use the input element with the specific id
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
   await expect(searchInput).toBeVisible();
-
-  // Test space selector (should already be set to cdf_cdm)
-  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
-  const spaceValue = spaceField.getByText('cdf_cdm');
-  await expect(spaceValue).toBeVisible();
-
-  // Test version input (should already be set to v1)
-  const versionInput = editorRow.locator('input[value="v1"]');
-  await expect(versionInput).toBeVisible();
-
-  // Test view selector (should be set to Time series)  
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewValue = viewField.getByText('Time series');
-  await expect(viewValue).toBeVisible();
 
   // Test aggregation selector (should be set to Average)
   const aggregationField = editorRow.locator('label:has-text("Aggregation")').locator('..');
@@ -317,11 +322,18 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   // Click on CogniteTimeSeries tab
   await editorRow.getByText('CogniteTimeSeries').click();
 
-  // Space and version should already be set to cdf_cdm and v1 by default
-  // Verify they are set correctly
-  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
-  await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
-  await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+  // Select a view from the View dropdown (views are fetched from container inspect API)
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  
+  // Wait for view options to load
+  await page.waitForTimeout(2000);
+  
+  // Select the CogniteTimeSeries view
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
 
   // Click on the search AsyncSelect and type '59.9139'
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
@@ -332,7 +344,6 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await waitForQueriesToFinish(page);
   
   // Look for the timeseries option in the dropdown
-  const option = selectors.components.Select.option;
   const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139/i }).first();
   await expect(tsOption).toBeVisible({ timeout: 10000 });
   
@@ -369,10 +380,18 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
   // Click on CogniteTimeSeries tab
   await editorRow.getByText('CogniteTimeSeries').click();
 
-  // Space and version should already be set to cdf_cdm and v1 by default
-  const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
-  await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
-  await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+  // Select a view from the View dropdown
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  
+  // Wait for view options to load
+  await page.waitForTimeout(2000);
+  
+  // Select the CogniteTimeSeries view
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
 
   // Search for a timeseries that has a unit (temperature)
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
@@ -383,7 +402,6 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
   await waitForQueriesToFinish(page);
   
   // Select the temperature timeseries
-  const option = selectors.components.Select.option;
   const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
   await expect(tsOption).toBeVisible({ timeout: 10000 });
   await tsOption.click();
@@ -438,6 +456,19 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
   // Click on CogniteTimeSeries tab
   await editorRow.getByText('CogniteTimeSeries').click();
 
+  // Select a view from the View dropdown
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  
+  // Wait for view options to load
+  await page.waitForTimeout(2000);
+  
+  // Select the CogniteTimeSeries view
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
+
   // Search for a timeseries that doesn't have a unit (clouds)
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
   await searchInput.click();
@@ -447,7 +478,6 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
   await waitForQueriesToFinish(page);
   
   // Select the clouds timeseries
-  const option = selectors.components.Select.option;
   const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.clouds/i }).first();
   await expect(tsOption).toBeVisible({ timeout: 10000 });
   await tsOption.click();
@@ -492,10 +522,18 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     // Click on CogniteTimeSeries tab
     await editorRow.getByText('CogniteTimeSeries').click();
 
-    // Space and version should already be set to cdf_cdm and v1 by default
-    const spaceField = editorRow.locator('label:has-text("Space")').locator('..');
-    await expect(spaceField.getByText('cdf_cdm')).toBeVisible();
-    await expect(editorRow.locator('input[value="v1"]')).toBeVisible();
+    // Select a view from the View dropdown
+    const viewField = editorRow.locator('label:has-text("View")').locator('..');
+    const viewDropdown = viewField.locator('input').first();
+    await viewDropdown.click();
+    
+    // Wait for view options to load
+    await page.waitForTimeout(2000);
+    
+    // Select the CogniteTimeSeries view
+    const option = selectors.components.Select.option;
+    const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+    await cogniteTimeSeriesOption.first().click();
 
     // Click on the search AsyncSelect and type the search term
     const searchInput = editorRow.locator(`input[id="cognite-timeseries-search-${queryLetter}"]`);
@@ -506,7 +544,6 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     await waitForQueriesToFinish(page);
     
     // Select first result from dropdown
-    const option = selectors.components.Select.option;
     const searchOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: new RegExp(searchTerm.replace('.', '\\.'), 'i') }).first();
     await expect(searchOption).toBeVisible({ timeout: 10000 });
     await searchOption.click();

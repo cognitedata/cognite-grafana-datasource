@@ -78,12 +78,14 @@ test.describe('Feature Flags - Tab Visibility', () => {
     const editorRow = panelEditPage.getQueryEditorRow("A");
 
     // Core data model tabs should be visible and clickable
-    await expect(editorRow.getByText('CogniteTimeSeries')).toBeVisible();
+    // Use getByRole('tab') to specifically target the tab, not the dropdown placeholder
+    const cogniteTimeSeriesTab = editorRow.getByRole('tab', { name: 'CogniteTimeSeries' });
+    await expect(cogniteTimeSeriesTab).toBeVisible();
     await expect(editorRow.getByText('Data Models')).toBeVisible();
 
     // Test that we can click on core tabs
-    await editorRow.getByText('CogniteTimeSeries').click();
-    await expect(editorRow.getByText('CogniteTimeSeries')).toHaveAttribute('aria-selected', 'true');
+    await cogniteTimeSeriesTab.click();
+    await expect(cogniteTimeSeriesTab).toHaveAttribute('aria-selected', 'true');
 
     // Legacy tabs should be hidden (not visible in tab bar)
     await expect(editorRow.getByText('Time series search')).not.toBeVisible();
