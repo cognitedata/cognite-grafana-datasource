@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, Input, InlineSwitch } from '@grafana/ui';
+import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError } from '../cdf/client';
-import { DMSSpace, DMSView, DMSInstance, DMSSearchRequest, CogniteUnit } from '../types/dms';
+import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError, fetchCogniteTimeSeriesViews } from '../cdf/client';
+import { DMSInstance, DMSSearchRequest, CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
 
@@ -36,8 +36,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   onQueryChange,
   connector,
 }) => {
-  const [spaces, setSpaces] = useState<SelectableValue[]>([]);
-  const [views, setViews] = useState<SelectableValue[]>([]);
+  const [viewOptions, setViewOptions] = useState<Array<SelectableValue<InvolvedView>>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [units, setUnits] = useState<CogniteUnit[]>([]);
@@ -54,37 +53,19 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     [cogniteTimeSeries.instanceId]
   );
 
-  const loadSpaces = useCallback(async () => {
+  const loadViews = useCallback(async () => {
     try {
       setLoading(true);
-      const spacesData = await fetchDMSSpaces(connector);
-      const spaceOptions = spacesData.map((space: DMSSpace) => ({
-        label: space.name || space.space,
-        value: space.space,
-        description: space.description,
+      const views = await fetchCogniteTimeSeriesViews(connector);
+      const options = views.map((view: InvolvedView) => ({
+        label: `${view.externalId} (${view.space}) ${view.version}`,
+        value: view,
+        description: `Space: ${view.space}, Version: ${view.version}`,
       }));
-      setSpaces(spaceOptions);
+      setViewOptions(options);
       setError(null);
     } catch (err) {
-      setError(`Failed to load spaces: ${stringifyError(err)}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [connector]);
-
-  const loadViews = useCallback(async (space: string) => {
-    try {
-      setLoading(true);
-      const viewsData = await fetchDMSViews(connector, space);
-      const viewOptions = viewsData.map((view: DMSView) => ({
-        label: view.name || view.externalId,
-        value: view.externalId,
-        description: view.description,
-      }));
-      setViews(viewOptions);
-      setError(null);
-    } catch (err) {
-      setError(`Failed to load views for space ${space}: ${stringifyError(err)}`);
+      setError(`Failed to load CogniteTimeSeries views: ${stringifyError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -135,14 +116,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   }, [connector, cogniteTimeSeries.space, cogniteTimeSeries.externalId, cogniteTimeSeries.version]);
 
   useEffect(() => {
-    loadSpaces();
-  }, [loadSpaces]);
-
-  useEffect(() => {
-    if (cogniteTimeSeries.space) {
-      loadViews(cogniteTimeSeries.space);
-    }
-  }, [cogniteTimeSeries.space, loadViews]);
+    loadViews();
+  }, [loadViews]);
 
   // Load available units
   useEffect(() => {
@@ -182,33 +157,15 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     fetchUnit();
   }, [connector, instanceIdKey, cogniteTimeSeries.instanceId]);
 
-  const handleSpaceChange = (selectedSpace: SelectableValue | null) => {
+  const handleViewChange = (selectedOption: SelectableValue<InvolvedView> | null) => {
+    const view = selectedOption?.value;
     onQueryChange({
       cogniteTimeSeries: {
         ...cogniteTimeSeries,
-        space: selectedSpace?.value || '',
-        externalId: '', // Reset external ID when space changes
-        instanceId: undefined, // Reset selected timeseries
-      },
-    });
-  };
-
-  const handleVersionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onQueryChange({
-      cogniteTimeSeries: {
-        ...cogniteTimeSeries,
-        version: event.target.value,
-        instanceId: undefined, // Reset selected timeseries when version changes
-      },
-    });
-  };
-
-  const handleExternalIdChange = (selectedView: SelectableValue | null) => {
-    onQueryChange({
-      cogniteTimeSeries: {
-        ...cogniteTimeSeries,
-        externalId: selectedView?.value || '',
-        instanceId: undefined, // Reset selected timeseries
+        space: view?.space || '',
+        externalId: view?.externalId || '',
+        version: view?.version || '',
+        instanceId: undefined, // Reset selected timeseries when view changes
       },
     });
   };
@@ -288,56 +245,36 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
 
+  // Find the currently selected view option
+  const selectedViewOption = useMemo(() => {
+    if (cogniteTimeSeries.space && cogniteTimeSeries.externalId && cogniteTimeSeries.version) {
+      return viewOptions.find(
+        (opt) =>
+          opt.value?.space === cogniteTimeSeries.space &&
+          opt.value?.externalId === cogniteTimeSeries.externalId &&
+          opt.value?.version === cogniteTimeSeries.version
+      );
+    }
+    return null;
+  }, [viewOptions, cogniteTimeSeries.space, cogniteTimeSeries.externalId, cogniteTimeSeries.version]);
+
   return (
     <div>
       <div className="gf-form-group">
         <InlineFieldRow>
           <InlineField
-            label="Space"
-            labelWidth={14}
-            tooltip="Select the space to search in"
-          >
-            <Select
-              options={spaces}
-              value={cogniteTimeSeries.space}
-              onChange={handleSpaceChange}
-              placeholder="Select space"
-              isClearable
-              isLoading={loading}
-              width={20}
-            />
-          </InlineField>
-        </InlineFieldRow>
-
-        <InlineFieldRow>
-          <InlineField
-            label="Version"
-            labelWidth={14}
-            tooltip="Version of the view"
-          >
-            <Input
-              value={cogniteTimeSeries.version}
-              onChange={handleVersionChange}
-              placeholder="v1"
-              width={20}
-            />
-          </InlineField>
-        </InlineFieldRow>
-
-        <InlineFieldRow>
-          <InlineField
             label="View"
             labelWidth={14}
-            tooltip="Select the view to search in"
+            tooltip="Select a CogniteTimeSeries view to search in"
           >
             <Select
-              options={views}
-              value={cogniteTimeSeries.externalId}
-              onChange={handleExternalIdChange}
-              placeholder="Select view"
+              options={viewOptions}
+              value={selectedViewOption}
+              onChange={handleViewChange}
+              placeholder="Select a CogniteTimeSeries view"
               isClearable
               isLoading={loading}
-              width={20}
+              width={40}
             />
           </InlineField>
         </InlineFieldRow>
@@ -349,7 +286,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             tooltip="Search for timeseries by name or description"
           >
             <AsyncSelect
-              key={`${cogniteTimeSeries.space}-${cogniteTimeSeries.version}-${cogniteTimeSeries.externalId}`}
+              key={`${cogniteTimeSeries.space}-${cogniteTimeSeries.externalId}-${cogniteTimeSeries.version}`}
               loadOptions={searchTimeseries}
               value={getCurrentTimeseriesValue()}
               onChange={handleTimeseriesSelection}
