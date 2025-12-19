@@ -99,6 +99,7 @@ export interface FlexibleDataModellingQuery {
   tsKeys: string[];
   labels?: string[];
   targets?: string[];
+  instanceIds?: Array<{ space: string; externalId: string }>;
 }
 
 export interface CogniteTimeSeries {

@@ -166,27 +166,61 @@ export class FlexibleDataModellingDatasource {
     try {
       let tsData = [];
       const res = getEdgesTableData(edges);
-      if (query.tsKeys.length) {
-        const labels = [];
-        const targets = _.map(
-          _.filter(
-            _.flatten(
-              _.map(edges, ({ node }) =>
-                _.filter(node, (value, key) => {
-                  const typename = '__typename';
-                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
-                    if (_.has(value, 'name')) {
-                      labels.push(value.name);
-                    }
-                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
-                  }
-                  return false;
-                })
-              )
-            )
-          ),
-          'externalId'
-        );
+      const labels = [];
+      const targets: string[] = [];
+      const instanceIds: Array<{ space: string; externalId: string }> = [];
+
+      _.forEach(edges, ({ node }) => {
+        // Check if the node itself is a numeric time series (type === 'numeric' at node level)
+        if (
+          _.has(node, 'type') &&
+          node.type === 'numeric' &&
+          _.has(node, 'space') &&
+          _.has(node, 'externalId') &&
+          node.space != null &&
+          node.externalId != null
+        ) {
+          if (_.has(node, 'name')) {
+            labels.push(node.name);
+          }
+          instanceIds.push({ space: node.space, externalId: node.externalId });
+        }
+
+        // Also check nested properties within node
+        _.forEach(node, (value, key) => {
+          const typename = '__typename';
+          // Check for __typename === 'TimeSeries' (legacy behavior - requires tsKeys)
+          if (
+            query.tsKeys.includes(key) &&
+            _.has(value, typename) &&
+            value[typename] === 'TimeSeries'
+          ) {
+            if (_.has(value, 'name')) {
+              labels.push(value.name);
+            }
+            if (_.has(value, 'externalId')) {
+              targets.push(value.externalId);
+            }
+          }
+          // Check for type === 'numeric' with space and externalId in nested properties
+          else if (
+            _.isObject(value) &&
+            _.has(value, 'type') &&
+            (value as any).type === 'numeric' &&
+            _.has(value, 'space') &&
+            _.has(value, 'externalId') &&
+            (value as any).space != null &&
+            (value as any).externalId != null
+          ) {
+            if (_.has(value, 'name')) {
+              labels.push((value as any).name);
+            }
+            instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
+          }
+        });
+      });
+
+      if (targets.length > 0 || instanceIds.length > 0) {
         const { data } = await this.timeseriesDatasource.query({
           ...options,
           targets: [
@@ -195,6 +229,7 @@ export class FlexibleDataModellingDatasource {
               flexibleDataModellingQuery: {
                 ...target.flexibleDataModellingQuery,
                 targets,
+                instanceIds,
                 labels,
               },
             },
@@ -212,27 +247,61 @@ export class FlexibleDataModellingDatasource {
     try {
       let tsData = [];
       const res = getItemsTableData(items);
-      if (query.tsKeys.length) {
-        const labels = [];
-        const targets = _.map(
-          _.filter(
-            _.flatten(
-              _.map(items, (item) =>
-                _.filter(item, (value, key) => {
-                  const typename = '__typename';
-                  if (_.has(value, typename) && value[typename] === 'TimeSeries') {
-                    if (_.has(value, 'name')) {
-                      labels.push(value.name);
-                    }
-                    return query.tsKeys.includes(key) && _.has(value, 'externalId');
-                  }
-                  return false;
-                })
-              )
-            )
-          ),
-          'externalId'
-        );
+      const labels = [];
+      const targets: string[] = [];
+      const instanceIds: Array<{ space: string; externalId: string }> = [];
+
+      _.forEach(items, (item) => {
+        // Check if the item itself is a numeric time series (type === 'numeric' at item level)
+        if (
+          _.has(item, 'type') &&
+          item.type === 'numeric' &&
+          _.has(item, 'space') &&
+          _.has(item, 'externalId') &&
+          item.space != null &&
+          item.externalId != null
+        ) {
+          if (_.has(item, 'name')) {
+            labels.push(item.name);
+          }
+          instanceIds.push({ space: item.space, externalId: item.externalId });
+        }
+
+        // Also check nested properties within item
+        _.forEach(item, (value, key) => {
+          const typename = '__typename';
+          // Check for __typename === 'TimeSeries' (legacy behavior - requires tsKeys)
+          if (
+            query.tsKeys.includes(key) &&
+            _.has(value, typename) &&
+            value[typename] === 'TimeSeries'
+          ) {
+            if (_.has(value, 'name')) {
+              labels.push(value.name);
+            }
+            if (_.has(value, 'externalId')) {
+              targets.push(value.externalId);
+            }
+          }
+          // Check for type === 'numeric' with space and externalId in nested properties
+          else if (
+            _.isObject(value) &&
+            _.has(value, 'type') &&
+            (value as any).type === 'numeric' &&
+            _.has(value, 'space') &&
+            _.has(value, 'externalId') &&
+            (value as any).space != null &&
+            (value as any).externalId != null
+          ) {
+            if (_.has(value, 'name')) {
+              labels.push((value as any).name);
+            }
+            instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
+          }
+        });
+      });
+
+      if (targets.length > 0 || instanceIds.length > 0) {
         const { data } = await this.timeseriesDatasource.query({
           ...options,
           targets: [
@@ -241,6 +310,7 @@ export class FlexibleDataModellingDatasource {
               flexibleDataModellingQuery: {
                 ...target.flexibleDataModellingQuery,
                 targets,
+                instanceIds,
                 labels,
               },
             },
