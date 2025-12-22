@@ -46,6 +46,7 @@ import {
   CogniteTargetObj,
   QueriesDataItem,
   DataQueryRequestType,
+  Container,
 } from '../types';
 import { toGranularityWithLowerBound, getRange } from '../utils';
 import { Connector } from '../connector';
@@ -622,45 +623,168 @@ export async function getTimeSeriesUnit(
   return undefined;
 }
 
-// Fetch views that implement the CogniteTimeSeries container
-export async function fetchCogniteTimeSeriesViews(
-  connector: Connector
-): Promise<InvolvedView[]> {
-  try {
-    const response = await retryOnRateLimit(() =>
-      connector.fetchData<{ data: ContainerInspectResponse }>({
-        method: HttpMethod.POST,
-        path: '/models/containers/inspect',
-        data: {
-          items: [
-            {
-              space: 'cdf_cdm',
-              externalId: 'CogniteTimeSeries',
-            },
-          ],
-          inspectionOperations: {
-            involvedViews: {
-              allVersions: true,
-            },
-            totalInvolvedViewCount: {
-              allVersions: true,
-              includeUnavailableViews: true,
-            },
-          },
-        },
-        cacheTime: CacheTime.ResourceByIds,
-      })
-    );
+// Streams API functions
+export interface Stream {
+  externalId: string;
+  name?: string;
+  description?: string;
+  settings?: {
+    template?: {
+      name: string;
+    };
+  };
+}
 
-    const item = response.data?.items?.[0];
-    if (item?.inspectionResults?.involvedViews) {
-      return item.inspectionResults.involvedViews;
+export interface StreamRecordsAggregateRequest {
+  lastUpdatedTime?: {
+    gt?: string | number;
+    lt?: string | number;
+  };
+  filter?: {
+    and?: any[];
+  };
+  aggregates?: {
+    [key: string]: any;
+  };
+}
+
+export interface StreamRecordsAggregateResponse {
+  aggregates: {
+    [key: string]: any;
+  };
+}
+
+export interface StreamRecordsFilterRequest {
+  lastUpdatedTime?: {
+    gt?: string | number;
+    lt?: string | number;
+  };
+  filter?: {
+    and?: any[];
+    or?: any[];
+    [key: string]: any;
+  };
+  sources?: Array<{
+    source: {
+      type: string;
+      space: string;
+      externalId: string;
+    };
+    properties: string[];
+  }>;
+  limit?: number;
+  sort?: Array<{
+    property: string[];
+    direction: 'ascending' | 'descending';
+  }>;
+}
+
+export interface StreamRecordsFilterResponse {
+  items: Array<{
+    [key: string]: any;
+  }>;
+}
+
+export function fetchStreams(
+  connector: Connector,
+  limit = 1000
+): Promise<Stream[]> {
+  return connector.fetchItems<Stream>({
+    method: HttpMethod.GET,
+    path: '/streams',
+    data: undefined,
+    params: { limit },
+    headers: { 'cdf-version': 'beta' },
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
+
+export function fetchStreamRecordsAggregate(
+  connector: Connector,
+  streamId: string,
+  aggregateRequest: StreamRecordsAggregateRequest
+): Promise<StreamRecordsAggregateResponse> {
+  return connector.fetchData<StreamRecordsAggregateResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/aggregate`,
+    data: aggregateRequest,
+    headers: { 'cdf-version': 'beta' },
+  });
+}
+
+export function fetchStreamRecordsFilter(
+  connector: Connector,
+  streamId: string,
+  filterRequest: StreamRecordsFilterRequest
+): Promise<StreamRecordsFilterResponse> {
+  return connector.fetchData<StreamRecordsFilterResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/filter`,
+    data: filterRequest,
+    headers: { 'cdf-version': 'beta' },
+  });
+}
+
+export function fetchStreamSpaces(
+  connector: Connector,
+  streamId: string,
+  timeRange?: { from?: string | number; to?: string | number }
+): Promise<string[]> {
+  // Use provided time range or fallback to a recent period
+  const fromTime = timeRange?.from || "${__from}";
+  const toTime = timeRange?.to || "${__to}";
+  
+  const spacesQuery: StreamRecordsAggregateRequest = {
+    lastUpdatedTime: {
+      gt: fromTime,
+      lt: toTime
+    },
+    aggregates: {
+      spaces: {
+        uniqueValues: {
+          property: ["space"],
+          size: "1000"
+        }
+      }
     }
+  };
+
+  return connector.fetchData<StreamRecordsAggregateResponse>({
+    method: HttpMethod.POST,
+    path: `/streams/${streamId}/records/aggregate`,
+    data: spacesQuery,
+    headers: { 'cdf-version': 'beta' },
+  }).then(response => {
+    // Extract spaces from uniqueValueBuckets
+    const actualData = (response as any)?.data || response;
+    const spacesAggregate = actualData?.aggregates?.spaces;
+    
+    if (spacesAggregate?.uniqueValueBuckets) {
+      return spacesAggregate.uniqueValueBuckets.map((bucket: any) => bucket.value).filter((value: any) => typeof value === 'string');
+    }
+    
     return [];
-  } catch (err) {
-    console.warn('Failed to fetch CogniteTimeSeries views:', err);
-    return [];
+  });
+}
+
+export function fetchContainers(
+  connector: Connector,
+  space?: string,
+  limit = 1000
+): Promise<Container[]> {
+  const params: any = { limit };
+  if (space) {
+    params.space = space;
   }
+
+  return connector.fetchItems<Container>({
+    method: HttpMethod.GET,
+    path: '/models/containers',
+    data: undefined,
+    params,
+    cacheTime: CacheTime.ResourceByIds,
+  });
+}
 }
 
 
