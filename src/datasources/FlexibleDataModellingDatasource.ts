@@ -51,8 +51,75 @@ const getEdgesTableData = (edges): TableData => {
   return convertItemsToTable(td, _.uniq(columns), 'edges');
 };
 const getFirstNameValue = (arr) => arr?.name?.value;
+
+interface TimeseriesIds {
+  targets: string[];
+  instanceIds: Array<{ space: string; externalId: string }>;
+  labels: string[];
+}
+
 export class FlexibleDataModellingDatasource {
   constructor(private connector: Connector, private timeseriesDatasource: TimeseriesDatasource) {}
+
+  /**
+   * Extracts time series identifiers from FDM response items.
+   * Handles both legacy __typename === 'TimeSeries' and new type === 'numeric' detection.
+   */
+  private extractTimeseriesIds(
+    dataItems: any[],
+    query: FlexibleDataModellingQuery
+  ): TimeseriesIds {
+    const labels: string[] = [];
+    const targets: string[] = [];
+    const instanceIds: Array<{ space: string; externalId: string }> = [];
+
+    const processItem = (item: any) => {
+      // Check if the item itself is a numeric time series
+      if (
+        item?.type === 'numeric' &&
+        item.space != null &&
+        item.externalId != null
+      ) {
+        if (item.name) {
+          labels.push(item.name);
+        }
+        instanceIds.push({ space: item.space, externalId: item.externalId });
+      }
+
+      // Also check nested properties within item
+      _.forEach(item, (value, key) => {
+        // Legacy behavior for __typename === 'TimeSeries'
+        if (
+          query.tsKeys.includes(key) &&
+          _.isObject(value) &&
+          (value as any).__typename === 'TimeSeries'
+        ) {
+          if ((value as any).name) {
+            labels.push((value as any).name);
+          }
+          if ((value as any).externalId) {
+            targets.push((value as any).externalId);
+          }
+        }
+        // New detection for nested numeric time series
+        else if (
+          _.isObject(value) &&
+          (value as any).type === 'numeric' &&
+          (value as any).space != null &&
+          (value as any).externalId != null
+        ) {
+          if ((value as any).name) {
+            labels.push((value as any).name);
+          }
+          instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
+        }
+      });
+    };
+
+    _.forEach(dataItems, processItem);
+
+    return { targets, instanceIds, labels };
+  }
 
   async listFlexibleDataModelling(refId: string): Promise<
     FDMQueryResponse<{
@@ -166,59 +233,8 @@ export class FlexibleDataModellingDatasource {
     try {
       let tsData = [];
       const res = getEdgesTableData(edges);
-      const labels = [];
-      const targets: string[] = [];
-      const instanceIds: Array<{ space: string; externalId: string }> = [];
-
-      _.forEach(edges, ({ node }) => {
-        // Check if the node itself is a numeric time series (type === 'numeric' at node level)
-        if (
-          _.has(node, 'type') &&
-          node.type === 'numeric' &&
-          _.has(node, 'space') &&
-          _.has(node, 'externalId') &&
-          node.space != null &&
-          node.externalId != null
-        ) {
-          if (_.has(node, 'name')) {
-            labels.push(node.name);
-          }
-          instanceIds.push({ space: node.space, externalId: node.externalId });
-        }
-
-        // Also check nested properties within node
-        _.forEach(node, (value, key) => {
-          const typename = '__typename';
-          // Check for __typename === 'TimeSeries' (legacy behavior - requires tsKeys)
-          if (
-            query.tsKeys.includes(key) &&
-            _.has(value, typename) &&
-            value[typename] === 'TimeSeries'
-          ) {
-            if (_.has(value, 'name')) {
-              labels.push(value.name);
-            }
-            if (_.has(value, 'externalId')) {
-              targets.push(value.externalId);
-            }
-          }
-          // Check for type === 'numeric' with space and externalId in nested properties
-          else if (
-            _.isObject(value) &&
-            _.has(value, 'type') &&
-            (value as any).type === 'numeric' &&
-            _.has(value, 'space') &&
-            _.has(value, 'externalId') &&
-            (value as any).space != null &&
-            (value as any).externalId != null
-          ) {
-            if (_.has(value, 'name')) {
-              labels.push((value as any).name);
-            }
-            instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
-          }
-        });
-      });
+      const nodes = _.map(edges, 'node');
+      const { targets, instanceIds, labels } = this.extractTimeseriesIds(nodes, query);
 
       if (targets.length > 0 || instanceIds.length > 0) {
         const { data } = await this.timeseriesDatasource.query({
@@ -247,59 +263,7 @@ export class FlexibleDataModellingDatasource {
     try {
       let tsData = [];
       const res = getItemsTableData(items);
-      const labels = [];
-      const targets: string[] = [];
-      const instanceIds: Array<{ space: string; externalId: string }> = [];
-
-      _.forEach(items, (item) => {
-        // Check if the item itself is a numeric time series (type === 'numeric' at item level)
-        if (
-          _.has(item, 'type') &&
-          item.type === 'numeric' &&
-          _.has(item, 'space') &&
-          _.has(item, 'externalId') &&
-          item.space != null &&
-          item.externalId != null
-        ) {
-          if (_.has(item, 'name')) {
-            labels.push(item.name);
-          }
-          instanceIds.push({ space: item.space, externalId: item.externalId });
-        }
-
-        // Also check nested properties within item
-        _.forEach(item, (value, key) => {
-          const typename = '__typename';
-          // Check for __typename === 'TimeSeries' (legacy behavior - requires tsKeys)
-          if (
-            query.tsKeys.includes(key) &&
-            _.has(value, typename) &&
-            value[typename] === 'TimeSeries'
-          ) {
-            if (_.has(value, 'name')) {
-              labels.push(value.name);
-            }
-            if (_.has(value, 'externalId')) {
-              targets.push(value.externalId);
-            }
-          }
-          // Check for type === 'numeric' with space and externalId in nested properties
-          else if (
-            _.isObject(value) &&
-            _.has(value, 'type') &&
-            (value as any).type === 'numeric' &&
-            _.has(value, 'space') &&
-            _.has(value, 'externalId') &&
-            (value as any).space != null &&
-            (value as any).externalId != null
-          ) {
-            if (_.has(value, 'name')) {
-              labels.push((value as any).name);
-            }
-            instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
-          }
-        });
-      });
+      const { targets, instanceIds, labels } = this.extractTimeseriesIds(items, query);
 
       if (targets.length > 0 || instanceIds.length > 0) {
         const { data } = await this.timeseriesDatasource.query({
