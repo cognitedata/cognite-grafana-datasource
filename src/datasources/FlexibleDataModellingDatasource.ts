@@ -52,10 +52,13 @@ const getEdgesTableData = (edges): TableData => {
 };
 const getFirstNameValue = (arr) => arr?.name?.value;
 
-interface TimeseriesIds {
-  targets: string[];
-  instanceIds: Array<{ space: string; externalId: string }>;
-  labels: string[];
+/**
+ * Represents a time series item with its identifier and label
+ */
+interface TimeseriesItem {
+  type: 'target' | 'instanceId';
+  value: string | { space: string; externalId: string };
+  label: string;
 }
 
 export class FlexibleDataModellingDatasource {
@@ -65,25 +68,17 @@ export class FlexibleDataModellingDatasource {
    * Extracts time series identifiers from FDM response items.
    * Handles both legacy __typename === 'TimeSeries' and new type === 'numeric' detection.
    */
-  private extractTimeseriesIds(
-    dataItems: any[],
-    query: FlexibleDataModellingQuery
-  ): TimeseriesIds {
-    const labels: string[] = [];
-    const targets: string[] = [];
-    const instanceIds: Array<{ space: string; externalId: string }> = [];
+  private extractTimeseriesItems(dataItems: any[], query: FlexibleDataModellingQuery): TimeseriesItem[] {
+    const items: TimeseriesItem[] = [];
 
-    const processItem = (item: any) => {
+    _.forEach(dataItems, (item) => {
       // Check if the item itself is a numeric time series
-      if (
-        item?.type === 'numeric' &&
-        item.space != null &&
-        item.externalId != null
-      ) {
-        if (item.name) {
-          labels.push(item.name);
-        }
-        instanceIds.push({ space: item.space, externalId: item.externalId });
+      if (item?.type === 'numeric' && item.space != null && item.externalId != null) {
+        items.push({
+          type: 'instanceId',
+          value: { space: item.space, externalId: item.externalId },
+          label: item.name || '',
+        });
       }
 
       // Also check nested properties within item
@@ -92,14 +87,14 @@ export class FlexibleDataModellingDatasource {
         if (
           query.tsKeys.includes(key) &&
           _.isObject(value) &&
-          (value as any).__typename === 'TimeSeries'
+          (value as any).__typename === 'TimeSeries' &&
+          (value as any).externalId
         ) {
-          if ((value as any).name) {
-            labels.push((value as any).name);
-          }
-          if ((value as any).externalId) {
-            targets.push((value as any).externalId);
-          }
+          items.push({
+            type: 'target',
+            value: (value as any).externalId,
+            label: (value as any).name || '',
+          });
         }
         // New detection for nested numeric time series
         else if (
@@ -108,17 +103,59 @@ export class FlexibleDataModellingDatasource {
           (value as any).space != null &&
           (value as any).externalId != null
         ) {
-          if ((value as any).name) {
-            labels.push((value as any).name);
-          }
-          instanceIds.push({ space: (value as any).space, externalId: (value as any).externalId });
+          items.push({
+            type: 'instanceId',
+            value: { space: (value as any).space, externalId: (value as any).externalId },
+            label: (value as any).name || '',
+          });
         }
       });
-    };
+    });
 
-    _.forEach(dataItems, processItem);
+    return items;
+  }
 
-    return { targets, instanceIds, labels };
+  /**
+   * Queries time series datapoints, one request per time series.
+   * Each time series gets its own request to ensure sufficient datapoints
+   * and unique refIds to prevent request cancellation.
+   */
+  private async queryTimeseriesItems(
+    items: TimeseriesItem[],
+    query: FlexibleDataModellingQuery,
+    options: any,
+    target: any
+  ): Promise<any[]> {
+    if (items.length === 0) {
+      return [];
+    }
+
+    // Query each time series individually with unique refIds
+    const queryPromises = items.map((item, index) => {
+      const targets = item.type === 'target' ? [item.value as string] : [];
+      const instanceIds = item.type === 'instanceId' 
+        ? [item.value as { space: string; externalId: string }] 
+        : [];
+
+      return this.timeseriesDatasource.query({
+        ...options,
+        targets: [
+          {
+            ...target,
+            refId: `${target.refId}_fdm_${index}`,
+            flexibleDataModellingQuery: {
+              ...query,
+              targets,
+              instanceIds,
+              labels: [item.label],
+            },
+          },
+        ],
+      });
+    });
+
+    const results = await Promise.all(queryPromises);
+    return _.flatten(results.map((r) => r.data));
   }
 
   async listFlexibleDataModelling(refId: string): Promise<
@@ -231,57 +268,22 @@ export class FlexibleDataModellingDatasource {
   }
   async postQueryEdges(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
     try {
-      let tsData = [];
       const res = getEdgesTableData(edges);
       const nodes = _.map(edges, 'node');
-      const { targets, instanceIds, labels } = this.extractTimeseriesIds(nodes, query);
-
-      if (targets.length > 0 || instanceIds.length > 0) {
-        const { data } = await this.timeseriesDatasource.query({
-          ...options,
-          targets: [
-            {
-              ...target,
-              flexibleDataModellingQuery: {
-                ...target.flexibleDataModellingQuery,
-                targets,
-                instanceIds,
-                labels,
-              },
-            },
-          ],
-        });
-        tsData = data;
-      }
+      const tsItems = this.extractTimeseriesItems(nodes, query);
+      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target);
       return _.concat(res, tsData);
     } catch (error) {
       handleError(error, target.refId);
       return [];
     }
   }
+
   async postQueryItems(items, query, options, target) {
     try {
-      let tsData = [];
       const res = getItemsTableData(items);
-      const { targets, instanceIds, labels } = this.extractTimeseriesIds(items, query);
-
-      if (targets.length > 0 || instanceIds.length > 0) {
-        const { data } = await this.timeseriesDatasource.query({
-          ...options,
-          targets: [
-            {
-              ...target,
-              flexibleDataModellingQuery: {
-                ...target.flexibleDataModellingQuery,
-                targets,
-                instanceIds,
-                labels,
-              },
-            },
-          ],
-        });
-        tsData = data;
-      }
+      const tsItems = this.extractTimeseriesItems(items, query);
+      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target);
       return _.concat(res, tsData);
     } catch (error) {
       handleError(error, target.refId);

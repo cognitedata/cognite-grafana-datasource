@@ -83,6 +83,21 @@ test('Data Modeling panel with GraphQL CogniteTimeSeries rendered OK', async ({ 
   // Set a larger viewport to ensure all panels are visible
   await page.setViewportSize({ width: 1920, height: 1080 });
   
+  // Track datapoints API responses
+  const datapointsResponses: any[] = [];
+  
+  page.on('response', async (response) => {
+    const url = response.url();
+    if (url.includes('/timeseries/data/list') && response.status() === 200) {
+      try {
+        const json = await response.json();
+        datapointsResponses.push(json);
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+    }
+  });
+
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
   await gotoDashboardPage(dashboard);
 
@@ -93,7 +108,8 @@ test('Data Modeling panel with GraphQL CogniteTimeSeries rendered OK', async ({ 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   
   // Wait for the panel to load and render data
-  await page.waitForTimeout(5000);
+  // Need time for multiple parallel requests to complete
+  await page.waitForTimeout(15000);
 
   // The Data Modeling panel uses GraphQL to query CogniteTimeSeries
   // and should display time series with names from the response
@@ -103,7 +119,22 @@ test('Data Modeling panel with GraphQL CogniteTimeSeries rendered OK', async ({ 
   // Wait for at least one legend item to appear (indicating data was fetched)
   await expect(legendButtons.first()).toBeVisible({ timeout: 30000 });
   
-  // Verify we have multiple time series displayed
-  const count = await legendButtons.count();
-  expect(count).toBeGreaterThan(0);
+  // Verify we have multiple time series displayed in the legend
+  // The GraphQL query returns 16 time series from both locations
+  const legendCount = await legendButtons.count();
+  expect(legendCount).toBeGreaterThanOrEqual(10);
+  
+  // Verify that datapoints API was called for multiple time series
+  expect(datapointsResponses.length).toBeGreaterThanOrEqual(10);
+  
+  // Check that at least one response has items with datapoints
+  const hasDatapoints = datapointsResponses.some((response) => {
+    const items = response?.items || [];
+    return items.some((item: any) => {
+      const datapoints = item?.datapoints || [];
+      return datapoints.length > 0;
+    });
+  });
+  
+  expect(hasDatapoints).toBe(true);
 });
