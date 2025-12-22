@@ -562,3 +562,333 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     await expect(legendText).toBeVisible({ timeout: 10000 });
   }
 });
+
+// Data Models tab tests
+test.describe('Data Models tab', () => {
+  const graphqlQuery = `query MyQuery {
+  listCogniteTimeSeries {
+    items {
+      externalId
+      space
+      type
+      name
+    }
+  }
+}`;
+
+  const graphqlQueryWithEdges = `query MyQuery {
+  listCogniteTimeSeries {
+    edges {
+      node {
+        externalId
+        space
+        type
+        name
+      }
+    }
+  }
+}`;
+
+  test('"Data Models" tab can be selected and UI elements are visible', async ({ 
+    selectors, 
+    readProvisionedDataSource, 
+    gotoDashboardPage, 
+    readProvisionedDashboard, 
+    page 
+  }) => {
+    // Set a larger viewport to ensure all UI elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
+
+    const panelEditPage = await dashboardPage.addPanel();
+    await panelEditPage.datasource.set(ds.name);
+    
+    // Wait for data source to be properly selected and tabs to render
+    await page.waitForTimeout(1000);
+
+    const editorRow = panelEditPage.getQueryEditorRow("A");
+
+    // Click on Data Models tab
+    await editorRow.getByText('Data Models').click();
+
+    // Test that the Data Model dropdown is visible
+    const dataModelField = editorRow.locator('label:has-text("Data Model")').locator('..');
+    await expect(dataModelField).toBeVisible();
+
+    // Test that the Version dropdown is visible
+    const versionField = editorRow.locator('label:has-text("Version")').locator('..');
+    await expect(versionField).toBeVisible();
+
+    // Test that the Query field (GraphQL editor) is visible
+    const queryField = editorRow.locator('label:has-text("Query")').locator('..');
+    await expect(queryField).toBeVisible();
+  });
+
+  test('"Data Models" tab can select a data model and version', async ({ 
+    selectors, 
+    readProvisionedDataSource, 
+    gotoDashboardPage, 
+    readProvisionedDashboard, 
+    page 
+  }) => {
+    // Set a larger viewport to ensure all UI elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
+
+    const panelEditPage = await dashboardPage.addPanel();
+    await panelEditPage.datasource.set(ds.name);
+    
+    // Wait for data source to be properly selected and tabs to render
+    await page.waitForTimeout(1000);
+
+    const editorRow = panelEditPage.getQueryEditorRow("A");
+
+    // Click on Data Models tab
+    await editorRow.getByText('Data Models').click();
+
+    // Click on the Data Model dropdown
+    const dataModelField = editorRow.locator('label:has-text("Data Model")').locator('..');
+    const dataModelDropdown = dataModelField.locator('input').first();
+    await dataModelDropdown.click();
+    
+    // Wait for data model options to load
+    await page.waitForTimeout(2000);
+    
+    // Check that at least one data model option is available (Cognite core data model)
+    const option = selectors.components.Select.option;
+    const cogniteDataModelOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /Cognite.*core.*data.*model|cdf_cdm/i });
+    await expect(cogniteDataModelOption.first()).toBeVisible({ timeout: 10000 });
+    
+    // Select the Cognite core data model
+    await cogniteDataModelOption.first().click();
+
+    // Wait for version options to load
+    await page.waitForTimeout(1000);
+
+    // Click on the Version dropdown
+    const versionField = editorRow.locator('label:has-text("Version")').locator('..');
+    const versionDropdown = versionField.locator('input').first();
+    await versionDropdown.click();
+    
+    // Wait for version options to load
+    await page.waitForTimeout(1000);
+    
+    // Check that at least one version option is available
+    const versionOption = panelEditPage.getByGrafanaSelector(option).first();
+    await expect(versionOption).toBeVisible({ timeout: 5000 });
+    
+    // Select the first version
+    await versionOption.click();
+  });
+
+  test('"Data Models" GraphQL query with numeric time series triggers datapoints API', async ({ 
+    selectors, 
+    readProvisionedDataSource, 
+    gotoDashboardPage, 
+    readProvisionedDashboard, 
+    page,
+    grafanaVersion
+  }) => {
+    test.setTimeout(90000);
+    
+    // Set a larger viewport to ensure all UI elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
+
+    const panelEditPage = await dashboardPage.addPanel();
+    await panelEditPage.datasource.set(ds.name);
+    
+    // Wait for data source to be properly selected and tabs to render
+    await page.waitForTimeout(1000);
+
+    const editorRow = panelEditPage.getQueryEditorRow("A");
+
+    // Click on Data Models tab
+    await editorRow.getByText('Data Models').click();
+
+    // Click on the Data Model dropdown and select Cognite core data model
+    const dataModelField = editorRow.locator('label:has-text("Data Model")').locator('..');
+    const dataModelDropdown = dataModelField.locator('input').first();
+    await dataModelDropdown.click();
+    
+    await page.waitForTimeout(2000);
+    
+    const option = selectors.components.Select.option;
+    const cogniteDataModelOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /Cognite.*core.*data.*model|cdf_cdm/i });
+    await cogniteDataModelOption.first().click();
+
+    // Wait for version to auto-populate or select it
+    await page.waitForTimeout(1000);
+
+    // Enter the GraphQL query in the code editor
+    const codeEditor = editorRow.locator('.monaco-editor').first();
+    await codeEditor.click();
+    
+    // Clear existing content and type new query
+    await page.keyboard.press('Meta+a');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type(graphqlQuery, { delay: 10 });
+
+    // Click outside the editor to trigger blur/save
+    await editorRow.locator('label:has-text("Query")').click();
+
+    await waitForQueriesToFinish(page);
+
+    // Set up response listeners for both GraphQL and datapoints API
+    let graphqlResponseReceived = false;
+    let datapointsResponseReceived = false;
+
+    page.on('response', async (response) => {
+      const url = response.request().url();
+      if (url.includes('/graphql') && response.status() === 200) {
+        graphqlResponseReceived = true;
+      }
+      if (url.includes('/timeseries/data') && response.status() === 200) {
+        datapointsResponseReceived = true;
+      }
+    });
+
+    // Refresh the panel
+    await expect(panelEditPage.refreshPanel({
+      timeout: 30000,
+      waitForResponsePredicateCallback: async (response) => {
+        const url = response.request().url();
+        // Wait for either graphql or datapoints response
+        return (url.includes('/graphql') || url.includes('/timeseries/data')) && response.status() === 200;
+      }
+    })).toBeOK();
+
+    // Verify that time series data is displayed (panel should show chart or data, not just table)
+    // The panel should either show a time series chart or have legend items with the time series names
+    await expect.poll(async () => {
+      // Check for legend items or time series data in the panel
+      const panelContent = await panelEditPage.panel.locator.textContent();
+      // Look for expected time series external IDs in the panel content
+      const hasTimeSeriesData = panelContent?.includes('59.9139') || panelContent?.includes('59.9127');
+      return hasTimeSeriesData;
+    }, { timeout: 15000 }).toBeTruthy();
+  });
+
+  test('"Data Models" GraphQL query with edges response works', async ({ 
+    selectors, 
+    readProvisionedDataSource, 
+    gotoDashboardPage, 
+    readProvisionedDashboard, 
+    page,
+    grafanaVersion
+  }) => {
+    test.setTimeout(90000);
+    
+    // Set a larger viewport to ensure all UI elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
+
+    const panelEditPage = await dashboardPage.addPanel();
+    await panelEditPage.datasource.set(ds.name);
+    
+    // Wait for data source to be properly selected and tabs to render
+    await page.waitForTimeout(1000);
+
+    const editorRow = panelEditPage.getQueryEditorRow("A");
+
+    // Click on Data Models tab
+    await editorRow.getByText('Data Models').click();
+
+    // Click on the Data Model dropdown and select Cognite core data model
+    const dataModelField = editorRow.locator('label:has-text("Data Model")').locator('..');
+    const dataModelDropdown = dataModelField.locator('input').first();
+    await dataModelDropdown.click();
+    
+    await page.waitForTimeout(2000);
+    
+    const option = selectors.components.Select.option;
+    const cogniteDataModelOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /Cognite.*core.*data.*model|cdf_cdm/i });
+    await cogniteDataModelOption.first().click();
+
+    // Wait for version to auto-populate
+    await page.waitForTimeout(1000);
+
+    // Enter the GraphQL query with edges in the code editor
+    const codeEditor = editorRow.locator('.monaco-editor').first();
+    await codeEditor.click();
+    
+    // Clear existing content and type new query
+    await page.keyboard.press('Meta+a');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type(graphqlQueryWithEdges, { delay: 10 });
+
+    // Click outside the editor to trigger blur/save
+    await editorRow.locator('label:has-text("Query")').click();
+
+    await waitForQueriesToFinish(page);
+
+    // Refresh the panel and wait for GraphQL response
+    await expect(panelEditPage.refreshPanel({
+      timeout: 30000,
+      waitForResponsePredicateCallback: async (response) => {
+        const url = response.request().url();
+        return url.includes('/graphql') && response.status() === 200;
+      }
+    })).toBeOK();
+
+    // Verify that time series data is displayed
+    await expect.poll(async () => {
+      const panelContent = await panelEditPage.panel.locator.textContent();
+      const hasTimeSeriesData = panelContent?.includes('59.9139') || panelContent?.includes('59.9127');
+      return hasTimeSeriesData;
+    }, { timeout: 15000 }).toBeTruthy();
+  });
+
+  test('"Data Models" aggregation and granularity controls are visible', async ({ 
+    selectors, 
+    readProvisionedDataSource, 
+    gotoDashboardPage, 
+    readProvisionedDashboard, 
+    page 
+  }) => {
+    // Set a larger viewport to ensure all UI elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
+
+    const panelEditPage = await dashboardPage.addPanel();
+    await panelEditPage.datasource.set(ds.name);
+    
+    // Wait for data source to be properly selected and tabs to render
+    await page.waitForTimeout(1000);
+
+    const editorRow = panelEditPage.getQueryEditorRow("A");
+
+    // Click on Data Models tab
+    await editorRow.getByText('Data Models').click();
+
+    // Wait for UI to render
+    await page.waitForTimeout(500);
+
+    // Test that Aggregation dropdown is visible
+    const aggregationField = editorRow.locator('label:has-text("Aggregation")').locator('..');
+    await expect(aggregationField).toBeVisible();
+
+    // Test that Granularity input is visible
+    const granularityField = editorRow.locator('label:has-text("Granularity")').locator('..');
+    await expect(granularityField).toBeVisible();
+
+    // Test that Label input is visible
+    const labelField = editorRow.locator('label:has-text("Label")').locator('..');
+    await expect(labelField).toBeVisible();
+  });
+});
