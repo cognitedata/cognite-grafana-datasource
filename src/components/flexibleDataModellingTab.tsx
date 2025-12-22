@@ -162,7 +162,9 @@ export const FlexibleDataModellingTab = (
           }}
         />
       </Field>
-      <CommonEditors {...{ onQueryChange, query, visible: true }} />
+      {flexibleDataModellingQuery.tsKeys?.length > 0 && (
+        <CommonEditors {...{ onQueryChange, query, visible: true }} />
+      )}
     </>
   );
 };
