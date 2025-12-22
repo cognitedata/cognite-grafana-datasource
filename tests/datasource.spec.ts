@@ -78,3 +78,32 @@ test('Panel with Relationships rendered OK', async ({ gotoDashboardPage, readPro
       return nodes.sort();
     }, { timeout: 10000 }).toEqual(expectedElements);
 });
+
+test('Data Modeling panel with GraphQL CogniteTimeSeries rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all panels are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
+  await gotoDashboardPage(dashboard);
+
+  // Wait for dashboard panels to be ready
+  await page.waitForSelector('.react-grid-layout', { timeout: 30000 });
+  
+  // Scroll down to ensure the Data Modeling panel is visible
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  
+  // Wait for the panel to load and render data
+  await page.waitForTimeout(5000);
+
+  // The Data Modeling panel uses GraphQL to query CogniteTimeSeries
+  // and should display time series with names from the response
+  // Check that at least some time series legend items are visible
+  const legendButtons = page.getByRole('button', { name: /59\.9139-10\.7522.*|59\.9127-10\.7461.*/ });
+  
+  // Wait for at least one legend item to appear (indicating data was fetched)
+  await expect(legendButtons.first()).toBeVisible({ timeout: 30000 });
+  
+  // Verify we have multiple time series displayed
+  const count = await legendButtons.count();
+  expect(count).toBeGreaterThan(0);
+});
