@@ -21,6 +21,8 @@ import {
   DMSListRequest,
   DMSListResponse,
   CogniteUnit,
+  InvolvedView,
+  ContainerInspectResponse,
 } from '../types/dms';
 import {
   Tab,
@@ -782,6 +784,7 @@ export function fetchContainers(
     params,
     cacheTime: CacheTime.ResourceByIds,
   });
+}
 }
 
 

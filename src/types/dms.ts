@@ -107,3 +107,23 @@ export interface CogniteUnit {
   source?: string;
   sourceReference?: string;
 }
+
+// Container inspect API types
+export interface InvolvedView {
+  space: string;
+  externalId: string;
+  version: string;
+}
+
+export interface ContainerInspectResponse {
+  items: Array<{
+    space: string;
+    externalId: string;
+    inspectionResults: {
+      involvedViews: InvolvedView[];
+      totalInvolvedViewCount: {
+        allVersions: number;
+      };
+    };
+  }>;
+}
