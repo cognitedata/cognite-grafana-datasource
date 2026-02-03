@@ -127,3 +127,23 @@ export interface ContainerInspectResponse {
     };
   }>;
 }
+
+// CogniteActivity interface based on Core Data Model
+export interface CogniteActivity {
+  space: string;
+  externalId: string;
+  version?: number;
+  lastUpdatedTime?: number;
+  createdTime?: number;
+  name?: string;
+  description?: string;
+  // Actual time fields
+  startTime?: number;
+  endTime?: number;
+  // Scheduled time fields
+  scheduledStartTime?: number;
+  scheduledEndTime?: number;
+  // Additional metadata
+  type?: string;
+  [key: string]: any; // Allow additional properties from DMS
+}

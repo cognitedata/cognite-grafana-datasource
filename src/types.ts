@@ -114,6 +114,15 @@ export interface CogniteTimeSeries {
   targetUnitSystem?: string;
 }
 
+export interface CogniteActivityQuery {
+  enabled: boolean;
+  space: string;
+  version: string;
+  externalId: string;
+  useScheduledTime: boolean; // false = actual time (startTime/endTime), true = scheduled time
+  searchQuery?: string;
+}
+
 export const defaultTemplateQuery: TemplateQuery = {
   groupExternalId: undefined,
   version: undefined,
@@ -160,6 +169,14 @@ export const defaultCogniteTimeSeries: CogniteTimeSeries = {
   instanceId: undefined,
 };
 
+export const defaultCogniteActivityQuery: CogniteActivityQuery = {
+  enabled: false,
+  space: 'cdf_cdm',
+  version: 'v1',
+  externalId: 'CogniteActivity',
+  useScheduledTime: false,
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -175,6 +192,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   extractionPipelinesQuery: defaultExtractionPipelinesQuery,
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
   cogniteTimeSeries: defaultCogniteTimeSeries,
+  cogniteActivityQuery: defaultCogniteActivityQuery,
 };
 
 /**
@@ -306,6 +324,7 @@ export interface CogniteQueryBase extends DataQuery {
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
   cogniteTimeSeries: CogniteTimeSeries;
+  cogniteActivityQuery: CogniteActivityQuery;
 }
 
 export type TemplateQuery = {

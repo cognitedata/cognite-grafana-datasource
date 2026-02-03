@@ -38,6 +38,7 @@ import {
   TimeseriesDatasource,
   EventsDatasource,
   ExtractionPipelinesDatasource,
+  ActivityDatasource,
 } from './datasources';
 import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
 import { lastValueFrom, Observable, from, map, of } from 'rxjs';
@@ -62,6 +63,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   extractionPipelinesDatasource: ExtractionPipelinesDatasource;
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
+  activityDatasource: ActivityDatasource;
 
   constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
     super(instanceSettings);
@@ -131,6 +133,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
+    this.activityDatasource = new ActivityDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
     this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(this.connector);
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
@@ -172,6 +175,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       relationshipsTargets,
       extractionPipelinesTargets,
       flexibleDataModellingTargets,
+      activityTargets,
     } = groupTargets(queryTargets);
 
     let observables: Array<Observable<DataQueryResponse>> = [];
@@ -243,6 +247,16 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           })
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(flexibleDataModellingObservable);
+      }
+
+      if (activityTargets.length) {
+        const activityObservable = from(
+          this.activityDatasource.query({
+            ...options,
+            targets: activityTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(activityObservable);
       }
     }
 
@@ -652,12 +666,19 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
 
 function groupTargets(targets: CogniteQuery[]) {
   const groupedByTab = _.groupBy(targets, (target) => target.tab ?? (isAnnotationTarget(target) ? Tab.Event : Tab.Timeseries));
+  
+  // Filter targets that have activity overlay enabled
+  const activityTargets = targets.filter(
+    (target) => target.cogniteActivityQuery?.enabled && target.tab === Tab.CogniteTimeSeriesSearch
+  );
+  
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
     relationshipsTargets: groupedByTab[Tab.Relationships] ?? [],
     extractionPipelinesTargets: groupedByTab[Tab.ExtractionPipelines] ?? [],
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
+    activityTargets,
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),

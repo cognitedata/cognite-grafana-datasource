@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError, fetchCogniteTimeSeriesViews } from '../cdf/client';
+import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
 import { DMSInstance, DMSSearchRequest, CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
@@ -42,8 +42,12 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [units, setUnits] = useState<CogniteUnit[]>([]);
   const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
   const [loadingUnits, setLoadingUnits] = useState(false);
+  
+  // Activity overlay state
+  const [activityViewOptions, setActivityViewOptions] = useState<Array<SelectableValue<InvolvedView>>>([]);
+  const [loadingActivityViews, setLoadingActivityViews] = useState(false);
 
-  const { cogniteTimeSeries } = query;
+  const { cogniteTimeSeries, cogniteActivityQuery } = query;
 
   // Create a stable key for instanceId to trigger useEffect
   const instanceIdKey = useMemo(
@@ -118,6 +122,30 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   useEffect(() => {
     loadViews();
   }, [loadViews]);
+
+  // Load activity views
+  const loadActivityViews = useCallback(async () => {
+    try {
+      setLoadingActivityViews(true);
+      const views = await fetchCogniteActivityViews(connector);
+      const options = views.map((view: InvolvedView) => ({
+        label: `${view.externalId} (${view.space}) ${view.version}`,
+        value: view,
+        description: `Space: ${view.space}, Version: ${view.version}`,
+      }));
+      setActivityViewOptions(options);
+    } catch (err) {
+      console.warn('Failed to load CogniteActivity views:', stringifyError(err));
+    } finally {
+      setLoadingActivityViews(false);
+    }
+  }, [connector]);
+
+  useEffect(() => {
+    if (cogniteTimeSeries.instanceId && cogniteActivityQuery?.enabled) {
+      loadActivityViews();
+    }
+  }, [loadActivityViews, cogniteTimeSeries.instanceId, cogniteActivityQuery?.enabled]);
 
   // Load available units
   useEffect(() => {
@@ -245,6 +273,37 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
 
+  // Activity overlay handlers
+  const handleActivityOverlayToggle = (checked: boolean) => {
+    onQueryChange({
+      cogniteActivityQuery: {
+        ...cogniteActivityQuery,
+        enabled: checked,
+      },
+    });
+  };
+
+  const handleActivityViewChange = (selectedOption: SelectableValue<InvolvedView> | null) => {
+    const view = selectedOption?.value;
+    onQueryChange({
+      cogniteActivityQuery: {
+        ...cogniteActivityQuery,
+        space: view?.space || 'cdf_cdm',
+        externalId: view?.externalId || 'CogniteActivity',
+        version: view?.version || 'v1',
+      },
+    });
+  };
+
+  const handleUseScheduledTimeToggle = (checked: boolean) => {
+    onQueryChange({
+      cogniteActivityQuery: {
+        ...cogniteActivityQuery,
+        useScheduledTime: checked,
+      },
+    });
+  };
+
   // Find the currently selected view option
   const selectedViewOption = useMemo(() => {
     if (cogniteTimeSeries.space && cogniteTimeSeries.externalId && cogniteTimeSeries.version) {
@@ -257,6 +316,19 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }
     return null;
   }, [viewOptions, cogniteTimeSeries.space, cogniteTimeSeries.externalId, cogniteTimeSeries.version]);
+
+  // Find the currently selected activity view option
+  const selectedActivityViewOption = useMemo(() => {
+    if (cogniteActivityQuery?.space && cogniteActivityQuery?.externalId && cogniteActivityQuery?.version) {
+      return activityViewOptions.find(
+        (opt) =>
+          opt.value?.space === cogniteActivityQuery.space &&
+          opt.value?.externalId === cogniteActivityQuery.externalId &&
+          opt.value?.version === cogniteActivityQuery.version
+      );
+    }
+    return null;
+  }, [activityViewOptions, cogniteActivityQuery?.space, cogniteActivityQuery?.externalId, cogniteActivityQuery?.version]);
 
   return (
     <div>
@@ -329,6 +401,63 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               />
             </InlineField>
           </InlineFieldRow>
+        )}
+
+        {/* Activity Overlay Section - only show when time series is selected */}
+        {cogniteTimeSeries.instanceId && (
+          <>
+            <InlineFieldRow>
+              <InlineField
+                label="Activities"
+                labelWidth={14}
+                tooltip="Overlay activities from CogniteActivity views on the time series chart"
+              >
+                <InlineSwitch
+                  label='Activities'
+                  id={`overlay-activities-${query.refId}`}
+                  value={cogniteActivityQuery?.enabled || false}
+                  onChange={({ currentTarget }) => handleActivityOverlayToggle(currentTarget.checked)}
+                />
+              </InlineField>
+            </InlineFieldRow>
+
+            {cogniteActivityQuery?.enabled && (
+              <>
+                <InlineFieldRow>
+                  <InlineField
+                    label="View"
+                    labelWidth={14}
+                    tooltip="Select a CogniteActivity view to overlay"
+                  >
+                    <Select
+                      options={activityViewOptions}
+                      value={selectedActivityViewOption}
+                      onChange={handleActivityViewChange}
+                      placeholder="Select a CogniteActivity view"
+                      isClearable
+                      isLoading={loadingActivityViews}
+                      width={40}
+                    />
+                  </InlineField>
+                </InlineFieldRow>
+
+                <InlineFieldRow>
+                  <InlineField
+                    label="Scheduled"
+                    labelWidth={14}
+                    tooltip="Use scheduledStartTime/scheduledEndTime instead of actual startTime/endTime"
+                  >
+                    <InlineSwitch
+                      label='Scheduled'
+                      id={`use-scheduled-time-${query.refId}`}
+                      value={cogniteActivityQuery?.useScheduledTime || false}
+                      onChange={({ currentTarget }) => handleUseScheduledTimeToggle(currentTarget.checked)}
+                    />
+                  </InlineField>
+                </InlineFieldRow>
+              </>
+            )}
+          </>
         )}
 
         <LatestValueCheckbox {...{ query, onQueryChange }} />
