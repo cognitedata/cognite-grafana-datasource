@@ -137,12 +137,12 @@ export interface CogniteActivity {
   createdTime?: number;
   name?: string;
   description?: string;
-  // Actual time fields
-  startTime?: number;
-  endTime?: number;
-  // Scheduled time fields
-  scheduledStartTime?: number;
-  scheduledEndTime?: number;
+  // Actual time fields (ISO strings from DMS API)
+  startTime?: string;
+  endTime?: string;
+  // Scheduled time fields (ISO strings from DMS API)
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
   // Additional metadata
   type?: string;
   [key: string]: any; // Allow additional properties from DMS

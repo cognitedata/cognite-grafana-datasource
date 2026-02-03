@@ -562,3 +562,259 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     await expect(legendText).toBeVisible({ timeout: 10000 });
   }
 });
+
+test('"CogniteTimeSeries with Activities" panel loads with annotations', async ({ readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const ACTIVITIES_PANEL_ID = '5';
+  const panelEditPage = await dashboardPage.gotoPanelEditPage(ACTIVITIES_PANEL_ID);
+
+  // Verify the panel title
+  await expect(page.getByText('CogniteTimeSeries with Activities - Core Data Model')).toBeVisible();
+
+  // Wait for queries to finish
+  await waitForQueriesToFinish(page);
+
+  // Check that the time series data is displayed
+  await expect(panelEditPage.panel.locator).toBeVisible();
+});
+
+test('"CogniteTimeSeries" activities toggle appears when timeseries selected', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Select a view from the View dropdown
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  
+  // Wait for view options to load
+  await page.waitForTimeout(2000);
+  
+  // Select the CogniteTimeSeries view
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
+
+  // Activities toggle should NOT be visible yet (no timeseries selected)
+  const activitiesToggleBefore = editorRow.getByLabel('Activities').nth(1);
+  await expect(activitiesToggleBefore).not.toBeVisible();
+
+  // Search for and select a timeseries
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.temp');
+
+  // Wait for search results
+  await waitForQueriesToFinish(page);
+  
+  // Select the temperature timeseries
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
+  await expect(tsOption).toBeVisible({ timeout: 10000 });
+  await tsOption.click();
+
+  // Wait for UI to update
+  await page.waitForTimeout(1000);
+
+  // Now the Activities toggle should be visible
+  const activitiesToggleAfter = editorRow.getByLabel('Activities').nth(1);
+  await expect(activitiesToggleAfter).toBeVisible({ timeout: 5000 });
+});
+
+test('"CogniteTimeSeries" enabling activities shows configuration options', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  
+  // Wait for data source to be properly selected and tabs to render
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Click on CogniteTimeSeries tab
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  // Select a view
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  await page.waitForTimeout(2000);
+  
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
+
+  // Select a timeseries
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.temp');
+  await waitForQueriesToFinish(page);
+  
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
+  await tsOption.click();
+  await page.waitForTimeout(1000);
+
+  // Enable activities
+  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.check({ force: true });
+  await expect(activitiesToggle).toBeChecked();
+
+  // Wait for activity configuration to appear
+  await page.waitForTimeout(1000);
+
+  // Check that the Activity View dropdown is visible
+  const activityViewLabel = editorRow.getByText('View').nth(1);
+  await expect(activityViewLabel).toBeVisible();
+
+  // Check that the Scheduled toggle is visible
+  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  await expect(scheduledToggle).toBeVisible();
+});
+
+test('"CogniteTimeSeries" can select activity view', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Setup: Select CogniteTimeSeries view and timeseries
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  await page.waitForTimeout(2000);
+  
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
+
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.temp');
+  await waitForQueriesToFinish(page);
+  
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
+  await tsOption.click();
+  await page.waitForTimeout(1000);
+
+  // Enable activities
+  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.check({ force: true });
+  await page.waitForTimeout(1000);
+
+  // Find the second View label (for activities, not timeseries)
+  const activityViewFields = editorRow.locator('label:has-text("View")');
+  const activityViewCount = await activityViewFields.count();
+  
+  // Should have at least 2 View fields now (timeseries + activity)
+  expect(activityViewCount).toBeGreaterThanOrEqual(2);
+
+  // Click on the activity view dropdown (the second one)
+  const activityViewInput = activityViewFields.nth(1).locator('..').locator('input').first();
+  await activityViewInput.click();
+  
+  // Wait for activity view options to load
+  await page.waitForTimeout(2000);
+
+  // Check that CogniteActivity view option is available
+  const activityViewOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteActivity.*cdf_cdm/i });
+  await expect(activityViewOption.first()).toBeVisible({ timeout: 10000 });
+  
+  // Select the CogniteActivity view
+  await activityViewOption.first().click();
+
+  // Verify the selection was made by checking the option is no longer visible (dropdown closed)
+  await page.waitForTimeout(500);
+  await expect(activityViewOption.first()).not.toBeVisible();
+});
+
+test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+  // Set a larger viewport to ensure all UI elements are visible
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+  await page.waitForTimeout(1000);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Setup: Select CogniteTimeSeries view and timeseries
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+  await page.waitForTimeout(2000);
+  
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+  await cogniteTimeSeriesOption.first().click();
+
+  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
+  await searchInput.click();
+  await searchInput.fill('59.9139-10.7522-current.temp');
+  await waitForQueriesToFinish(page);
+  
+  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
+  await tsOption.click();
+  await page.waitForTimeout(1000);
+
+  // Enable activities
+  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.check({ force: true });
+  await page.waitForTimeout(1000);
+
+  // Find the Scheduled toggle
+  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  await expect(scheduledToggle).toBeVisible();
+  
+  // Initially should not be checked
+  await expect(scheduledToggle).not.toBeChecked();
+
+  // Check the toggle
+  await scheduledToggle.check({ force: true });
+  await expect(scheduledToggle).toBeChecked();
+
+  // Uncheck the toggle
+  await scheduledToggle.uncheck({ force: true });
+  await expect(scheduledToggle).not.toBeChecked();
+});
