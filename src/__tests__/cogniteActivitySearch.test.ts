@@ -151,8 +151,13 @@ describe('CogniteActivity DMS Functions', () => {
               {
                 range: {
                   property: ['cdf_cdm', 'CogniteActivity/v1', 'startTime'],
-                  gte: new Date(timeRange[0]).toISOString(),
                   lte: new Date(timeRange[1]).toISOString(),
+                },
+              },
+              {
+                range: {
+                  property: ['cdf_cdm', 'CogniteActivity/v1', 'endTime'],
+                  gte: new Date(timeRange[0]).toISOString(),
                 },
               },
               {
@@ -202,9 +207,14 @@ describe('CogniteActivity DMS Functions', () => {
         'CogniteActivity/v1',
         'scheduledStartTime',
       ]);
+      expect(callData.filter.and[1].range.property).toEqual([
+        'cdf_cdm',
+        'CogniteActivity/v1',
+        'scheduledEndTime',
+      ]);
     });
 
-    it('should filter by startTime within range', async () => {
+    it('should use overlap filter for start/end time', async () => {
       fetcher.fetch.mockResolvedValue({
         data: { items: mockActivityDMSInstances },
         status: 200,
@@ -225,8 +235,14 @@ describe('CogniteActivity DMS Functions', () => {
         'CogniteActivity/v1',
         'startTime',
       ]);
-      expect(callData.filter.and[0].range.gte).toBe(new Date(timeRange[0]).toISOString());
       expect(callData.filter.and[0].range.lte).toBe(new Date(timeRange[1]).toISOString());
+
+      expect(callData.filter.and[1].range.property).toEqual([
+        'cdf_cdm',
+        'CogniteActivity/v1',
+        'endTime',
+      ]);
+      expect(callData.filter.and[1].range.gte).toBe(new Date(timeRange[0]).toISOString());
     });
 
     it('should return empty array on error', async () => {
