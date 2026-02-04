@@ -736,12 +736,21 @@ export async function fetchActivitiesFromDMS(
             lte: rangeEndISO,
           },
         },
-        // Activity ends after or during the range start
+        // Activity ends after or during the range start OR is ongoing (null endTime)
         {
-          range: {
-            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
-            gte: rangeStartISO,
-          },
+          or: [
+            {
+              range: {
+                property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+                gte: rangeStartISO,
+              },
+            },
+            {
+              isNull: {
+                property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+              },
+            },
+          ],
         },
         // Activity is related to the selected time series
         {

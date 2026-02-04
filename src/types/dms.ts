@@ -41,6 +41,9 @@ export interface DMSFilter {
     lte?: any;
     lt?: any;
   };
+  isNull?: {
+    property: string[];
+  };
 }
 
 export interface DMSSearchRequest {
