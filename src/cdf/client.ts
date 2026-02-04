@@ -723,9 +723,8 @@ export async function fetchActivitiesFromDMS(
     const rangeStartISO = new Date(rangeStart).toISOString();
     const rangeEndISO = new Date(rangeEnd).toISOString();
 
-    // Build filter for time range - activities that overlap with the time range
-    // We check: startTime <= rangeEnd AND endTime >= rangeStart
-    // This finds activities that have any overlap with our time range
+    // Build filter for time range - activities that start or end within the time range
+    // We check: startTime within range OR endTime within range
     // PLUS filter to only activities related to the selected time series
     const timeFilter: DMSFilter = {
       and: [
