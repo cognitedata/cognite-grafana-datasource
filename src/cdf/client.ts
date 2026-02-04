@@ -729,25 +729,21 @@ export async function fetchActivitiesFromDMS(
     // PLUS filter to only activities related to the selected time series
     const timeFilter: DMSFilter = {
       and: [
-        // Activity starts before or during the range end
-        {
-          range: {
-            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, startTimeProperty],
-            lte: rangeEndISO,
-          },
-        },
-        // Activity ends after or during the range start OR is ongoing (null endTime)
+        // Activity starts or ends within the time range
         {
           or: [
             {
               range: {
-                property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+                property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, startTimeProperty],
                 gte: rangeStartISO,
+                lte: rangeEndISO,
               },
             },
             {
-              isNull: {
+              range: {
                 property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+                gte: rangeStartISO,
+                lte: rangeEndISO,
               },
             },
           ],

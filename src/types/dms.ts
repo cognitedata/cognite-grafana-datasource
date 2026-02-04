@@ -40,11 +40,7 @@ export interface DMSFilter {
     gt?: any;
     lte?: any;
     lt?: any;
-  };
-  isNull?: {
-    property: string[];
-  };
-}
+  };}
 
 export interface DMSSearchRequest {
   view: {
