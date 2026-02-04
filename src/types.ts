@@ -120,7 +120,6 @@ export interface CogniteActivityQuery {
   version: string;
   externalId: string;
   useScheduledTime: boolean; // false = actual time (startTime/endTime), true = scheduled time
-  searchQuery?: string;
 }
 
 export const defaultTemplateQuery: TemplateQuery = {

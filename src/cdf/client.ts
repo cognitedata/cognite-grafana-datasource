@@ -712,8 +712,7 @@ export async function fetchActivitiesFromDMS(
   viewSpec: { space: string; externalId: string; version: string },
   timeRange: [number, number],
   useScheduledTime: boolean,
-  timeSeriesInstanceId: { space: string; externalId: string },
-  searchQuery?: string
+  timeSeriesInstanceId: { space: string; externalId: string }
 ): Promise<CogniteActivity[]> {
   try {
     const [rangeStart, rangeEnd] = timeRange;

@@ -158,8 +158,7 @@ describe('ActivityDatasource unit tests', () => {
         {
           space: 'cdm_try',
           externalId: '59.9139-10.7522-current.temp',
-        },
-        undefined
+        }
       );
       expect(result).toEqual(mockActivities);
     });
@@ -182,31 +181,7 @@ describe('ActivityDatasource unit tests', () => {
         expect.anything(),
         expect.anything(),
         true, // useScheduledTime
-        expect.anything(),
-        undefined // searchQuery
-      );
-    });
-
-    it('should pass searchQuery when provided', async () => {
-      fetchActivitiesFromDMSMock.mockResolvedValue(mockActivities);
-
-      const query: CogniteQuery = {
-        ...baseQuery,
-        cogniteActivityQuery: {
-          ...baseQuery.cogniteActivityQuery!,
-          searchQuery: 'monitoring',
-        },
-      };
-
-      await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
-
-      expect(fetchActivitiesFromDMSMock).toHaveBeenCalledWith(
-        connector,
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        'monitoring'
+        expect.anything()
       );
     });
 

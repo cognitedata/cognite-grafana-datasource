@@ -71,7 +71,7 @@ export class ActivityDatasource {
       return [];
     }
 
-    const { space, externalId, version, useScheduledTime, searchQuery } = cogniteActivityQuery;
+    const { space, externalId, version, useScheduledTime } = cogniteActivityQuery;
 
     if (!space || !externalId || !version) {
       return [];
@@ -83,8 +83,7 @@ export class ActivityDatasource {
         { space, externalId, version },
         [rangeStart, rangeEnd],
         useScheduledTime,
-        cogniteTimeSeries.instanceId,
-        searchQuery
+        cogniteTimeSeries.instanceId
       );
       return activities;
     } catch (e) {
