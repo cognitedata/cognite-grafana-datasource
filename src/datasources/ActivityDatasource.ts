@@ -12,24 +12,26 @@ const convertActivitiesToAnnotations = (
   useScheduledTime: boolean,
   timeRangeEnd: number
 ) => {
-  return activities.map((activity) => {
-    const startTime = useScheduledTime ? activity.scheduledStartTime : activity.startTime;
-    const endTime = useScheduledTime ? activity.scheduledEndTime : activity.endTime;
-    
-    // Convert ISO strings to timestamps (milliseconds)
-    const startTimeMs = startTime ? new Date(startTime).getTime() : timeRangeEnd;
-    const endTimeMs = endTime ? new Date(endTime).getTime() : timeRangeEnd;
-    
-    return {
-      id: activity.externalId,
-      isRegion: true,
-      text: activity.description || activity.name || activity.externalId,
-      time: startTimeMs,
-      timeEnd: endTimeMs,
-      title: activity.name || activity.type || 'Activity',
-      tags: activity.type ? [activity.type] : [],
-    };
-  });
+  return activities
+    .filter((activity) => {
+      const startTime = useScheduledTime ? activity.scheduledStartTime : activity.startTime;
+      // Filter out activities without startTime
+      return !!startTime;
+    })
+    .map((activity) => {
+      const startTime = useScheduledTime ? activity.scheduledStartTime : activity.startTime;
+      const endTime = useScheduledTime ? activity.scheduledEndTime : activity.endTime;
+      
+      return {
+        id: activity.externalId,
+        isRegion: true,
+        text: activity.description || activity.name || activity.externalId,
+        time: new Date(startTime!).getTime(),
+        timeEnd: endTime ? new Date(endTime).getTime() : timeRangeEnd,
+        title: activity.name || activity.type || 'Activity',
+        tags: activity.type ? [activity.type] : [],
+      };
+    });
 };
 
 // Convert activities date fields for table display

@@ -318,13 +318,31 @@ describe('ActivityDatasource unit tests', () => {
       expect(tagsField?.values[0]).toEqual([]);
     });
 
-    it('should use timeRangeEnd for missing timestamps', async () => {
+    it('should filter out activities without startTime', async () => {
+      const activityWithoutStartTime = {
+        space: 'cdm_try',
+        externalId: 'activity-no-start',
+        name: 'Missing Start Activity',
+        endTime: '2026-01-15T12:00:00Z',
+        // startTime missing
+      };
+
+      fetchActivitiesFromDMSMock.mockResolvedValue([activityWithoutStartTime]);
+
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+
+      const dataFrame = result[0];
+      expect(dataFrame.length).toBe(0);
+      expect(dataFrame.fields[0].values).toEqual([]);
+    });
+
+    it('should use timeRangeEnd for missing endTime', async () => {
       const activityWithoutEndTime = {
         space: 'cdm_try',
         externalId: 'activity-no-end',
         name: 'Ongoing Activity',
-        // startTime missing
-        // endTime missing
+        startTime: '2026-01-15T10:00:00Z',
+        // endTime missing (ongoing activity)
       };
 
       fetchActivitiesFromDMSMock.mockResolvedValue([activityWithoutEndTime]);
@@ -335,8 +353,8 @@ describe('ActivityDatasource unit tests', () => {
       const timeField = dataFrame.fields.find((f) => f.name === 'time');
       const timeEndField = dataFrame.fields.find((f) => f.name === 'timeEnd');
 
-      // Should fall back to endTime of range
-      expect(timeField?.values[0]).toBe(endTime);
+      // Should use actual startTime and fall back to timeRangeEnd for endTime
+      expect(timeField?.values[0]).toBe(new Date('2026-01-15T10:00:00Z').getTime());
       expect(timeEndField?.values[0]).toBe(endTime);
     });
 

@@ -48,6 +48,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [loadingActivityViews, setLoadingActivityViews] = useState(false);
 
   const { cogniteTimeSeries, cogniteActivityQuery } = query;
+  const activityEnabled = cogniteActivityQuery?.enabled || false;
 
   // Create a stable key for instanceId to trigger useEffect
   const instanceIdKey = useMemo(
@@ -142,10 +143,10 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   }, [connector]);
 
   useEffect(() => {
-    if (cogniteTimeSeries.instanceId && cogniteActivityQuery?.enabled) {
+    if (cogniteTimeSeries.instanceId && activityEnabled) {
       loadActivityViews();
     }
-  }, [loadActivityViews, cogniteTimeSeries.instanceId, cogniteActivityQuery?.enabled]);
+  }, [loadActivityViews, cogniteTimeSeries.instanceId, activityEnabled]);
 
   // Load available units
   useEffect(() => {
