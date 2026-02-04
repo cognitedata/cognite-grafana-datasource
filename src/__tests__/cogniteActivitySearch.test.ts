@@ -149,22 +149,11 @@ describe('CogniteActivity DMS Functions', () => {
           filter: {
             and: [
               {
-                or: [
-                  {
-                    range: {
-                      property: ['cdf_cdm', 'CogniteActivity/v1', 'startTime'],
-                      gte: new Date(timeRange[0]).toISOString(),
-                      lte: new Date(timeRange[1]).toISOString(),
-                    },
-                  },
-                  {
-                    range: {
-                      property: ['cdf_cdm', 'CogniteActivity/v1', 'endTime'],
-                      gte: new Date(timeRange[0]).toISOString(),
-                      lte: new Date(timeRange[1]).toISOString(),
-                    },
-                  },
-                ],
+                range: {
+                  property: ['cdf_cdm', 'CogniteActivity/v1', 'startTime'],
+                  gte: new Date(timeRange[0]).toISOString(),
+                  lte: new Date(timeRange[1]).toISOString(),
+                },
               },
               {
                 in: {
@@ -208,19 +197,14 @@ describe('CogniteActivity DMS Functions', () => {
       );
 
       const callData = fetcher.fetch.mock.calls[0][0].data;
-      expect(callData.filter.and[0].or[0].range.property).toEqual([
+      expect(callData.filter.and[0].range.property).toEqual([
         'cdf_cdm',
         'CogniteActivity/v1',
         'scheduledStartTime',
       ]);
-      expect(callData.filter.and[0].or[1].range.property).toEqual([
-        'cdf_cdm',
-        'CogniteActivity/v1',
-        'scheduledEndTime',
-      ]);
     });
 
-    it('should include OR filter for startTime or endTime within range', async () => {
+    it('should filter by startTime within range', async () => {
       fetcher.fetch.mockResolvedValue({
         data: { items: mockActivityDMSInstances },
         status: 200,
@@ -236,24 +220,13 @@ describe('CogniteActivity DMS Functions', () => {
 
       const callData = fetcher.fetch.mock.calls[0][0].data;
 
-      expect(callData.filter.and[0].or).toBeDefined();
-      expect(callData.filter.and[0].or).toHaveLength(2);
-
-      expect(callData.filter.and[0].or[0].range.property).toEqual([
+      expect(callData.filter.and[0].range.property).toEqual([
         'cdf_cdm',
         'CogniteActivity/v1',
         'startTime',
       ]);
-      expect(callData.filter.and[0].or[0].range.gte).toBe(new Date(timeRange[0]).toISOString());
-      expect(callData.filter.and[0].or[0].range.lte).toBe(new Date(timeRange[1]).toISOString());
-
-      expect(callData.filter.and[0].or[1].range.property).toEqual([
-        'cdf_cdm',
-        'CogniteActivity/v1',
-        'endTime',
-      ]);
-      expect(callData.filter.and[0].or[1].range.gte).toBe(new Date(timeRange[0]).toISOString());
-      expect(callData.filter.and[0].or[1].range.lte).toBe(new Date(timeRange[1]).toISOString());
+      expect(callData.filter.and[0].range.gte).toBe(new Date(timeRange[0]).toISOString());
+      expect(callData.filter.and[0].range.lte).toBe(new Date(timeRange[1]).toISOString());
     });
 
     it('should return empty array on error', async () => {
