@@ -91,10 +91,20 @@ const getNodeSelection = (selection) => {
 
 export const isAnnotationTarget = (target: CogniteQuery) => !target.tab && target.query && target.refId === "Anno";
 
-export const typeNameList = (selected) =>
-  uniq(
+export const typeNameList = (selected) => {
+  const nodeSelections = getNodeSelection(selected);
+  
+  // Check if 'type' field exists at node/items level (for numeric time series detection)
+  const hasTypeField = find(nodeSelections, ({ name: { value } }) => value === 'type');
+  if (hasTypeField) {
+    // Return a marker to indicate time series detection is active
+    return ['_numeric_type'];
+  }
+  
+  // Legacy: look for fields whose selectionSet contains __typename
+  return uniq(
     filter(
-      map(getNodeSelection(selected), ({ selectionSet, name: { value } }) => {
+      map(nodeSelections, ({ selectionSet, name: { value } }) => {
         if (selectionSet) {
           if (find(selectionSet.selections, ({ name: { value } }) => value === '__typename')) {
             return value;
@@ -104,6 +114,7 @@ export const typeNameList = (selected) =>
       })
     )
   );
+};
 
 export const addValuesToDataFrameObj = (dataFrame: Partial<DataFrame>, valueObj: any) => {
   for (const field of dataFrame.fields) {

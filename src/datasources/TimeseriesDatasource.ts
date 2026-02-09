@@ -122,7 +122,10 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.FlexibleDataModelling: {
-      items = _.map(flexibleDataModellingQuery.targets, (externalId) => ({ externalId }));
+      // Handle both legacy externalId-based targets and new instanceId-based targets
+      const externalIdItems = _.map(flexibleDataModellingQuery.targets, (externalId) => ({ externalId }));
+      const instanceIdItems = _.map(flexibleDataModellingQuery.instanceIds, (instanceId) => ({ instanceId }));
+      items = [...externalIdItems, ...instanceIdItems];
       break;
     }
     case Tab.CogniteTimeSeriesSearch: {
