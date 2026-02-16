@@ -244,8 +244,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
       const integrationDs = getMockedDataSource(integrationFetcher);
       const integrationConnector = integrationDs.connector as Connector;
 
-      // Mock data
-
       // Setup sequential mock responses
       integrationFetcher.fetch
         .mockResolvedValueOnce({ data: { items: mockSingleSpace }, status: 200 })
