@@ -571,7 +571,7 @@ test('"CogniteTimeSeries with Activities" panel loads with annotations', async (
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
 
-  const ACTIVITIES_PANEL_ID = '5';
+  const ACTIVITIES_PANEL_ID = '6';
   const panelEditPage = await dashboardPage.gotoPanelEditPage(ACTIVITIES_PANEL_ID);
 
   // Verify the panel title
