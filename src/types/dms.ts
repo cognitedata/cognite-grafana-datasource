@@ -40,8 +40,7 @@ export interface DMSFilter {
     gt?: any;
     lte?: any;
     lt?: any;
-  };
-}
+  };}
 
 export interface DMSSearchRequest {
   view: {
@@ -126,4 +125,24 @@ export interface ContainerInspectResponse {
       };
     };
   }>;
+}
+
+// CogniteActivity interface based on Core Data Model
+export interface CogniteActivity {
+  space: string;
+  externalId: string;
+  version?: number;
+  lastUpdatedTime?: number;
+  createdTime?: number;
+  name?: string;
+  description?: string;
+  // Actual time fields (ISO strings from DMS API)
+  startTime?: string;
+  endTime?: string;
+  // Scheduled time fields (ISO strings from DMS API)
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  // Additional metadata
+  type?: string;
+  [key: string]: any; // Allow additional properties from DMS
 }

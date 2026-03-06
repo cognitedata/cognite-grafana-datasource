@@ -1,4 +1,4 @@
-import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
+import { DMSSpace, DMSView, DMSInstance, CogniteActivity, InvolvedView } from '../types/dms';
 
 export const mockSpaces: DMSSpace[] = [
   {
@@ -145,6 +145,147 @@ export const mockSingleInstance: DMSInstance[] = [
         'CogniteTimeSeries/v1': {
           name: 'Temperature Sensor 1',
           type: 'numeric',
+        },
+      },
+    },
+  },
+];
+
+// Mock data for CogniteActivity views
+export const mockActivityViews: InvolvedView[] = [
+  {
+    space: 'cdf_cdm',
+    externalId: 'CogniteActivity',
+    version: 'v1',
+  },
+  {
+    space: 'cdf_cdm',
+    externalId: 'CogniteActivity',
+    version: 'v2',
+  },
+];
+
+export const mockSingleActivityView: InvolvedView[] = [
+  {
+    space: 'cdf_cdm',
+    externalId: 'CogniteActivity',
+    version: 'v1',
+  },
+];
+
+// Mock CogniteActivity instances (as returned from DMS API with ISO string timestamps)
+export const mockActivities: CogniteActivity[] = [
+  {
+    space: 'cdm_try',
+    externalId: 'activity-temp-monitoring-1',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    name: 'Temperature Monitoring',
+    description: 'Monitoring temperature levels in Building A',
+    startTime: '2026-01-15T10:00:00Z',
+    endTime: '2026-01-15T12:00:00Z',
+    scheduledStartTime: '2026-01-15T09:00:00Z',
+    scheduledEndTime: '2026-01-15T11:00:00Z',
+    type: 'monitoring',
+  },
+  {
+    space: 'cdm_try',
+    externalId: 'activity-pressure-check-2',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    name: 'Pressure Check',
+    description: 'Routine pressure sensor calibration',
+    startTime: '2026-01-20T14:00:00Z',
+    endTime: '2026-01-20T16:00:00Z',
+    scheduledStartTime: '2026-01-20T13:30:00Z',
+    scheduledEndTime: '2026-01-20T15:30:00Z',
+    type: 'calibration',
+  },
+  {
+    space: 'cdm_try',
+    externalId: 'activity-maintenance-3',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    name: 'Equipment Maintenance',
+    description: 'Scheduled maintenance for sensor equipment',
+    startTime: '2026-01-25T08:00:00Z',
+    endTime: '2026-01-25T17:00:00Z',
+    type: 'maintenance',
+  },
+];
+
+export const mockSingleActivity: CogniteActivity[] = [
+  {
+    space: 'cdm_try',
+    externalId: 'activity-temp-monitoring-1',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    name: 'Temperature Monitoring',
+    description: 'Monitoring temperature levels in Building A',
+    startTime: '2026-01-15T10:00:00Z',
+    endTime: '2026-01-15T12:00:00Z',
+    scheduledStartTime: '2026-01-15T09:00:00Z',
+    scheduledEndTime: '2026-01-15T11:00:00Z',
+    type: 'monitoring',
+  },
+];
+
+// Mock DMS instances representing activities (raw API response format)
+export const mockActivityDMSInstances: DMSInstance[] = [
+  {
+    instanceType: 'node',
+    space: 'cdm_try',
+    externalId: 'activity-temp-monitoring-1',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    properties: {
+      cdf_cdm: {
+        'CogniteActivity/v1': {
+          name: 'Temperature Monitoring',
+          description: 'Monitoring temperature levels in Building A',
+          startTime: '2026-01-15T10:00:00Z',
+          endTime: '2026-01-15T12:00:00Z',
+          scheduledStartTime: '2026-01-15T09:00:00Z',
+          scheduledEndTime: '2026-01-15T11:00:00Z',
+          type: 'monitoring',
+          timeSeries: [
+            {
+              space: 'cdm_try',
+              externalId: '59.9139-10.7522-current.temp',
+            },
+          ],
+        },
+      },
+    },
+  },
+  {
+    instanceType: 'node',
+    space: 'cdm_try',
+    externalId: 'activity-pressure-check-2',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    properties: {
+      cdf_cdm: {
+        'CogniteActivity/v1': {
+          name: 'Pressure Check',
+          description: 'Routine pressure sensor calibration',
+          startTime: '2026-01-20T14:00:00Z',
+          endTime: '2026-01-20T16:00:00Z',
+          scheduledStartTime: '2026-01-20T13:30:00Z',
+          scheduledEndTime: '2026-01-20T15:30:00Z',
+          type: 'calibration',
+          timeSeries: [
+            {
+              space: 'cdm_try',
+              externalId: '59.9139-10.7522-current.pressure',
+            },
+          ],
         },
       },
     },

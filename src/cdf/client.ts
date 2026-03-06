@@ -20,7 +20,9 @@ import {
   DMSInstance,
   DMSListRequest,
   DMSListResponse,
+  DMSFilter,
   CogniteUnit,
+  CogniteActivity,
   InvolvedView,
   ContainerInspectResponse,
 } from '../types/dms';
@@ -659,6 +661,145 @@ export async function fetchCogniteTimeSeriesViews(
     return [];
   } catch (err) {
     console.warn('Failed to fetch CogniteTimeSeries views:', err);
+    return [];
+  }
+}
+
+// Fetch views that implement the CogniteActivity container
+export async function fetchCogniteActivityViews(
+  connector: Connector
+): Promise<InvolvedView[]> {
+  try {
+    const response = await retryOnRateLimit(() =>
+      connector.fetchData<{ data: ContainerInspectResponse }>({
+        method: HttpMethod.POST,
+        path: '/models/containers/inspect',
+        data: {
+          items: [
+            {
+              space: 'cdf_cdm',
+              externalId: 'CogniteActivity',
+            },
+          ],
+          inspectionOperations: {
+            involvedViews: {
+              allVersions: true,
+            },
+            totalInvolvedViewCount: {
+              allVersions: true,
+              includeUnavailableViews: true,
+            },
+          },
+        },
+        cacheTime: CacheTime.ResourceByIds,
+      })
+    );
+
+    const item = response.data?.items?.[0];
+    if (item?.inspectionResults?.involvedViews) {
+      return item.inspectionResults.involvedViews;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Failed to fetch CogniteActivity views:', err);
+    return [];
+  }
+}
+
+// Fetch activities from DMS for a given time range, filtered to a specific time series
+export async function fetchActivitiesFromDMS(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string },
+  timeRange: [number, number],
+  useScheduledTime: boolean,
+  timeSeriesInstanceId: { space: string; externalId: string }
+): Promise<CogniteActivity[]> {
+  try {
+    const [rangeStart, rangeEnd] = timeRange;
+    const startTimeProperty = useScheduledTime ? 'scheduledStartTime' : 'startTime';
+    const endTimeProperty = useScheduledTime ? 'scheduledEndTime' : 'endTime';
+
+    // Convert Unix timestamps (ms) to ISO 8601 strings as required by DMS
+    const rangeStartISO = new Date(rangeStart).toISOString();
+    const rangeEndISO = new Date(rangeEnd).toISOString();
+
+    // Build filter for time range - activities that overlap the time range
+    // We check: startTime <= rangeEnd AND endTime >= rangeStart
+    // PLUS filter to only activities related to the selected time series
+    const timeFilter: DMSFilter = {
+      and: [
+        // Activity starts before or during the range end
+        {
+          range: {
+            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, startTimeProperty],
+            lte: rangeEndISO,
+          },
+        },
+        // Activity ends after or during the range start
+        {
+          range: {
+            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+            gte: rangeStartISO,
+          },
+        },
+        // Activity is related to the selected time series
+        {
+          in: {
+            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, 'timeSeries'],
+            values: [{
+              space: timeSeriesInstanceId.space,
+              externalId: timeSeriesInstanceId.externalId,
+            }],
+          },
+        },
+      ],
+    };
+
+    const listRequest: DMSListRequest = {
+      sources: [
+        {
+          source: {
+            type: 'view',
+            space: viewSpec.space,
+            externalId: viewSpec.externalId,
+            version: viewSpec.version,
+          },
+        },
+      ],
+      instanceType: 'node',
+      limit: 1000,
+      filter: timeFilter,
+    };
+
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/list',
+        data: listRequest,
+      })
+    );
+
+    // Convert DMS instances to CogniteActivity objects
+    return instances.map((instance) => {
+      const props = instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
+      return {
+        space: instance.space,
+        externalId: instance.externalId,
+        version: instance.version,
+        lastUpdatedTime: instance.lastUpdatedTime,
+        createdTime: instance.createdTime,
+        name: props.name,
+        description: props.description,
+        startTime: props.startTime,
+        endTime: props.endTime,
+        scheduledStartTime: props.scheduledStartTime,
+        scheduledEndTime: props.scheduledEndTime,
+        type: props.type,
+        ...props, // Include any additional properties
+      };
+    });
+  } catch (err) {
+    console.warn('Failed to fetch activities from DMS:', err);
     return [];
   }
 }
