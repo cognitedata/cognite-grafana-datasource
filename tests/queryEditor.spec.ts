@@ -175,7 +175,12 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.setVisualization('Table');
+
+  // Select Table visualization: Grafana <=12.1 uses aria-label, 12.4+ uses data-testid
+  await page.getByTestId('data-testid toggle-viz-picker').click();
+  const tableViz = page.locator('[aria-label="Plugin visualization item Table"]')
+    .or(page.getByTestId('data-testid Plugin visualization item Table'));
+  await tableViz.click();
 
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
     await page.getByTestId(/query-tab-add-query/).click();
@@ -197,17 +202,8 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   await waitForQueriesToFinish(page);
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
-  // Based on actual UI inspection of different Grafana versions:
-  // - 11.6.7+: uses 'data-testid Tab Transformations'
-  // - 11.2.10: uses 'data-testid Tab Transform data'
-  // - <11.0.0: uses role selector
-  if (semver.gte(grafanaVersion, '11.5.4')) {
-    await page.getByTestId('data-testid Tab Transformations').click();
-  } else if (semver.gte(grafanaVersion, '11.0.0')) {
-    await page.getByTestId('data-testid Tab Transform data').click();
-  } else {
-    await page.getByRole('tab', { name: 'Tab Transform' }).click();
-  }
+  // Grafana renamed this tab across versions; use a resilient role-based selector
+  await page.getByRole('tab', { name: /Transform/ }).click();
 
   if (semver.gte(grafanaVersion, '10.2.0')) {
     await page.getByTestId('data-testid add transformation button').click();
