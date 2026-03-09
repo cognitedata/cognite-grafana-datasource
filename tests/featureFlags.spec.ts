@@ -61,8 +61,8 @@ test.describe("Feature Flags - Tab Visibility", () => {
     );
 
     // Core data model tabs should be hidden (not visible in tab bar)
-    await expect(editorRow.getByText("Time Series")).not.toBeVisible();
-    await expect(editorRow.getByText("Data Models")).not.toBeVisible();
+    await expect(editorRow.getByText("Time Series", { exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText("GraphQL")).not.toBeVisible();
   });
 
   test("Core-only dashboard should show only core data model tabs and auto-select first enabled tab", async ({readProvisionedDataSource,readProvisionedDashboard,gotoDashboardPage,page,grafanaVersion,}) => {
@@ -87,9 +87,10 @@ test.describe("Feature Flags - Tab Visibility", () => {
     // Core data model tabs should be visible and clickable
     const cogniteTimeSeriesTab = editorRow.getByRole("tab", {
       name: "Time Series",
+      exact: true,
     });
     await expect(cogniteTimeSeriesTab).toBeVisible();
-    await expect(editorRow.getByText("Data Models")).toBeVisible();
+    await expect(editorRow.getByText("GraphQL")).toBeVisible();
 
     // The first enabled tab should be auto-selected (not the disabled "Time series search")
     await expect(cogniteTimeSeriesTab).toHaveAttribute("aria-selected", "true");
@@ -112,6 +113,7 @@ test.describe("Feature Flags - Config Editor", () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
 
     const legacyMasterToggle = page.locator(
       "#enable-legacy-data-model-features",
@@ -162,6 +164,7 @@ test.describe("Feature Flags - Config Editor", () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
 
     const coreMasterToggle = page.locator("#enable-core-data-model-features");
     const legacyMasterToggle = page.locator(
@@ -205,8 +208,9 @@ test.describe("Feature Flags - Config Editor", () => {
     });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Wait for the page to fully load and scroll to feature flags
+    // Wait for the page to fully load and navigate to Features tab
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
     const legacyMasterToggle = page.locator(
       "#enable-legacy-data-model-features",
     );
@@ -244,6 +248,7 @@ test.describe("Feature Flags - Config Editor", () => {
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
 
     const coreMasterToggle = page.locator("#enable-core-data-model-features");
     const legacyMasterToggle = page.locator(
@@ -295,8 +300,9 @@ test.describe("Feature Flags - Config Editor", () => {
     });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Wait for the page to fully load and scroll to feature flags
+    // Wait for the page to fully load and navigate to Features tab
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
 
     // Deprecated features should be visible and toggleable independently
     await expect(page.locator("#enable-relationships")).toBeVisible();
@@ -338,8 +344,9 @@ test.describe("Feature Flags - Config Editor", () => {
     });
     const configPage = await gotoDataSourceConfigPage(datasource.uid);
 
-    // Wait for the page to fully load and scroll to feature flags
+    // Wait for the page to fully load and navigate to Features tab
     await page.waitForLoadState("load");
+    await page.getByRole("tab", { name: "Features" }).click();
     const legacyMasterToggle = page.locator(
       "#enable-legacy-data-model-features",
     );
@@ -356,8 +363,9 @@ test.describe("Feature Flags - Config Editor", () => {
     ).click();
     await expect(configPage).toHaveAlert("success");
 
-    // Reload the page to verify persistence
+    // Reload the page and navigate back to Features tab to verify persistence
     await page.reload();
+    await page.getByRole("tab", { name: "Features" }).click();
 
     // Feature flags should maintain their disabled state
     await expect(page.locator("#enable-legacy-data-model-features")).not
@@ -369,7 +377,7 @@ test.describe("Feature Flags - Config Editor", () => {
     await expect(page.locator("#enable-timeseries-search")).not.toBeChecked();
     await expect(page.locator("#enable-cognite-timeseries")).not.toBeChecked();
 
-    // Reset to original state for cleanup (only one can be active due to mutual exclusivity)
+    // Reset to original state for cleanup
     await toggleCheckbox(page, "#enable-legacy-data-model-features", true);
     await page.getByTestId(
       "data-testid Data source settings page Save and Test button",

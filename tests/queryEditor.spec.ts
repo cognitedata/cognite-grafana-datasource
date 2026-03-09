@@ -264,7 +264,7 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Test that the View dropdown is visible (single dropdown with views from container inspect API)
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -320,7 +320,7 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Select a view from the View dropdown (views are fetched from container inspect API)
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -378,7 +378,7 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Select a view from the View dropdown
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -454,7 +454,7 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Select a view from the View dropdown
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -520,7 +520,7 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
     // Click on CogniteTimeSeries tab
-    await editorRow.getByText('Time Series').click();
+    await editorRow.getByText('Time Series', { exact: true }).click();
 
     // Select a view from the View dropdown
     const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -601,7 +601,7 @@ test('"CogniteTimeSeries" activities toggle appears when timeseries selected', a
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Select a view from the View dropdown
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -658,7 +658,7 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Click on CogniteTimeSeries tab
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   // Select a view
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -712,7 +712,7 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Setup: Select CogniteTimeSeries view and timeseries
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
   const viewDropdown = viewField.locator('input').first();
@@ -778,7 +778,7 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Setup: Select CogniteTimeSeries view and timeseries
-  await editorRow.getByText('Time Series').click();
+  await editorRow.getByText('Time Series', { exact: true }).click();
 
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
   const viewDropdown = viewField.locator('input').first();
