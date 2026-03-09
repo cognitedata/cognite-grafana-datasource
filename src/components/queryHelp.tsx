@@ -106,7 +106,7 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     The documentation on how to use them can be found on{' '}
     <a
       className="query-keyword"
-      href="https://docs.cognite.com/dev/concepts/resource_types/timeseries.html#synthetic-time-series"
+      href="https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries"
     >
       docs.cognite.com/dev
     </a>
@@ -119,7 +119,7 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     Event queries use the{' '}
     <a
       className="query-keyword"
-      href="https://docs.cognite.com/api/v1/#operation/advancedListEvents"
+      href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents"
       target="_blank"
       rel="noreferrer"
     >

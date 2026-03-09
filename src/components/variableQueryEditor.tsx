@@ -12,7 +12,7 @@ const assetsHelp = (
     Variable query uses the{' '}
     <a
       className="query-keyword"
-      href="https://docs.cognite.com/api/v1/#operation/listAssets"
+      href="https://api-docs.cognite.com/20230101/tag/Assets/operation/listAssets"
       target="_blank"
       rel="noreferrer"
     >
@@ -50,7 +50,7 @@ const assetsHelp = (
     our{' '}
     <a
       className="query-keyword"
-      href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html"
+      href="https://docs.cognite.com/cdf/dashboards/guides/grafana/timeseries"
     >
       documentation
     </a>

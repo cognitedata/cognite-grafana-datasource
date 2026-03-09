@@ -13,7 +13,7 @@ type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any
 
 const help = (
   <pre>
-    Annotation query uses the <a className="query-keyword" href="https://docs.cognite.com/api/v1/#operation/advancedListEvents" target="_blank" rel="noreferrer">events/list</a> endpoint to fetch data.
+    Annotation query uses the <a className="query-keyword" href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents" target="_blank" rel="noreferrer">events/list</a> endpoint to fetch data.
     <br />
     <br />
     Use <code className="query-keyword">&apos;=&apos;</code> operator to provide parameters for the request.
@@ -49,7 +49,7 @@ const help = (
     <br />
     Example: <code className="query-keyword">{`events{type='WORKORDER', subtype=$variable}`}</code>.
     <br />
-    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a className="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html">documentation</a>.
+    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a className="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/timeseries">documentation</a>.
   </pre>
 );
 
