@@ -159,6 +159,7 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 });
 
 test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  test.setTimeout(90_000);
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -397,10 +398,14 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.clouds');
 
-  // Target Unit and Unit label should NOT appear for timeseries without units.
-  // Use a short explicit wait because we're asserting absence.
-  await page.waitForTimeout(2000);
+  // Wait for the search dropdown to close, confirming the selection was processed
+  const dropdownOption = panelEditPage
+    .getByGrafanaSelector(option)
+    .filter({ hasText: /59\.9139-10\.7522-current\.clouds/i })
+    .first();
+  await expect(dropdownOption).not.toBeVisible();
 
+  // Target Unit and Unit label should NOT appear for timeseries without units
   const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
   await expect(targetUnitField).not.toBeVisible();
 

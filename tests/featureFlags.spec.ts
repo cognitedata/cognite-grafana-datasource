@@ -5,12 +5,19 @@ import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrat
 
 const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
+/**
+ * Toggles a checkbox to the desired state using dispatchEvent('click').
+ * Playwright's native check/uncheck fails with "Element is outside of the
+ * viewport" on older Grafana versions even with force:true, because the
+ * config editor places feature toggles below the fold.  dispatchEvent
+ * bypasses viewport and actionability checks while still throwing if the
+ * element does not exist.
+ */
 const toggleCheckbox = async (page: Page, id: string, shouldBeChecked: boolean) => {
   const checkbox = page.locator(id);
-  if (shouldBeChecked) {
-    await checkbox.check({ force: true });
-  } else {
-    await checkbox.uncheck({ force: true });
+  const isChecked = await checkbox.isChecked();
+  if (isChecked !== shouldBeChecked) {
+    await checkbox.dispatchEvent('click');
   }
 };
 
@@ -87,10 +94,7 @@ test.describe('Feature Flags - Config Editor', () => {
 
     await expect(legacyMasterToggle).toBeVisible();
 
-    const initiallyChecked = await legacyMasterToggle.isChecked();
-    if (!initiallyChecked) {
-      await legacyMasterToggle.check({ force: true });
-    }
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await expect(legacyMasterToggle).toBeChecked();
 
     await expect(page.locator('#enable-timeseries-search')).toBeVisible();
@@ -120,10 +124,7 @@ test.describe('Feature Flags - Config Editor', () => {
 
     await expect(coreMasterToggle).toBeVisible();
 
-    const initiallyChecked = await coreMasterToggle.isChecked();
-    if (!initiallyChecked) {
-      await coreMasterToggle.check({ force: true });
-    }
+    await toggleCheckbox(page, '#enable-core-data-model-features', true);
     await expect(coreMasterToggle).toBeChecked();
 
     await expect(page.locator('#enable-cognite-timeseries')).toBeVisible();
@@ -144,7 +145,7 @@ test.describe('Feature Flags - Config Editor', () => {
 
   test('Should allow individual feature toggles when master is enabled', async () => {
     const legacyMasterToggle = page.locator('#enable-legacy-data-model-features');
-    await legacyMasterToggle.check({ force: true });
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
 
     const timeseriesSearchToggle = page.locator('#enable-timeseries-search');
     const eventsToggle = page.locator('#enable-events');
