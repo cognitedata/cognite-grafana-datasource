@@ -176,10 +176,14 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
 
-  // Select Table visualization: Grafana <=12.1 uses aria-label, 12.4+ uses data-testid
-  await page.getByTestId('data-testid toggle-viz-picker').click();
+  // Select Table visualization (cross-version compatible)
+  // Grafana 12.4+ opens the viz picker automatically after addPanel(); older versions don't.
+  // Only click the toggle when the picker is not already visible.
   const tableViz = page.locator('[aria-label="Plugin visualization item Table"]')
     .or(page.getByTestId('data-testid Plugin visualization item Table'));
+  if (!(await tableViz.isVisible())) {
+    await page.getByTestId('data-testid toggle-viz-picker').click();
+  }
   await tableViz.click();
 
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
