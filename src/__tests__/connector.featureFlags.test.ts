@@ -1,186 +1,334 @@
-import { Connector } from '../connector';
+import { Connector } from "../connector";
 
-describe('Connector Feature Flags', () => {
-  const project = 'test';
-  const protocol = 'protocol:/';
+describe("Connector Feature Flags", () => {
+  const project = "test";
+  const protocol = "protocol:/";
   const fetcher = { fetch: jest.fn() };
 
-  describe('Core Data Model features', () => {
-    it('should enable CogniteTimeSeries only when both master and feature flags are enabled', () => {
+  describe("Core data model (CDM) features", () => {
+    it("should enable CogniteTimeSeries only when both master and feature flags are enabled", () => {
       // Both master and feature enabled
       const connectorEnabled = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
-        true,  // enableCogniteTimeSeries
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorEnabled.isCogniteTimeSeriesEnabled()).toBe(true);
 
       // Master disabled, feature enabled
       const connectorMasterDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures - DISABLED
-        true,  // enableLegacyDataModelFeatures
-        true,  // enableCogniteTimeSeries
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorMasterDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
 
       // Master enabled, feature disabled
       const connectorFeatureDisabled = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries - DISABLED
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorFeatureDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
 
       // Both disabled
       const connectorBothDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures - DISABLED
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries - DISABLED
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorBothDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
     });
 
-    it('should enable FlexibleDataModelling only when both core master and feature flags are enabled', () => {
+    it("should enable FlexibleDataModelling only when both core master and feature flags are enabled", () => {
       // Both enabled
       const connectorEnabled = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorEnabled.isFlexibleDataModellingEnabled()).toBe(true);
 
       // Core master disabled
       const connectorMasterDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures - DISABLED
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
-      expect(connectorMasterDisabled.isFlexibleDataModellingEnabled()).toBe(false);
+      expect(connectorMasterDisabled.isFlexibleDataModellingEnabled()).toBe(
+        false,
+      );
 
       // Feature disabled
       const connectorFeatureDisabled = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling - DISABLED
-        true, true, true, true, true, // legacy features (5 total)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
-      expect(connectorFeatureDisabled.isFlexibleDataModellingEnabled()).toBe(false);
+      expect(connectorFeatureDisabled.isFlexibleDataModellingEnabled()).toBe(
+        false,
+      );
     });
   });
 
-  describe('Legacy data model features', () => {
-    it('should enable TimeseriesSearch only when both master and feature flags are enabled', () => {
+  describe("Legacy data model features", () => {
+    it("should enable TimeseriesSearch only when both master and feature flags are enabled", () => {
       // Both enabled
       const connectorEnabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (enableTimeseriesSearch = true)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (enableTimeseriesSearch = true)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorEnabled.isTimeseriesSearchEnabled()).toBe(true);
 
       // Master disabled, feature enabled
       const connectorMasterDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (enableTimeseriesSearch = true)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (enableTimeseriesSearch = true)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorMasterDisabled.isTimeseriesSearchEnabled()).toBe(false);
 
       // Master enabled, feature disabled
       const connectorFeatureDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        false, true, true, true, true, // legacy features (enableTimeseriesSearch = false)
-        false, false, false // deprecated features (3 total)
+        false,
+        true,
+        true,
+        true,
+        true, // legacy features (enableTimeseriesSearch = false)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorFeatureDisabled.isTimeseriesSearchEnabled()).toBe(false);
     });
 
-    it('should enable EventsAdvancedFiltering only when both legacy master and feature flags are enabled', () => {
+    it("should enable EventsAdvancedFiltering only when both legacy master and feature flags are enabled", () => {
       // Both enabled
       const connectorEnabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (enableEventsAdvancedFiltering = true)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (enableEventsAdvancedFiltering = true)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
       expect(connectorEnabled.isEventsAdvancedFilteringEnabled()).toBe(true);
 
       // Legacy master disabled
       const connectorMasterDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (enableEventsAdvancedFiltering = true)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (enableEventsAdvancedFiltering = true)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
-      expect(connectorMasterDisabled.isEventsAdvancedFilteringEnabled()).toBe(false);
+      expect(connectorMasterDisabled.isEventsAdvancedFilteringEnabled()).toBe(
+        false,
+      );
 
       // Feature disabled
       const connectorFeatureDisabled = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, false, // legacy features (enableEventsAdvancedFiltering = false)
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        false, // legacy features (enableEventsAdvancedFiltering = false)
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
-      expect(connectorFeatureDisabled.isEventsAdvancedFilteringEnabled()).toBe(false);
+      expect(connectorFeatureDisabled.isEventsAdvancedFilteringEnabled()).toBe(
+        false,
+      );
     });
 
-    it('should enable all legacy features when both master and individual flags are enabled', () => {
+    it("should enable all legacy features when both master and individual flags are enabled", () => {
       const connector = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // all legacy features enabled
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // all legacy features enabled
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
 
       expect(connector.isTimeseriesSearchEnabled()).toBe(true);
@@ -190,15 +338,25 @@ describe('Connector Feature Flags', () => {
       expect(connector.isEventsAdvancedFilteringEnabled()).toBe(true);
     });
 
-    it('should disable all legacy features when master is disabled', () => {
+    it("should disable all legacy features when master is disabled", () => {
       const connector = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // all legacy features enabled but master disabled
-        false, false, false // deprecated features (3 total)
+        true,
+        true,
+        true,
+        true,
+        true, // all legacy features enabled but master disabled
+        false,
+        false,
+        false, // deprecated features (3 total)
       );
 
       expect(connector.isTimeseriesSearchEnabled()).toBe(false);
@@ -209,16 +367,26 @@ describe('Connector Feature Flags', () => {
     });
   });
 
-  describe('Deprecated features', () => {
-    it('should ignore master toggles for deprecated features', () => {
+  describe("Deprecated features", () => {
+    it("should ignore master toggles for deprecated features", () => {
       const connector = new Connector(
-        project, protocol, fetcher, false, false,
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
         false, // enableCoreDataModelFeatures - disabled
         false, // enableLegacyDataModelFeatures - disabled
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        false, false, false, false, false, // all legacy features disabled
-        true, true, true // all deprecated features enabled
+        false,
+        false,
+        false,
+        false,
+        false, // all legacy features disabled
+        true,
+        true,
+        true, // all deprecated features enabled
       );
 
       // Deprecated features should work regardless of master toggles
@@ -227,15 +395,25 @@ describe('Connector Feature Flags', () => {
       expect(connector.isRelationshipsEnabled()).toBe(true);
     });
 
-    it('should respect individual deprecated feature flags', () => {
+    it("should respect individual deprecated feature flags", () => {
       const connector = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures
-        true,  // enableLegacyDataModelFeatures
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
         false, // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features
-        false, false, false // all deprecated features disabled
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features
+        false,
+        false,
+        false, // all deprecated features disabled
       );
 
       expect(connector.isTemplatesEnabled()).toBe(false);
@@ -244,16 +422,26 @@ describe('Connector Feature Flags', () => {
     });
   });
 
-  describe('Mixed scenarios', () => {
-    it('should handle mixed master toggle states correctly', () => {
+  describe("Mixed scenarios", () => {
+    it("should handle mixed master toggle states correctly", () => {
       const connector = new Connector(
-        project, protocol, fetcher, false, false,
-        true,  // enableCoreDataModelFeatures - enabled
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures - enabled
         false, // enableLegacyDataModelFeatures - disabled
-        true,  // enableCogniteTimeSeries
-        true,  // enableFlexibleDataModelling
-        true, true, true, true, true, // legacy features (but master disabled)
-        true, true, true // deprecated features
+        true, // enableCogniteTimeSeries
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (but master disabled)
+        true,
+        true,
+        true, // deprecated features
       );
 
       // Core features should work (master enabled)

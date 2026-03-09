@@ -5,18 +5,18 @@
 
 export const FEATURE_DEFAULTS = {
   // Master toggles for feature sections
-  enableCoreDataModelFeatures: false, // Default off - opt-in for new features
-  enableLegacyDataModelFeatures: true, // Default on - backward compatibility
-  
-  // Core Data Model features - default to enabled when core master toggle is on
+  enableCoreDataModelFeatures: true, // Default on for new datasource instances
+  enableLegacyDataModelFeatures: false, // Default off - enable manually if needed
+
+  // Core data model (CDM) features - default to enabled when core master toggle is on
   enableCogniteTimeSeries: true,
-  
+
   // Legacy data model features - default to enabled for backward compatibility
   enableTimeseriesSearch: true,
   enableTimeseriesFromAsset: true,
   enableTimeseriesCustomQuery: true,
   enableEvents: true,
-  
+
   // Deprecated features - keep existing behavior for backward compatibility
   enableTemplates: false, // Disabled by default
   enableEventsAdvancedFiltering: false, // Disabled by default

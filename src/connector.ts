@@ -1,21 +1,23 @@
-import { chunk } from 'lodash';
-import { BackendSrvRequest, FetchResponse } from '@grafana/runtime';
-import ms from 'ms';
+import { chunk } from "lodash";
+import { BackendSrvRequest, FetchResponse } from "@grafana/runtime";
+import ms from "ms";
 import {
-  RequestParams,
-  ItemsResponse,
-  HttpMethod,
-  DataSourceRequestOptions,
   CursorResponse,
-  isError,
   DataResponse,
+  DataSourceRequestOptions,
   FDMResponse,
-} from './types';
-import { Items, Limit } from './cdf/types';
-import { getQueryString } from './utils';
-import { API_V1, AuthType, CacheTime } from './constants';
+  HttpMethod,
+  isError,
+  ItemsResponse,
+  RequestParams,
+} from "./types";
+import { Items, Limit } from "./cdf/types";
+import { getQueryString } from "./utils";
+import { API_V1, AuthType, CacheTime } from "./constants";
 
-export interface Fetcher { fetch: (options: BackendSrvRequest) => Promise<FetchResponse<any>> };
+export interface Fetcher {
+  fetch: (options: BackendSrvRequest) => Promise<FetchResponse<any>>;
+}
 
 export class Connector {
   constructor(
@@ -27,7 +29,7 @@ export class Connector {
     // Master toggles for feature sections
     private enableCoreDataModelFeatures?: boolean,
     private enableLegacyDataModelFeatures?: boolean,
-    // Core Data Model features
+    // Core data model (CDM) features
     private enableCogniteTimeSeries?: boolean,
     private enableFlexibleDataModelling?: boolean,
     // Legacy data model features
@@ -39,15 +41,17 @@ export class Connector {
     // Deprecated features
     private enableTemplates?: boolean,
     private enableExtractionPipelines?: boolean,
-    private enableRelationships?: boolean
+    private enableRelationships?: boolean,
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
 
   fetchData<T>(request: RequestParams): Promise<T> {
-    const { path, data, method, params, requestId, cacheTime, headers } = request;
-    const queryString = params ? `?${getQueryString(params)}` : '';
-    const url = `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;
+    const { path, data, method, params, requestId, cacheTime, headers } =
+      request;
+    const queryString = params ? `?${getQueryString(params)}` : "";
+    const url =
+      `${this.apiUrlAuth}/${API_V1}/${this.project}${path}${queryString}`;
     const body: DataSourceRequestOptions = { url, data, method, headers };
     if (requestId) {
       body.requestId = requestId;
@@ -57,7 +61,7 @@ export class Connector {
 
   async chunkAndFetch<Req extends Items, Res extends ItemsResponse>(
     request: RequestParams<Req>,
-    chunkSize = 100
+    chunkSize = 100,
   ): Promise<Res> {
     const { data, requestId } = request;
     const chunkedItems = chunk(data.items, chunkSize);
@@ -125,7 +129,9 @@ export class Connector {
     return items;
   }
 
-  request({ path, method = HttpMethod.GET }: { path: string; method?: HttpMethod }) {
+  request(
+    { path, method = HttpMethod.GET }: { path: string; method?: HttpMethod },
+  ) {
     return this.fetcher.fetch({
       method,
       url: `${this.apiUrlAuth}/${path}`,
@@ -147,7 +153,7 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
-  // Core Data Model features
+  // Core data model (CDM) features
   isCogniteTimeSeriesEnabled() {
     return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
   }
@@ -166,7 +172,8 @@ export class Connector {
   }
 
   isTimeseriesCustomQueryEnabled() {
-    return this.enableLegacyDataModelFeatures && this.enableTimeseriesCustomQuery;
+    return this.enableLegacyDataModelFeatures &&
+      this.enableTimeseriesCustomQuery;
   }
 
   isEventsEnabled() {
@@ -174,7 +181,8 @@ export class Connector {
   }
 
   isEventsAdvancedFilteringEnabled() {
-    return this.enableLegacyDataModelFeatures && this.enableEventsAdvancedFiltering;
+    return this.enableLegacyDataModelFeatures &&
+      this.enableEventsAdvancedFiltering;
   }
 
   // Deprecated features
@@ -186,14 +194,13 @@ export class Connector {
     return this.enableTemplates;
   }
 
-  
   isExtractionPipelinesEnabled() {
     return this.enableExtractionPipelines;
   }
 
   public cachedRequest = async (
     query: DataSourceRequestOptions,
-    cacheTime: string = CacheTime.Default
+    cacheTime: string = CacheTime.Default,
   ): Promise<any> => {
     const { requestId, ...queryWithoutId } = query;
     const hash = JSON.stringify(queryWithoutId);
@@ -225,7 +232,7 @@ export class Connector {
 const chunkedReqId = (requestId: string, chunk: number) => {
   return requestId
     ? {
-        requestId: chunk ? `${requestId}${chunk}` : requestId,
-      }
+      requestId: chunk ? `${requestId}${chunk}` : requestId,
+    }
     : undefined;
 };

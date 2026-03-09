@@ -1,47 +1,54 @@
 import {
-  DataQueryRequest,
-  DataSourceInstanceSettings,
-  SelectableValue,
-  ScopedVars,
-  DataQueryResponse,
   DataQueryError,
-} from '@grafana/data';
-import { BackendSrv, BackendSrvRequest, DataSourceWithBackend, getBackendSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
-import _ from 'lodash';
-import { fetchSingleAsset, fetchSingleTimeseries } from './cdf/client';
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceInstanceSettings,
+  ScopedVars,
+  SelectableValue,
+} from "@grafana/data";
+import {
+  BackendSrv,
+  BackendSrvRequest,
+  DataSourceWithBackend,
+  getBackendSrv,
+  getTemplateSrv,
+  TemplateSrv,
+} from "@grafana/runtime";
+import _ from "lodash";
+import { fetchSingleAsset, fetchSingleTimeseries } from "./cdf/client";
 import {
   AssetsFilterRequestParams,
   FilterRequest,
-  TimeSeriesResponseItem,
-  Resource,
   IdEither,
-} from './cdf/types';
-import { Connector } from './connector';
-import { CacheTime } from './constants';
-import { FEATURE_DEFAULTS } from './featureDefaults';
-import { parse as parseQuery } from './parser/events-assets';
-import { ParsedFilter, QueryCondition } from './parser/types';
+  Resource,
+  TimeSeriesResponseItem,
+} from "./cdf/types";
+import { Connector } from "./connector";
+import { CacheTime } from "./constants";
+import { FEATURE_DEFAULTS } from "./featureDefaults";
+import { parse as parseQuery } from "./parser/events-assets";
+import { ParsedFilter, QueryCondition } from "./parser/types";
 import {
   CogniteDataSourceOptions,
-  HttpMethod,
   CogniteQuery,
+  HttpMethod,
   MetricDescription,
   QueryTarget,
   Tab,
   VariableQueryData,
-} from './types';
-import { applyFilters, isAnnotationTarget } from './utils';
+} from "./types";
+import { applyFilters, isAnnotationTarget } from "./utils";
 import {
+  ActivityDatasource,
+  EventsDatasource,
+  ExtractionPipelinesDatasource,
   FlexibleDataModellingDatasource,
   RelationshipsDatasource,
   TemplatesDatasource,
   TimeseriesDatasource,
-  EventsDatasource,
-  ExtractionPipelinesDatasource,
-  ActivityDatasource,
-} from './datasources';
-import AnnotationsQueryEditor from 'components/annotationsQueryEditor';
-import { lastValueFrom, Observable, from, map, of } from 'rxjs';
+} from "./datasources";
+import AnnotationsQueryEditor from "components/annotationsQueryEditor";
+import { from, lastValueFrom, map, Observable, of } from "rxjs";
 
 export default class CogniteDatasource extends DataSourceWithBackend<
   CogniteQuery,
@@ -65,15 +72,17 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
   activityDatasource: ActivityDatasource;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>) {
+  constructor(
+    instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>,
+  ) {
     super(instanceSettings);
 
     const defaultFetcher = {
       fetch: (options: BackendSrvRequest) => {
         const observable = this.backendSrv.fetch(options);
         return lastValueFrom(observable);
-      }
-    }
+      },
+    };
 
     const { url, jsonData } = instanceSettings;
     const {
@@ -82,19 +91,24 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       oauthPassThru,
       oauthClientCreds,
       // Master toggles for feature sections
-      enableCoreDataModelFeatures = FEATURE_DEFAULTS.enableCoreDataModelFeatures,
-      enableLegacyDataModelFeatures = FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
-      // Core Data Model features
+      enableCoreDataModelFeatures =
+        FEATURE_DEFAULTS.enableCoreDataModelFeatures,
+      enableLegacyDataModelFeatures =
+        FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
+      // Core data model (CDM) features
       enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
       // Legacy data model features
       enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
       enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
-      enableTimeseriesCustomQuery = FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
+      enableTimeseriesCustomQuery =
+        FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
       enableEvents = FEATURE_DEFAULTS.enableEvents,
       // Deprecated features
       enableTemplates = FEATURE_DEFAULTS.enableTemplates,
-      enableEventsAdvancedFiltering = FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
-      enableFlexibleDataModelling = FEATURE_DEFAULTS.enableFlexibleDataModelling,
+      enableEventsAdvancedFiltering =
+        FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
+      enableFlexibleDataModelling =
+        FEATURE_DEFAULTS.enableFlexibleDataModelling,
       enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
       enableRelationships = FEATURE_DEFAULTS.enableRelationships,
     } = jsonData;
@@ -111,7 +125,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       // Master toggles for feature sections
       enableCoreDataModelFeatures,
       enableLegacyDataModelFeatures,
-      // Core Data Model features
+      // Core data model (CDM) features
       enableCogniteTimeSeries,
       enableFlexibleDataModelling,
       // Legacy data model features
@@ -123,33 +137,35 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       // Deprecated features
       enableTemplates,
       enableExtractionPipelines,
-      enableRelationships
+      enableRelationships,
     );
     this.initSources(connector);
   }
 
-  initSources (connector: Connector) {
+  initSources(connector: Connector) {
     this.connector = connector;
     this.templatesDatasource = new TemplatesDatasource(this.connector);
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
     this.activityDatasource = new ActivityDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
-    this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(this.connector);
+    this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(
+      this.connector,
+    );
     this.flexibleDataModellingDatasource = new FlexibleDataModellingDatasource(
       this.connector,
-      this.timeseriesDatasource
+      this.timeseriesDatasource,
     );
   }
 
   annotations = {
     QueryEditor: AnnotationsQueryEditor,
-  }
+  };
 
   // Queries the backend by using `super.query`
   queryBackend(
     backendTargets: QueryTarget[],
-    options: DataQueryRequest<CogniteQuery>
+    options: DataQueryRequest<CogniteQuery>,
   ): Observable<DataQueryResponse> {
     const request = {
       ...options,
@@ -163,7 +179,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * used by panels to get timeseries data
    */
-  query(options: DataQueryRequest<CogniteQuery>): Observable<DataQueryResponse> {
+  query(
+    options: DataQueryRequest<CogniteQuery>,
+  ): Observable<DataQueryResponse> {
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
@@ -182,7 +200,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
 
     if (queryTargets.length) {
       // If there are backend targets (e.g., Tab.Backend), send them to the backend
-      const backendTargets = queryTargets.filter((t) => t.tab === Tab.DataModellingV2);
+      const backendTargets = queryTargets.filter((t) =>
+        t.tab === Tab.DataModellingV2
+      );
       if (backendTargets.length) {
         const backendObservable = this.queryBackend(backendTargets, options);
         observables.push(backendObservable);
@@ -194,7 +214,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.timeseriesDatasource.query({
             ...options,
             targets: tsTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(tsObservable);
       }
@@ -204,7 +224,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.eventsDatasource.query({
             ...options,
             targets: eventTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(eventObservable);
       }
@@ -214,7 +234,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.templatesDatasource.query({
             ...options,
             targets: templatesTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(templatesObservable);
       }
@@ -224,7 +244,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.relationshipsDatasource.query({
             ...options,
             targets: relationshipsTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(relationshipsObservable);
       }
@@ -234,7 +254,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.extractionPipelinesDatasource.query({
             ...options,
             targets: extractionPipelinesTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(extractionPipelinesObservable);
       }
@@ -244,7 +264,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.flexibleDataModellingDatasource.query({
             ...options,
             targets: flexibleDataModellingTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(flexibleDataModellingObservable);
       }
@@ -254,7 +274,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           this.activityDatasource.query({
             ...options,
             targets: activityTargets,
-          })
+          }),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(activityObservable);
       }
@@ -264,16 +284,18 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   }
 
   // A utility function to merge multiple observables into one
-  mergeObservables(observables: Array<Observable<DataQueryResponse>>): Observable<DataQueryResponse> {
+  mergeObservables(
+    observables: Array<Observable<DataQueryResponse>>,
+  ): Observable<DataQueryResponse> {
     if (observables.length === 0) {
       return of({ data: [] });
     }
-    
+
     return new Observable((subscriber) => {
       let allData: any[] = [];
       let allErrors: DataQueryError[] = [];
       let completedCount = 0;
-  
+
       const subscriptions = observables.map((obs) =>
         obs.subscribe({
           next: (response) => {
@@ -281,7 +303,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           },
           error: (err) => {
             allErrors.push({
-              message: err?.message || 'Unknown error',
+              message: err?.message || "Unknown error",
               refId: err?.refId || undefined,
               ...err,
             });
@@ -291,7 +313,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
             if (completedCount === observables.length) {
               const fullResponse: DataQueryResponse = {
                 data: allData,
-              }
+              };
               if (allErrors.length) {
                 fullResponse.errors = allErrors;
               }
@@ -307,9 +329,20 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     });
   }
 
-  private replaceVariablesInTarget(target: QueryTarget, scopedVars: ScopedVars): QueryTarget {
-    const { expr, query, assetQuery, label, eventQuery, flexibleDataModellingQuery, templateQuery, cogniteTimeSeries } =
-      target;
+  private replaceVariablesInTarget(
+    target: QueryTarget,
+    scopedVars: ScopedVars,
+  ): QueryTarget {
+    const {
+      expr,
+      query,
+      assetQuery,
+      label,
+      eventQuery,
+      flexibleDataModellingQuery,
+      templateQuery,
+      cogniteTimeSeries,
+    } = target;
 
     const [
       exprTemplated,
@@ -333,7 +366,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         cogniteTimeSeries?.targetUnit,
         cogniteTimeSeries?.targetUnitSystem,
       ],
-      scopedVars
+      scopedVars,
     );
     const templatedAssetQuery = assetQuery && {
       assetQuery: {
@@ -394,16 +427,16 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   async getOptionsForDropdown(
     query: string,
     type?: string,
-    options?: any
+    options?: any,
   ): Promise<Array<SelectableValue<string> & Resource>> {
     const resources = {
-      [Tab.Asset]: 'assets',
-      [Tab.Timeseries]: 'timeseries',
+      [Tab.Asset]: "assets",
+      [Tab.Timeseries]: "timeseries",
     };
     const data: any = query
       ? {
-          search: { query },
-        }
+        search: { query },
+      }
       : {};
 
     const items = await this.connector.fetchItems<TimeSeriesResponseItem>({
@@ -420,10 +453,16 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * used by query editor to get metric suggestions (template variables)
    */
-  async metricFindQuery({ query, valueType, queryType, graphqlQuery, dataModel }: VariableQueryData): Promise<MetricDescription[]> {
+  async metricFindQuery(
+    { query, valueType, queryType, graphqlQuery, dataModel }: VariableQueryData,
+  ): Promise<MetricDescription[]> {
     // Handle GraphQL queries
-    if (queryType === 'graphql') {
-      return this.metricFindGraphqlQuery({ graphqlQuery, dataModel, valueType });
+    if (queryType === "graphql") {
+      return this.metricFindGraphqlQuery({
+        graphqlQuery,
+        dataModel,
+        valueType,
+      });
     }
 
     // Handle legacy assets queries
@@ -458,52 +497,58 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * Handle GraphQL queries for variables
    */
-  private async metricFindGraphqlQuery({ 
-    graphqlQuery, 
-    dataModel, 
-    valueType 
-  }: { 
-    graphqlQuery?: string; 
+  private async metricFindGraphqlQuery({
+    graphqlQuery,
+    dataModel,
+    valueType,
+  }: {
+    graphqlQuery?: string;
     dataModel?: { space?: string; externalId?: string; version?: string };
     valueType?: { value: string; label: string };
   }): Promise<MetricDescription[]> {
-    if (!graphqlQuery || !dataModel?.space || !dataModel?.externalId || !dataModel?.version) {
+    if (
+      !graphqlQuery || !dataModel?.space || !dataModel?.externalId ||
+      !dataModel?.version
+    ) {
       return [];
     }
 
     try {
       // Interpolate template variables in the GraphQL query
       const interpolatedQuery = this.templateSrv.replace(graphqlQuery);
-      
+
       const { data, errors } = await this.connector.fetchQuery({
-        path: `/userapis/spaces/${dataModel.space}/datamodels/${dataModel.externalId}/versions/${dataModel.version}/graphql`,
+        path:
+          `/userapis/spaces/${dataModel.space}/datamodels/${dataModel.externalId}/versions/${dataModel.version}/graphql`,
         method: HttpMethod.POST,
         data: JSON.stringify({ query: interpolatedQuery }),
       });
 
       if (errors) {
-        console.error('GraphQL variable query errors:', errors);
+        console.error("GraphQL variable query errors:", errors);
         return [];
       }
 
       // Extract items from the response
       const items = this.extractItemsFromGraphqlResponse(data);
-      
+
       // Map items to metric descriptions
-      const fieldName = valueType?.value || 'name';
+      const fieldName = valueType?.value || "name";
       return items.map((item) => {
         const getValue = (key: string): string => {
           const val = item[key];
-          return typeof val === 'string' ? val : String(val || '');
+          return typeof val === "string" ? val : String(val || "");
         };
-        
+
         return {
-          text: getValue(fieldName) || getValue('name') || getValue('externalId') || getValue('id') || 'Unknown',
-          value: getValue(fieldName) || getValue('id') || getValue('externalId'),
+          text: getValue(fieldName) || getValue("name") ||
+            getValue("externalId") || getValue("id") || "Unknown",
+          value: getValue(fieldName) || getValue("id") ||
+            getValue("externalId"),
         };
       });
     } catch (error) {
-      console.error('GraphQL variable query error:', error);
+      console.error("GraphQL variable query error:", error);
       return [];
     }
   }
@@ -511,28 +556,38 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   /**
    * Extract items from GraphQL response - handles both 'items' and 'edges' formats
    */
-  private extractItemsFromGraphqlResponse(data: Record<string, unknown>): Array<Record<string, unknown>> {
+  private extractItemsFromGraphqlResponse(
+    data: Record<string, unknown>,
+  ): Array<Record<string, unknown>> {
     if (!data) {
       return [];
     }
 
     // Look for the first non-null response in the data
-    const firstResponseKey = Object.keys(data).find(key => data[key] !== null);
+    const firstResponseKey = Object.keys(data).find((key) =>
+      data[key] !== null
+    );
     if (!firstResponseKey) {
       return [];
     }
 
     const firstResponse = data[firstResponseKey] as Record<string, unknown>;
-    
+
     // Handle 'items' format
-    if (firstResponse && typeof firstResponse === 'object' && 'items' in firstResponse && Array.isArray(firstResponse.items)) {
+    if (
+      firstResponse && typeof firstResponse === "object" &&
+      "items" in firstResponse && Array.isArray(firstResponse.items)
+    ) {
       return firstResponse.items as Array<Record<string, unknown>>;
     }
-    
+
     // Handle 'edges' format (GraphQL Relay connection)
-    if (firstResponse && typeof firstResponse === 'object' && 'edges' in firstResponse && Array.isArray(firstResponse.edges)) {
+    if (
+      firstResponse && typeof firstResponse === "object" &&
+      "edges" in firstResponse && Array.isArray(firstResponse.edges)
+    ) {
       return (firstResponse.edges as Array<{ node?: Record<string, unknown> }>)
-        .map(edge => edge.node)
+        .map((edge) => edge.node)
         .filter((node): node is Record<string, unknown> => node !== undefined);
     }
 
@@ -555,7 +610,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   async checkLoginStatusOAuth() {
     let hasAccessToProject = false;
     let isLoggedIn = false;
-    const { status, data } = await this.connector.request({ path: 'api/v1/token/inspect' });
+    const { status, data } = await this.connector.request({
+      path: "api/v1/token/inspect",
+    });
 
     if (status === 200) {
       const { projects = [] } = data || {};
@@ -579,27 +636,29 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     switch (true) {
       case isLoggedIn && hasAccessToProject:
         return {
-          status: 'success',
-          message: 'Your Cognite credentials are valid',
-          title: 'Success',
+          status: "success",
+          message: "Your Cognite credentials are valid",
+          title: "Success",
         };
       case isLoggedIn:
         return {
-          status: 'warning',
+          status: "warning",
           message: `Cannot access '${this.project}' project`,
-          title: 'Warning',
+          title: "Warning",
         };
       default:
         return {
-          status: 'error',
-          message: 'Your Cognite credentials are invalid',
-          title: 'Error',
+          status: "error",
+          message: "Your Cognite credentials are invalid",
+          title: "Error",
         };
     }
   }
 }
 
-export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] {
+export function filterEmptyQueryTargets(
+  targets: CogniteQuery[],
+): QueryTarget[] {
   return targets.filter((target) => {
     if (target && !target.hide) {
       const {
@@ -651,7 +710,9 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
   }) as QueryTarget[];
 }
 
-export function resource2DropdownOption(resource: Resource): SelectableValue<string> & Resource {
+export function resource2DropdownOption(
+  resource: Resource,
+): SelectableValue<string> & Resource {
   const { id, name, externalId, description } = resource;
   const value = id.toString();
   const label = name || externalId || value;
@@ -665,13 +726,19 @@ export function resource2DropdownOption(resource: Resource): SelectableValue<str
 }
 
 function groupTargets(targets: CogniteQuery[]) {
-  const groupedByTab = _.groupBy(targets, (target) => target.tab ?? (isAnnotationTarget(target) ? Tab.Event : Tab.Timeseries));
-  
+  const groupedByTab = _.groupBy(
+    targets,
+    (target) =>
+      target.tab ?? (isAnnotationTarget(target) ? Tab.Event : Tab.Timeseries),
+  );
+
   // Filter targets that have activity overlay enabled
   const activityTargets = targets.filter(
-    (target) => target.cogniteActivityQuery?.enabled && target.tab === Tab.CogniteTimeSeriesSearch
+    (target) =>
+      target.cogniteActivityQuery?.enabled &&
+      target.tab === Tab.CogniteTimeSeriesSearch,
   );
-  
+
   return {
     eventTargets: groupedByTab[Tab.Event] ?? [],
     templatesTargets: groupedByTab[Tab.Templates] ?? [],
