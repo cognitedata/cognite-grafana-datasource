@@ -1,5 +1,5 @@
 import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
-import { Response } from 'playwright';
+import { Page, Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
@@ -18,15 +18,88 @@ const expectedTs = [
   '59.9139-10.7522-current.uvi'
 ].sort();
 
-
 const isCdfResponse = (path: string) => {
   return (response: Response) => {
     const isTsData = response.request().url().endsWith(path);
     const is200 = response.status() === 200;
-
     return isTsData && is200;
   }
 };
+
+/**
+ * Shared setup for CogniteTimeSeries tests: sets viewport, navigates to a new
+ * panel, selects the datasource, clicks the CogniteTimeSeries tab, and picks
+ * the first CogniteTimeSeries/cdf_cdm view.
+ *
+ * Returns { panelEditPage, editorRow, option } for further test-specific steps.
+ */
+async function setupCogniteTimeSeriesPanel({
+  readProvisionedDataSource: readDS,
+  readProvisionedDashboard: readDash,
+  gotoDashboardPage: gotoDash,
+  selectors,
+  page,
+}: Pick<
+  PluginFixture,
+  'readProvisionedDataSource' | 'readProvisionedDashboard' | 'gotoDashboardPage' | 'selectors'
+> & { page: Page }) {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  const ds = await readDS({ fileName: 'datasources.yml' });
+  const dashboard = await readDash({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDash(dashboard);
+
+  const panelEditPage = await dashboardPage.addPanel();
+  await panelEditPage.datasource.set(ds.name);
+
+  const editorRow = panelEditPage.getQueryEditorRow("A");
+
+  // Wait for CogniteTimeSeries tab to appear after datasource selection
+  await expect(editorRow.getByText('CogniteTimeSeries')).toBeVisible();
+  await editorRow.getByText('CogniteTimeSeries').click();
+
+  const viewField = editorRow.locator('label:has-text("View")').locator('..');
+  const viewDropdown = viewField.locator('input').first();
+  await viewDropdown.click();
+
+  const option = selectors.components.Select.option;
+  const cogniteTimeSeriesOption = panelEditPage
+    .getByGrafanaSelector(option)
+    .filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+
+  // Wait for the view options to load from the container inspect API
+  await expect(cogniteTimeSeriesOption.first()).toBeVisible({ timeout: 10000 });
+  await cogniteTimeSeriesOption.first().click();
+
+  return { panelEditPage, editorRow, option, dashboardPage };
+}
+
+/**
+ * Searches for and selects a timeseries by external ID in the CogniteTimeSeries
+ * search dropdown. Waits for the search result to appear before clicking.
+ */
+async function searchAndSelectTimeSeries(
+  page: Page,
+  editorRow: ReturnType<Awaited<ReturnType<typeof setupCogniteTimeSeriesPanel>>['panelEditPage']['getQueryEditorRow']>,
+  panelEditPage: Awaited<ReturnType<typeof setupCogniteTimeSeriesPanel>>['panelEditPage'],
+  option: string,
+  searchTerm: string,
+  queryLetter = 'A',
+) {
+  const searchInput = editorRow.locator(`input[id="cognite-timeseries-search-${queryLetter}"]`);
+  await searchInput.click();
+  await searchInput.fill(searchTerm);
+
+  await waitForQueriesToFinish(page);
+
+  const escaped = searchTerm.replace(/\./g, '\\.');
+  const tsOption = panelEditPage
+    .getByGrafanaSelector(option)
+    .filter({ hasText: new RegExp(escaped, 'i') })
+    .first();
+  await expect(tsOption).toBeVisible({ timeout: 10000 });
+  await tsOption.click();
+}
 
 test('Panel with asset subtree queries rendered OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   test.setTimeout(60000);
@@ -43,11 +116,10 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   const combobox = await editorRow.getByRole('combobox', { name: 'Asset Tag' });
   await combobox.click();
-  
-  // Wait for dropdown to populate
-  await page.waitForTimeout(2000);
 
   const option = selectors.components.Select.option;
+  // Wait for dropdown options to appear instead of fixed timeout
+  await expect(panelEditPage.getByGrafanaSelector(option).first()).toBeVisible({ timeout: 10000 });
   await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Locations' }).click();
 
   const includeSubAssets = await editorRow.getByLabel('Include sub-assets').nth(1);
@@ -90,7 +162,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
-  
+
   const tsExternalIds = [
     '59.9139-10.7522-current.humidity',
     '59.9139-10.7522-current.pressure',
@@ -99,24 +171,24 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
 
   const panels = ['A', 'B', 'C'];
   const units = ['percent', 'hPa', 'Kelvin'];
-  
+
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
   await panelEditPage.setVisualization('Table');
-  
+
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
     await page.getByTestId(/query-tab-add-query/).click();
     const editorRow = panelEditPage.getQueryEditorRow(panels[index]);
-  
+
     await editorRow.getByText('Time series custom query').click();
-  
+
     await editorRow.getByRole('textbox', { name: 'Query' }).fill(`ts{externalId="${tsExternalId}"}`);
-  
+
     await editorRow.getByRole('combobox', { name: 'Aggregation' }).click();
     const option = selectors.components.Select.option;
-    
+
     await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Interpolation' }).first().click();
-    
+
     await editorRow.getByRole('textbox', { name: 'Label' }).fill(`{{externalId}}-{{unit}}`);
     await editorRow.getByRole('textbox', { name: 'Granularity' }).fill(`1d`);
   }
@@ -124,10 +196,9 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   await waitForQueriesToFinish(page);
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
-  // transform into a single table, this is simpler to assert
   // Based on actual UI inspection of different Grafana versions:
   // - 11.6.7+: uses 'data-testid Tab Transformations'
-  // - 11.2.10: uses 'data-testid Tab Transform data'  
+  // - 11.2.10: uses 'data-testid Tab Transform data'
   // - <11.0.0: uses role selector
   if (semver.gte(grafanaVersion, '11.5.4')) {
     await page.getByTestId('data-testid Tab Transformations').click();
@@ -142,7 +213,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   }
 
   await page.getByRole('button', { name: 'Join by field' }).click();
-  
+
   const tsWithUnits = tsExternalIds.map((ts, i) => `${ts}-${units[i]}`);
   await expect(panelEditPage.panel.fieldNames).toContainText(tsWithUnits);
 });
@@ -155,8 +226,7 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   const panelEditPage = await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
 
   await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
-  
-  // Select only the first column (externalId)
+
   const deleteColumnButtonPattern = /event-remove-col-/;
   while (await page.getByTestId(deleteColumnButtonPattern).count() !== 1) {
     await page.getByTestId(deleteColumnButtonPattern).last().click();
@@ -178,19 +248,15 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
 
   await waitForQueriesToFinish(page);
   await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
-  
+
 
   await expect(panelEditPage.panel.fieldNames).toHaveText("externalId");
   await expect(panelEditPage.panel.fieldNames).not.toContainText(["description", "startTime", "endTime"]);
 
-  // Check if the table contains the expected events
-  // Since we filtered the events by prefix, we can check if the table contains the events that start with "test_event (1"
-  // and do not contain the events that start with "test_event (2..9"
   const EXPECTED_EVENT_PREFIX_PATTERN = /test_event \(1/;
   const EXCLUDED_EVENT_PATTERN = /test_event \(2-9/;
 
   const validateCellTexts = (cellTexts: string[]) => {
-    // Filter out header cells and empty cells, focus on actual event data
     const eventCells = cellTexts.filter(text => text && text.includes('test_event'));
     const hasExpectedEvents = eventCells.length > 0 && eventCells.some(text => EXPECTED_EVENT_PREFIX_PATTERN.test(text));
     const hasNoExcludedEvents = !eventCells.some(text => EXCLUDED_EVENT_PATTERN.test(text));
@@ -198,17 +264,14 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   };
 
   await expect.poll(async () => {
-    // Try different selectors for cross-Grafana version compatibility
     let cellTexts: string[] = [];
-    
-    // First try the standard plugin-e2e selector
+
     try {
       cellTexts = await panelEditPage.panel.data.allInnerTexts();
     } catch (e) {
       // Selector may not work in all Grafana versions
     }
-    
-    // If that fails, try direct table selectors
+
     if (cellTexts.length === 0) {
       try {
         const tableCells = await page.locator('table td, table th').allInnerTexts();
@@ -217,20 +280,18 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
         // Table selector may not work in all cases
       }
     }
-    
-    // If still no data, extract from panel text (fallback for newer Grafana versions)
+
     if (cellTexts.length === 0) {
       try {
         const panelText = await panelEditPage.panel.locator.textContent();
         if (panelText) {
-          // Extract event data from the panel text
           cellTexts = panelText.split(/(?=test_event)/).filter(text => text.includes('test_event'));
         }
       } catch (e) {
         // Final fallback failed
       }
     }
-    
+
     return validateCellTexts(cellTexts);
   }, { timeout: 10000 }).toBeTruthy();
 });
@@ -239,7 +300,7 @@ test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, read
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
   const EVENTS_QUERY_PANEL_ID = '3';
-  
+
   await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
 
   await page.getByTestId(/event-query-help/).click();
@@ -248,112 +309,45 @@ test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, read
 });
 
 test('"CogniteTimeSeries" tab can be selected and search works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
-
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Test that the View dropdown is visible (single dropdown with views from container inspect API)
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
   await expect(viewField).toBeVisible();
 
-  // Click on the View dropdown to see available options
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  
-  // Wait for view options to load from the container inspect API
-  await page.waitForTimeout(2000);
-  
-  // Check that at least one CogniteTimeSeries view option is available
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await expect(cogniteTimeSeriesOption.first()).toBeVisible({ timeout: 10000 });
-  
-  // Select the CogniteTimeSeries view
-  await cogniteTimeSeriesOption.first().click();
-
-  // Test that search AsyncSelect is visible - use the input element with the specific id
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
   await expect(searchInput).toBeVisible();
 
-  // Test aggregation selector (should be set to Average)
   const aggregationField = editorRow.locator('label:has-text("Aggregation")').locator('..');
   const aggregationValue = aggregationField.getByText('Average');
   await expect(aggregationValue).toBeVisible();
 
-  // Test granularity input
   const granularityInput = editorRow.locator('input[id="granularity-A"]');
   await expect(granularityInput).toBeVisible();
 
-  // Test label input  
   const labelInput = editorRow.locator('input[id="label-A"]');
   await expect(labelInput).toBeVisible();
 });
 
 test('"CogniteTimeSeries" query with selection works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Select a view from the View dropdown (views are fetched from container inspect API)
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  
-  // Wait for view options to load
-  await page.waitForTimeout(2000);
-  
-  // Select the CogniteTimeSeries view
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  // Click on the search AsyncSelect and type '59.9139'
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139');
-
-  // Wait for search results
-  await waitForQueriesToFinish(page);
-  
-  // Look for the timeseries option in the dropdown
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139/i }).first();
-  await expect(tsOption).toBeVisible({ timeout: 10000 });
-  
-  // Click on the first result to select it
-  await tsOption.click();
-
-  // Verify that a timeseries name appears in the search box (it should replace the placeholder)
   await expect(searchInput).not.toHaveText('Search timeseries by name/description');
 
-  // Test label input - find the textbox that contains 'default' for label
   const labelInput = editorRow.locator('input[id="label-A"]');
   await labelInput.clear();
   await labelInput.fill('CDMTS Data');
@@ -362,142 +356,61 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
 });
 
 test('"CogniteTimeSeries" unit conversion is available for timeseries with units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Select a view from the View dropdown
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  
-  // Wait for view options to load
-  await page.waitForTimeout(2000);
-  
-  // Select the CogniteTimeSeries view
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  // Search for a timeseries that has a unit (temperature)
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.temp');
-
-  // Wait for search results
-  await waitForQueriesToFinish(page);
-  
-  // Select the temperature timeseries
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
-  await expect(tsOption).toBeVisible({ timeout: 10000 });
-  await tsOption.click();
-
-  // Wait for unit information to load
-  await page.waitForTimeout(2000);
-
-  // Check that the current unit is displayed (should show "Unit: Degree Celsius (°C)" or similar)
+  // Wait for unit label to appear after timeseries selection
   const unitLabel = editorRow.getByText(/Unit:/i);
-  await expect(unitLabel).toBeVisible({ timeout: 5000 });
+  await expect(unitLabel).toBeVisible({ timeout: 10000 });
 
-  // Check that the Target Unit field is visible
   const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
   await expect(targetUnitField).toBeVisible();
 
-  // Click on the Target Unit dropdown
   const targetUnitInput = targetUnitField.locator('..').locator('input').first();
   await targetUnitInput.click();
 
-  // Wait for unit options to load
-  await page.waitForTimeout(1000);
-
-  // Check that unit options are available (should show other temperature units)
   const unitOptions = panelEditPage.getByGrafanaSelector(option);
   await expect(unitOptions.first()).toBeVisible({ timeout: 5000 });
 
-  // Verify that at least one temperature unit option is available
   const fahrenheitOption = unitOptions.filter({ hasText: /Fahrenheit|°F/i });
   const kelvinOption = unitOptions.filter({ hasText: /Kelvin|K/i });
-  
-  // At least one of these should be visible
+
   const hasTemperatureUnits = await fahrenheitOption.count() > 0 || await kelvinOption.count() > 0;
   expect(hasTemperatureUnits).toBeTruthy();
 });
 
 test('"CogniteTimeSeries" unit conversion not shown for timeseries without units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.clouds');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Select a view from the View dropdown
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  
-  // Wait for view options to load
-  await page.waitForTimeout(2000);
-  
-  // Select the CogniteTimeSeries view
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  // Search for a timeseries that doesn't have a unit (clouds)
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.clouds');
-
-  // Wait for search results
-  await waitForQueriesToFinish(page);
-  
-  // Select the clouds timeseries
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.clouds/i }).first();
-  await expect(tsOption).toBeVisible({ timeout: 10000 });
-  await tsOption.click();
-
-  // Wait a bit for any unit information to potentially load
+  // Target Unit and Unit label should NOT appear for timeseries without units.
+  // Use a short explicit wait because we're asserting absence.
   await page.waitForTimeout(2000);
 
-  // Check that the Target Unit field is NOT visible (timeseries has no unit)
   const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
   await expect(targetUnitField).not.toBeVisible();
 
-  // Check that no unit label is displayed
   const unitLabel = editorRow.getByText(/Unit:/i);
   await expect(unitLabel).not.toBeVisible();
 });
 
 test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  // Set a larger viewport to ensure all UI elements are visible
   await page.setViewportSize({ width: 1920, height: 1080 });
-  
+
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -507,48 +420,30 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
 
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
 
   for (const [index, searchTerm] of searchTerms.entries()) {
     if (index > 0) {
       await page.getByTestId(/query-tab-add-query/).click();
     }
-    
-    const queryLetter = String.fromCharCode(65 + index); // A, B, C
+
+    const queryLetter = String.fromCharCode(65 + index);
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
-    // Click on CogniteTimeSeries tab
+    // Wait for CogniteTimeSeries tab and click it
+    await expect(editorRow.getByText('CogniteTimeSeries')).toBeVisible();
     await editorRow.getByText('CogniteTimeSeries').click();
 
-    // Select a view from the View dropdown
     const viewField = editorRow.locator('label:has-text("View")').locator('..');
     const viewDropdown = viewField.locator('input').first();
     await viewDropdown.click();
-    
-    // Wait for view options to load
-    await page.waitForTimeout(2000);
-    
-    // Select the CogniteTimeSeries view
+
     const option = selectors.components.Select.option;
     const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
+    await expect(cogniteTimeSeriesOption.first()).toBeVisible({ timeout: 10000 });
     await cogniteTimeSeriesOption.first().click();
 
-    // Click on the search AsyncSelect and type the search term
-    const searchInput = editorRow.locator(`input[id="cognite-timeseries-search-${queryLetter}"]`);
-    await searchInput.click();
-    await searchInput.fill(searchTerm);
+    await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, searchTerm, queryLetter);
 
-    // Wait for search results
-    await waitForQueriesToFinish(page);
-    
-    // Select first result from dropdown
-    const searchOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: new RegExp(searchTerm.replace('.', '\\.'), 'i') }).first();
-    await expect(searchOption).toBeVisible({ timeout: 10000 });
-    await searchOption.click();
-
-    // Set custom label - find the label textbox (last textbox with 'default')
     const labelInput = editorRow.locator(`input[id="label-${queryLetter}"]`);
     await labelInput.clear();
     await labelInput.fill(`TST ${expectedLabels[index]}`);
@@ -556,7 +451,6 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
 
   await waitForQueriesToFinish(page);
 
-  // Check that all labels appear in the legend
   for (const label of expectedLabels) {
     const legendText = panelEditPage.panel.locator.getByText(`TST ${label}`);
     await expect(legendText).toBeVisible({ timeout: 10000 });
@@ -564,9 +458,8 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
 });
 
 test('"CogniteTimeSeries with Activities" panel loads with annotations', async ({ readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
-  // Set a larger viewport to ensure all UI elements are visible
   await page.setViewportSize({ width: 1920, height: 1080 });
-  
+
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -574,247 +467,113 @@ test('"CogniteTimeSeries with Activities" panel loads with annotations', async (
   const ACTIVITIES_PANEL_ID = '6';
   const panelEditPage = await dashboardPage.gotoPanelEditPage(ACTIVITIES_PANEL_ID);
 
-  // Verify the panel title
   await expect(page.getByText('CogniteTimeSeries with Activities - Core Data Model')).toBeVisible();
 
-  // Wait for queries to finish
   await waitForQueriesToFinish(page);
 
-  // Check that the time series data is displayed
   await expect(panelEditPage.panel.locator).toBeVisible();
 });
 
 test('"CogniteTimeSeries" activities toggle appears when timeseries selected', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
-
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
-
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Select a view from the View dropdown
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  
-  // Wait for view options to load
-  await page.waitForTimeout(2000);
-  
-  // Select the CogniteTimeSeries view
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
   // Activities toggle should NOT be visible yet (no timeseries selected)
   const activitiesToggleBefore = editorRow.getByLabel('Activities').nth(1);
   await expect(activitiesToggleBefore).not.toBeVisible();
 
-  // Search for and select a timeseries
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.temp');
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
-  // Wait for search results
-  await waitForQueriesToFinish(page);
-  
-  // Select the temperature timeseries
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
-  await expect(tsOption).toBeVisible({ timeout: 10000 });
-  await tsOption.click();
-
-  // Wait for UI to update
-  await page.waitForTimeout(1000);
-
-  // Now the Activities toggle should be visible
+  // Now the Activities toggle should appear
   const activitiesToggleAfter = editorRow.getByLabel('Activities').nth(1);
   await expect(activitiesToggleAfter).toBeVisible({ timeout: 5000 });
 });
 
 test('"CogniteTimeSeries" enabling activities shows configuration options', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  
-  // Wait for data source to be properly selected and tabs to render
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Click on CogniteTimeSeries tab
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  // Select a view
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  await page.waitForTimeout(2000);
-  
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  // Select a timeseries
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.temp');
-  await waitForQueriesToFinish(page);
-  
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
-  await tsOption.click();
-  await page.waitForTimeout(1000);
-
-  // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.check({ force: true });
   await expect(activitiesToggle).toBeChecked();
 
-  // Wait for activity configuration to appear
-  await page.waitForTimeout(1000);
-
-  // Check that the Activity View dropdown is visible
+  // Wait for activity configuration UI to render
   const activityViewLabel = editorRow.getByText('View').nth(1);
-  await expect(activityViewLabel).toBeVisible();
+  await expect(activityViewLabel).toBeVisible({ timeout: 5000 });
 
-  // Check that the Scheduled toggle is visible
   const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
   await expect(scheduledToggle).toBeVisible();
 });
 
 test('"CogniteTimeSeries" can select activity view', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Setup: Select CogniteTimeSeries view and timeseries
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  await page.waitForTimeout(2000);
-  
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.temp');
-  await waitForQueriesToFinish(page);
-  
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
-  await tsOption.click();
-  await page.waitForTimeout(1000);
-
-  // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.check({ force: true });
-  await page.waitForTimeout(1000);
 
-  // Find the second View label (for activities, not timeseries)
+  // Wait for the second View field (activity view) to appear
   const activityViewFields = editorRow.locator('label:has-text("View")');
+  await expect(activityViewFields.nth(1)).toBeVisible({ timeout: 5000 });
+
   const activityViewCount = await activityViewFields.count();
-  
-  // Should have at least 2 View fields now (timeseries + activity)
   expect(activityViewCount).toBeGreaterThanOrEqual(2);
 
-  // Click on the activity view dropdown (the second one)
   const activityViewInput = activityViewFields.nth(1).locator('..').locator('input').first();
   await activityViewInput.click();
-  
-  // Wait for activity view options to load
-  await page.waitForTimeout(2000);
 
-  // Check that CogniteActivity view option is available
   const activityViewOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteActivity.*cdf_cdm/i });
   await expect(activityViewOption.first()).toBeVisible({ timeout: 10000 });
-  
-  // Select the CogniteActivity view
+
   await activityViewOption.first().click();
 
-  // Verify the selection was made by checking the option is no longer visible (dropdown closed)
-  await page.waitForTimeout(500);
   await expect(activityViewOption.first()).not.toBeVisible();
 });
 
 test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
-  // Set a larger viewport to ensure all UI elements are visible
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
-  const dashboardPage = await gotoDashboardPage(dashboard);
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+  });
 
-  const panelEditPage = await dashboardPage.addPanel();
-  await panelEditPage.datasource.set(ds.name);
-  await page.waitForTimeout(1000);
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
-  const editorRow = panelEditPage.getQueryEditorRow("A");
-
-  // Setup: Select CogniteTimeSeries view and timeseries
-  await editorRow.getByText('CogniteTimeSeries').click();
-
-  const viewField = editorRow.locator('label:has-text("View")').locator('..');
-  const viewDropdown = viewField.locator('input').first();
-  await viewDropdown.click();
-  await page.waitForTimeout(2000);
-  
-  const option = selectors.components.Select.option;
-  const cogniteTimeSeriesOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteTimeSeries.*cdf_cdm/i });
-  await cogniteTimeSeriesOption.first().click();
-
-  const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await searchInput.click();
-  await searchInput.fill('59.9139-10.7522-current.temp');
-  await waitForQueriesToFinish(page);
-  
-  const tsOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /59\.9139-10\.7522-current\.temp/i }).first();
-  await tsOption.click();
-  await page.waitForTimeout(1000);
-
-  // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.check({ force: true });
-  await page.waitForTimeout(1000);
 
-  // Find the Scheduled toggle
   const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
-  await expect(scheduledToggle).toBeVisible();
-  
-  // Initially should not be checked
+  await expect(scheduledToggle).toBeVisible({ timeout: 5000 });
+
   await expect(scheduledToggle).not.toBeChecked();
 
-  // Check the toggle
   await scheduledToggle.check({ force: true });
   await expect(scheduledToggle).toBeChecked();
 
-  // Uncheck the toggle
   await scheduledToggle.uncheck({ force: true });
   await expect(scheduledToggle).not.toBeChecked();
 });
