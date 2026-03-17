@@ -33,23 +33,23 @@ const oAuthClientSecretTooltip = `A secret string that the application uses to p
 
 const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. Example: https://api.cognitedata.com/.default.`;
 
-const enableCogniteTimeSeriesTooltip = `Enable to explore time series from the core data model`;
+const enableCogniteTimeSeriesTooltip = `Enable the CogniteTimeSeries tab to explore time series from the core data model`;
 
-const enableTimeseriesSearchTooltip = `Enable to search and select time series`;
+const enableTimeseriesSearchTooltip = `Enable the Time series search tab to search and select time series`;
 
-const enableTimeseriesFromAssetTooltip = `Enable to find time series linked to assets`;
+const enableTimeseriesFromAssetTooltip = `Enable the Time series from asset tab to find time series linked to assets`;
 
-const enableTimeseriesCustomQueryTooltip = `Enable for advanced time series querying`;
+const enableTimeseriesCustomQueryTooltip = `Enable the Time series custom query tab for advanced time series querying`;
 
-const enableEventsTooltip = `Enable to query CDF events`;
+const enableEventsTooltip = `Enable the Events tab to query CDF events`;
 
-const enableRelationshipsTooltip = `Deprecated. Use the data models feature instead.`;
+const enableRelationshipsTooltip = `Deprecated (use the Data models feature instead)`;
 
 const enableTemplatesTooltip = `Deprecated. Enables the Cognite templates preview.`;
 
 const enableEventsAdvancedFilteringTooltip = `Enable advanced filtering for events (preview)`;
 
-const enableFlexibleDataModellingTooltip = 'Enable to use data models';
+const enableFlexibleDataModellingTooltip = 'Enable data models';
 
 const enableExtractionPipelinesTooltip = 'Deprecated. Enables extraction pipelines (preview).';
 
