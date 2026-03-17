@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState } from 'react';
 import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
@@ -18,7 +18,7 @@ type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteSecureJsonData
 >;
 
-const apiUrlTooltip = `Hostname used to reach the API. 
+const apiUrlTooltip = `Hostname used to reach the API.
 For projects deployed on the default multi-tenant installation (api.cognitedata.com), keep the default value and do not change the hostname.
 For projects deployed on another cluster (e.g., westeurope-1.cognitedata.com), change the hostname to point at the cluster's API server.
 When unsure, keep the hostname as the default.`;
@@ -122,7 +122,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
       <FieldSet label='HTTP'>
           <InlineField
             label="Project"
-            labelWidth={24}            
+            labelWidth={24}
             tooltip="Your CDF project name."
           >
             <Input
