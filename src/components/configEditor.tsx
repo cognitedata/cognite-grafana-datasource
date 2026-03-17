@@ -199,7 +199,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
               />
             </InlineFieldRow>
             <InlineFieldRow style={{ marginBottom: '4px' }}>
-              <InlineFormLabel htmlFor='oauth-client-id' tooltip={oAuthClientIdTooltip} width={12}>
+              <InlineFormLabel htmlFor='oauth-client-id' tooltip={oAuthClientSecretTooltip} width={12}>
                 Client ID
               </InlineFormLabel>
               <Input
