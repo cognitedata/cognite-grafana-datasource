@@ -26,7 +26,7 @@ const GranularityEditor = (props: SelectedProps) => {
           label="Granularity"
           labelWidth={14}
           tooltip={
-            `The granularity of the aggregate values. Valid entries are: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`
+            `The granularity of the aggregate values. Use: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`
           }
         >
           <Input
@@ -71,7 +71,7 @@ export const LabelEditor = (props: SelectedProps) => {
         label="Label"
         labelWidth={10}
         tooltip={
-          'Set the label for each time series. Can also access time series properties via {{property}}. Eg: {{description}}-{{metadata.key}}'
+          'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.'
         }
       >
         <Input
