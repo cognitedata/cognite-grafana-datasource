@@ -102,8 +102,17 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.setVisualization('Table');
-  
+
+  // Grafana 12.4+ changed the viz picker item from aria-label to data-testid.
+  // plugin-e2e@1.x uses e2e-selectors@12.1 which doesn't know about this change,
+  // so we fall back to direct page selectors for 12.4+.
+  if (semver.gte(grafanaVersion, '12.4.0')) {
+    await page.getByTestId('toggle-viz-picker').click();
+    await page.getByTestId('Plugin visualization item Table').click();
+  } else {
+    await panelEditPage.setVisualization('Table');
+  }
+
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
     await page.getByTestId(/query-tab-add-query/).click();
     const editorRow = panelEditPage.getQueryEditorRow(panels[index]);
@@ -126,10 +135,10 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
 
   // transform into a single table, this is simpler to assert
   // Based on actual UI inspection of different Grafana versions:
-  // - 11.6.7+: uses 'data-testid Tab Transformations'
-  // - 11.2.10: uses 'data-testid Tab Transform data'  
+  // - 11.3.0+: uses 'data-testid Tab Transformations'
+  // - 11.0.0 - 11.2.x: uses 'data-testid Tab Transform data'
   // - <11.0.0: uses role selector
-  if (semver.gte(grafanaVersion, '11.5.4')) {
+  if (semver.gte(grafanaVersion, '11.3.0')) {
     await page.getByTestId('data-testid Tab Transformations').click();
   } else if (semver.gte(grafanaVersion, '11.0.0')) {
     await page.getByTestId('data-testid Tab Transform data').click();
