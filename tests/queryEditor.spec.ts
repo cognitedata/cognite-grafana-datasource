@@ -103,12 +103,14 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   const panelEditPage = await dashboardPage.addPanel();
   await panelEditPage.datasource.set(ds.name);
 
-  // Grafana 12.4+ changed the viz picker item from aria-label to data-testid.
+  // Grafana 12.4+ changed the viz picker item from aria-label to data-testid,
+  // and the viz picker is always open by default (toggle-viz-picker collapses it).
   // plugin-e2e@1.x uses e2e-selectors@12.1 which doesn't know about this change,
   // so we fall back to direct page selectors for 12.4+.
   if (semver.gte(grafanaVersion, '12.4.0')) {
-    await page.getByTestId('toggle-viz-picker').click();
-    await page.getByTestId('Plugin visualization item Table').click();
+    // In 12.4+, the data-testid attribute value includes the "data-testid " prefix
+    // and the viz picker is always open — no toggle needed.
+    await page.getByTestId('data-testid Plugin visualization item Table').click();
   } else {
     await panelEditPage.setVisualization('Table');
   }
