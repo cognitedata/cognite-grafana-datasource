@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState } from 'react';
 import { FieldSet, Icon, InlineField, InlineFieldRow, InlineFormLabel, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../types';
@@ -18,47 +18,44 @@ type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteSecureJsonData
 >;
 
-const apiUrlTooltip = `This is the hostname used to reach the API.
-If the project is deployed on the default multi-tenant installation (api.cognitedata.com),
-then keep the default value and do not change the hostname.
-If the project is deployed on another cluster like westeurope-1.cognitedata.com,
-then change the hostname to point at the API server for that cluster.
-If unsure, leave the hostname as default.`;
+const apiUrlTooltip = `Hostname used to reach the API.
+For projects deployed on the default multi-tenant installation (api.cognitedata.com), keep the default value and do not change the hostname.
+For projects deployed on another cluster (e.g., westeurope-1.cognitedata.com), change the hostname to point at the cluster's API server.
+When unsure, keep the hostname as the default.`;
 
-const oAuthPassThruTooltip = `Forward the user's upstream OAuth identity to the data source
-(Their access token gets passed along).`;
+const oAuthPassThruTooltip = `Pass the user's identity from the OAuth service to the data source. Their access token will be passed along.`;
 
 const oAuthClientCredsTooltip = `The OAuth 2.0 client credentials grant flow permits this data source to use its own credentials, instead of impersonating a user, to authenticate when calling CDF.`;
 
-const oAuthTokenUrlTooltip = `OAuth 2.0 token endpoint (v2). E.g. https://login.microsoftonline.com/your-tenant/oauth2/v2.0/token`;
+const oAuthTokenUrlTooltip = `OAuth 2.0 token endpoint (v2). Example: https://login.microsoftonline.com/your-tenant/oauth2/v2.0/token`;
 
-const oAuthClientSecretTooltip = `A secret string that the application uses to prove its identity when requesting a token. Also can be referred to as application password.`;
+const oAuthClientSecretTooltip = `A secret string that the application uses to prove its identity when requesting a token. Also referred to as an application password.`;
 
-const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. E.g. https://api.cognitedata.com/.default.`;
+const oAuthScopeTooltip = `The value passed for the scope parameter should be the resource identifier (application ID URI) of the resource you want, affixed with the .default suffix. Example: https://api.cognitedata.com/.default.`;
 
-const enableCogniteTimeSeriesTooltip = `Enable the Cognite TimeSeries tab for exploring time series from the Core Data Model.`;
+const enableCogniteTimeSeriesTooltip = `Enable the CogniteTimeSeries tab to explore time series from the core data model`;
 
-const enableTimeseriesSearchTooltip = `Enable the Time series search tab for searching and selecting time series.`;
+const enableTimeseriesSearchTooltip = `Enable the Time series search tab to search and select time series`;
 
-const enableTimeseriesFromAssetTooltip = `Enable the Time series from asset tab for finding time series linked to assets.`;
+const enableTimeseriesFromAssetTooltip = `Enable the Time series from asset tab to find time series linked to assets`;
 
-const enableTimeseriesCustomQueryTooltip = `Enable the Time series custom query tab for advanced time series querying.`;
+const enableTimeseriesCustomQueryTooltip = `Enable the Time series custom query tab for advanced time series querying`;
 
-const enableEventsTooltip = `Enable the Events tab for querying CDF events.`;
+const enableEventsTooltip = `Enable the Events tab to query CDF events`;
 
-const enableRelationshipsTooltip = `Enable the Relationships tab (deprecated - use Data Models instead).`;
+const enableRelationshipsTooltip = `Deprecated (use the Data models feature instead)`;
 
-const enableTemplatesTooltip = `Enable the templates tab for use with the Cognite Templates preview feature (deprecated).`;
+const enableTemplatesTooltip = `Deprecated. Enables the Cognite templates preview.`;
 
-const enableEventsAdvancedFilteringTooltip = `Enable the Events advanced filtering (preview)`;
+const enableEventsAdvancedFilteringTooltip = `Enable advanced filtering for events (preview)`;
 
-const enableFlexibleDataModellingTooltip = 'Enable Data Models';
+const enableFlexibleDataModellingTooltip = 'Enable data models';
 
-const enableExtractionPipelinesTooltip = 'Enable Extraction Pipelines (preview) - deprecated feature.';
+const enableExtractionPipelinesTooltip = 'Deprecated. Enables extraction pipelines (preview).';
 
-const enableCoreDataModelFeaturesTooltip = `Master toggle for Core Data Model features section. When disabled, all Core Data Model features will be hidden.`;
+const enableCoreDataModelFeaturesTooltip = `Enable to show all core data model features`;
 
-const enableLegacyDataModelFeaturesTooltip = `Master toggle for Legacy Data Model features section. When disabled, all Legacy Data Model features will be hidden.`;
+const enableLegacyDataModelFeaturesTooltip = `Enable to show all legacy data model features`;
 
 // Feature keys are derived from FEATURE_DEFAULTS to ensure only boolean feature flags are handled
 
@@ -125,8 +122,8 @@ export function ConfigEditor(props: ConfigEditorProps) {
       <FieldSet label='HTTP'>
           <InlineField
             label="Project"
-            labelWidth={24}            
-            tooltip="Cognite Data Fusion project name."
+            labelWidth={24}
+            tooltip="Your CDF project name."
           >
             <Input
               id='cognite-project'
@@ -158,7 +155,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
 
         {showHelp && (
           <pre>
-            Find out more about authentication at{' '}
+            Learn more about authentication at{' '}
             <a href="https://docs.cognite.com/cdf/dashboards/guides/grafana/admin.html#step-3-configure-the-cognite-data-source-for-grafana">
               docs.cognite.com/cdf/dashboards/guides/grafana/admin.html
             </a>
@@ -243,14 +240,14 @@ export function ConfigEditor(props: ConfigEditorProps) {
         )}
       </FieldSet>
 
-      <FieldSet label="Core Data Model features">
+      <FieldSet label="Core data model features">
         <InlineFieldRow style={{ marginBottom: '4px' }}>
           <InlineFormLabel htmlFor='enable-core-data-model-features' tooltip={enableCoreDataModelFeaturesTooltip} width={20}>
-            Enable Core Data Model features
+            Core data model features
           </InlineFormLabel>
           <InlineSwitch
             id='enable-core-data-model-features'
-            label='Enable Core Data Model features'
+            label='Core data model features'
             value={enableCoreDataModelFeatures}
             onChange={onMasterToggleChange('enableCoreDataModelFeatures', ['enableCogniteTimeSeries', 'enableFlexibleDataModelling'])}
           />
@@ -259,22 +256,22 @@ export function ConfigEditor(props: ConfigEditorProps) {
           <>
             <InlineFieldRow style={{ marginBottom: '4px' }}>
               <InlineFormLabel htmlFor='enable-cognite-timeseries' tooltip={enableCogniteTimeSeriesTooltip} width={20}>
-                Cognite Timeseries
+                CogniteTimeSeries
               </InlineFormLabel>
               <InlineSwitch
                 id='enable-cognite-timeseries'
-                label='Cognite Timeseries'
+                label='CogniteTimeSeries'
                 value={enableCogniteTimeSeries}
                 onChange={onJsonBoolValueChange('enableCogniteTimeSeries')}
               />
             </InlineFieldRow>
             <InlineFieldRow style={{ marginBottom: '4px' }}>
               <InlineFormLabel htmlFor='enable-flexible-data-modelling' tooltip={enableFlexibleDataModellingTooltip} width={20}>
-                Data Models
+                Data models
               </InlineFormLabel>
               <InlineSwitch
                 id='enable-flexible-data-modelling'
-                label='Data Models'
+                label='Data models'
                 value={enableFlexibleDataModelling}
                 onChange={onJsonBoolValueChange('enableFlexibleDataModelling')}
               />
@@ -286,11 +283,11 @@ export function ConfigEditor(props: ConfigEditorProps) {
       <FieldSet label="Legacy data model features">
         <InlineFieldRow style={{ marginBottom: '4px' }}>
           <InlineFormLabel htmlFor='enable-legacy-data-model-features' tooltip={enableLegacyDataModelFeaturesTooltip} width={20}>
-            Enable Legacy data model features
+            Legacy data model features
           </InlineFormLabel>
           <InlineSwitch
             id='enable-legacy-data-model-features'
-            label='Enable Legacy data model features'
+            label='Legacy data model features'
             value={enableLegacyDataModelFeatures}
             onChange={onMasterToggleChange('enableLegacyDataModelFeatures', [
               'enableTimeseriesSearch',
@@ -349,11 +346,11 @@ export function ConfigEditor(props: ConfigEditorProps) {
             </InlineFieldRow>
             <InlineFieldRow style={{ marginBottom: '4px' }}>
               <InlineFormLabel htmlFor='enable-events-advanced-filtering' tooltip={enableEventsAdvancedFilteringTooltip} width={20}>
-                Advanced Filtering
+                Advanced filtering
               </InlineFormLabel>
               <InlineSwitch
                 id='enable-events-advanced-filtering'
-                label='Advanced Filtering'
+                label='Advanced filtering'
                 value={enableEventsAdvancedFiltering}
                 onChange={onJsonBoolValueChange('enableEventsAdvancedFiltering')}
               />
@@ -376,22 +373,22 @@ export function ConfigEditor(props: ConfigEditorProps) {
         </InlineFieldRow>
         <InlineFieldRow style={{ marginBottom: '4px' }}>
           <InlineFormLabel htmlFor='enable-extraction-pipelines' tooltip={enableExtractionPipelinesTooltip} width={20}>
-            Extraction Pipelines
+            Extraction pipelines
           </InlineFormLabel>
           <InlineSwitch
             id='enable-extraction-pipelines'
-            label='Extraction Pipelines'
+            label='Extraction pipelines'
             value={enableExtractionPipelines}
             onChange={onJsonBoolValueChange('enableExtractionPipelines')}
           />
         </InlineFieldRow>
         <InlineFieldRow style={{ marginBottom: '4px' }}>
           <InlineFormLabel htmlFor='enable-templates' tooltip={enableTemplatesTooltip} width={20}>
-            Cognite Templates
+            Cognite templates
           </InlineFormLabel>
           <InlineSwitch
             id='enable-templates'
-            label='Cognite Templates'
+            label='Cognite templates'
             value={enableTemplates}
             onChange={onJsonBoolValueChange('enableTemplates')}
           />
