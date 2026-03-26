@@ -14,6 +14,7 @@ import CogniteDatasource from './datasource';
 export enum Tab {
   Timeseries = 'Timeseries',
   CogniteTimeSeriesSearch = 'CogniteTimeSeries',
+  CogniteActivity = 'CogniteActivity',
   Asset = 'Asset',
   Custom = 'Custom',
   Event = 'Event',
@@ -34,6 +35,7 @@ export const TabTitles = {
   [Tab.Relationships]: 'Relationships',
   [Tab.Templates]: 'Templates',
   [Tab.FlexibleDataModelling]: 'Data Models',
+  [Tab.CogniteActivity]: 'CogniteActivities',
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: '',
@@ -176,6 +178,26 @@ export const defaultCogniteActivityQuery: CogniteActivityQuery = {
   useScheduledTime: false,
 };
 
+export type CogniteActivityResourceType = 'CogniteAsset' | 'CogniteEquipment' | 'CogniteTimeSeries';
+
+export interface CogniteActivityTabQuery {
+  space: string;
+  externalId: string;
+  version: string;
+  resourceType: CogniteActivityResourceType;
+  instanceSpace: string;
+  assetInstances: Array<{ space: string; externalId: string; name?: string }>;
+}
+
+export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
+  space: 'cdf_cdm',
+  externalId: 'CogniteActivity',
+  version: 'v1',
+  resourceType: 'CogniteAsset',
+  instanceSpace: '',
+  assetInstances: [],
+};
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: '',
   latestValue: false,
@@ -192,6 +214,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   flexibleDataModellingQuery: defaultFlexibleDataModellingQuery,
   cogniteTimeSeries: defaultCogniteTimeSeries,
   cogniteActivityQuery: defaultCogniteActivityQuery,
+  cogniteActivityTabQuery: defaultCogniteActivityTabQuery,
 };
 
 /**
@@ -324,6 +347,7 @@ export interface CogniteQueryBase extends DataQuery {
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
   cogniteTimeSeries: CogniteTimeSeries;
   cogniteActivityQuery: CogniteActivityQuery;
+  cogniteActivityTabQuery: CogniteActivityTabQuery;
 }
 
 export type TemplateQuery = {

@@ -3,7 +3,7 @@ import { CogniteQuery, CogniteActivityQuery, HttpMethod, Tuple } from '../types'
 import { Connector } from '../connector';
 import { getRange } from '../utils';
 import { CogniteActivity } from '../types/dms';
-import { fetchActivitiesFromDMS } from '../cdf/client';
+import { fetchActivitiesFromDMS, fetchActivitiesByAssets } from '../cdf/client';
 import { handleError } from '../appEventHandler';
 
 // Convert activities to annotation format for overlay on charts
@@ -92,6 +92,97 @@ export class ActivityDatasource {
       handleError(e, refId);
       return [];
     }
+  }
+
+  async queryByAssets(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+    const results = await Promise.all(
+      options.targets.map(async (target) => {
+        const { refId, cogniteActivityTabQuery } = target;
+        if (!cogniteActivityTabQuery?.assetInstances?.length) {
+          return null;
+        }
+        const { space, externalId, version, resourceType, assetInstances } = cogniteActivityTabQuery;
+        const filterPropertyMap: Record<string, string> = {
+          CogniteAsset: 'assets',
+          CogniteEquipment: 'equipment',
+          CogniteTimeSeries: 'timeSeries',
+        };
+        const filterProperty = filterPropertyMap[resourceType] ?? 'assets';
+        try {
+          const activities = await fetchActivitiesByAssets(
+            this.connector,
+            { space, externalId, version },
+            assetInstances,
+            filterProperty
+          );
+          const converted = convertActivitiesDateFields(activities);
+
+          // Build lookup: "space:externalId" -> display name (name only, fallback to externalId)
+          const instanceNameMap = new Map(
+            assetInstances.map((a) => [
+              `${a.space}:${a.externalId}`,
+              a.name ?? a.externalId,
+            ])
+          );
+
+          // Column name reflects the resource type
+          const resourceColumnNames: Record<string, string> = {
+            CogniteAsset: 'asset',
+            CogniteEquipment: 'equipment',
+            CogniteTimeSeries: 'timeSeries',
+          };
+          const resourceColName = resourceColumnNames[resourceType] ?? 'Instance';
+
+          const resourceColValues = converted.map((item) => {
+            const refs: Array<{ space: string; externalId: string }> =
+              (item as any)[filterProperty] ?? [];
+            const names = (Array.isArray(refs) ? refs : [refs])
+              .map((r) => instanceNameMap.get(`${r.space}:${r.externalId}`))
+              .filter((name): name is string => name !== undefined)
+              .join(', ');
+            return names || null;
+          });
+
+          const columns = [
+            'externalId', 'space', 'name', 'type', 'description',
+            'startTime', 'endTime',
+            'scheduledStartTime', 'scheduledEndTime',
+            'createdTime', 'lastUpdatedTime',
+          ];
+          const dataFrame: DataFrame = {
+            refId,
+            name: 'CogniteActivities',
+            fields: [
+              ...columns.slice(0, 5).map((col) => ({
+                name: col,
+                type: FieldType.string,
+                config: {},
+                values: converted.map((item) => (item as any)[col] ?? null),
+              })),
+              ...columns.slice(5).map((col) => ({
+                name: col,
+                type: FieldType.time,
+                config: {},
+                values: converted.map((item) => (item as any)[col] ?? null),
+              })),
+              // Dynamic resource column last
+              {
+                name: resourceColName,
+                type: FieldType.string,
+                config: {},
+                values: resourceColValues,
+              },
+            ],
+            length: converted.length,
+          };
+          return dataFrame;
+        } catch (e) {
+          handleError(e, refId);
+          return null;
+        }
+      })
+    );
+    return { data: results.filter(Boolean) };
   }
 
   async fetchActivityTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {

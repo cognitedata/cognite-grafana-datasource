@@ -176,6 +176,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       extractionPipelinesTargets,
       flexibleDataModellingTargets,
       activityTargets,
+      cogniteActivityTabTargets,
     } = groupTargets(queryTargets);
 
     let observables: Array<Observable<DataQueryResponse>> = [];
@@ -257,6 +258,16 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           })
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(activityObservable);
+      }
+
+      if (cogniteActivityTabTargets.length) {
+        const cogniteActivityTabObservable = from(
+          this.activityDatasource.queryByAssets({
+            ...options,
+            targets: cogniteActivityTabTargets,
+          })
+        ).pipe(map((result) => ({ data: result.data })));
+        observables.push(cogniteActivityTabObservable);
       }
     }
 
@@ -638,6 +649,8 @@ export function filterEmptyQueryTargets(targets: CogniteQuery[]): QueryTarget[] 
           );
         case Tab.CogniteTimeSeriesSearch:
           return !!cogniteTimeSeries?.instanceId;
+        case Tab.CogniteActivity:
+          return !!target.cogniteActivityTabQuery?.assetInstances?.length;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -679,6 +692,7 @@ function groupTargets(targets: CogniteQuery[]) {
     extractionPipelinesTargets: groupedByTab[Tab.ExtractionPipelines] ?? [],
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
     activityTargets,
+    cogniteActivityTabTargets: groupedByTab[Tab.CogniteActivity] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),

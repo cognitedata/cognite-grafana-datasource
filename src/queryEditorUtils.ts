@@ -45,7 +45,12 @@ export function isTabDisabled(tab: Tabs, datasource: CogniteDatasource): boolean
   if (tab === Tabs.DataModellingV2) {
     return false;
   }
-  
+
+  // CogniteActivity tab - gated under the same CDM toggle as CogniteTimeSeriesSearch
+  if (tab === Tabs.CogniteActivity) {
+    return !datasource.connector.isCogniteTimeSeriesEnabled();
+  }
+
   return false;
 }
 

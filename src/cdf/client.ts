@@ -706,6 +706,41 @@ export async function fetchCogniteActivityViews(
   }
 }
 
+async function fetchCogniteContainerViews(connector: Connector, containerExternalId: string): Promise<InvolvedView[]> {
+  try {
+    const response = await retryOnRateLimit(() =>
+      connector.fetchData<{ data: ContainerInspectResponse }>({
+        method: HttpMethod.POST,
+        path: '/models/containers/inspect',
+        data: {
+          items: [{ space: 'cdf_cdm', externalId: containerExternalId }],
+          inspectionOperations: {
+            involvedViews: { allVersions: true },
+            totalInvolvedViewCount: { allVersions: true, includeUnavailableViews: true },
+          },
+        },
+        cacheTime: CacheTime.ResourceByIds,
+      })
+    );
+    const item = response.data?.items?.[0];
+    if (item?.inspectionResults?.involvedViews) {
+      return item.inspectionResults.involvedViews;
+    }
+    return [];
+  } catch (err) {
+    console.warn(`Failed to fetch ${containerExternalId} views:`, err);
+    return [];
+  }
+}
+
+export function fetchCogniteAssetViews(connector: Connector): Promise<InvolvedView[]> {
+  return fetchCogniteContainerViews(connector, 'CogniteAsset');
+}
+
+export function fetchCogniteEquipmentViews(connector: Connector): Promise<InvolvedView[]> {
+  return fetchCogniteContainerViews(connector, 'CogniteEquipment');
+}
+
 // Fetch activities from DMS for a given time range, filtered to a specific time series
 export async function fetchActivitiesFromDMS(
   connector: Connector,
@@ -804,4 +839,70 @@ export async function fetchActivitiesFromDMS(
   }
 }
 
+// Fetch activities from DMS filtered by a set of related instances (assets, equipment, or timeSeries)
+export async function fetchActivitiesByAssets(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string },
+  assetInstances: Array<{ space: string; externalId: string }>,
+  filterProperty = 'assets'
+): Promise<CogniteActivity[]> {
+  if (!assetInstances.length) {
+    return [];
+  }
+  try {
+    const filter: DMSFilter = {
+      in: {
+        property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, filterProperty],
+        values: assetInstances.map((a) => ({ space: a.space, externalId: a.externalId })),
+      },
+    };
+
+    const listRequest: DMSListRequest = {
+      sources: [
+        {
+          source: {
+            type: 'view',
+            space: viewSpec.space,
+            externalId: viewSpec.externalId,
+            version: viewSpec.version,
+          },
+        },
+      ],
+      instanceType: 'node',
+      limit: 1000,
+      filter,
+    };
+
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/list',
+        data: listRequest,
+      })
+    );
+
+    return instances.map((instance) => {
+      const props =
+        instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
+      return {
+        space: instance.space,
+        externalId: instance.externalId,
+        version: instance.version,
+        lastUpdatedTime: instance.lastUpdatedTime,
+        createdTime: instance.createdTime,
+        name: props.name,
+        description: props.description,
+        startTime: props.startTime,
+        endTime: props.endTime,
+        scheduledStartTime: props.scheduledStartTime,
+        scheduledEndTime: props.scheduledEndTime,
+        type: props.type,
+        ...props,
+      };
+    });
+  } catch (err) {
+    console.warn('Failed to fetch activities by assets from DMS:', err);
+    return [];
+  }
+}
 

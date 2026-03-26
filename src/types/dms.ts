@@ -40,7 +40,9 @@ export interface DMSFilter {
     gt?: any;
     lte?: any;
     lt?: any;
-  };}
+  };
+  inSpace?: string;
+}
 
 export interface DMSSearchRequest {
   view: {
