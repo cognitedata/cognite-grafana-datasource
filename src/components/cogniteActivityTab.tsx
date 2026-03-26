@@ -101,7 +101,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     } finally {
       setLoadingActivityViews(false);
     }
-  }, [connector]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [connector, onQueryChange]);
 
   const loadInstanceViews = useCallback(
     async (type: CogniteActivityResourceType) => {
@@ -142,7 +142,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     loadActivityViews();
     loadSpaces();
     loadInstanceViews(resourceType);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // intentional: load once on mount; resource type changes handled by handleResourceTypeChange
 
   const searchInstances = useCallback(
     async (inputValue: string) => {
@@ -201,7 +201,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     ) ?? null;
 
   const selectedInstanceValues = assetInstances.map((a) => ({
-    label: a.externalId,
+    label: a.name ?? a.externalId,
     value: `${a.space}:${a.externalId}`,
     space: a.space,
     externalId: a.externalId,
