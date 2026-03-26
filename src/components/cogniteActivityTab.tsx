@@ -101,7 +101,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     } finally {
       setLoadingActivityViews(false);
     }
-  }, [connector, onQueryChange]);
+  }, [connector, onQueryChange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadInstanceViews = useCallback(
     async (type: CogniteActivityResourceType) => {
@@ -142,7 +142,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     loadActivityViews();
     loadSpaces();
     loadInstanceViews(resourceType);
-  }, []); // intentional: load once on mount; resource type changes handled by handleResourceTypeChange
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: load once on mount; resource type changes handled by handleResourceTypeChange
 
   const searchInstances = useCallback(
     async (inputValue: string) => {
