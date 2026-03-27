@@ -21,7 +21,7 @@ test.describe('CogniteActivities dashboard', () => {
     // Grafana table uses role="cell" divs, not <td>
     await expect.poll(
       async () => {
-        const cells = await panel.locator.locator('[role="cell"]').allInnerTexts();
+        const cells = await panel.locator.locator('[role="cell"],[role="gridcell"]').allInnerTexts();
         return cells.some((c) => c.startsWith('weather-activity-'));
       },
       { timeout: 30000 }
@@ -45,7 +45,7 @@ test.describe('CogniteActivities dashboard', () => {
 
     await expect.poll(
       async () => {
-        const cells = await panel.locator.locator('[role="cell"]').allInnerTexts();
+        const cells = await panel.locator.locator('[role="cell"],[role="gridcell"]').allInnerTexts();
         return cells.some((c) => c.startsWith('weather-activity-'));
       },
       { timeout: 30000 }
@@ -67,7 +67,7 @@ test.describe('CogniteActivities dashboard', () => {
 
     await expect.poll(
       async () => {
-        const cells = await panel.locator.locator('[role="cell"]').allInnerTexts();
+        const cells = await panel.locator.locator('[role="cell"],[role="gridcell"]').allInnerTexts();
         return cells.some((c) => c.startsWith('weather-activity-'));
       },
       { timeout: 30000 }

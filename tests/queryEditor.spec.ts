@@ -691,10 +691,9 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
   await tsOption.click();
   await page.waitForTimeout(1000);
 
-  // Enable activities
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
-  await activitiesToggle.scrollIntoViewIfNeeded();
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await expect(activitiesToggle).toBeChecked();
 
   // Wait for activity configuration to appear
@@ -744,10 +743,9 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
   await tsOption.click();
   await page.waitForTimeout(1000);
 
-  // Enable activities
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
-  await activitiesToggle.scrollIntoViewIfNeeded();
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
   // Find the second View label (for activities, not timeseries)
@@ -811,10 +809,9 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
   await tsOption.click();
   await page.waitForTimeout(1000);
 
-  // Enable activities
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
-  await activitiesToggle.scrollIntoViewIfNeeded();
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
   // Find the Scheduled toggle
