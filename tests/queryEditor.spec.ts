@@ -693,6 +693,7 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
 
   // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.scrollIntoViewIfNeeded();
   await activitiesToggle.check({ force: true });
   await expect(activitiesToggle).toBeChecked();
 
@@ -745,6 +746,7 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
 
   // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.scrollIntoViewIfNeeded();
   await activitiesToggle.check({ force: true });
   await page.waitForTimeout(1000);
 
@@ -811,6 +813,7 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
 
   // Enable activities
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  await activitiesToggle.scrollIntoViewIfNeeded();
   await activitiesToggle.check({ force: true });
   await page.waitForTimeout(1000);
 
