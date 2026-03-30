@@ -1,13 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Select, AsyncMultiSelect, InlineFieldRow, InlineField } from '@grafana/ui';
+import {
+  Select,
+  AsyncMultiSelect,
+  InlineFieldRow,
+  InlineField,
+  InlineSwitch,
+  InlineFormLabel,
+  InlineSegmentGroup,
+  Segment,
+  Button,
+} from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SelectedProps, CogniteActivityResourceType } from '../types';
+import { SelectedProps, CogniteActivityResourceType, ActivitySortProp, EventsOrderDirection, CogniteActivityTabQuery, defaultCogniteActivityTabQuery } from '../types';
 import {
   fetchCogniteActivityViews,
   fetchCogniteAssetViews,
   fetchCogniteEquipmentViews,
   fetchCogniteTimeSeriesViews,
   fetchDMSSpaces,
+  fetchDMSViewProperties,
   searchDMSInstances,
   stringifyError,
 } from '../cdf/client';
@@ -49,6 +60,145 @@ function viewToOption(view: InvolvedView): SelectableValue<InvolvedView> {
   };
 }
 
+const ActivityOrderDirectionEditor = ({
+  onChange,
+  direction = 'asc',
+}: {
+  direction: EventsOrderDirection;
+  onChange: (val: EventsOrderDirection) => void;
+}) => {
+  const options = [
+    { label: 'ascending', value: 'asc' as EventsOrderDirection },
+    { label: 'descending', value: 'desc' as EventsOrderDirection },
+  ];
+  return (
+    <InlineFieldRow>
+      <InlineFormLabel width={6}>Order</InlineFormLabel>
+      <Select
+        onChange={({ value }) => onChange(value!)}
+        options={options}
+        menuPosition="fixed"
+        value={direction}
+        className="cog-mr-4 width-10"
+      />
+    </InlineFieldRow>
+  );
+};
+
+interface ActivitySubProps {
+  query: CogniteActivityTabQuery;
+  onChange: (e: Partial<CogniteActivityTabQuery>) => void;
+  fields: string[];
+}
+
+const ActiveOnlySwitch = ({ query, onChange, fields: _ }: ActivitySubProps) => (
+  <InlineFieldRow>
+    <InlineField
+      label="Active only"
+      labelWidth={LABEL_WIDTH}
+      tooltip="Show only activities that are active (overlapping) within the current time range"
+    >
+      <InlineSwitch
+        label="Active only"
+        id="activity-active-only"
+        value={query.activeOnly ?? true}
+        onChange={({ currentTarget }) => onChange({ activeOnly: currentTarget.checked })}
+      />
+    </InlineField>
+  </InlineFieldRow>
+);
+
+const ActivityColumnsPicker = ({ query, onChange, fields }: ActivitySubProps) => {
+  const allOptions = fields.map((value) => ({ value, label: value }));
+  const columns = query.columns ?? defaultCogniteActivityTabQuery.columns!;
+  const addOptions = fields
+    .filter((f) => !columns.includes(f))
+    .map((value) => ({ value, label: value }));
+  return (
+    <InlineFieldRow>
+      <InlineFormLabel tooltip="Choose which columns to display" width={LABEL_WIDTH}>
+        Columns
+      </InlineFormLabel>
+      <InlineSegmentGroup>
+        {columns.map((val, key) => (
+          <React.Fragment key={key}>
+            <Segment
+              value={val}
+              options={allOptions}
+              onChange={({ value }) =>
+                onChange({ columns: columns.map((old, i) => (i === key ? value! : old)) })
+              }
+              allowCustomValue
+            />
+            <Button
+              variant="secondary"
+              onClick={() => onChange({ columns: columns.filter((_, i) => i !== key) })}
+              icon="times"
+              className="cog-mr-4"
+              data-testId={`activity-remove-col-${key}`}
+            />
+          </React.Fragment>
+        ))}
+        {addOptions.length > 0 && (
+          <Segment
+            value="+"
+            options={addOptions}
+            onChange={({ value }) => onChange({ columns: [...columns, value!] })}
+            data-testId="activity-add-col"
+          />
+        )}
+      </InlineSegmentGroup>
+    </InlineFieldRow>
+  );
+};
+
+const ActivitySortByPicker = ({ query, onChange, fields }: ActivitySubProps) => {
+  const options = fields.map((value) => ({ value, label: value }));
+  const sort: ActivitySortProp[] = query.sort ?? [];
+  return (
+    <InlineFieldRow>
+      <InlineFormLabel tooltip="Property to sort results by" width={LABEL_WIDTH}>
+        Sort by
+      </InlineFormLabel>
+      <InlineSegmentGroup>
+        {sort.map((val, key) => (
+          <React.Fragment key={key}>
+            <Segment
+              value={val.property}
+              options={options}
+              onChange={({ value }) =>
+                onChange({ sort: sort.map((old, i) => (i === key ? { ...old, property: value! } : old)) })
+              }
+              allowCustomValue
+            />
+            <ActivityOrderDirectionEditor
+              direction={val.order}
+              onChange={(value) =>
+                onChange({ sort: sort.map((old, i) => (i === key ? { ...old, order: value } : old)) })
+              }
+            />
+            <Button
+              variant="secondary"
+              onClick={() => onChange({ sort: sort.filter((_, i) => i !== key) })}
+              icon="times"
+              className="cog-mr-4"
+              data-testId={`activity-remove-sort-${key}`}
+            />
+          </React.Fragment>
+        ))}
+        {sort.length < 2 && (
+          <Button
+            variant="secondary"
+            onClick={() => onChange({ sort: [...sort, { property: 'startTime', order: 'asc' }] })}
+            icon="plus-circle"
+            data-testId="activity-add-sort"
+          />
+        )}
+      </InlineSegmentGroup>
+    </InlineFieldRow>
+  );
+};
+
 export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   query,
   onQueryChange,
@@ -78,6 +228,15 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   const [selectedInstanceView, setSelectedInstanceView] = useState<InvolvedView | null>(null);
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
+  const [viewProperties, setViewProperties] = useState<string[]>([]);
+
+  const loadViewProperties = useCallback(
+    async (viewSpec: { space: string; externalId: string; version: string }) => {
+      const props = await fetchDMSViewProperties(connector, viewSpec);
+      setViewProperties(props);
+    },
+    [connector]
+  );
 
   const loadActivityViews = useCallback(async () => {
     try {
@@ -142,6 +301,9 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     loadActivityViews();
     loadSpaces();
     loadInstanceViews(resourceType);
+    if (space && externalId && version) {
+      loadViewProperties({ space, externalId, version });
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: load once on mount; resource type changes handled by handleResourceTypeChange
 
   const searchInstances = useCallback(
@@ -218,6 +380,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           version: v.version,
         },
       });
+      loadViewProperties(v);
     }
   };
 
@@ -268,6 +431,10 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           .map((v) => ({ space: v.space!, externalId: v.externalId!, name: v.label })),
       },
     });
+  };
+
+  const handleTabQueryChange = (partial: Partial<CogniteActivityTabQuery>) => {
+    onQueryChange({ cogniteActivityTabQuery: { ...cogniteActivityTabQuery, ...partial } });
   };
 
   return (
@@ -355,6 +522,9 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           />
         </InlineField>
       </InlineFieldRow>
+      <ActiveOnlySwitch query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
+      <ActivityColumnsPicker query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
+      <ActivitySortByPicker query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
     </>
   );
 };

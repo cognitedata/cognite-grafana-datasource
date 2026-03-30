@@ -28,6 +28,16 @@ function makeActivity(overrides: Partial<CogniteActivity> = {}): CogniteActivity
   };
 }
 
+// Wide range covering all test activity timestamps (Jan 2026)
+const defaultRange = {
+  from: { valueOf: () => new Date('2024-01-01').getTime() },
+  to: { valueOf: () => new Date('2027-01-01').getTime() },
+};
+
+function makeOptions(targets: any[], range = defaultRange) {
+  return { targets, range } as any;
+}
+
 function makeTarget(overrides: object = {}) {
   return {
     refId: 'A',
@@ -48,6 +58,7 @@ function makeTarget(overrides: object = {}) {
       assetInstances: [
         { space: 'cdm_try', externalId: 'weather-station-fornebu', name: 'Fornebu Weather Station' },
       ],
+      columns: ['externalId', 'space', 'name', 'type', 'description', 'startTime', 'endTime', 'scheduledStartTime', 'scheduledEndTime', 'createdTime', 'lastUpdatedTime'],
     },
     ...overrides,
   } as any;
@@ -102,9 +113,9 @@ describe('ActivityDatasource.queryByAssets', () => {
   });
 
   it('returns empty data when no targets have assetInstances', async () => {
-    const result = await datasource.queryByAssets({
-      targets: [makeTarget({ cogniteActivityTabQuery: { assetInstances: [] } })],
-    } as any);
+    const result = await datasource.queryByAssets(
+      makeOptions([makeTarget({ cogniteActivityTabQuery: { assetInstances: [] } })])
+    );
     expect(result.data).toHaveLength(0);
     expect(fetchActivitiesByAssets).not.toHaveBeenCalled();
   });
@@ -112,7 +123,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('builds a DataFrame with correct column order for CogniteAsset', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     expect(result.data).toHaveLength(1);
     const frame = result.data[0];
@@ -128,16 +139,15 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('names the resource column based on resourceType', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ equipment: [{ space: 'cdm_try', externalId: 'sensor-fornebu-anemometer' }] })]);
 
-    const result = await datasource.queryByAssets({
-      targets: [makeTarget({
-        cogniteActivityTabQuery: {
-          space: 'cdf_cdm', externalId: 'CogniteActivity', version: 'v1',
-          resourceType: 'CogniteEquipment',
-          instanceSpace: '',
-          assetInstances: [{ space: 'cdm_try', externalId: 'sensor-fornebu-anemometer', name: 'Ultrasonic Wind Sensor' }],
-        },
-      })],
-    } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget({
+      cogniteActivityTabQuery: {
+        space: 'cdf_cdm', externalId: 'CogniteActivity', version: 'v1',
+        resourceType: 'CogniteEquipment',
+        instanceSpace: '',
+        assetInstances: [{ space: 'cdm_try', externalId: 'sensor-fornebu-anemometer', name: 'Ultrasonic Wind Sensor' }],
+        columns: ['externalId', 'description'],
+      },
+    })]));
 
     const frame = result.data[0];
     const lastField = frame.fields[frame.fields.length - 1];
@@ -149,7 +159,7 @@ describe('ActivityDatasource.queryByAssets', () => {
       makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] }),
     ]);
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     const frame = result.data[0];
     const assetField = frame.fields.find((f: any) => f.name === 'asset');
@@ -162,7 +172,7 @@ describe('ActivityDatasource.queryByAssets', () => {
       makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-lysaker' }] }),
     ]);
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     const frame = result.data[0];
     const assetField = frame.fields.find((f: any) => f.name === 'asset');
@@ -173,7 +183,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('time fields have FieldType.time', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     const frame = result.data[0];
     for (const col of ['startTime', 'endTime', 'scheduledStartTime', 'scheduledEndTime', 'createdTime', 'lastUpdatedTime']) {
@@ -185,7 +195,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('string fields have FieldType.string', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     const frame = result.data[0];
     for (const col of ['externalId', 'space', 'name', 'type', 'description', 'asset']) {
@@ -198,7 +208,7 @@ describe('ActivityDatasource.queryByAssets', () => {
     const { handleError } = jest.requireMock('../appEventHandler');
     fetchActivitiesByAssets.mockRejectedValue(new Error('network error'));
 
-    const result = await datasource.queryByAssets({ targets: [makeTarget()] } as any);
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
 
     expect(result.data).toHaveLength(0);
     expect(handleError).toHaveBeenCalled();
@@ -207,16 +217,15 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('passes filterProperty based on resourceType to fetchActivitiesByAssets', async () => {
     fetchActivitiesByAssets.mockResolvedValue([]);
 
-    await datasource.queryByAssets({
-      targets: [makeTarget({
-        cogniteActivityTabQuery: {
-          space: 'cdf_cdm', externalId: 'CogniteActivity', version: 'v1',
-          resourceType: 'CogniteTimeSeries',
-          instanceSpace: '',
-          assetInstances: [{ space: 'cdm_try', externalId: 'ts-001', name: 'My TS' }],
-        },
-      })],
-    } as any);
+    await datasource.queryByAssets(makeOptions([makeTarget({
+      cogniteActivityTabQuery: {
+        space: 'cdf_cdm', externalId: 'CogniteActivity', version: 'v1',
+        resourceType: 'CogniteTimeSeries',
+        instanceSpace: '',
+        assetInstances: [{ space: 'cdm_try', externalId: 'ts-001', name: 'My TS' }],
+        columns: ['externalId'],
+      },
+    })]));
 
     expect(fetchActivitiesByAssets).toHaveBeenCalledWith(
       expect.anything(),

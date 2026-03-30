@@ -42,7 +42,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true
@@ -62,7 +64,21 @@
                 "externalId": "weather-station-fornebu",
                 "name": "Fornebu Weather Station"
               }
-            ]
+            ],
+            "columns": [
+              "externalId",
+              "name",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
           },
           "datasource": {
             "type": "cognitedata-datasource",
@@ -101,7 +117,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true
@@ -121,7 +139,20 @@
                 "externalId": "sensor-lysaker-visibility-sensor",
                 "name": "Forward Scatter Visibility Sensor"
               }
-            ]
+            ],
+            "columns": [
+              "externalId",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
           },
           "datasource": {
             "type": "cognitedata-datasource",
@@ -160,7 +191,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true
@@ -180,7 +213,20 @@
                 "externalId": "59.9139-10.7522-current.temp",
                 "name": "59.9139-10.7522-current.temp"
               }
-            ]
+            ],
+            "columns": [
+              "externalId",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
           },
           "datasource": {
             "type": "cognitedata-datasource",

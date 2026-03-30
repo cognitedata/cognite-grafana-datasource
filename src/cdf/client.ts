@@ -25,6 +25,7 @@ import {
   CogniteActivity,
   InvolvedView,
   ContainerInspectResponse,
+  DMSViewWithProperties,
 } from '../types/dms';
 import {
   Tab,
@@ -464,6 +465,32 @@ export function fetchDMSViews(
     params,
     cacheTime: CacheTime.ResourceByIds,
   });
+}
+
+// Fetch all property names of a specific DMS view (includes inherited properties)
+export async function fetchDMSViewProperties(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string }
+): Promise<string[]> {
+  try {
+    const response = await connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
+      method: HttpMethod.POST,
+      path: '/models/views/byids',
+      data: {
+        items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
+        includeInheritedProperties: true,
+      },
+      cacheTime: CacheTime.ResourceByIds,
+    });
+    const view = response.data?.items?.[0];
+    if (!view?.properties) {
+      return [];
+    }
+    return Object.keys(view.properties);
+  } catch (err) {
+    console.warn('Failed to fetch DMS view properties:', err);
+    return [];
+  }
 }
 
 // Helper function to retry DMS API calls with exponential backoff and jitter on 429 errors

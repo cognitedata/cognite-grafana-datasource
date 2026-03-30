@@ -1,10 +1,24 @@
 import { DataQueryRequest, DataQueryResponse, DataFrame, FieldType, DataTopic } from '@grafana/data';
-import { CogniteQuery, CogniteActivityQuery, HttpMethod, Tuple } from '../types';
+import { CogniteQuery, CogniteActivityQuery, HttpMethod, Tuple, ActivitySortProp } from '../types';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
 import { CogniteActivity } from '../types/dms';
 import { fetchActivitiesFromDMS, fetchActivitiesByAssets } from '../cdf/client';
 import { handleError } from '../appEventHandler';
+
+function inferFieldType(values: any[]): FieldType {
+  const first = values.find((v) => v !== null && v !== undefined);
+  if (first instanceof Date) {
+    return FieldType.time;
+  }
+  if (typeof first === 'number') {
+    return FieldType.number;
+  }
+  if (typeof first === 'boolean') {
+    return FieldType.boolean;
+  }
+  return FieldType.string;
+}
 
 // Convert activities to annotation format for overlay on charts
 const convertActivitiesToAnnotations = (
@@ -46,6 +60,27 @@ export const convertActivitiesDateFields = (activities: CogniteActivity[]) => {
       ...(scheduledStartTime && { scheduledStartTime: new Date(scheduledStartTime) }),
       ...(scheduledEndTime && { scheduledEndTime: new Date(scheduledEndTime) }),
     };
+  });
+};
+
+const sortActivities = (activities: CogniteActivity[], sort: ActivitySortProp[]): CogniteActivity[] => {
+  return [...activities].sort((a, b) => {
+    for (const { property, order } of sort) {
+      const aVal = (a as any)[property];
+      const bVal = (b as any)[property];
+      if (aVal === bVal) {
+        continue;
+      }
+      if (aVal === null || aVal === undefined) {
+        return 1;
+      }
+      if (bVal === null || bVal === undefined) {
+        return -1;
+      }
+      const cmp = aVal < bVal ? -1 : 1;
+      return order === 'desc' ? -cmp : cmp;
+    }
+    return 0;
   });
 };
 
@@ -95,13 +130,19 @@ export class ActivityDatasource {
   }
 
   async queryByAssets(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+    const [rangeStart, rangeEnd] = getRange(options.range);
     const results = await Promise.all(
       options.targets.map(async (target) => {
         const { refId, cogniteActivityTabQuery } = target;
         if (!cogniteActivityTabQuery?.assetInstances?.length) {
           return null;
         }
-        const { space, externalId, version, resourceType, assetInstances } = cogniteActivityTabQuery;
+        const {
+          space, externalId, version, resourceType, assetInstances,
+          activeOnly = true,
+          columns: selectedColumns = ['externalId', 'description', 'startTime', 'endTime'],
+          sort = [],
+        } = cogniteActivityTabQuery;
         const filterPropertyMap: Record<string, string> = {
           CogniteAsset: 'assets',
           CogniteEquipment: 'equipment',
@@ -109,12 +150,31 @@ export class ActivityDatasource {
         };
         const filterProperty = filterPropertyMap[resourceType] ?? 'assets';
         try {
-          const activities = await fetchActivitiesByAssets(
+          let activities = await fetchActivitiesByAssets(
             this.connector,
             { space, externalId, version },
             assetInstances,
             filterProperty
           );
+
+          // Active only: keep activities that overlap [rangeStart, rangeEnd]
+          if (activeOnly) {
+            activities = activities.filter((a) => {
+              const start = a.startTime ? new Date(a.startTime).getTime() : null;
+              const end = a.endTime ? new Date(a.endTime).getTime() : null;
+              if (start === null) {
+                return false;
+              }
+              // Activity starts before range ends, and either has no end or ends after range starts
+              return start <= rangeEnd && (end === null || end >= rangeStart);
+            });
+          }
+
+          // Client-side sort
+          if (sort.length > 0) {
+            activities = sortActivities(activities, sort);
+          }
+
           const converted = convertActivitiesDateFields(activities);
 
           // Build lookup: "space:externalId" -> display name (name only, fallback to externalId)
@@ -143,29 +203,20 @@ export class ActivityDatasource {
             return names || null;
           });
 
-          const columns = [
-            'externalId', 'space', 'name', 'type', 'description',
-            'startTime', 'endTime',
-            'scheduledStartTime', 'scheduledEndTime',
-            'createdTime', 'lastUpdatedTime',
-          ];
           const dataFrame: DataFrame = {
             refId,
             name: 'CogniteActivities',
             fields: [
-              ...columns.slice(0, 5).map((col) => ({
-                name: col,
-                type: FieldType.string,
-                config: {},
-                values: converted.map((item) => (item as any)[col] ?? null),
-              })),
-              ...columns.slice(5).map((col) => ({
-                name: col,
-                type: FieldType.time,
-                config: {},
-                values: converted.map((item) => (item as any)[col] ?? null),
-              })),
-              // Dynamic resource column last
+              ...selectedColumns.map((col) => {
+                const values = converted.map((item) => (item as any)[col] ?? null);
+                return {
+                  name: col,
+                  type: inferFieldType(values),
+                  config: {},
+                  values,
+                };
+              }),
+              // Dynamic resource column always last
               {
                 name: resourceColName,
                 type: FieldType.string,

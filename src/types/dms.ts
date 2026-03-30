@@ -109,6 +109,21 @@ export interface CogniteUnit {
   sourceReference?: string;
 }
 
+export interface DMSViewProperty {
+  type: { type: string; list?: boolean };
+  nullable?: boolean;
+  immutable?: boolean;
+  description?: string;
+  name?: string;
+}
+
+export interface DMSViewWithProperties {
+  space: string;
+  externalId: string;
+  version: string;
+  properties?: Record<string, DMSViewProperty>;
+}
+
 // Container inspect API types
 export interface InvolvedView {
   space: string;

@@ -180,6 +180,11 @@ export const defaultCogniteActivityQuery: CogniteActivityQuery = {
 
 export type CogniteActivityResourceType = 'CogniteAsset' | 'CogniteEquipment' | 'CogniteTimeSeries';
 
+export interface ActivitySortProp {
+  property: string;
+  order: EventsOrderDirection;
+}
+
 export interface CogniteActivityTabQuery {
   space: string;
   externalId: string;
@@ -187,6 +192,9 @@ export interface CogniteActivityTabQuery {
   resourceType: CogniteActivityResourceType;
   instanceSpace: string;
   assetInstances: Array<{ space: string; externalId: string; name?: string }>;
+  activeOnly?: boolean;
+  columns?: string[];
+  sort?: ActivitySortProp[];
 }
 
 export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
@@ -196,6 +204,9 @@ export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
   resourceType: 'CogniteAsset',
   instanceSpace: '',
   assetInstances: [],
+  activeOnly: true,
+  columns: ['externalId', 'description', 'startTime', 'endTime'],
+  sort: [{ property: 'startTime', order: 'asc' }],
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {

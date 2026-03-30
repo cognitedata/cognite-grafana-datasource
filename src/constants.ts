@@ -57,6 +57,7 @@ export const EventSortByFields = [
   ...DateFields,
   '_score_',
 ];
+
 const createFields = (parent, field) => `${parent}-${field}`;
 const metaFields = [
   'Dockerfile',
