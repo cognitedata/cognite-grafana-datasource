@@ -18,11 +18,10 @@ test('Panel with multiple time series queries rendered OK', async ({ gotoDashboa
     '59.9139-10.7522-current.uvi W/m2'
   ];
 
-  const buttons = await page.getByRole('button', { name: /59.9139-10.7522.*/ });
-  
+  // In Grafana 13 the legend item buttons changed their accessible name to
+  // "All series selected" — use text content matching instead of role+name.
   for (const expectedTsName of expectedTs) {
-    const button = buttons.locator(`text=${expectedTsName}`);
-    await expect(button).toBeVisible();
+    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: 5000 });
   }
 });
 
@@ -47,11 +46,10 @@ test('Panel with multiple CogniteTimeSeries queries rendered OK', async ({ gotoD
   // Scroll down to ensure CDMTS panel is visible
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
-  const buttons = await page.getByRole('button', { name: /CDMTS.*/ });
-  
+  // In Grafana 13 the legend item buttons changed their accessible name to
+  // "All series selected" — use text content matching instead of role+name.
   for (const expectedTsName of expectedTs) {
-    const button = buttons.locator(`text=${expectedTsName}`);
-    await expect(button).toBeVisible();
+    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: 5000 });
   }
 });
 

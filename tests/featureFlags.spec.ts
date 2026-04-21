@@ -2,6 +2,7 @@ import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
 import { Page } from '@playwright/test';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
+import { addPanel } from '../playwright/fixtures/addPanel';
 
 const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
@@ -33,7 +34,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
-    const panelEditPage = await dashboardPage.addPanel();
+    const panelEditPage = await addPanel(dashboardPage, page, grafanaVersion);
     await panelEditPage.datasource.set('Cognite Data Fusion - Legacy Only');
 
     const editorRow = panelEditPage.getQueryEditorRow("A");
@@ -59,7 +60,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
-    const panelEditPage = await dashboardPage.addPanel();
+    const panelEditPage = await addPanel(dashboardPage, page, grafanaVersion);
     await panelEditPage.datasource.set('Cognite Data Fusion - Core Only');
 
     const editorRow = panelEditPage.getQueryEditorRow("A");

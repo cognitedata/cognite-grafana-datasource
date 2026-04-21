@@ -3,6 +3,7 @@ import { Page, Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
 import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
+import { addPanel as addPanelHelper } from '../playwright/fixtures/addPanel';
 import semver from 'semver';
 
 const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
@@ -39,9 +40,10 @@ async function setupCogniteTimeSeriesPanel({
   gotoDashboardPage: gotoDash,
   selectors,
   page,
+  grafanaVersion,
 }: Pick<
   PluginFixture,
-  'readProvisionedDataSource' | 'readProvisionedDashboard' | 'gotoDashboardPage' | 'selectors'
+  'readProvisionedDataSource' | 'readProvisionedDashboard' | 'gotoDashboardPage' | 'selectors' | 'grafanaVersion'
 > & { page: Page }) {
   await page.setViewportSize({ width: 1920, height: 1080 });
 
@@ -49,7 +51,7 @@ async function setupCogniteTimeSeriesPanel({
   const dashboard = await readDash({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDash(dashboard);
 
-  const panelEditPage = await dashboardPage.addPanel();
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
   await panelEditPage.datasource.set(ds.name);
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
@@ -107,54 +109,78 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
 
-  const panelEditPage = await dashboardPage.addPanel();
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
   await panelEditPage.datasource.set(ds.name);
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   await editorRow.getByText('Time series from asset').click();
 
-  const combobox = await editorRow.getByRole('combobox', { name: 'Asset Tag' });
-  await combobox.click();
+  // Collect all /timeseries/data/latest responses via page.on so we never miss one
+  // regardless of timing. waitForResponse with a fixed timeout can be missed if the
+  // response fires while the test is blocked on a UI interaction or waitForQueriesToFinish.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const latestResponses: any[] = [];
+  page.on('response', (response) => {
+    if (isCdfResponse('/timeseries/data/latest')(response)) {
+      latestResponses.push(response);
+    }
+  });
 
+  const combobox = editorRow.getByRole('combobox', { name: 'Asset Tag' });
   const option = selectors.components.Select.option;
-  // Wait for dropdown options to appear instead of fixed timeout
-  await expect(panelEditPage.getByGrafanaSelector(option).first()).toBeVisible({ timeout: 10000 });
-  await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Locations' }).click();
 
-  const includeSubAssets = await editorRow.getByLabel('Include sub-assets').nth(1);
+  // In Grafana 13's scene-based inline editor, the combobox can be reset by a concurrent
+  // async re-render after the selection is made. Retry until the value actually sticks.
+  // We detect success by checking the combobox's parent container for the selected text.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await combobox.click();
+    await expect(panelEditPage.getByGrafanaSelector(option).first()).toBeVisible({ timeout: 10000 });
+    await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Locations' }).first().click();
+    // Wait for the dropdown to dismiss
+    await expect(panelEditPage.getByGrafanaSelector(option)).toHaveCount(0, { timeout: 5000 });
+    // Verify the selected value is actually shown in the combobox container
+    const selected = await combobox.locator('..').filter({ hasText: 'Locations' }).isVisible().catch(() => false);
+    if (selected) break;
+  }
+
+  const includeSubAssets = editorRow.getByLabel('Include sub-assets').nth(1);
   await includeSubAssets.check({ force: true });
   await expect(includeSubAssets).toBeChecked();
 
-  const includeTs = await editorRow.getByLabel('Include sub-timeseries').nth(1);
+  const includeTs = editorRow.getByLabel('Include sub-timeseries').nth(1);
   await expect(includeTs).toBeChecked();
 
-  const latestValue = await editorRow.getByLabel('Latest value').nth(1);
+  const latestValue = editorRow.getByLabel('Latest value').nth(1);
   await latestValue.check({ force: true });
   await expect(latestValue).toBeChecked();
 
+  // Grafana 13 scene-based dashboards process query-option changes asynchronously.
+  // The deferred query (data/latest) reliably fires within ~2 seconds of the last
+  // state change, but only if the browser gets idle time to process its microtask
+  // queue. waitForQueriesToFinish's repeated DOM-polling can starve that execution.
+  // Pause here first so the response is captured before we start any other checks.
+  await page.waitForTimeout(2500);
+
   await waitForQueriesToFinish(page);
 
-  await expect(panelEditPage.refreshPanel(
-    {
-      timeout: 30000,
-      waitForResponsePredicateCallback: async (response) => {
-
-        if (isCdfResponse('/timeseries/data/latest')(response)) {
-          const json = await response.json();
-          const externalIds = [...json.items?.map(({ externalId }) => externalId)].sort();
-          const isEqualArr = JSON.stringify(externalIds) === JSON.stringify(expectedTs);
-          return isEqualArr;
-        }
-
-        return false;
-      }
-    }
-  )).toBeOK();
+  // Verify that /timeseries/data/latest was actually called with the expected series
+  expect(latestResponses.length).toBeGreaterThan(0);
+  const lastResponse = latestResponses[latestResponses.length - 1];
+  expect(lastResponse.ok()).toBe(true);
+  const json = await lastResponse.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const externalIds = [...(json.items ?? []).map(({ externalId }: any) => externalId)].sort();
+  expect(externalIds).toEqual(expectedTs);
 
   await expect.poll(async () => {
-    const buttonTexts = await panelEditPage.panel.locator.getByRole('button', { name: /59.9139-10.7522.*/ }).allInnerTexts();
-    return buttonTexts.sort();
+    const panelContent = panelEditPage.panel.locator;
+    // Time series visualization (Grafana < 13): series appear as clickable legend buttons
+    const buttons = await panelContent.getByRole('button', { name: /59\.9139-10\.7522/ }).allInnerTexts();
+    if (buttons.length > 0) return buttons.sort();
+    // Grafana 13 inline editor may use a Stat visualization: series appear as plain text
+    const textElems = await panelContent.getByText(/59\.9139-10\.7522/).allInnerTexts();
+    return [...new Set(textElems.filter(t => /59\.9139-10\.7522/.test(t)).map(t => t.trim()))].sort();
   }, { timeout: 10000 }).toEqual(expectedTs);
 });
 
@@ -173,16 +199,23 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   const panels = ['A', 'B', 'C'];
   const units = ['percent', 'hPa', 'Kelvin'];
 
-  const panelEditPage = await dashboardPage.addPanel();
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
   await panelEditPage.datasource.set(ds.name);
 
-  // Select Table visualization (cross-version compatible)
-  // Grafana 12.4+ opens the viz picker automatically after addPanel(); older versions don't.
-  // Only click the toggle when the picker is not already visible.
+  // Select Table visualization (cross-version compatible).
+  // Grafana 13 inline editor shows a viz picker with "Suggestions" and "All visualizations" tabs.
+  // Older Grafana (9.5 – 12.x) uses a toggle-viz-picker button to open the picker.
   const tableViz = page.locator('[aria-label="Plugin visualization item Table"]')
     .or(page.getByTestId('data-testid Plugin visualization item Table'));
   if (!(await tableViz.isVisible())) {
-    await page.getByTestId('data-testid toggle-viz-picker').click();
+    // Grafana 13: viz picker is open with a "All visualizations" tab
+    const allVizTab = page.getByRole('tab', { name: 'All visualizations' });
+    if (await allVizTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await allVizTab.click();
+    } else {
+      // Older Grafana: open picker via toggle button
+      await page.getByTestId('data-testid toggle-viz-picker').click();
+    }
   }
   await tableViz.click();
 
@@ -316,6 +349,7 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
@@ -342,6 +376,7 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139');
@@ -363,6 +398,7 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
@@ -394,6 +430,7 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.clouds');
@@ -423,7 +460,7 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
   const searchTerms = ['59.9139-10.7522-current.temp', '59.9139-10.7522-current.pressure', '59.9139-10.7522-current.humidity'];
   const expectedLabels = ['temperature', 'pressure', 'humidity'];
 
-  const panelEditPage = await dashboardPage.addPanel();
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
   await panelEditPage.datasource.set(ds.name);
 
   for (const [index, searchTerm] of searchTerms.entries()) {
@@ -479,13 +516,14 @@ test('"CogniteTimeSeries with Activities" panel loads with annotations', async (
   await expect(panelEditPage.panel.locator).toBeVisible();
 });
 
-test('"CogniteTimeSeries" activities toggle appears when timeseries selected', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('"CogniteTimeSeries" activities toggle appears when timeseries selected', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   // Activities toggle should NOT be visible yet (no timeseries selected)
@@ -499,13 +537,14 @@ test('"CogniteTimeSeries" activities toggle appears when timeseries selected', a
   await expect(activitiesToggleAfter).toBeVisible({ timeout: 5000 });
 });
 
-test('"CogniteTimeSeries" enabling activities shows configuration options', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('"CogniteTimeSeries" enabling activities shows configuration options', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
@@ -523,13 +562,14 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
   await expect(scheduledToggle).toBeVisible();
 });
 
-test('"CogniteTimeSeries" can select activity view', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('"CogniteTimeSeries" can select activity view', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
@@ -556,13 +596,14 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
   await expect(activityViewOption.first()).not.toBeVisible();
 });
 
-test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     selectors,
     page,
+    grafanaVersion,
   });
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
