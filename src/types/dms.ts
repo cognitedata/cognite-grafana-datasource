@@ -40,7 +40,9 @@ export interface DMSFilter {
     gt?: any;
     lte?: any;
     lt?: any;
-  };}
+  };
+  inSpace?: string;
+}
 
 export interface DMSSearchRequest {
   view: {
@@ -105,6 +107,21 @@ export interface CogniteUnit {
   quantity?: string;
   source?: string;
   sourceReference?: string;
+}
+
+export interface DMSViewProperty {
+  type: { type: string; list?: boolean };
+  nullable?: boolean;
+  immutable?: boolean;
+  description?: string;
+  name?: string;
+}
+
+export interface DMSViewWithProperties {
+  space: string;
+  externalId: string;
+  version: string;
+  properties?: Record<string, DMSViewProperty>;
 }
 
 // Container inspect API types

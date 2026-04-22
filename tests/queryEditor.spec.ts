@@ -549,9 +549,10 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await expect(activitiesToggle).toBeChecked();
 
   // Wait for activity configuration UI to render
@@ -574,9 +575,11 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
+  await page.waitForTimeout(1000);
 
   // Wait for the second View field (activity view) to appear
   const activityViewFields = editorRow.locator('label:has-text("View")');
@@ -608,9 +611,11 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
+  // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
   const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
-  await activitiesToggle.check({ force: true });
+  await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
+  await page.waitForTimeout(1000);
 
   const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
   await expect(scheduledToggle).toBeVisible({ timeout: 5000 });
