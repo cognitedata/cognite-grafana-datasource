@@ -190,7 +190,7 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Navigate to Connection tab before saving — on some Grafana versions (e.g. 12.x)
     // clicking Save & Test while on the Features tab does not trigger the PUT request.
-    await page.getByRole('tab', { name: 'Connection' }).click();
+    await page.getByRole('tab', { name: 'Tab Connection', exact: true }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
 
@@ -208,7 +208,7 @@ test.describe('Feature Flags - Config Editor', () => {
     await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await toggleCheckbox(page, '#enable-core-data-model-features', true);
     // Navigate back to Connection tab before second save for the same reason
-    await page.getByRole('tab', { name: 'Connection' }).click();
+    await page.getByRole('tab', { name: 'Tab Connection', exact: true }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
   });
