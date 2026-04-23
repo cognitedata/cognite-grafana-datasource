@@ -36,6 +36,7 @@ import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
+import { CogniteActivityTab } from './cogniteActivityTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
@@ -351,20 +352,21 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => {
+          if (hiddenTab(t)) {
+            return null;
+          }
           const tabIsDisabled = isTabDisabled(t, datasource);
           const isCurrentlySelected = t === tab;
           const showingDisabledTab = tabIsDisabled && isCurrentlySelected;
-          
+
           return (
             <Tab
-              hidden={hiddenTab(t)}
               label={TabTitles[t]}
               key={t}
               active={activeTab === t}
               onChangeTab={onSelectTab(t)}
               style={{ display: 'flex' }}
               suffix={
-                // Show "Disabled" label for tabs that are disabled but shown for backward compatibility
                 showingDisabledTab
                   ? () => (
                       <p className="preview-label" style={{ color: theme.colors.error.text }}>Disabled</p>
@@ -396,6 +398,9 @@ export function QueryEditor(props: EditorProps) {
         )}
         {activeTab === Tabs.CogniteTimeSeriesSearch && (
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
+        )}
+        {activeTab === Tabs.CogniteActivity && (
+          <CogniteActivityTab {...{ onQueryChange, query, connector: datasource.connector }} />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

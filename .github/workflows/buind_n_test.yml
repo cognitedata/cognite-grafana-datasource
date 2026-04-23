@@ -134,7 +134,7 @@ jobs:
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
 
     needs: [resolve-versions, build-and-test]
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

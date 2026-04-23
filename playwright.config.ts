@@ -16,6 +16,8 @@ require('dotenv').config({ override: true });
  */
 export default defineConfig<PluginOptions>({
   testDir: './tests',
+  /* Per-test timeout: 45s on CI (slower runners), 30s locally */
+  timeout: process.env.CI ? 45_000 : 30_000,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
