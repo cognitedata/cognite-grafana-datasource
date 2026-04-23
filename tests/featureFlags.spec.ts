@@ -43,8 +43,8 @@ test.describe('Feature Flags - Tab Visibility', () => {
     await editorRow.getByText('Time series search').click();
     await expect(editorRow.getByText('Time series search')).toHaveAttribute('aria-selected', 'true');
 
-    await expect(editorRow.getByRole('tab', { name: 'Time Series', exact: true })).not.toBeVisible();
-    await expect(editorRow.getByRole('tab', { name: 'GraphQL', exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText('Time Series', { exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText('GraphQL', { exact: true })).not.toBeVisible();
   });
 
   test('Core-only dashboard should show only core data model tabs', async ({
@@ -61,9 +61,9 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     const editorRow = panelEditPage.getQueryEditorRow("A");
 
-    const cogniteTimeSeriesTab = editorRow.getByRole('tab', { name: 'Time Series', exact: true });
+    const cogniteTimeSeriesTab = editorRow.getByText('Time Series', { exact: true });
     await expect(cogniteTimeSeriesTab).toBeVisible();
-    await expect(editorRow.getByRole('tab', { name: 'GraphQL', exact: true })).toBeVisible();
+    await expect(editorRow.getByText('GraphQL', { exact: true })).toBeVisible();
 
     await cogniteTimeSeriesTab.click();
     await expect(cogniteTimeSeriesTab).toHaveAttribute('aria-selected', 'true');

@@ -57,7 +57,7 @@ async function setupCogniteTimeSeriesPanel({
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
   // Wait for Time Series tab to appear after datasource selection
-  const timeSeriesTab = editorRow.getByRole('tab', { name: 'Time Series', exact: true });
+  const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
   await expect(timeSeriesTab).toBeVisible();
   await timeSeriesTab.click();
 
@@ -473,7 +473,7 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
     // Wait for Time Series tab and click it
-    const timeSeriesTab = editorRow.getByRole('tab', { name: 'Time Series', exact: true });
+    const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
     await expect(timeSeriesTab).toBeVisible();
     await timeSeriesTab.click();
 
