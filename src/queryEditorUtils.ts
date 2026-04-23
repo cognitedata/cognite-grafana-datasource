@@ -49,6 +49,11 @@ export function isTabDisabled(
     return false;
   }
 
+  // CogniteActivity tab - gated under the same CDM toggle as CogniteTimeSeriesSearch
+  if (tab === Tabs.CogniteActivity) {
+    return !datasource.connector.isCogniteTimeSeriesEnabled();
+  }
+
   return false;
 }
 

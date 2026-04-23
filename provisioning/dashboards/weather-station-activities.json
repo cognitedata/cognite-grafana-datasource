@@ -1,0 +1,263 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "core-only"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "aggregation": "average",
+          "cogniteActivityTabQuery": {
+            "space": "cdf_cdm",
+            "externalId": "CogniteActivity",
+            "version": "v1",
+            "resourceType": "CogniteAsset",
+            "instanceSpace": "",
+            "assetInstances": [
+              {
+                "space": "cdm_try",
+                "externalId": "weather-station-fornebu",
+                "name": "Fornebu Weather Station"
+              }
+            ],
+            "columns": [
+              "externalId",
+              "name",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "core-only"
+          },
+          "expr": "",
+          "granularity": "",
+          "label": "",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "CogniteActivity",
+          "target": ""
+        }
+      ],
+      "title": "Activities - Asset (Fornebu Weather Station)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "core-only"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "aggregation": "average",
+          "cogniteActivityTabQuery": {
+            "space": "cdf_cdm",
+            "externalId": "CogniteActivity",
+            "version": "v1",
+            "resourceType": "CogniteEquipment",
+            "instanceSpace": "",
+            "assetInstances": [
+              {
+                "space": "cdm_try",
+                "externalId": "sensor-lysaker-visibility-sensor",
+                "name": "Forward Scatter Visibility Sensor"
+              }
+            ],
+            "columns": [
+              "externalId",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "core-only"
+          },
+          "expr": "",
+          "granularity": "",
+          "label": "",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "CogniteActivity",
+          "target": ""
+        }
+      ],
+      "title": "Activities - Equipment (Lysaker Visibility Sensor)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "core-only"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "aggregation": "average",
+          "cogniteActivityTabQuery": {
+            "space": "cdf_cdm",
+            "externalId": "CogniteActivity",
+            "version": "v1",
+            "resourceType": "CogniteTimeSeries",
+            "instanceSpace": "",
+            "assetInstances": [
+              {
+                "space": "cdm_try",
+                "externalId": "59.9139-10.7522-current.temp",
+                "name": "59.9139-10.7522-current.temp"
+              }
+            ],
+            "columns": [
+              "externalId",
+              "description",
+              "startTime",
+              "endTime"
+            ],
+            "sort": [
+              {
+                "property": "startTime",
+                "order": "asc"
+              }
+            ],
+            "activeOnly": true
+          },
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "core-only"
+          },
+          "expr": "",
+          "granularity": "",
+          "label": "",
+          "latestValue": false,
+          "refId": "A",
+          "tab": "CogniteActivity",
+          "target": ""
+        }
+      ],
+      "title": "Activities - TimeSeries (59.9139-10.7522-current.temp)",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1y",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CogniteActivities - by Resource Type",
+  "uid": "cognite-activities",
+  "version": 1,
+  "weekStart": ""
+}
