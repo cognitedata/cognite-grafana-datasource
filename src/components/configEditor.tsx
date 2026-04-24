@@ -1,7 +1,6 @@
 import React, { ChangeEvent, useState } from "react";
 import {
   Badge,
-  Divider,
   Icon,
   InlineField,
   InlineFieldRow,
@@ -12,7 +11,6 @@ import {
   Tab,
   TabContent,
   TabsBar,
-  Text,
   Tooltip,
 } from "@grafana/ui";
 import { DataSourcePluginOptionsEditorProps } from "@grafana/data";
@@ -209,7 +207,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
       <TabContent style={{ paddingTop: '16px' }}>
         {activeTab === "connection" && (
           <>
-            <Text element="h6" weight="medium" color="primary">HTTP</Text>
+            <h6 style={{ marginBottom: 4 }}>HTTP</h6>
             <div style={{ marginTop: '8px', marginBottom: '8px' }}>
               <InlineField
                 label="Project"
@@ -240,9 +238,9 @@ export function ConfigEditor(props: ConfigEditorProps) {
               </InlineField>
             </div>
 
-            <Divider />
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(204,204,220,0.12)', margin: '16px 0' }} />
 
-            <Text element="h6" weight="medium" color="primary">
+            <h6 style={{ marginBottom: 4 }}>
               Authentication{" "}
               <Tooltip
                 content="Find out more about authentication at docs.cognite.com/cdf/dashboards/guides/grafana/admin_oidc"
@@ -253,7 +251,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                   onClick={() => setShowHelp(!showHelp)}
                 />
               </Tooltip>
-            </Text>
+            </h6>
             <div style={{ marginTop: '8px' }}>
               {showHelp && (
                 <pre>
@@ -370,7 +368,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
 
         {activeTab === "features" && (
           <>
-            <Text element="h6" weight="medium" color="primary">Core Data Model (CDM)</Text>
+            <h6 style={{ marginBottom: 4 }}>Core Data Model (CDM)</h6>
             <div style={{ marginTop: '8px', marginBottom: '8px' }}>
               <InlineFieldRow style={{ marginBottom: "4px" }}>
                 <InlineFormLabel
@@ -428,11 +426,11 @@ export function ConfigEditor(props: ConfigEditorProps) {
               )}
             </div>
 
-            <Divider />
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(204,204,220,0.12)', margin: '16px 0' }} />
 
-            <Text element="h6" weight="medium" color="primary">
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>Asset-centric <Badge text="legacy" color="orange" /></span>
-            </Text>
+            <h6 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Asset-centric <Badge text="legacy" color="orange" />
+            </h6>
             <div style={{ marginTop: '8px', marginBottom: '8px' }}>
               <InlineFieldRow style={{ marginBottom: "4px" }}>
                 <InlineFormLabel
@@ -537,9 +535,9 @@ export function ConfigEditor(props: ConfigEditorProps) {
               )}
             </div>
 
-            <Divider />
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(204,204,220,0.12)', margin: '16px 0' }} />
 
-            <Text element="h6" weight="medium" color="primary">Deprecated</Text>
+            <h6 style={{ marginBottom: 4 }}>Deprecated</h6>
             <div style={{ marginTop: '8px', marginBottom: '8px' }}>
               <InlineFieldRow style={{ marginBottom: "4px" }}>
                 <InlineFormLabel
