@@ -27,6 +27,14 @@ export async function addPanel(
   grafanaVersion: string
 ): Promise<PanelEditPage> {
   if (semver.lt(grafanaVersion, '13.0.0')) {
+    // Grafana 10.0.x only: wait for the toolbar to finish its initial layout.
+    // On these builds the "Show more items" overflow button briefly appears and
+    // detaches before the click can land, causing a race condition.
+    // Later versions (10.1+) don't have this issue, and 12.x never reaches
+    // networkidle due to background WebSocket/polling activity.
+    if (semver.lt(grafanaVersion, '10.1.0')) {
+      await page.waitForLoadState('networkidle');
+    }
     return dashboardPage.addPanel();
   }
 

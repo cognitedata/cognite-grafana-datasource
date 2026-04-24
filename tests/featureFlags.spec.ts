@@ -84,8 +84,9 @@ test.describe('Feature Flags - Config Editor', () => {
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
     configPage = await gotoDataSourceConfigPage(datasource.uid);
     await page.waitForLoadState('load');
-    // Feature toggles are in the Features tab of the new tabbed config editor
-    await page.getByRole('tab', { name: 'Features' }).click();
+    // Feature toggles are in the Features tab of the new tabbed config editor.
+    // Use exact text filter to match plugin tabs without hitting Grafana nav tabs.
+    await page.locator('[role="tab"]').filter({ hasText: /^Features$/ }).click();
   });
 
   test('Should toggle legacy data model features on/off', async () => {
@@ -190,14 +191,14 @@ test.describe('Feature Flags - Config Editor', () => {
 
     // Navigate to Connection tab before saving — on some Grafana versions (e.g. 12.x)
     // clicking Save & Test while on the Features tab does not trigger the PUT request.
-    await page.getByRole('tab', { name: 'Tab Connection', exact: true }).click();
+    await page.locator('[role="tab"]').filter({ hasText: /^Connection$/ }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
 
     await page.reload();
     await page.waitForLoadState('load');
     // Re-navigate to Features tab after reload
-    await page.getByRole('tab', { name: 'Features' }).click();
+    await page.locator('[role="tab"]').filter({ hasText: /^Features$/ }).click();
 
     await expect(page.locator('#enable-legacy-data-model-features')).not.toBeChecked();
     await expect(page.locator('#enable-core-data-model-features')).not.toBeChecked();
@@ -208,7 +209,7 @@ test.describe('Feature Flags - Config Editor', () => {
     await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await toggleCheckbox(page, '#enable-core-data-model-features', true);
     // Navigate back to Connection tab before second save for the same reason
-    await page.getByRole('tab', { name: 'Tab Connection', exact: true }).click();
+    await page.locator('[role="tab"]').filter({ hasText: /^Connection$/ }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
   });
