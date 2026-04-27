@@ -35,7 +35,7 @@ export const TabTitles = {
   [Tab.Relationships]: "Relationships",
   [Tab.Templates]: "Templates",
   [Tab.FlexibleDataModelling]: "GraphQL",
-  [Tab.CogniteActivity]: "CogniteActivities",
+  [Tab.CogniteActivity]: "Activities",
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
   externalId: "",
@@ -254,6 +254,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableLegacyDataModelFeatures?: boolean;
   // Core data model (CDM) features
   enableCogniteTimeSeries?: boolean;
+  enableCogniteActivities?: boolean;
   enableFlexibleDataModelling?: boolean;
   // Legacy data model features
   enableTimeseriesSearch?: boolean;

@@ -31,6 +31,7 @@ export class Connector {
     private enableLegacyDataModelFeatures?: boolean,
     // Core data model (CDM) features
     private enableCogniteTimeSeries?: boolean,
+    private enableCogniteActivities?: boolean,
     private enableFlexibleDataModelling?: boolean,
     // Legacy data model features
     private enableTimeseriesSearch?: boolean,
@@ -156,6 +157,10 @@ export class Connector {
   // Core data model (CDM) features
   isCogniteTimeSeriesEnabled() {
     return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
+  }
+
+  isCogniteActivitiesEnabled() {
+    return this.enableCoreDataModelFeatures && this.enableCogniteActivities;
   }
 
   isFlexibleDataModellingEnabled() {

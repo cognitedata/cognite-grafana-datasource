@@ -77,7 +77,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   }, [connector]);
 
   const searchTimeseries = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim() || !cogniteTimeSeries.space || !cogniteTimeSeries.externalId) {
+    if (!cogniteTimeSeries.space || !cogniteTimeSeries.externalId) {
       return [];
     }
 
@@ -89,7 +89,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           externalId: cogniteTimeSeries.externalId,
           version: cogniteTimeSeries.version,
         },
-        query: searchQuery,
+        query: searchQuery.trim(),
         filter: {
           not: {
             equals: {
@@ -361,6 +361,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             <AsyncSelect
               key={`${cogniteTimeSeries.space}-${cogniteTimeSeries.externalId}-${cogniteTimeSeries.version}`}
               loadOptions={searchTimeseries}
+              defaultOptions
               value={getCurrentTimeseriesValue()}
               onChange={handleTimeseriesSelection}
               placeholder="Search timeseries by name/description"

@@ -513,6 +513,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           <AsyncMultiSelect
             key={`${selectedInstanceView?.space}:${selectedInstanceView?.externalId}:${selectedInstanceView?.version}:${instanceSpace}`}
             loadOptions={searchInstances}
+            defaultOptions
             value={selectedInstanceValues}
             onChange={handleInstancesChange}
             placeholder={`Search ${resourceType} by name...`}

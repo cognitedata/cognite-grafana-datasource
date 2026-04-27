@@ -13,6 +13,25 @@ export const stringValueHandler = (
   onJsonDataChange({ [key]: event.target.value });
 
 /**
+ * Strip an optional http(s):// scheme and trailing slashes from a hostname-like
+ * value. The plugin route in plugin.json hardcodes the https:// scheme, so the
+ * stored value must be a bare hostname.
+ */
+export const sanitizeHostname = (value: string): string =>
+  value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+
+/**
+ * Handler for hostname value changes - strips any scheme/trailing slashes so
+ * pasted full URLs (e.g. https://bluefield.cognitedata.com) still work.
+ */
+export const hostnameValueHandler = (
+  key: keyof CogniteDataSourceOptions,
+  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void,
+) =>
+(event: ChangeEvent<HTMLInputElement>) =>
+  onJsonDataChange({ [key]: sanitizeHostname(event.target.value) });
+
+/**
  * Handler for boolean value changes in jsonData
  */
 export const boolValueHandler = (

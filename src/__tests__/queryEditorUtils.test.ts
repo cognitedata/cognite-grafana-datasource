@@ -16,21 +16,34 @@ describe('QueryEditor Utility Functions', () => {
   describe('isTabDisabled', () => {
     it('should correctly identify disabled Core Data Model tabs', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
 
       expect(isTabDisabled(Tabs.CogniteTimeSeriesSearch, mockDataSource)).toBe(true);
+      expect(isTabDisabled(Tabs.CogniteActivity, mockDataSource)).toBe(true);
       expect(isTabDisabled(Tabs.FlexibleDataModelling, mockDataSource)).toBe(true);
 
       expect(mockDataSource.connector.isCogniteTimeSeriesEnabled).toHaveBeenCalled();
+      expect(mockDataSource.connector.isCogniteActivitiesEnabled).toHaveBeenCalled();
       expect(mockDataSource.connector.isFlexibleDataModellingEnabled).toHaveBeenCalled();
     });
 
     it('should correctly identify enabled Core Data Model tabs', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(true);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(true);
 
       expect(isTabDisabled(Tabs.CogniteTimeSeriesSearch, mockDataSource)).toBe(false);
+      expect(isTabDisabled(Tabs.CogniteActivity, mockDataSource)).toBe(false);
       expect(isTabDisabled(Tabs.FlexibleDataModelling, mockDataSource)).toBe(false);
+    });
+
+    it('should gate Activities tab on enableCogniteActivities independent of Time Series', () => {
+      mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
+
+      expect(isTabDisabled(Tabs.CogniteTimeSeriesSearch, mockDataSource)).toBe(false);
+      expect(isTabDisabled(Tabs.CogniteActivity, mockDataSource)).toBe(true);
     });
 
     it('should correctly identify disabled Legacy Data Model tabs', () => {
@@ -94,9 +107,11 @@ describe('QueryEditor Utility Functions', () => {
 
     it('should handle Core Data Model tabs backward compatibility', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
 
       // Disabled but selected - should not be hidden
       expect(isTabHidden(Tabs.CogniteTimeSeriesSearch, Tabs.CogniteTimeSeriesSearch, mockDataSource)).toBe(false);
+      expect(isTabHidden(Tabs.CogniteActivity, Tabs.CogniteActivity, mockDataSource)).toBe(false);
       
       // Disabled and not selected - should be hidden
       expect(isTabHidden(Tabs.CogniteTimeSeriesSearch, Tabs.Asset, mockDataSource)).toBe(true);
@@ -108,6 +123,7 @@ describe('QueryEditor Utility Functions', () => {
       // Disable first two tabs, enable Asset tab (third in order)
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(true);
       // Ensure other tabs are also properly mocked
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
@@ -136,6 +152,7 @@ describe('QueryEditor Utility Functions', () => {
       // Disable all tabs
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
@@ -153,6 +170,7 @@ describe('QueryEditor Utility Functions', () => {
       // Disable first few tabs, enable Events tab
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);
@@ -178,6 +196,7 @@ describe('QueryEditor Utility Functions', () => {
     it('should switch to first available tab when current tab is disabled', () => {
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
 
       // Tab is disabled - should switch to first available tab
       const result = getActiveTab(Tabs.Timeseries, mockDataSource);
@@ -205,6 +224,7 @@ describe('QueryEditor Utility Functions', () => {
       // Disable first few tabs, enable Events
       mockDataSource.connector.isTimeseriesSearchEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);

@@ -3,7 +3,9 @@ import {
   boolValueHandler, 
   secretValueHandler, 
   resetSecretHandler,
-  masterToggleHandler
+  masterToggleHandler,
+  sanitizeHostname,
+  hostnameValueHandler
 } from '../configEditorUtils';
 import { FEATURE_DEFAULTS } from '../featureDefaults';
 
@@ -56,6 +58,43 @@ describe('ConfigEditor Utility Functions', () => {
 
       expect(mockOnJsonDataChange).toHaveBeenCalledWith({
         oauthClientId: 'client-id_123!@#',
+      });
+    });
+  });
+
+  describe('sanitizeHostname', () => {
+    it('strips https:// scheme', () => {
+      expect(sanitizeHostname('https://bluefield.cognitedata.com')).toBe('bluefield.cognitedata.com');
+    });
+
+    it('strips http:// scheme and trailing slash', () => {
+      expect(sanitizeHostname('http://api.cognitedata.com/')).toBe('api.cognitedata.com');
+    });
+
+    it('trims whitespace', () => {
+      expect(sanitizeHostname('  api.cognitedata.com  ')).toBe('api.cognitedata.com');
+    });
+
+    it('leaves a bare hostname unchanged', () => {
+      expect(sanitizeHostname('bluefield.cognitedata.com')).toBe('bluefield.cognitedata.com');
+    });
+
+    it('is case-insensitive on the scheme', () => {
+      expect(sanitizeHostname('HTTPS://api.cognitedata.com')).toBe('api.cognitedata.com');
+    });
+  });
+
+  describe('hostnameValueHandler', () => {
+    it('persists the sanitized hostname', () => {
+      const handler = hostnameValueHandler('cogniteApiUrl', mockOnJsonDataChange);
+      const mockEvent = {
+        target: { value: 'https://bluefield.cognitedata.com/' }
+      } as React.ChangeEvent<HTMLInputElement>;
+
+      handler(mockEvent);
+
+      expect(mockOnJsonDataChange).toHaveBeenCalledWith({
+        cogniteApiUrl: 'bluefield.cognitedata.com',
       });
     });
   });

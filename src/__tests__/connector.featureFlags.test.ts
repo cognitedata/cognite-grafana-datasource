@@ -17,6 +17,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -39,6 +40,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures - DISABLED
         true, // enableLegacyDataModelFeatures
         true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -61,6 +63,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries - DISABLED
+        false, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -83,6 +86,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures - DISABLED
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries - DISABLED
+        false, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -96,6 +100,96 @@ describe("Connector Feature Flags", () => {
       expect(connectorBothDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
     });
 
+    it("should enable CogniteActivities only when both master and feature flags are enabled", () => {
+      const connectorEnabled = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
+      );
+      expect(connectorEnabled.isCogniteActivitiesEnabled()).toBe(true);
+
+      const connectorMasterDisabled = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        false, // enableCoreDataModelFeatures - DISABLED
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
+      );
+      expect(connectorMasterDisabled.isCogniteActivitiesEnabled()).toBe(false);
+
+      const connectorFeatureDisabled = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        false, // enableCogniteActivities - DISABLED
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
+      );
+      expect(connectorFeatureDisabled.isCogniteActivitiesEnabled()).toBe(false);
+
+      const connectorBothDisabled = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        false, // enableCoreDataModelFeatures - DISABLED
+        true, // enableLegacyDataModelFeatures
+        false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities - DISABLED
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
+      );
+      expect(connectorBothDisabled.isCogniteActivitiesEnabled()).toBe(false);
+    });
+
     it("should enable FlexibleDataModelling only when both core master and feature flags are enabled", () => {
       // Both enabled
       const connectorEnabled = new Connector(
@@ -107,6 +201,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -129,6 +224,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures - DISABLED
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,
@@ -153,6 +249,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling - DISABLED
         true,
         true,
@@ -181,6 +278,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -203,6 +301,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -225,6 +324,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         false,
         true,
@@ -249,6 +349,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -271,6 +372,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -295,6 +397,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -320,6 +423,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -348,6 +452,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures
         false, // enableLegacyDataModelFeatures - DISABLED
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -378,6 +483,7 @@ describe("Connector Feature Flags", () => {
         false, // enableCoreDataModelFeatures - disabled
         false, // enableLegacyDataModelFeatures - disabled
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         false,
         false,
@@ -405,6 +511,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures
         true, // enableLegacyDataModelFeatures
         false, // enableCogniteTimeSeries
+        false, // enableCogniteActivities
         false, // enableFlexibleDataModelling
         true,
         true,
@@ -433,6 +540,7 @@ describe("Connector Feature Flags", () => {
         true, // enableCoreDataModelFeatures - enabled
         false, // enableLegacyDataModelFeatures - disabled
         true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
         true, // enableFlexibleDataModelling
         true,
         true,

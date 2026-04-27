@@ -70,17 +70,18 @@ export const getMockedDataSource = (
     // Master toggles - enabled for tests
     true, // enableCoreDataModelFeatures
     true, // enableLegacyDataModelFeatures
-    // Core data model (CDM) features - enabled for tests (default is false in production)
+    // Core data model (CDM) features - enabled for tests
     true, // enableCogniteTimeSeries
-    // Legacy data model features - default to enabled for tests
+    true, // enableCogniteActivities
+    true, // enableFlexibleDataModelling
+    // Legacy data model features - enabled for tests
     true, // enableTimeseriesSearch
     true, // enableTimeseriesFromAsset
     true, // enableTimeseriesCustomQuery
     true, // enableEvents
-    // Deprecated features - default to enabled for tests
-    true, // enableTemplates
     true, // enableEventsAdvancedFiltering
-    true, // enableFlexibleDataModelling
+    // Deprecated features - enabled for tests
+    true, // enableTemplates
     true, // enableExtractionPipelines
     true, // enableRelationships
   );

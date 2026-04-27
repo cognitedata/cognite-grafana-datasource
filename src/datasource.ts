@@ -97,6 +97,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
       // Core data model (CDM) features
       enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
+      enableCogniteActivities = FEATURE_DEFAULTS.enableCogniteActivities,
       // Legacy data model features
       enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
       enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
@@ -127,6 +128,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       enableLegacyDataModelFeatures,
       // Core data model (CDM) features
       enableCogniteTimeSeries,
+      enableCogniteActivities,
       enableFlexibleDataModelling,
       // Legacy data model features
       enableTimeseriesSearch,
