@@ -56,9 +56,10 @@ async function setupCogniteTimeSeriesPanel({
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
-  // Wait for CogniteTimeSeries tab to appear after datasource selection
-  await expect(editorRow.getByText('CogniteTimeSeries')).toBeVisible();
-  await editorRow.getByText('CogniteTimeSeries').click();
+  // Wait for Time Series tab to appear after datasource selection
+  const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+  await expect(timeSeriesTab).toBeVisible();
+  await timeSeriesTab.click();
 
   const viewField = editorRow.locator('label:has-text("View")').locator('..');
   const viewDropdown = viewField.locator('input').first();
@@ -343,7 +344,7 @@ test('"Event query" can open Help panel', async ({ page, gotoDashboardPage, read
 });
 
 test('"CogniteTimeSeries" tab can be selected and search works', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
-  const { panelEditPage, editorRow } = await setupCogniteTimeSeriesPanel({
+  const { editorRow } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
@@ -471,9 +472,10 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const queryLetter = String.fromCharCode(65 + index);
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
-    // Wait for CogniteTimeSeries tab and click it
-    await expect(editorRow.getByText('CogniteTimeSeries')).toBeVisible();
-    await editorRow.getByText('CogniteTimeSeries').click();
+    // Wait for Time Series tab and click it
+    const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+    await expect(timeSeriesTab).toBeVisible();
+    await timeSeriesTab.click();
 
     const viewField = editorRow.locator('label:has-text("View")').locator('..');
     const viewDropdown = viewField.locator('input').first();
@@ -499,10 +501,9 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
   }
 });
 
-test('"CogniteTimeSeries with Activities" panel loads with annotations', async ({ readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page }) => {
+test('"CogniteTimeSeries with Activities" panel loads with annotations', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
 
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
 

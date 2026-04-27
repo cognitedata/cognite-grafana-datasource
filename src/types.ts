@@ -1,44 +1,44 @@
 import {
-  DataQueryRequest,
-  TimeSeries,
-  DataSourceJsonData,
-  TableData,
   DataFrame,
+  DataQueryRequest,
+  DataSourceJsonData,
   QueryEditorProps,
   SelectableValue,
-} from '@grafana/data';
-import { DataQuery } from '@grafana/schema';
-import { Datapoints, Items, IdEither, Limit } from './cdf/types';
-import CogniteDatasource from './datasource';
+  TableData,
+  TimeSeries,
+} from "@grafana/data";
+import { DataQuery } from "@grafana/schema";
+import { Datapoints, IdEither, Items, Limit } from "./cdf/types";
+import CogniteDatasource from "./datasource";
 
 export enum Tab {
-  Timeseries = 'Timeseries',
-  CogniteTimeSeriesSearch = 'CogniteTimeSeries',
-  CogniteActivity = 'CogniteActivity',
-  Asset = 'Asset',
-  Custom = 'Custom',
-  Event = 'Event',
-  Relationships = 'Relationships',
-  Templates = 'Templates',
-  ExtractionPipelines = 'Extraction Pipelines',
-  FlexibleDataModelling = 'Data Models',
-  DataModellingV2 = 'Data Models V2',
+  Timeseries = "Timeseries",
+  CogniteTimeSeriesSearch = "CogniteTimeSeries",
+  CogniteActivity = "CogniteActivity",
+  Asset = "Asset",
+  Custom = "Custom",
+  Event = "Event",
+  Relationships = "Relationships",
+  Templates = "Templates",
+  ExtractionPipelines = "Extraction Pipelines",
+  FlexibleDataModelling = "Data Models",
+  DataModellingV2 = "Data Models V2",
 }
 
 export const TabTitles = {
-  [Tab.Timeseries]: 'Time series search',
-  [Tab.CogniteTimeSeriesSearch]: 'CogniteTimeSeries',
-  [Tab.Asset]: 'Time series from asset',
-  [Tab.Custom]: 'Time series custom query',
-  [Tab.Event]: 'Events',
-  [Tab.ExtractionPipelines]: 'Extraction Pipelines',
-  [Tab.Relationships]: 'Relationships',
-  [Tab.Templates]: 'Templates',
-  [Tab.FlexibleDataModelling]: 'Data Models',
-  [Tab.CogniteActivity]: 'CogniteActivities',
+  [Tab.Timeseries]: "Time series search",
+  [Tab.CogniteTimeSeriesSearch]: "Time Series",
+  [Tab.Asset]: "Time series from asset",
+  [Tab.Custom]: "Time series custom query",
+  [Tab.Event]: "Events",
+  [Tab.ExtractionPipelines]: "Extraction Pipelines",
+  [Tab.Relationships]: "Relationships",
+  [Tab.Templates]: "Templates",
+  [Tab.FlexibleDataModelling]: "GraphQL",
+  [Tab.CogniteActivity]: "CogniteActivities",
 };
 const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
-  externalId: '',
+  externalId: "",
   graphQlQuery: `{
   listMachine {
     items {
@@ -64,12 +64,19 @@ const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
 };
 
 const defaultEventQuery: EventQuery = {
-  expr: '',
-  columns: ['externalId', 'type', 'subtype', 'description', 'startTime', 'endTime'],
+  expr: "",
+  columns: [
+    "externalId",
+    "type",
+    "subtype",
+    "description",
+    "startTime",
+    "endTime",
+  ],
   activeAtTimeRange: true,
   advancedFilter: ``,
   aggregate: {
-    name: 'uniqueValues',
+    name: "uniqueValues",
     properties: [],
     withAggregate: false,
   },
@@ -88,7 +95,7 @@ export const defaultRelationshipsQuery: RelationshipsQuery = {
 };
 const defaultAssetQuery: AssetQuery = {
   includeSubtrees: false,
-  target: '',
+  target: "",
   withRelationships: false,
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
@@ -141,40 +148,40 @@ export const defaultTemplateQuery: TemplateQuery = {
     }
   }
 }`,
-  dataPath: 'oEE_MachinesQuery.items',
-  datapointsPath: 'GoodQuantity.datapoints',
-  groupBy: 'Facility',
+  dataPath: "oEE_MachinesQuery.items",
+  datapointsPath: "GoodQuantity.datapoints",
+  groupBy: "Facility",
 };
 
 export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   selections: [],
   getRuns: false,
   columns: [
-    'name',
-    'status',
-    'lastUpdatedTime',
-    'lastFailure',
-    'lastSeen',
-    'lastSuccess',
-    'schedule',
-    'data set',
-    'message',
+    "name",
+    "status",
+    "lastUpdatedTime",
+    "lastFailure",
+    "lastSeen",
+    "lastSuccess",
+    "schedule",
+    "data set",
+    "message",
   ],
   limit: 1000,
 };
 
 export const defaultCogniteTimeSeries: CogniteTimeSeries = {
-  space: 'cdf_cdm',
-  version: 'v1',
-  externalId: 'CogniteTimeSeries',
+  space: "cdf_cdm",
+  version: "v1",
+  externalId: "CogniteTimeSeries",
   instanceId: undefined,
 };
 
 export const defaultCogniteActivityQuery: CogniteActivityQuery = {
   enabled: false,
-  space: 'cdf_cdm',
-  version: 'v1',
-  externalId: 'CogniteActivity',
+  space: "cdf_cdm",
+  version: "v1",
+  externalId: "CogniteActivity",
   useScheduledTime: false,
 };
 
@@ -210,13 +217,13 @@ export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
 };
 
 export const defaultQuery: Partial<CogniteQuery> = {
-  target: '',
+  target: "",
   latestValue: false,
-  aggregation: 'average',
-  granularity: '',
-  label: '',
+  aggregation: "average",
+  granularity: "",
+  label: "",
   tab: Tab.Timeseries,
-  expr: '',
+  expr: "",
   assetQuery: defaultAssetQuery,
   eventQuery: defaultEventQuery,
   relationshipsQuery: defaultRelationshipsQuery,
@@ -245,7 +252,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   // Master toggles for feature sections
   enableCoreDataModelFeatures?: boolean;
   enableLegacyDataModelFeatures?: boolean;
-  // Core Data Model features
+  // Core data model (CDM) features
   enableCogniteTimeSeries?: boolean;
   enableFlexibleDataModelling?: boolean;
   // Legacy data model features
@@ -268,11 +275,15 @@ export interface CogniteSecureJsonData {
 /**
  * Value that is used in the backend, but never sent over HTTP to the frontend
  */
-export function isError(maybeError: DataQueryError | any): maybeError is DataQueryError {
+export function isError(
+  maybeError: DataQueryError | any,
+): maybeError is DataQueryError {
   return (maybeError as DataQueryError).error !== undefined;
 }
 
-export type QueryResponse = DataResponse<Array<TimeSeries | TableData | DataFrame>>;
+export type QueryResponse = DataResponse<
+  Array<TimeSeries | TableData | DataFrame>
+>;
 
 export interface MetricDescription {
   readonly text: string;
@@ -309,14 +320,14 @@ export interface AssetQuery {
 }
 
 export interface EventQueryAggregate {
-  name: 'uniqueValues' | 'count';
+  name: "uniqueValues" | "count";
   properties: Array<{ property?: string }>;
   withAggregate: boolean;
 }
 
-export type EventsOrderDirection = 'desc' | 'asc';
+export type EventsOrderDirection = "desc" | "asc";
 
-export type EventsOrderNulls = 'first' | 'last' | 'auto';
+export type EventsOrderNulls = "first" | "last" | "auto";
 
 export interface EventQuerySortProp {
   property: string;
@@ -372,13 +383,13 @@ export type TemplateQuery = {
 
 export type CogniteTargetObj =
   | {
-      target?: number;
-      targetRefType?: 'id';
-    }
+    target?: number;
+    targetRefType?: "id";
+  }
   | {
-      target?: string;
-      targetRefType?: 'externalId';
-    };
+    target?: string;
+    targetRefType?: "externalId";
+  };
 
 export type QueryTarget = CogniteQuery;
 
@@ -395,10 +406,10 @@ export interface AppEvent<T> {
 }
 
 export enum HttpMethod {
-  POST = 'POST',
-  GET = 'GET',
-  PATCH = 'PATCH',
-  DELETE = 'DELETE',
+  POST = "POST",
+  GET = "GET",
+  PATCH = "PATCH",
+  DELETE = "DELETE",
 }
 
 export interface DataSourceRequestOptions {
@@ -484,7 +495,7 @@ export type DataQueryError = {
   };
 };
 
-export type DataQueryRequestType = 'data' | 'latest' | 'synthetic';
+export type DataQueryRequestType = "data" | "latest" | "synthetic";
 
 export type QueriesDataItem = {
   type: DataQueryRequestType;
@@ -516,9 +527,9 @@ export type DataQueryRequestItem = {
   targetUnit?: string;
 };
 
-export type Aggregates = Pick<CDFDataQueryRequest, 'aggregates'>;
-export type Granularity = Pick<CDFDataQueryRequest, 'granularity'>;
-export type TimeZone = Pick<CDFDataQueryRequest, 'timeZone'>;
+export type Aggregates = Pick<CDFDataQueryRequest, "aggregates">;
+export type Granularity = Pick<CDFDataQueryRequest, "granularity">;
+export type TimeZone = Pick<CDFDataQueryRequest, "timeZone">;
 
 export interface CDFDataQueryRequest {
   items: DataQueryRequestItem[];
@@ -534,7 +545,9 @@ export interface DataResponse<T> {
   data: T;
 }
 
-export type CursorResponse<T> = DataResponse<Items<T> & { nextCursor?: string }>;
+export type CursorResponse<T> = DataResponse<
+  Items<T> & { nextCursor?: string }
+>;
 
 export type ItemsResponse<T = any> = DataResponse<{
   items: T[];
@@ -557,7 +570,7 @@ export interface VariableQueryData {
     label: string;
     value: string;
   };
-  queryType?: 'assets' | 'graphql';
+  queryType?: "assets" | "graphql";
   graphqlQuery?: string;
   dataModel?: {
     space?: string;
@@ -605,6 +618,8 @@ export type EditorProps = QueryEditorProps<
 >;
 export type OnQueryChange = (
   patch: Partial<CogniteQueryBase> | CogniteTargetObj,
-  shouldRunQuery?: boolean
+  shouldRunQuery?: boolean,
 ) => void;
-export type SelectedProps = Pick<EditorProps, 'query'> & { onQueryChange: OnQueryChange };
+export type SelectedProps = Pick<EditorProps, "query"> & {
+  onQueryChange: OnQueryChange;
+};

@@ -24,13 +24,11 @@ const toggleCheckbox = async (page: Page, id: string, shouldBeChecked: boolean) 
 
 test.describe('Feature Flags - Tab Visibility', () => {
   test('Legacy-only dashboard should show only legacy tabs', async ({
-    readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     page,
     grafanaVersion,
   }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Legacy Only' });
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
@@ -45,18 +43,16 @@ test.describe('Feature Flags - Tab Visibility', () => {
     await editorRow.getByText('Time series search').click();
     await expect(editorRow.getByText('Time series search')).toHaveAttribute('aria-selected', 'true');
 
-    await expect(editorRow.getByText('CogniteTimeSeries')).not.toBeVisible();
-    await expect(editorRow.getByText('Data Models')).not.toBeVisible();
+    await expect(editorRow.getByText('Time Series', { exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText('GraphQL', { exact: true })).not.toBeVisible();
   });
 
   test('Core-only dashboard should show only core data model tabs', async ({
-    readProvisionedDataSource,
     readProvisionedDashboard,
     gotoDashboardPage,
     page,
     grafanaVersion,
   }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Core Only' });
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station-core.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
@@ -65,9 +61,9 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     const editorRow = panelEditPage.getQueryEditorRow("A");
 
-    const cogniteTimeSeriesTab = editorRow.getByRole('tab', { name: 'CogniteTimeSeries' });
+    const cogniteTimeSeriesTab = editorRow.getByText('Time Series', { exact: true });
     await expect(cogniteTimeSeriesTab).toBeVisible();
-    await expect(editorRow.getByText('Data Models')).toBeVisible();
+    await expect(editorRow.getByText('GraphQL', { exact: true })).toBeVisible();
 
     await cogniteTimeSeriesTab.click();
     await expect(cogniteTimeSeriesTab).toHaveAttribute('aria-selected', 'true');
@@ -88,6 +84,9 @@ test.describe('Feature Flags - Config Editor', () => {
     const datasource = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Config Test' });
     configPage = await gotoDataSourceConfigPage(datasource.uid);
     await page.waitForLoadState('load');
+    // Feature toggles are in the Features tab of the new tabbed config editor.
+    // Use exact text filter to match plugin tabs without hitting Grafana nav tabs.
+    await page.locator('[role="tab"]').filter({ hasText: /^Features$/ }).click();
   });
 
   test('Should toggle legacy data model features on/off', async () => {
@@ -190,10 +189,16 @@ test.describe('Feature Flags - Config Editor', () => {
     await toggleCheckbox(page, '#enable-legacy-data-model-features', false);
     await toggleCheckbox(page, '#enable-core-data-model-features', false);
 
+    // Navigate to Connection tab before saving — on some Grafana versions (e.g. 12.x)
+    // clicking Save & Test while on the Features tab does not trigger the PUT request.
+    await page.locator('[role="tab"]').filter({ hasText: /^Connection$/ }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
 
     await page.reload();
+    await page.waitForLoadState('load');
+    // Re-navigate to Features tab after reload
+    await page.locator('[role="tab"]').filter({ hasText: /^Features$/ }).click();
 
     await expect(page.locator('#enable-legacy-data-model-features')).not.toBeChecked();
     await expect(page.locator('#enable-core-data-model-features')).not.toBeChecked();
@@ -203,6 +208,8 @@ test.describe('Feature Flags - Config Editor', () => {
 
     await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await toggleCheckbox(page, '#enable-core-data-model-features', true);
+    // Navigate back to Connection tab before second save for the same reason
+    await page.locator('[role="tab"]').filter({ hasText: /^Connection$/ }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
     await expect(configPage).toHaveAlert('success');
   });

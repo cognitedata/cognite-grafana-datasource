@@ -1,5 +1,5 @@
-import { Tab as Tabs } from './types';
-import CogniteDatasource from './datasource';
+import { Tab as Tabs } from "./types";
+import CogniteDatasource from "./datasource";
 
 /**
  * Determines if a tab feature is disabled by feature flags
@@ -7,15 +7,18 @@ import CogniteDatasource from './datasource';
  * @param datasource The datasource instance with connector
  * @returns true if the tab is disabled, false otherwise
  */
-export function isTabDisabled(tab: Tabs, datasource: CogniteDatasource): boolean {
-  // Core Data Model features
+export function isTabDisabled(
+  tab: Tabs,
+  datasource: CogniteDatasource,
+): boolean {
+  // Core data model (CDM) features
   if (tab === Tabs.CogniteTimeSeriesSearch) {
     return !datasource.connector.isCogniteTimeSeriesEnabled();
   }
   if (tab === Tabs.FlexibleDataModelling) {
     return !datasource.connector.isFlexibleDataModellingEnabled();
   }
-  
+
   // Legacy data model features
   if (tab === Tabs.Timeseries) {
     return !datasource.connector.isTimeseriesSearchEnabled();
@@ -29,7 +32,7 @@ export function isTabDisabled(tab: Tabs, datasource: CogniteDatasource): boolean
   if (tab === Tabs.Event) {
     return !datasource.connector.isEventsEnabled();
   }
-  
+
   // Deprecated features
   if (tab === Tabs.Relationships) {
     return !datasource.connector.isRelationshipsEnabled();
@@ -40,7 +43,7 @@ export function isTabDisabled(tab: Tabs, datasource: CogniteDatasource): boolean
   if (tab === Tabs.ExtractionPipelines) {
     return !datasource.connector.isExtractionPipelinesEnabled();
   }
-  
+
   // DataModellingV2 tab - always enabled (no feature flag)
   if (tab === Tabs.DataModellingV2) {
     return false;
@@ -64,20 +67,24 @@ export function isTabDisabled(tab: Tabs, datasource: CogniteDatasource): boolean
  * @param datasource The datasource instance with connector
  * @returns true if the tab should be hidden, false otherwise
  */
-export function isTabHidden(tab: Tabs, currentTab: Tabs, datasource: CogniteDatasource): boolean {
+export function isTabHidden(
+  tab: Tabs,
+  currentTab: Tabs,
+  datasource: CogniteDatasource,
+): boolean {
   const tabIsDisabled = isTabDisabled(tab, datasource);
-  
+
   // If tab is not disabled, always show it
   if (!tabIsDisabled) {
     return false;
   }
-  
+
   // If tab is disabled but currently selected (existing visualization), show it
   // This ensures backward compatibility - users can still see their existing dashboards
   if (tab === currentTab) {
     return false;
   }
-  
+
   // Otherwise, hide disabled tabs to prevent new selections
   return true;
 }
@@ -109,7 +116,10 @@ export function getFirstAvailableTab(datasource: CogniteDatasource): Tabs {
  * @param datasource The datasource instance with connector
  * @returns The tab that should be active
  */
-export function getActiveTab(currentTab: Tabs, datasource: CogniteDatasource): Tabs {
+export function getActiveTab(
+  currentTab: Tabs,
+  datasource: CogniteDatasource,
+): Tabs {
   return isTabDisabled(currentTab, datasource)
     ? getFirstAvailableTab(datasource)
     : currentTab;

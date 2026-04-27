@@ -1,14 +1,15 @@
-import { ChangeEvent } from 'react';
-import { FEATURE_DEFAULTS, FeatureKey } from './featureDefaults';
-import { CogniteDataSourceOptions, CogniteSecureJsonData } from './types';
+import { ChangeEvent } from "react";
+import { FEATURE_DEFAULTS, FeatureKey } from "./featureDefaults";
+import { CogniteDataSourceOptions, CogniteSecureJsonData } from "./types";
 
 /**
  * Handler for string value changes in jsonData
  */
 export const stringValueHandler = (
   key: keyof CogniteDataSourceOptions,
-  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void
-) => (event: ChangeEvent<HTMLInputElement>) =>
+  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void,
+) =>
+(event: ChangeEvent<HTMLInputElement>) =>
   onJsonDataChange({ [key]: event.target.value });
 
 /**
@@ -16,8 +17,9 @@ export const stringValueHandler = (
  */
 export const boolValueHandler = (
   key: keyof CogniteDataSourceOptions,
-  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void
-) => (event: ChangeEvent<HTMLInputElement>) =>
+  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void,
+) =>
+(event: ChangeEvent<HTMLInputElement>) =>
   onJsonDataChange({ [key]: event.currentTarget.checked });
 
 /**
@@ -26,8 +28,9 @@ export const boolValueHandler = (
 export const secretValueHandler = (
   secretKey: keyof CogniteSecureJsonData,
   options: any,
-  onOptionsChange: (options: any) => void
-) => (event: ChangeEvent<HTMLInputElement>) =>
+  onOptionsChange: (options: any) => void,
+) =>
+(event: ChangeEvent<HTMLInputElement>) =>
   onOptionsChange({
     ...options,
     secureJsonData: {
@@ -41,8 +44,9 @@ export const secretValueHandler = (
 export const resetSecretHandler = (
   secretKey: keyof CogniteSecureJsonData,
   options: any,
-  onOptionsChange: (options: any) => void
-) => () =>
+  onOptionsChange: (options: any) => void,
+) =>
+() =>
   onOptionsChange({
     ...options,
     secureJsonFields: {
@@ -51,7 +55,7 @@ export const resetSecretHandler = (
     },
     secureJsonData: {
       ...options.secureJsonData,
-      [secretKey]: '',
+      [secretKey]: "",
     },
   });
 
@@ -61,21 +65,22 @@ export const resetSecretHandler = (
 export const masterToggleHandler = (
   masterKey: FeatureKey,
   dependentKeys: FeatureKey[],
-  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void
-) => (event: ChangeEvent<HTMLInputElement>) => {
+  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void,
+) =>
+(event: ChangeEvent<HTMLInputElement>) => {
   const isEnabled = event.currentTarget.checked;
-  
+
   // Create patch object with master toggle and dependent features
   const patch: Partial<Pick<CogniteDataSourceOptions, FeatureKey>> = {
     [masterKey]: isEnabled,
   };
-  
+
   // When enabling master toggle, enable all dependent features
   // When disabling master toggle, set dependent features to false
   dependentKeys.forEach((key) => {
     if (isEnabled) {
-      // For core data model features, enable them when master is enabled
-      if (masterKey === 'enableCoreDataModelFeatures') {
+      // For Core data model (CDM) features, enable them when master is enabled
+      if (masterKey === "enableCoreDataModelFeatures") {
         patch[key] = true;
       } else {
         // For other master toggles, use their defaults
@@ -86,6 +91,6 @@ export const masterToggleHandler = (
       patch[key] = false;
     }
   });
-  
+
   onJsonDataChange(patch);
 };

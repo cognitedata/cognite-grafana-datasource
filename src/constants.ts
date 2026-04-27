@@ -93,7 +93,7 @@ export const ExtractionPipelinesFields = [
 export const EVENTS_PAGE_LIMIT = 1000;
 
 export const DOCS_URL =
-  'https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html';
+  'https://docs.cognite.com/cdf/dashboards/guides/grafana/timeseries';
 
 export const edgeField: any = {
   id: {

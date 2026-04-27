@@ -26,7 +26,7 @@ test('"Save & test" should be successful when configuration is valid', async ({
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
-  await page.getByLabel('API Host').fill(ds.jsonData.cogniteApiUrl ?? '');
+  await page.getByLabel('Base URL').fill(ds.jsonData.cogniteApiUrl ?? '');
   
   await page.getByLabel('OAuth2 client credentials').click();
   
@@ -50,7 +50,7 @@ test('"Save & test" should fail when configuration is invalid', async ({
   const configPage = await createDataSourceConfigPage({ type: ds.type });
   
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
-  await page.getByLabel('API Host').fill(ds.jsonData.cogniteApiUrl ?? '');
+  await page.getByLabel('Base URL').fill(ds.jsonData.cogniteApiUrl ?? '');
   
   await page.getByLabel('OAuth2 client credentials').click();
   

@@ -40,7 +40,7 @@ import { CogniteActivityTab } from './cogniteActivityTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
-import { isTabDisabled, isTabHidden } from '../queryEditorUtils';
+import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -340,8 +340,14 @@ export function QueryEditor(props: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Use the selected tab directly - no automatic switching to avoid infinite loops
-  const activeTab = tab;
+  const activeTab = getActiveTab(tab, datasource);
+
+  useEffect(() => {
+    if (activeTab !== tab) {
+      onQueryChange({ tab: activeTab }, false);
+    }
+  }, [activeTab, tab, onQueryChange]);
+
   return (
     <div>
       <TabsBar>

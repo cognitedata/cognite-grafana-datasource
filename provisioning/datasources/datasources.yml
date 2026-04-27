@@ -15,7 +15,7 @@ datasources:
       # Master toggles for feature sections
       enableCoreDataModelFeatures: true
       enableLegacyDataModelFeatures: true
-      # Core Data Model features
+      # Core data model (CDM) features
       enableCogniteTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features (already enabled by default, but explicit for clarity)
@@ -50,7 +50,7 @@ datasources:
       # Master toggles for feature sections
       enableCoreDataModelFeatures: false
       enableLegacyDataModelFeatures: true
-      # Core Data Model features (disabled)
+      # Core data model (CDM) features (disabled)
       enableCogniteTimeSeries: false
       enableFlexibleDataModelling: false
       # Legacy data model features (enabled)
@@ -85,7 +85,7 @@ datasources:
       # Master toggles for feature sections
       enableCoreDataModelFeatures: true
       enableLegacyDataModelFeatures: false
-      # Core Data Model features (enabled)
+      # Core data model (CDM) features (enabled)
       enableCogniteTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features (disabled)
@@ -117,10 +117,10 @@ datasources:
     jsonData:
       cogniteApiUrl: ${COGNITE_HOST}
       cogniteProject: ${COGNITE_PROJECT}
-      # Master toggles for feature sections
-      enableCoreDataModelFeatures: true
+      # Master toggles for feature sections (mutually exclusive)
+      enableCoreDataModelFeatures: false
       enableLegacyDataModelFeatures: true
-      # Core Data Model features
+      # Core data model (CDM) features
       enableCogniteTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features
