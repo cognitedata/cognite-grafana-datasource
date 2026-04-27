@@ -18,6 +18,7 @@ import { CogniteDataSourceOptions, CogniteSecureJsonData } from "../types";
 import { FEATURE_DEFAULTS, FeatureKey } from "../featureDefaults";
 import {
   boolValueHandler,
+  hostnameValueHandler,
   resetSecretHandler,
   secretValueHandler,
   stringValueHandler,
@@ -30,7 +31,7 @@ type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
 >;
 
 const baseUrlTooltip =
-  `The base URL for your CDF cluster (e.g. api.cognitedata.com, westeurope-1.cognitedata.com, az-eastus-1.cognitedata.com). Keep the default if your project is on the api.cognitedata.com cluster. See docs.cognite.com/cdf/admin/clusters_regions for a full list.`;
+  `The base URL for your CDF cluster (e.g. api.cognitedata.com, westeurope-1.cognitedata.com, az-eastus-1.cognitedata.com). Keep the default if your project is on the api.cognitedata.com cluster. See docs.cognite.com/cdf/admin/clusters_regions for a full list. The https:// scheme is optional and will be stripped automatically.`;
 
 const oAuthPassThruTooltip =
   `Forward the user's OAuth token from Grafana to CDF. Requires Grafana to authenticate with the same identity provider (e.g. Microsoft Entra ID) as the CDF project. Available on Grafana Enterprise, self-hosted, and Cloud Pro.`;
@@ -52,6 +53,9 @@ const oAuthScopeTooltip =
 
 const enableCogniteTimeSeriesTooltip =
   `Enable the Time Series tab to browse and select time series instances from the Core Data Model (CogniteTimeSeries type).`;
+
+const enableCogniteActivitiesTooltip =
+  `Enable the Activities tab to query CogniteActivity instances from the Core Data Model.`;
 
 const enableTimeseriesSearchTooltip =
   `Enable the Time series search tab to find and select time series by name, description, or metadata.`;
@@ -88,6 +92,7 @@ const enableLegacyDataModelFeaturesTooltip =
 
 const CORE_DEPENDENT_KEYS: FeatureKey[] = [
   "enableCogniteTimeSeries",
+  "enableCogniteActivities",
   "enableFlexibleDataModelling",
 ];
 const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
@@ -124,6 +129,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableLegacyDataModelFeatures =
       FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
     enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
+    enableCogniteActivities = FEATURE_DEFAULTS.enableCogniteActivities,
     enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
     enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
     enableTimeseriesCustomQuery = FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
@@ -233,7 +239,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                   value={cogniteApiUrl}
                   width={INPUT_WIDTH}
                   placeholder={clusterUrl ?? "api.cognitedata.com"}
-                  onChange={onJsonStringValueChange("cogniteApiUrl")}
+                  onChange={hostnameValueHandler("cogniteApiUrl", onJsonDataChange)}
                 />
               </InlineField>
             </div>
@@ -405,6 +411,21 @@ export function ConfigEditor(props: ConfigEditorProps) {
                       label="Time Series"
                       value={enableCogniteTimeSeries}
                       onChange={onJsonBoolValueChange("enableCogniteTimeSeries")}
+                    />
+                  </InlineFieldRow>
+                  <InlineFieldRow style={{ marginBottom: "4px" }}>
+                    <InlineFormLabel
+                      htmlFor="enable-cognite-activities"
+                      tooltip={enableCogniteActivitiesTooltip}
+                      width={FEATURE_LABEL_WIDTH}
+                    >
+                      Activities
+                    </InlineFormLabel>
+                    <InlineSwitch
+                      id="enable-cognite-activities"
+                      label="Activities"
+                      value={enableCogniteActivities}
+                      onChange={onJsonBoolValueChange("enableCogniteActivities")}
                     />
                   </InlineFieldRow>
                   <InlineFieldRow style={{ marginBottom: "4px" }}>

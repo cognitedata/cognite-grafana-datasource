@@ -10,19 +10,20 @@ export const FEATURE_DEFAULTS = {
 
   // Core data model (CDM) features - default to enabled when core master toggle is on
   enableCogniteTimeSeries: true,
+  enableCogniteActivities: true,
+  enableFlexibleDataModelling: true, // GraphQL / Data Models tab
 
   // Legacy data model features - default to enabled for backward compatibility
   enableTimeseriesSearch: true,
   enableTimeseriesFromAsset: true,
   enableTimeseriesCustomQuery: true,
   enableEvents: true,
+  enableEventsAdvancedFiltering: false, // Off by default
 
-  // Deprecated features - keep existing behavior for backward compatibility
+  // Deprecated features
   enableTemplates: false, // Disabled by default
-  enableEventsAdvancedFiltering: false, // Disabled by default
-  enableFlexibleDataModelling: true, // Enable Data Models by default
   enableExtractionPipelines: false, // Disabled by default
-  enableRelationships: true, // Default enabled for backward compatibility
+  enableRelationships: false, // Disabled by default
 } as const;
 
 /**
