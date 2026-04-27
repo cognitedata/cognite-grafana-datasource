@@ -3,6 +3,28 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.5.0 - April 27th, 2026
+
+### Features
+
+- Added **Activities** query editor tab for querying CogniteActivity records by resource type (Asset, Equipment, TimeSeries)
+- Added CogniteActivity annotations overlay on CogniteTimeSeries charts, displayed as shaded regions with start/end times
+- Added automatic numeric time series detection in the Data Models (GraphQL) tab, auto-triggering the CDF datapoints API for matching results
+- Overhauled datasource config editor: reorganized into **Connection** and **Features** tabs, CDM features now enabled by default for new datasources, CDM and asset-centric (legacy) toggles are mutually exclusive
+- Base URL field now strips `http(s)://` prefixes and trailing slashes automatically to prevent misconfigured proxy URLs
+- Query editor dropdowns (CDM Time Series and Activities) now load options lazily on menu open
+- Relationships feature is now off by default for new datasources
+
+### Bug fixes
+
+- Fixed broken Cognite documentation URLs in annotations editor, query help, variable query editor, and shared constants
+- Improved UX copy and tooltip text across config editor and query editors for clarity and consistency
+
+### Security
+
+- Updated lodash to v4.18.1 to address CVE-2025-13465
+- Updated webpack to v5.104.1 to address CVE-2025-68458
+
 ## 4.4.0 - November 12th, 2025
 
 ### Features
