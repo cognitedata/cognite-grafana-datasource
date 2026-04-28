@@ -20,11 +20,11 @@ The easiest way to install this plugin is to follow the installation instruction
 
 ## Documentation
 
-To learn more about the connector please visit our [documentation](https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started.html)
+To learn more about the connector please visit our [documentation](https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started).
 
 ## Feedback
 
-If you find any bugs, or have any suggestions, please [visit support portal](https://support.cognite.com/).
+If you find any bugs, or have any suggestions, please [visit support portal](https://cognite.zendesk.com/hc/en-us).
 
 
 ## Development
