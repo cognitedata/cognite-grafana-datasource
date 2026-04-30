@@ -108,6 +108,22 @@ export const mockInstancesWithStringType: DMSInstance[] = [
       },
     },
   },
+  {
+    instanceType: 'node',
+    space: 'cdf_cdm',
+    externalId: 'state_sensor',
+    version: 1,
+    lastUpdatedTime: 1640995200000,
+    createdTime: 1640995200000,
+    properties: {
+      cdf_cdm: {
+        'CogniteTimeSeries/v1': {
+          name: 'State Sensor',
+          type: 'state',
+        },
+      },
+    },
+  },
 ];
 
 export const mockSingleSpace: DMSSpace[] = [

@@ -1,4 +1,4 @@
-import { fetchCogniteUnits, getTimeSeriesUnit, formQueryForItems } from '../cdf/client';
+import { fetchCogniteUnits, getTimeSeriesUnit, getTimeSeriesProperties, formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
 import { CogniteUnit, DMSInstance } from '../types/dms';
 import { HttpMethod, defaultQuery, CogniteQuery, QueryOptions } from '../types';
@@ -292,6 +292,67 @@ describe('Unit Conversion', () => {
       });
 
       expect(unit).toBeUndefined();
+    });
+  });
+
+  describe('getTimeSeriesProperties', () => {
+    const buildInstance = (props: Record<string, unknown>): DMSInstance[] => [
+      {
+        instanceType: 'node',
+        space: 'cdm_try',
+        externalId: 'test-ts',
+        version: 1,
+        lastUpdatedTime: 1234567890,
+        createdTime: 1234567890,
+        properties: {
+          cdf_cdm: {
+            'CogniteTimeSeries/v1': {
+              name: 'Test TS',
+              ...props,
+            },
+          },
+        },
+      },
+    ];
+
+    it.each([
+      ['numeric'],
+      ['string'],
+      ['state'],
+    ])('returns the %s type from the instance', async (type) => {
+      mockConnector.fetchItems.mockResolvedValue(buildInstance({ type }));
+
+      const result = await getTimeSeriesProperties(mockConnector, {
+        space: 'cdm_try',
+        externalId: 'test-ts',
+      });
+
+      expect(result.type).toBe(type);
+    });
+
+    it('returns unit and type together in a single fetch', async () => {
+      mockConnector.fetchItems.mockResolvedValue(
+        buildInstance({ type: 'numeric', unit: 'temperature:deg_c' })
+      );
+
+      const result = await getTimeSeriesProperties(mockConnector, {
+        space: 'cdm_try',
+        externalId: 'test-ts',
+      });
+
+      expect(result).toEqual({ type: 'numeric', unit: 'temperature:deg_c' });
+      expect(mockConnector.fetchItems).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty object on error', async () => {
+      mockConnector.fetchItems.mockRejectedValue(new Error('API Error'));
+
+      const result = await getTimeSeriesProperties(mockConnector, {
+        space: 'cdm_try',
+        externalId: 'test-ts',
+      });
+
+      expect(result).toEqual({});
     });
   });
 

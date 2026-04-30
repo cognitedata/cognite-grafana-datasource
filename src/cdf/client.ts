@@ -605,10 +605,15 @@ export async function fetchCogniteUnits(
   }
 }
 
-export async function getTimeSeriesUnit(
+export interface TimeSeriesProperties {
+  unit?: string;
+  type?: string;
+}
+
+export async function getTimeSeriesProperties(
   connector: Connector,
   instanceId: { space: string; externalId: string }
-): Promise<string | undefined> {
+): Promise<TimeSeriesProperties> {
   try {
     const instances = await retryOnRateLimit(() =>
       connector.fetchItems<DMSInstance>({
@@ -635,20 +640,31 @@ export async function getTimeSeriesUnit(
 
     if (instances.length > 0) {
       const tsProps = instances[0].properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
-      // Try both 'unit' and 'sourceUnit' properties
-      const unit = tsProps?.unit || tsProps?.sourceUnit;
-      
-      // Handle both string and object formats
-      if (typeof unit === 'string') {
-        return unit;
-      } else if (unit && typeof unit === 'object' && 'externalId' in unit) {
-        return unit.externalId;
+      // Try both 'unit' and 'sourceUnit'; each may be a string or an object with externalId
+      const rawUnit = tsProps?.unit || tsProps?.sourceUnit;
+      let unit: string | undefined;
+      if (typeof rawUnit === 'string') {
+        unit = rawUnit;
+      } else if (rawUnit && typeof rawUnit === 'object' && 'externalId' in rawUnit) {
+        unit = rawUnit.externalId;
       }
+
+      const rawType = tsProps?.type;
+      const type = typeof rawType === 'string' ? rawType : undefined;
+
+      return { unit, type };
     }
   } catch (err) {
-    console.warn('Failed to fetch timeseries unit:', err);
+    console.warn('Failed to fetch timeseries properties:', err);
   }
-  return undefined;
+  return {};
+}
+
+export async function getTimeSeriesUnit(
+  connector: Connector,
+  instanceId: { space: string; externalId: string }
+): Promise<string | undefined> {
+  return (await getTimeSeriesProperties(connector, instanceId)).unit;
 }
 
 // Fetch views that implement the CogniteTimeSeries container

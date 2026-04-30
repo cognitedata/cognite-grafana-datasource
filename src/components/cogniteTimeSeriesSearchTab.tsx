@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Select, AsyncSelect, Alert, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
+import { Select, AsyncSelect, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesUnit, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
+import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesProperties, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
 import { DMSInstance, DMSSearchRequest, CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
@@ -10,6 +10,15 @@ import { Connector } from '../connector';
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
   connector: Connector;
 }
+
+const TYPE_BADGE_COLORS: Record<string, BadgeColor> = {
+  numeric: 'blue',
+  string: 'orange',
+  state: 'purple',
+};
+
+export const getTypeBadgeColor = (type: string): BadgeColor =>
+  TYPE_BADGE_COLORS[type] ?? 'darkgrey';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -41,6 +50,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [error, setError] = useState<string | null>(null);
   const [units, setUnits] = useState<CogniteUnit[]>([]);
   const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
+  const [timeSeriesType, setTimeSeriesType] = useState<string | undefined>(undefined);
   const [loadingUnits, setLoadingUnits] = useState(false);
   
   // Activity overlay state
@@ -90,27 +100,22 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           version: cogniteTimeSeries.version,
         },
         query: searchQuery.trim(),
-        filter: {
-          not: {
-            equals: {
-              property: ['type'],
-              value: 'string',
-            },
-          },
-        },
         limit: 1000,
       };
 
       const instances = await searchDMSInstances(connector, searchRequest);
       const tsOptions = instances.map((instance: DMSInstance) => {
-        const name = instance.properties?.[cogniteTimeSeries.space]?.[`${cogniteTimeSeries.externalId}/${cogniteTimeSeries.version}`]?.name || instance.externalId;
+        const props = instance.properties?.[cogniteTimeSeries.space]?.[`${cogniteTimeSeries.externalId}/${cogniteTimeSeries.version}`];
+        const name = props?.name || instance.externalId;
+        const type = props?.type;
         return {
           label: name,
           value: `${instance.space}:${instance.externalId}`,
           description: `Space: ${instance.space}, External ID: ${instance.externalId}`,
           space: instance.space,
           externalId: instance.externalId,
-          name: name,
+          name,
+          type,
         };
       });
       return tsOptions;
@@ -164,27 +169,37 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     loadUnits();
   }, [connector]);
 
-  // Fetch the unit of the selected timeseries
+  // Fetch the unit and type of the selected timeseries in a single byids call
   useEffect(() => {
-    const fetchUnit = async () => {
+    const fetchProperties = async () => {
       const instanceId = cogniteTimeSeries.instanceId;
       if (instanceId?.space && instanceId?.externalId) {
         setLoadingUnits(true);
         try {
-          const unit = await getTimeSeriesUnit(connector, instanceId);
+          const { unit, type } = await getTimeSeriesProperties(connector, instanceId);
           setTimeSeriesUnit(unit);
+          setTimeSeriesType(type);
         } catch (err) {
-          console.warn('Failed to fetch timeseries unit:', stringifyError(err));
+          console.warn('Failed to fetch timeseries properties:', stringifyError(err));
           setTimeSeriesUnit(undefined);
+          setTimeSeriesType(undefined);
         } finally {
           setLoadingUnits(false);
         }
       } else {
         setTimeSeriesUnit(undefined);
+        setTimeSeriesType(undefined);
       }
     };
-    fetchUnit();
+    fetchProperties();
   }, [connector, instanceIdKey, cogniteTimeSeries.instanceId]);
+
+  // String timeseries don't support aggregations — pin aggregation to 'none'
+  useEffect(() => {
+    if (timeSeriesType === 'string' && query.aggregation !== 'none') {
+      onQueryChange({ aggregation: 'none' });
+    }
+  }, [timeSeriesType, query.aggregation, onQueryChange]);
 
   const handleViewChange = (selectedOption: SelectableValue<InvolvedView> | null) => {
     const view = selectedOption?.value;
@@ -200,17 +215,20 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   };
 
   const handleTimeseriesSelection = (selectedTimeseries: SelectableValue | null) => {
+    setTimeSeriesType(selectedTimeseries?.type);
     onQueryChange({
       cogniteTimeSeries: {
         ...cogniteTimeSeries,
         instanceId: selectedTimeseries ? {
-          // PR Feedback: We need space field here because top-level space (e.g., "cdf_cdm") 
-          // is used for searching/listing in DMS view, while instanceId.space 
+          // PR Feedback: We need space field here because top-level space (e.g., "cdf_cdm")
+          // is used for searching/listing in DMS view, while instanceId.space
           // (e.g., "cdm_try") is where the actual selected instance lives for data queries
           space: selectedTimeseries.space,
           externalId: selectedTimeseries.externalId,
         } : undefined,
       },
+      // String timeseries don't support aggregations — pin to 'none' on selection
+      ...(selectedTimeseries?.type === 'string' ? { aggregation: 'none' } : {}),
     });
   };
 
@@ -273,6 +291,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   };
 
   const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
+  const isStateType = timeSeriesType === 'state';
 
   // Activity overlay handlers
   const handleActivityOverlayToggle = (checked: boolean) => {
@@ -369,9 +388,17 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               width={40}
               noOptionsMessage="No timeseries found"
               inputId={`cognite-timeseries-search-${query.refId}`}
+              formatOptionLabel={(option: SelectableValue & { type?: string }) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{option.label}</span>
+                  {option.type && (
+                    <Badge text={option.type} color={getTypeBadgeColor(option.type)} />
+                  )}
+                </div>
+              )}
             />
           </InlineField>
-          {timeSeriesUnit && (
+          {timeSeriesUnit && !isStateType && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -385,7 +412,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           )}
         </InlineFieldRow>
 
-        {cogniteTimeSeries.instanceId && isUnitConversionEnabled && (
+        {cogniteTimeSeries.instanceId && isStateType && (
+          <Alert title="Unsupported time series type" severity="info">
+            State time series are not currently supported in Grafana.
+          </Alert>
+        )}
+
+        {cogniteTimeSeries.instanceId && isUnitConversionEnabled && !isStateType && (
           <InlineFieldRow>
             <InlineField
               label="Target Unit"
@@ -406,7 +439,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
         )}
 
         {/* Activity Overlay Section - only show when time series is selected */}
-        {cogniteTimeSeries.instanceId && (
+        {cogniteTimeSeries.instanceId && !isStateType && (
           <>
             <InlineFieldRow>
               <InlineField
@@ -462,9 +495,16 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </>
         )}
 
-        <LatestValueCheckbox {...{ query, onQueryChange }} />
-        {!query.latestValue && (
-          <CommonEditors {...{ query, onQueryChange }} />
+        {!isStateType && (
+          <>
+            <LatestValueCheckbox {...{ query, onQueryChange }} />
+            {!query.latestValue && (
+              <CommonEditors
+                {...{ query, onQueryChange }}
+                hideAggregation={timeSeriesType === 'string'}
+              />
+            )}
+          </>
         )}
 
         {error && (
@@ -473,7 +513,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </Alert>
         )}
       </div>
-      {query.latestValue && (
+      {query.latestValue && !isStateType && (
         <LabelEditor {...{ onQueryChange, query }} />
       )}
     </div>

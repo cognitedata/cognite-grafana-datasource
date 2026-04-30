@@ -2,6 +2,7 @@ import { getMockedDataSource } from '../test_utils';
 import { fetchDMSSpaces, fetchDMSViews, searchDMSInstances } from '../cdf/client';
 import { DMSSpace, DMSView, DMSInstance } from '../types/dms';
 import { Connector } from '../connector';
+import { getTypeBadgeColor } from '../components/cogniteTimeSeriesSearchTab';
 import {
   mockSpaces,
   mockViews,
@@ -132,14 +133,6 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
           version: 'v1',
         },
         query: 'temperature',
-        filter: {
-          not: {
-            equals: {
-              property: ['type'],
-              value: 'string',
-            },
-          },
-        },
         limit: 10,
       };
 
@@ -181,8 +174,7 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
       });
     });
 
-    it('should filter out string-type timeseries', async () => {
-
+    it('should return mixed-type timeseries (numeric, string and state)', async () => {
       fetcher.fetch.mockResolvedValue({
         data: { items: mockInstancesWithStringType },
         status: 200,
@@ -196,20 +188,17 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
           version: 'v1',
         },
         query: 'sensor',
-        filter: {
-          not: {
-            equals: {
-              property: ['type'],
-              value: 'string',
-            },
-          },
-        },
         limit: 10,
       };
 
       const result = await searchDMSInstances(connector, searchRequest);
 
       expect(result).toEqual(mockInstancesWithStringType);
+      expect(result.map((i) => i.properties?.cdf_cdm['CogniteTimeSeries/v1'].type)).toEqual([
+        'numeric',
+        'string',
+        'state',
+      ]);
       expect(fetcher.fetch).toHaveBeenCalledWith({
         url: '/api/datasources/proxy/6/cdf-oauth/api/v1/projects/TestProject/models/instances/search',
         method: 'POST',
@@ -305,4 +294,23 @@ describe('CogniteTimeSeriesSearch DMS Functions', () => {
       expect(instances).toEqual([]);
     });
   });
-}); 
+});
+
+describe('getTypeBadgeColor', () => {
+  it('returns blue for numeric', () => {
+    expect(getTypeBadgeColor('numeric')).toBe('blue');
+  });
+
+  it('returns orange for string', () => {
+    expect(getTypeBadgeColor('string')).toBe('orange');
+  });
+
+  it('returns purple for state', () => {
+    expect(getTypeBadgeColor('state')).toBe('purple');
+  });
+
+  it('returns darkgrey for unknown types', () => {
+    expect(getTypeBadgeColor('mystery')).toBe('darkgrey');
+    expect(getTypeBadgeColor('')).toBe('darkgrey');
+  });
+});
