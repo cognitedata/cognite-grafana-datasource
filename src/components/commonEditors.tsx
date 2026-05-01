@@ -88,7 +88,7 @@ export const LabelEditor = (props: SelectedProps) => {
 
 export const CommonEditors = ({ onQueryChange, query, ...etc }: SelectedProps & any) => (
   <InlineFieldRow>
-    <AggregationEditor {...{ onQueryChange, query }} />
+    {!etc?.hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
     <GranularityEditor {...{ onQueryChange, query }} />
     {!etc?.visible && <LabelEditor {...{ onQueryChange, query }} />}
   </InlineFieldRow>
