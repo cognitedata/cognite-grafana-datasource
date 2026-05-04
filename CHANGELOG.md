@@ -3,6 +3,24 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.5.1 - May 4th, 2026
+
+### Features
+
+- Added support for mixed CogniteTimeSeries types (numeric, string, and state) in the CDM query editor
+- Time series type is now displayed as a chip in the selection dropdown
+- Aggregates selector is disabled for string type time series
+- State time series shows a warning (support to be added in a future release)
+
+### Bug fixes
+
+- Fixed broken README links
+
+### Dependencies
+
+- Upgraded `grafana-plugin-sdk-go` to v0.292.0
+- Added yarn resolutions to fix npm CVEs
+
 ## 4.5.0 - April 27th, 2026
 
 ### Features
