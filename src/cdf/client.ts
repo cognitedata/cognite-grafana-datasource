@@ -141,15 +141,24 @@ export async function getLabelsForTarget(
       return timeseries.map((ts) => getLabelWithInjectedProps(labelSrc, ts));
     }
     case Tab.CogniteTimeSeriesSearch: {
-      // For CogniteTimeSeriesSearch, we use the instanceId format as a fallback
-      // since name should be loaded at runtime, not persisted in JSON
+      // Default label for CogniteTimeSeries: <space>:<externalId> of the picked instance.
       if (target.cogniteTimeSeries?.instanceId) {
         const space = target.cogniteTimeSeries.instanceId.space;
         const externalId = target.cogniteTimeSeries.instanceId.externalId;
-        const instanceId = `${space}:${externalId}`;
-        // If we have a custom label with variables, we can't inject properties from regular timeseries metadata
-        // since this is a DMS instance, so we'll use the instanceId as fallback
-        return labelSrc && !labelContainsVariableProps(labelSrc) ? [labelSrc] : [instanceId];
+        const instanceLabel = `${space}:${externalId}`;
+        if (labelSrc && labelContainsVariableProps(labelSrc)) {
+          const viewSpec = {
+            space: target.cogniteTimeSeries.space,
+            externalId: target.cogniteTimeSeries.externalId,
+            version: target.cogniteTimeSeries.version,
+          };
+          const [props, viewProps] = await Promise.all([
+            fetchCogniteTimeSeriesInstance(connector, viewSpec, target.cogniteTimeSeries.instanceId),
+            fetchDMSViewProperties(connector, viewSpec),
+          ]);
+          return [interpolateCogniteTimeSeriesInstanceLabel(labelSrc, props, viewProps)];
+        }
+        return [labelSrc || instanceLabel];
       }
       return [labelSrc || 'CogniteTimeSeries'];
     }
@@ -187,6 +196,31 @@ export function getLabelWithInjectedProps(
 
 export function labelContainsVariableProps(label: string): boolean {
   return label && !!label.match(variableLabelRegex);
+}
+
+/** Interpolate `{{property}}` tokens from a CogniteTimeSeries DMS instance + view schema. */
+export function interpolateCogniteTimeSeriesInstanceLabel(
+  labelSrc: string,
+  props: Record<string, any>,
+  viewPropertyNames: string[]
+): string {
+  // `space` and `externalId` come from the instance node itself (not the view
+  // schema), but are exposed in `props` and useful in labels.
+  const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
+  return labelSrc.replace(variableLabelRegex, (_full, group) => {
+    const rootKey = group.split('.')[0];
+    if (!validPropNames.has(rootKey)) {
+      return `:${group}`;
+    }
+    const val = get(props, group);
+    if (val == null) {
+      return group.includes('.') ? `:${group}` : 'null';
+    }
+    if (typeof val === 'object') {
+      return JSON.stringify(val);
+    }
+    return String(val);
+  });
 }
 
 export async function getTimeseries(
@@ -640,14 +674,14 @@ export async function getTimeSeriesProperties(
 
     if (instances.length > 0) {
       const tsProps = instances[0].properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
-      // Try both 'unit' and 'sourceUnit'; each may be a string or an object with externalId
-      const rawUnit = tsProps?.unit || tsProps?.sourceUnit;
-      let unit: string | undefined;
-      if (typeof rawUnit === 'string') {
-        unit = rawUnit;
-      } else if (rawUnit && typeof rawUnit === 'object' && 'externalId' in rawUnit) {
-        unit = rawUnit.externalId;
-      }
+      // Only the structured `unit` direct relation (a CogniteUnit reference) qualifies as
+      // a storage unit for conversion. The free-text `sourceUnit` is informational and not
+      // resolvable against the unit catalog, so we ignore it here.
+      const rawUnit = tsProps?.unit;
+      const unit =
+        rawUnit && typeof rawUnit === 'object' && typeof rawUnit.externalId === 'string'
+          ? rawUnit.externalId
+          : undefined;
 
       const rawType = tsProps?.type;
       const type = typeof rawType === 'string' ? rawType : undefined;
@@ -665,6 +699,57 @@ export async function getTimeSeriesUnit(
   instanceId: { space: string; externalId: string }
 ): Promise<string | undefined> {
   return (await getTimeSeriesProperties(connector, instanceId)).unit;
+}
+
+// Fetch the full property bag of a CogniteTimeSeries instance from a specific view, so
+// label templates like `{{name}}` or `{{metadata.foo}}` can be interpolated at query time.
+export async function fetchCogniteTimeSeriesInstance(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string },
+  instanceId: { space: string; externalId: string }
+): Promise<Record<string, any>> {
+  try {
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/byids',
+        data: {
+          sources: [
+            {
+              source: {
+                type: 'view',
+                space: viewSpec.space,
+                externalId: viewSpec.externalId,
+                version: viewSpec.version,
+              },
+            },
+          ],
+          items: [
+            {
+              instanceType: 'node',
+              space: instanceId.space,
+              externalId: instanceId.externalId,
+            },
+          ],
+          includeTyping: false,
+        },
+      })
+    );
+    if (!instances.length) {
+      return {};
+    }
+    const instance = instances[0];
+    const props =
+      instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] ?? {};
+    return {
+      space: instance.space,
+      externalId: instance.externalId,
+      ...props,
+    };
+  } catch (err) {
+    console.warn('Failed to fetch CogniteTimeSeries instance:', err);
+    return {};
+  }
 }
 
 // Fetch views that implement the CogniteTimeSeries container

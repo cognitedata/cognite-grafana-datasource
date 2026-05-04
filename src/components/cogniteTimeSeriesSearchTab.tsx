@@ -352,7 +352,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   return (
     <div>
-      <div className="gf-form-group">
+      <div>
         <InlineFieldRow>
           <InlineField
             label="View"
@@ -398,18 +398,6 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               )}
             />
           </InlineField>
-          {timeSeriesUnit && !isStateType && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginLeft: '8px',
-              color: 'rgba(204, 204, 220, 0.65)',
-              fontSize: '12px',
-              whiteSpace: 'nowrap'
-            }}>
-              Unit: {getUnitDisplayName(timeSeriesUnit)}
-            </div>
-          )}
         </InlineFieldRow>
 
         {cogniteTimeSeries.instanceId && isStateType && (
@@ -435,6 +423,14 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
                 width={40}
               />
             </InlineField>
+            {timeSeriesUnit && (
+              <InlineField transparent style={{ alignItems: 'center' }}>
+                <Badge
+                  text={`Storage unit: ${getUnitDisplayName(timeSeriesUnit)}`}
+                  color="darkgrey"
+                />
+              </InlineField>
+            )}
           </InlineFieldRow>
         )}
 
