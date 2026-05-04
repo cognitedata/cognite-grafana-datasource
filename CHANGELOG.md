@@ -12,10 +12,6 @@ Data Source for Grafana**.
 - Aggregates selector is disabled for string type time series
 - State time series shows a warning (support to be added in a future release)
 
-### Bug fixes
-
-- Fixed broken README links
-
 ### Dependencies
 
 - Upgraded `grafana-plugin-sdk-go` to v0.292.0
