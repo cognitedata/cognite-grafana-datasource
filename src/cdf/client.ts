@@ -209,12 +209,16 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
   return labelSrc.replace(variableLabelRegex, (_full, group) => {
     const rootKey = group.split('.')[0];
-    if (!validPropNames.has(rootKey)) return `:${group}`;
+    if (!validPropNames.has(rootKey)) {
+      return `:${group}`;
+    }
     const val = get(props, group);
     if (val == null) {
       return group.includes('.') ? `:${group}` : 'null';
     }
-    if (typeof val === 'object') return JSON.stringify(val);
+    if (typeof val === 'object') {
+      return JSON.stringify(val);
+    }
     return String(val);
   });
 }
@@ -731,7 +735,9 @@ export async function fetchCogniteTimeSeriesInstance(
         },
       })
     );
-    if (!instances.length) return {};
+    if (!instances.length) {
+      return {};
+    }
     const instance = instances[0];
     const props =
       instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] ?? {};
