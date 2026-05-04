@@ -3,6 +3,7 @@ import {
   datapoints2Tuples,
   reduceTimeseries,
   labelContainsVariableProps,
+  interpolateCogniteTimeSeriesInstanceLabel,
   concurrent,
   convertItemsToTable,
 } from '../cdf/client';
@@ -113,6 +114,41 @@ describe('CDF client', () => {
 
     test('no props', () => {
       expect(labelContainsVariableProps('pure text')).toEqual(false);
+    });
+  });
+
+  describe('CogniteTimeSeriesSearch label interpolation', () => {
+    it('interpolates fields, JSONifies objects, invalid root, null, nested typos', () => {
+      const props = {
+        space: 'inst_s',
+        externalId: 'inst_e',
+        name: 'TS-A',
+        unit: { externalId: 'kg' },
+        nullableField: null,
+        nested: { ok: 1 },
+      };
+      const viewProps = ['name', 'unit', 'nullableField', 'nested'];
+
+      const out = interpolateCogniteTimeSeriesInstanceLabel(
+        '{{name}} | {{nope}} | {{unit}} | {{nullableField}} | {{nested.bad}} | {{nested.ok}}',
+        props,
+        viewProps
+      );
+
+      expect(out).toBe('TS-A | :nope | {"externalId":"kg"} | null | :nested.bad | 1');
+    });
+
+    it('allows {{space}} and {{externalId}} from instance node', () => {
+      const props = { space: 'inst_s', externalId: 'inst_e', name: 'N' };
+      const viewProps = ['name'];
+
+      const out = interpolateCogniteTimeSeriesInstanceLabel(
+        '{{space}}/{{externalId}}/{{name}}',
+        props,
+        viewProps
+      );
+
+      expect(out).toBe('inst_s/inst_e/N');
     });
   });
 

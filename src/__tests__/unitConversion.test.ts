@@ -140,7 +140,7 @@ describe('Unit Conversion', () => {
   });
 
   describe('getTimeSeriesUnit', () => {
-    it('should fetch unit from timeseries instance (string format)', async () => {
+    it('does not return a string-typed unit property as storage unit (only direct relation)', async () => {
       const mockInstances: DMSInstance[] = [
         {
           instanceType: 'node',
@@ -188,7 +188,7 @@ describe('Unit Conversion', () => {
         },
       });
 
-      expect(unit).toBe('temperature:deg_c');
+      expect(unit).toBeUndefined();
     });
 
     it('should fetch unit from timeseries instance (object format)', async () => {
@@ -224,7 +224,7 @@ describe('Unit Conversion', () => {
       expect(unit).toBe('temperature:deg_c');
     });
 
-    it('should fallback to sourceUnit if unit is not present', async () => {
+    it('does not treat sourceUnit as a resolvable storage unit when structured unit is absent', async () => {
       const mockInstances: DMSInstance[] = [
         {
           instanceType: 'node',
@@ -251,7 +251,7 @@ describe('Unit Conversion', () => {
         externalId: 'test-ts',
       });
 
-      expect(unit).toBe('temperature:deg_c');
+      expect(unit).toBeUndefined();
     });
 
     it('should return undefined if no unit is found', async () => {
@@ -332,7 +332,10 @@ describe('Unit Conversion', () => {
 
     it('returns unit and type together in a single fetch', async () => {
       mockConnector.fetchItems.mockResolvedValue(
-        buildInstance({ type: 'numeric', unit: 'temperature:deg_c' })
+        buildInstance({
+          type: 'numeric',
+          unit: { space: 'cdf_cdm_units', externalId: 'temperature:deg_c' },
+        })
       );
 
       const result = await getTimeSeriesProperties(mockConnector, {
