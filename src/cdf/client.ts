@@ -59,6 +59,13 @@ import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
 
+/** Per-bucket `stateAggregates[]` with one series per state in the panel. */
+const STATE_MULTI_AGGREGATES = new Set([
+  'stateDuration',
+  'stateCount',
+  'stateTransitions',
+]);
+
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
   { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
@@ -79,23 +86,37 @@ export function formQueryForItems(
       };
     }
     default: {
-      let aggregations: Aggregates & Granularity & TimeZone = null;
+      const isStateTS = cogniteTimeSeries?.type === 'state';
       const isAggregated = aggregation && aggregation !== 'none';
+      let aggregations: Aggregates & Granularity & TimeZone = null;
       if (isAggregated) {
+        let aggregates: string[];
+        if (isStateTS) {
+          if (STATE_MULTI_AGGREGATES.has(aggregation)) {
+            aggregates = [aggregation];
+          } else if (aggregation === 'count') {
+            aggregates = ['count'];
+          } else {
+            // dominantState: single series from stateDuration; API still returns stateAggregates
+            aggregates = ['stateDuration'];
+          }
+        } else {
+          aggregates = [aggregation];
+        }
         aggregations = {
-          aggregates: [aggregation],
+          aggregates,
           granularity: granularity || toGranularityWithLowerBound(intervalMs),
           timeZone,
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
-      
-      // Add targetUnit to items if specified for CogniteTimeSeries queries
-      const targetUnit = cogniteTimeSeries?.targetUnit;
+
+      // Add targetUnit to items if specified for numeric CogniteTimeSeries queries (state TS doesn't use units)
+      const targetUnit = !isStateTS ? cogniteTimeSeries?.targetUnit : undefined;
       const itemsWithUnit = targetUnit
         ? items.map((item) => item.instanceId ? { ...item, targetUnit } : item)
         : items;
-      
+
       return {
         ...aggregations,
         end,
@@ -208,6 +229,9 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   // schema), but are exposed in `props` and useful in labels.
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
   return labelSrc.replace(variableLabelRegex, (_full, group) => {
+    if (group.startsWith('$')) {
+      return `{{${group}}}`;
+    }
     const rootKey = group.split('.')[0];
     if (!validPropNames.has(rootKey)) {
       return `:${group}`;
@@ -291,6 +315,83 @@ function generateTargetTsLabel(
   return type === 'latest' ? idEither : `${aggregateStr}${idEither}`;
 }
 
+type StateAggregateEntry = {
+  numericValue?: number;
+  stringValue?: string;
+  stateCount?: number;
+  stateTransitions?: number;
+  stateDuration?: number;
+};
+
+type StateBucket = {
+  timestamp: number;
+  stateAggregates?: StateAggregateEntry[];
+};
+
+/** Replaces all `{{$state}}` occurrences in a multi-state series label. */
+const STATE_TOKEN_RE = /\{\{\s*\$state\s*\}\}/g;
+
+function pickStateLabel(state: { numericValue: number; stringValue?: string }): string {
+  return state.stringValue ?? String(state.numericValue);
+}
+
+function valueFromStateEntry(
+  entry: StateAggregateEntry | undefined,
+  field: 'stateDuration' | 'stateCount' | 'stateTransitions'
+): number {
+  if (!entry) return 0;
+  switch (field) {
+    case 'stateDuration':
+      return entry.stateDuration ?? 0;
+    case 'stateCount':
+      return entry.stateCount ?? 0;
+    case 'stateTransitions':
+      return entry.stateTransitions ?? 0;
+    default:
+      return 0;
+  }
+}
+
+/** One Grafana series per distinct state; missing entries in a bucket become 0. */
+function expandMultiStateSeries(
+  datapoints: StateBucket[],
+  baseLabel: string,
+  field: 'stateDuration' | 'stateCount' | 'stateTransitions',
+  appendStateSuffix: boolean
+): TimeSeries[] {
+  const seen = new Map<number, { numericValue: number; stringValue?: string }>();
+  for (const bucket of datapoints) {
+    for (const e of bucket.stateAggregates ?? []) {
+      if (e.numericValue === undefined) continue;
+      if (!seen.has(e.numericValue)) {
+        seen.set(e.numericValue, {
+          numericValue: e.numericValue,
+          stringValue: e.stringValue,
+        });
+      }
+    }
+  }
+  const states = Array.from(seen.values()).sort((a, b) => a.numericValue - b.numericValue);
+  return states.map((state) => {
+    const suffix = pickStateLabel(state);
+    const replaced = baseLabel.replace(STATE_TOKEN_RE, suffix);
+    const target =
+      replaced !== baseLabel
+        ? replaced
+        : appendStateSuffix
+          ? `${baseLabel} - ${suffix}`
+          : baseLabel;
+    const datapointsOut: Array<[number, number]> = datapoints.map((bucket) => {
+      const entry = (bucket.stateAggregates ?? []).find(
+        (e) => e.numericValue === state.numericValue
+      );
+      const v = valueFromStateEntry(entry, field);
+      return [v, bucket.timestamp];
+    });
+    return { target, datapoints: datapointsOut };
+  });
+}
+
 export function reduceTimeseries(
   metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
@@ -298,26 +399,112 @@ export function reduceTimeseries(
   const responseTimeseries: TimeSeries[] = [];
 
   metaResponses.forEach(({ result, metadata }) => {
-    const { labels, type } = metadata;
+    const { labels, type, target } = metadata;
     const { aggregates } = result.config.data;
     const { items } = result.data;
 
-    const series = items.map(({ datapoints, externalId, id }, i) => {
+    const isStateTS = target?.cogniteTimeSeries?.type === 'state';
+    let stateAggregation = isStateTS
+      ? (type === 'latest' ? 'none' : target?.aggregation)
+      : undefined;
+    const stateAsNumeric = isStateTS && !!target?.cogniteTimeSeries?.displayAsNumeric;
+    const useStateReducer = isStateTS && stateAggregation !== 'count';
+    const isMultiStateAgg =
+      isStateTS &&
+      !!stateAggregation &&
+      STATE_MULTI_AGGREGATES.has(stateAggregation);
+
+    const series = items.flatMap(({ datapoints, externalId, id }, i) => {
       const label = labels && labels[i];
-      const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
+      const baseLabel = label || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
         type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end);
-      const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
-      return {
-        target: resTarget,
-        datapoints: rawDatapoints,
-      };
+
+      if (isMultiStateAgg && stateAggregation) {
+        // Only auto-append " - <state>" for the default label (user left Label blank).
+        const appendStateSuffix = !target?.label;
+        return expandMultiStateSeries(
+          dpsInRange as StateBucket[],
+          baseLabel,
+          stateAggregation as 'stateDuration' | 'stateCount' | 'stateTransitions',
+          appendStateSuffix
+        );
+      }
+
+      const tuples = useStateReducer
+        ? stateDatapoints2Tuples(dpsInRange, stateAggregation, stateAsNumeric)
+        : datapoints2Tuples(dpsInRange, aggregates);
+      return [
+        {
+          target: baseLabel,
+          datapoints: tuples,
+        } as TimeSeries,
+      ];
     });
 
-    responseTimeseries.push(...series);
+    responseTimeseries.push(...(series as TimeSeries[]));
   });
 
   return responseTimeseries;
+}
+
+type StateValue = number | string | null;
+type StateTuple = [StateValue, number];
+
+const entryValue = (
+  e: StateAggregateEntry | undefined,
+  asNumeric: boolean
+): StateValue => {
+  if (!e) return null;
+  if (asNumeric) return e.numericValue ?? null;
+  return e.stringValue ?? e.numericValue ?? null;
+};
+
+function reduceStateBucket(
+  bucket: StateBucket,
+  aggregation: string,
+  asNumeric: boolean
+): StateValue {
+  const entries = bucket.stateAggregates;
+  if (!entries || entries.length === 0) {
+    return null;
+  }
+  switch (aggregation) {
+    case 'dominantState': {
+      let dominant = entries[0];
+      for (const e of entries) {
+        if ((e.stateDuration ?? 0) > (dominant.stateDuration ?? 0)) {
+          dominant = e;
+        }
+      }
+      return entryValue(dominant, asNumeric);
+    }
+    default:
+      return null;
+  }
+}
+
+export function stateDatapoints2Tuples(
+  datapoints: any[],
+  aggregation: string | undefined,
+  asNumeric = false
+): StateTuple[] {
+  if (!aggregation || aggregation === 'none') {
+    return datapoints
+      .map((dp): StateTuple | null => {
+        const value: StateValue = asNumeric
+          ? (dp.numericValue ?? null)
+          : (dp.stringValue ?? dp.numericValue ?? null);
+        return value === null ? null : [value, dp.timestamp];
+      })
+      .filter((t): t is StateTuple => t !== null);
+  }
+  return datapoints
+    .map((bucket: StateBucket): StateTuple | null => {
+      const value = reduceStateBucket(bucket, aggregation, asNumeric);
+      return value === null ? null : [value, bucket.timestamp];
+    })
+    .filter((t): t is StateTuple => t !== null);
 }
 
 export function datapoints2Tuples<T extends Timestamp[]>(
@@ -642,6 +829,12 @@ export async function fetchCogniteUnits(
 export interface TimeSeriesProperties {
   unit?: string;
   type?: string;
+  stateSet?: { space: string; externalId: string };
+}
+
+export interface StateSetEntry {
+  numericValue: number;
+  stringValue: string;
 }
 
 export async function getTimeSeriesProperties(
@@ -686,7 +879,14 @@ export async function getTimeSeriesProperties(
       const rawType = tsProps?.type;
       const type = typeof rawType === 'string' ? rawType : undefined;
 
-      return { unit, type };
+      const rawStateSet = tsProps?.stateSet;
+      const stateSet = rawStateSet && typeof rawStateSet === 'object'
+        && typeof rawStateSet.space === 'string'
+        && typeof rawStateSet.externalId === 'string'
+          ? { space: rawStateSet.space, externalId: rawStateSet.externalId }
+          : undefined;
+
+      return { unit, type, stateSet };
     }
   } catch (err) {
     console.warn('Failed to fetch timeseries properties:', err);
@@ -699,6 +899,58 @@ export async function getTimeSeriesUnit(
   instanceId: { space: string; externalId: string }
 ): Promise<string | undefined> {
   return (await getTimeSeriesProperties(connector, instanceId)).unit;
+}
+
+// Fetch the entries of a CogniteStateSet by its instance reference.
+// Returns the list of { numericValue, stringValue } pairs that the state TS can resolve to.
+export async function getStateSetStates(
+  connector: Connector,
+  ref: { space: string; externalId: string }
+): Promise<StateSetEntry[]> {
+  if (!connector.isStateTimeSeriesEnabled()) {
+    return [];
+  }
+  try {
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/byids',
+        data: {
+          sources: [{
+            source: {
+              type: 'view',
+              space: 'cdf_cdm',
+              externalId: 'CogniteStateSet',
+              version: 'v1',
+            },
+          }],
+          items: [{
+            instanceType: 'node',
+            space: ref.space,
+            externalId: ref.externalId,
+          }],
+          includeTyping: false,
+        },
+        headers: { 'cdf-version': 'beta' },
+      })
+    );
+
+    if (!instances.length) return [];
+    const props = instances[0].properties?.['cdf_cdm']?.['CogniteStateSet/v1'];
+    const rawStates = Array.isArray(props?.states) ? props.states : [];
+    return rawStates
+      .map((s: any): StateSetEntry | null => {
+        const numericValue = typeof s?.numericValue === 'number' ? s.numericValue : undefined;
+        const stringValue = typeof s?.stringValue === 'string' ? s.stringValue : undefined;
+        if (numericValue === undefined || stringValue === undefined) return null;
+        return { numericValue, stringValue };
+      })
+      .filter((s: StateSetEntry | null): s is StateSetEntry => s !== null)
+      .sort((a: StateSetEntry, b: StateSetEntry) => a.numericValue - b.numericValue);
+  } catch (err) {
+    console.warn('Failed to fetch state set states:', err);
+    return [];
+  }
 }
 
 // Fetch the full property bag of a CogniteTimeSeries instance from a specific view, so
@@ -714,23 +966,19 @@ export async function fetchCogniteTimeSeriesInstance(
         method: HttpMethod.POST,
         path: '/models/instances/byids',
         data: {
-          sources: [
-            {
-              source: {
-                type: 'view',
-                space: viewSpec.space,
-                externalId: viewSpec.externalId,
-                version: viewSpec.version,
-              },
+          sources: [{
+            source: {
+              type: 'view',
+              space: viewSpec.space,
+              externalId: viewSpec.externalId,
+              version: viewSpec.version,
             },
-          ],
-          items: [
-            {
-              instanceType: 'node',
-              space: instanceId.space,
-              externalId: instanceId.externalId,
-            },
-          ],
+          }],
+          items: [{
+            instanceType: 'node',
+            space: instanceId.space,
+            externalId: instanceId.externalId,
+          }],
           includeTyping: false,
         },
       })

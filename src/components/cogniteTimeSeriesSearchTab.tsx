@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Select, AsyncSelect, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
+import { Select, AsyncSelect, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSwitch, Toggletip, Button, Tooltip, Icon } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SelectedProps } from '../types';
-import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesProperties, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
+import { SelectedProps, CogniteTimeSeries } from '../types';
+import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesProperties, getStateSetStates, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews, StateSetEntry } from '../cdf/client';
 import { DMSInstance, DMSSearchRequest, CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
@@ -30,7 +30,7 @@ const LatestValueCheckbox = (props: SelectedProps) => {
         tooltip="Fetch the latest data point in the provided time range"
       >
         <InlineSwitch
-          label='Latest value'
+          label="Latest value"
           id={`latest-value-${query.refId}`}
           value={query.latestValue}
           onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
@@ -39,6 +39,35 @@ const LatestValueCheckbox = (props: SelectedProps) => {
     </InlineFieldRow>
   );
 };
+
+const NUMERIC_AGGREGATIONS = new Set([
+  'none', 'average', 'max', 'min', 'count', 'sum', 'interpolation',
+  'stepInterpolation', 'continuousVariance', 'discreteVariance', 'totalVariation',
+]);
+const STATE_AGGREGATIONS = new Set([
+  'none',
+  'dominantState',
+  'count',
+  'stateDuration',
+  'stateCount',
+  'stateTransitions',
+]);
+
+// Returns a partial query update that snaps `aggregation` back to a valid value
+// for the newly selected TS type. Returns {} if the current aggregation is still valid.
+function normalizeAggregationForType(
+  type: CogniteTimeSeries['type'] | undefined,
+  current: string | undefined
+): { aggregation?: string } {
+  if (type === 'string') {
+    return current === 'none' ? {} : { aggregation: 'none' };
+  }
+  if (type === 'state') {
+    return current && STATE_AGGREGATIONS.has(current) ? {} : { aggregation: 'dominantState' };
+  }
+  // numeric (or unknown — fall back to numeric defaults)
+  return current && NUMERIC_AGGREGATIONS.has(current) ? {} : { aggregation: 'average' };
+}
 
 export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProps> = ({
   query,
@@ -51,6 +80,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [units, setUnits] = useState<CogniteUnit[]>([]);
   const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
   const [timeSeriesType, setTimeSeriesType] = useState<string | undefined>(undefined);
+  const [stateSetStates, setStateSetStates] = useState<StateSetEntry[]>([]);
+  const [loadingStateSet, setLoadingStateSet] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
   
   // Activity overlay state
@@ -176,19 +207,42 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       if (instanceId?.space && instanceId?.externalId) {
         setLoadingUnits(true);
         try {
-          const { unit, type } = await getTimeSeriesProperties(connector, instanceId);
+          const { unit, type, stateSet } = await getTimeSeriesProperties(connector, instanceId);
           setTimeSeriesUnit(unit);
           setTimeSeriesType(type);
+          if (type && cogniteTimeSeries.type !== type) {
+            const persistedType = type as CogniteTimeSeries['type'];
+            onQueryChange({
+              cogniteTimeSeries: {
+                ...cogniteTimeSeries,
+                type: persistedType,
+              },
+              ...normalizeAggregationForType(persistedType, query.aggregation),
+            });
+          }
+          if (type === 'state' && stateSet && connector.isStateTimeSeriesEnabled()) {
+            setLoadingStateSet(true);
+            try {
+              const states = await getStateSetStates(connector, stateSet);
+              setStateSetStates(states);
+            } finally {
+              setLoadingStateSet(false);
+            }
+          } else {
+            setStateSetStates([]);
+          }
         } catch (err) {
           console.warn('Failed to fetch timeseries properties:', stringifyError(err));
           setTimeSeriesUnit(undefined);
           setTimeSeriesType(undefined);
+          setStateSetStates([]);
         } finally {
           setLoadingUnits(false);
         }
       } else {
         setTimeSeriesUnit(undefined);
         setTimeSeriesType(undefined);
+        setStateSetStates([]);
       }
     };
     fetchProperties();
@@ -216,6 +270,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   const handleTimeseriesSelection = (selectedTimeseries: SelectableValue | null) => {
     setTimeSeriesType(selectedTimeseries?.type);
+    const selectedType = selectedTimeseries?.type as CogniteTimeSeries['type'] | undefined;
     onQueryChange({
       cogniteTimeSeries: {
         ...cogniteTimeSeries,
@@ -226,9 +281,11 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           space: selectedTimeseries.space,
           externalId: selectedTimeseries.externalId,
         } : undefined,
+        type: selectedType,
+        // Clear targetUnit when selecting a state TS (units don't apply)
+        ...(selectedType === 'state' ? { targetUnit: undefined } : {}),
       },
-      // String timeseries don't support aggregations — pin to 'none' on selection
-      ...(selectedTimeseries?.type === 'string' ? { aggregation: 'none' } : {}),
+      ...normalizeAggregationForType(selectedType, query.aggregation),
     });
   };
 
@@ -291,7 +348,9 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   };
 
   const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
+  const stateTimeSeriesFeatureEnabled = connector.isStateTimeSeriesEnabled();
   const isStateType = timeSeriesType === 'state';
+  const stateTsUiActive = isStateType && stateTimeSeriesFeatureEnabled;
 
   // Activity overlay handlers
   const handleActivityOverlayToggle = (checked: boolean) => {
@@ -398,11 +457,16 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               )}
             />
           </InlineField>
+          {cogniteTimeSeries.instanceId && timeSeriesType && (!isStateType || stateTsUiActive) && (
+            <InlineField transparent style={{ alignItems: 'center' }}>
+              <Badge text={timeSeriesType} color={getTypeBadgeColor(timeSeriesType)} />
+            </InlineField>
+          )}
         </InlineFieldRow>
 
-        {cogniteTimeSeries.instanceId && isStateType && (
+        {cogniteTimeSeries.instanceId && isStateType && !stateTimeSeriesFeatureEnabled && (
           <Alert title="Unsupported time series type" severity="info">
-            State time series are not currently supported in Grafana.
+            State time series are not enabled for this data source. Ask an administrator to enable &quot;State time series (beta)&quot; in the data source Features tab.
           </Alert>
         )}
 
@@ -434,8 +498,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </InlineFieldRow>
         )}
 
-        {/* Activity Overlay Section - only show when time series is selected */}
-        {cogniteTimeSeries.instanceId && !isStateType && (
+        {/* Activity overlay — not offered for state TS unless the beta feature is enabled */}
+        {cogniteTimeSeries.instanceId && (!isStateType || stateTsUiActive) && (
           <>
             <InlineFieldRow>
               <InlineField
@@ -498,6 +562,98 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               <CommonEditors
                 {...{ query, onQueryChange }}
                 hideAggregation={timeSeriesType === 'string'}
+                labelContext="cdmNumeric"
+              />
+            )}
+          </>
+        )}
+
+        {stateTsUiActive && (
+          <>
+            <InlineFieldRow>
+              <InlineField
+                label="Latest value"
+                labelWidth={14}
+                tooltip="Fetch the latest data point in the provided time range"
+              >
+                <InlineSwitch
+                  label="Latest value"
+                  id={`latest-value-${query.refId}`}
+                  value={query.latestValue}
+                  onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
+                />
+              </InlineField>
+              {(query.latestValue || query.aggregation === 'dominantState' || query.aggregation === 'none') && (
+                <InlineField
+                  label="Numeric value"
+                  labelWidth={16}
+                  tooltip="Display the numeric state code instead of the textual state label"
+                >
+                  <InlineSwitch
+                    label="Numeric value"
+                    id={`state-display-numeric-${query.refId}`}
+                    value={!!cogniteTimeSeries.displayAsNumeric}
+                    onChange={({ currentTarget }) =>
+                      onQueryChange({
+                        cogniteTimeSeries: {
+                          ...cogniteTimeSeries,
+                          displayAsNumeric: currentTarget.checked,
+                        },
+                      })
+                    }
+                  />
+                </InlineField>
+              )}
+              {stateSetStates.length > 0 && (
+                <InlineField transparent>
+                  <Toggletip
+                    closeButton={false}
+                    content={
+                      <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'inline-block', margin: '-8px 0' }}>
+                        <table style={{ borderCollapse: 'collapse', fontSize: '12px' }}>
+                          <tbody>
+                            {stateSetStates.map((s) => (
+                              <tr key={s.numericValue}>
+                                <td style={{
+                                  padding: '4px 16px 4px 0',
+                                  textAlign: 'left',
+                                  fontVariantNumeric: 'tabular-nums',
+                                  color: 'rgba(204, 204, 220, 0.65)',
+                                }}>
+                                  {s.numericValue}
+                                </td>
+                                <td style={{ padding: '4px 0', textAlign: 'left' }}>{s.stringValue}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                    placement="right"
+                  >
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      disabled={loadingStateSet}
+                      style={{ fontSize: '12px' }}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        View state set
+                        <Tooltip content="Show the integer-to-label mapping for each entry in this state set.">
+                          <Icon name="info-circle" size="sm" />
+                        </Tooltip>
+                      </span>
+                    </Button>
+                  </Toggletip>
+                </InlineField>
+              )}
+            </InlineFieldRow>
+            {!query.latestValue && (
+              <CommonEditors
+                {...{ query, onQueryChange }}
+                hideAggregation={false}
+                isStateType
+                labelContext="cdmState"
               />
             )}
           </>
@@ -509,8 +665,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </Alert>
         )}
       </div>
-      {query.latestValue && !isStateType && (
-        <LabelEditor {...{ onQueryChange, query }} />
+      {query.latestValue && (!isStateType || stateTsUiActive) && (
+        <LabelEditor
+          {...{ onQueryChange, query }}
+          labelContext={
+            isStateType && stateTsUiActive ? 'cdmState' : 'cdmNumeric'
+          }
+        />
       )}
     </div>
   );

@@ -112,6 +112,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         FEATURE_DEFAULTS.enableFlexibleDataModelling,
       enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
       enableRelationships = FEATURE_DEFAULTS.enableRelationships,
+      enableStateTimeSeries = FEATURE_DEFAULTS.enableStateTimeSeries,
     } = jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
@@ -140,6 +141,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       enableTemplates,
       enableExtractionPipelines,
       enableRelationships,
+      enableStateTimeSeries,
     );
     this.initSources(connector);
   }
