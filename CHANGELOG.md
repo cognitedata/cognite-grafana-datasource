@@ -3,6 +3,22 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## 4.5.1 - May 4th, 2026
+
+### Features
+
+- Added support for mixed CogniteTimeSeries types (numeric, string, and state) in the CDM query editor
+- Time series type is now displayed as a chip in the selection dropdown
+- Aggregates selector is disabled for string type time series
+- State time series shows a warning (support to be added in a future release)
+- Added dynamic label interpolation for CogniteTimeSeries queries: the Label field now supports `{{property}}` tokens resolved against the selected instance's view properties at query time
+- `{{space}}` and `{{externalId}}` tokens are always available; nested paths like `{{property.foo}}` are supported
+
+### Bug fixes
+
+- Tightened unit validation: only structured `unit` direct relations are treated as resolvable storage units; free-text `sourceUnit` values are no longer surfaced in the Target Unit field
+- Storage unit is now displayed as a badge next to the Target Unit selector instead of inline text next to the search field
+
 ## 4.5.0 - April 27th, 2026
 
 ### Features
