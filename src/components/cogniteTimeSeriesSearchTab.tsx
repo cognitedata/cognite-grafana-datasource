@@ -246,6 +246,9 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       }
     };
     fetchProperties();
+    // We intentionally re-run only when the selected instance changes; the latest
+    // `cogniteTimeSeries`, `onQueryChange`, and `query.aggregation` are captured via closure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connector, instanceIdKey, cogniteTimeSeries.instanceId]);
 
   // String timeseries don't support aggregations — pin aggregation to 'none'

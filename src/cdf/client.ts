@@ -339,7 +339,9 @@ function valueFromStateEntry(
   entry: StateAggregateEntry | undefined,
   field: 'stateDuration' | 'stateCount' | 'stateTransitions'
 ): number {
-  if (!entry) return 0;
+  if (!entry) {
+    return 0;
+  }
   switch (field) {
     case 'stateDuration':
       return entry.stateDuration ?? 0;
@@ -362,7 +364,9 @@ function expandMultiStateSeries(
   const seen = new Map<number, { numericValue: number; stringValue?: string }>();
   for (const bucket of datapoints) {
     for (const e of bucket.stateAggregates ?? []) {
-      if (e.numericValue === undefined) continue;
+      if (e.numericValue === undefined) {
+        continue;
+      }
       if (!seen.has(e.numericValue)) {
         seen.set(e.numericValue, {
           numericValue: e.numericValue,
@@ -455,8 +459,12 @@ const entryValue = (
   e: StateAggregateEntry | undefined,
   asNumeric: boolean
 ): StateValue => {
-  if (!e) return null;
-  if (asNumeric) return e.numericValue ?? null;
+  if (!e) {
+    return null;
+  }
+  if (asNumeric) {
+    return e.numericValue ?? null;
+  }
   return e.stringValue ?? e.numericValue ?? null;
 };
 
@@ -935,14 +943,18 @@ export async function getStateSetStates(
       })
     );
 
-    if (!instances.length) return [];
+    if (!instances.length) {
+      return [];
+    }
     const props = instances[0].properties?.['cdf_cdm']?.['CogniteStateSet/v1'];
     const rawStates = Array.isArray(props?.states) ? props.states : [];
     return rawStates
       .map((s: any): StateSetEntry | null => {
         const numericValue = typeof s?.numericValue === 'number' ? s.numericValue : undefined;
         const stringValue = typeof s?.stringValue === 'string' ? s.stringValue : undefined;
-        if (numericValue === undefined || stringValue === undefined) return null;
+        if (numericValue === undefined || stringValue === undefined) {
+          return null;
+        }
         return { numericValue, stringValue };
       })
       .filter((s: StateSetEntry | null): s is StateSetEntry => s !== null)
