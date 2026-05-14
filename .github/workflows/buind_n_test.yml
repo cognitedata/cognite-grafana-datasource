@@ -123,7 +123,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Resolve Grafana E2E versions
         id: resolve-versions
-        uses: grafana/plugin-actions/e2e-version@main
+        uses: grafana/plugin-actions/e2e-version@d03819869ff83790bb6549d1b917cff7bb7278ae # main
         with:
           skip-grafana-dev-image: true
           limit: 5
@@ -171,7 +171,7 @@ jobs:
           sleep 15
 
       - name: Wait for grafana server
-        uses: grafana/plugin-actions/wait-for-grafana@main
+        uses: grafana/plugin-actions/wait-for-grafana@d03819869ff83790bb6549d1b917cff7bb7278ae # main
         with:
           url: ${{ env.GRAFANA_URL }}/login
 
