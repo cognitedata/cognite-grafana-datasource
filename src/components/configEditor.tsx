@@ -54,6 +54,9 @@ const oAuthScopeTooltip =
 const enableCogniteTimeSeriesTooltip =
   `Enable the Time Series tab to browse and select time series instances from the Core Data Model (CogniteTimeSeries type).`;
 
+const enableStateTimeSeriesTooltip =
+  `Beta: enable querying state time series.`;
+
 const enableCogniteActivitiesTooltip =
   `Enable the Activities tab to query CogniteActivity instances from the Core Data Model.`;
 
@@ -140,6 +143,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableFlexibleDataModelling = FEATURE_DEFAULTS.enableFlexibleDataModelling,
     enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
     enableRelationships = FEATURE_DEFAULTS.enableRelationships,
+    enableStateTimeSeries = FEATURE_DEFAULTS.enableStateTimeSeries,
   } = jsonData;
 
   const onJsonDataChange = (
@@ -413,6 +417,23 @@ export function ConfigEditor(props: ConfigEditorProps) {
                       onChange={onJsonBoolValueChange("enableCogniteTimeSeries")}
                     />
                   </InlineFieldRow>
+                  {enableCogniteTimeSeries && (
+                    <InlineFieldRow style={{ marginBottom: "4px" }}>
+                      <InlineFormLabel
+                        htmlFor="enable-state-time-series"
+                        tooltip={enableStateTimeSeriesTooltip}
+                        width={FEATURE_LABEL_WIDTH}
+                      >
+                        State time series (beta)
+                      </InlineFormLabel>
+                      <InlineSwitch
+                        id="enable-state-time-series"
+                        label="State time series (beta)"
+                        value={enableStateTimeSeries}
+                        onChange={onJsonBoolValueChange("enableStateTimeSeries")}
+                      />
+                    </InlineFieldRow>
+                  )}
                   <InlineFieldRow style={{ marginBottom: "4px" }}>
                     <InlineFormLabel
                       htmlFor="enable-cognite-activities"

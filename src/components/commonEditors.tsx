@@ -16,6 +16,28 @@ const aggregateOptions = [
   { value: 'totalVariation', label: 'Total Variation' },
 ];
 
+export const stateAggregateOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'dominantState', label: 'Dominant State' },
+  { value: 'count', label: 'Count' },
+  { value: 'stateDuration', label: 'State Duration' },
+  { value: 'stateCount', label: 'State Count' },
+  { value: 'stateTransitions', label: 'State Transitions' },
+];
+
+export type LabelContext = 'legacy' | 'cdmNumeric' | 'cdmState';
+
+const LABEL_TOOLTIPS: Record<LabelContext, string> = {
+  legacy:
+    'Label for each time series. Access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.',
+  cdmNumeric:
+    'Label for each time series. Access view properties via {{property}}, e.g. {{name}} or {{unit.externalId}}.',
+  cdmState:
+    'Label for each time series. Access view properties via {{property}}, e.g. {{name}}. ' +
+    'For the State Duration / State Count / State Transitions aggregations (which produce one series per state), ' +
+    'use the reserved {{$state}} token to embed the state name in the label.',
+};
+
 const GranularityEditor = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
   return (
@@ -42,8 +64,9 @@ const GranularityEditor = (props: SelectedProps) => {
   );
 };
 
-const AggregationEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+const AggregationEditor = (props: SelectedProps & { isStateType?: boolean }) => {
+  const { query, onQueryChange, isStateType } = props;
+  const options = isStateType ? stateAggregateOptions : aggregateOptions;
   return (
     <InlineFieldRow>
       <InlineField
@@ -53,7 +76,7 @@ const AggregationEditor = (props: SelectedProps) => {
         <Select
           inputId={`aggregation-${query.refId}`}
           onChange={({ value }) => onQueryChange({ aggregation: value })}
-          options={aggregateOptions}
+          options={options}
           menuPosition="fixed"
           value={query.aggregation}
           className="width-10"
@@ -63,16 +86,15 @@ const AggregationEditor = (props: SelectedProps) => {
   );
 };
 
-export const LabelEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+export const LabelEditor = (props: SelectedProps & { labelContext?: LabelContext }) => {
+  const { query, onQueryChange, labelContext = 'legacy' } = props;
+  const tooltip = LABEL_TOOLTIPS[labelContext];
   return (
     <InlineSegmentGroup>
       <InlineField
         label="Label"
         labelWidth={10}
-        tooltip={
-          'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.'
-        }
+        tooltip={tooltip}
       >
         <Input
           id={`label-${query.refId}`}
@@ -86,10 +108,16 @@ export const LabelEditor = (props: SelectedProps) => {
   );
 };
 
-export const CommonEditors = ({ onQueryChange, query, ...etc }: SelectedProps & any) => (
+export const CommonEditors = ({
+  onQueryChange,
+  query,
+  ...etc
+}: SelectedProps & { visible?: boolean; hideAggregation?: boolean; isStateType?: boolean; labelContext?: LabelContext }) => (
   <InlineFieldRow>
-    {!etc?.hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
+    {!etc?.hideAggregation && <AggregationEditor {...{ onQueryChange, query, isStateType: etc?.isStateType }} />}
     <GranularityEditor {...{ onQueryChange, query }} />
-    {!etc?.visible && <LabelEditor {...{ onQueryChange, query }} />}
+    {!etc?.visible && (
+      <LabelEditor {...{ onQueryChange, query, labelContext: etc?.labelContext ?? 'legacy' }} />
+    )}
   </InlineFieldRow>
 );

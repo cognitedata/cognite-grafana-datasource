@@ -12,6 +12,8 @@ export const FEATURE_DEFAULTS = {
   enableCogniteTimeSeries: true,
   enableCogniteActivities: true,
   enableFlexibleDataModelling: true, // GraphQL / Data Models tab
+  /** State time series (beta) */
+  enableStateTimeSeries: false,
 
   // Legacy data model features - default to enabled for backward compatibility
   enableTimeseriesSearch: true,

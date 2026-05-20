@@ -129,6 +129,11 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.CogniteTimeSeriesSearch: {
+      if (cogniteTimeSeries?.type === 'state' && !connector.isStateTimeSeriesEnabled()) {
+        throw new Error(
+          'State time series are disabled for this data source. Enable "State time series (beta)" in the data source Features tab.',
+        );
+      }
       // By this point, filterEmptyQueryTargets should have already filtered out empty queries
       items = [{
         instanceId: {
@@ -185,12 +190,17 @@ export class TimeseriesDatasource {
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
       const { target, type } = metadata;
       const chunkSize = type === 'synthetic' ? 10 : 100;
+      const useStateTsBetaHeader =
+        target.tab === Tab.CogniteTimeSeriesSearch &&
+        target.cogniteTimeSeries?.type === 'state' &&
+        this.connector.isStateTimeSeriesEnabled();
       const request = {
         data,
         path: datapointsPath(type),
         method: HttpMethod.POST,
         requestId: getRequestId(options, target),
-      };
+        ...(useStateTsBetaHeader ? { headers: { 'cdf-version': 'beta' } } : {}),
+      } as const;
 
       try {
         const result = await this.connector.chunkAndFetch<

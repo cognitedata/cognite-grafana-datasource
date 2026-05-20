@@ -343,7 +343,7 @@ describe('Unit Conversion', () => {
         externalId: 'test-ts',
       });
 
-      expect(result).toEqual({ type: 'numeric', unit: 'temperature:deg_c' });
+      expect(result).toEqual({ type: 'numeric', unit: 'temperature:deg_c', stateSet: undefined });
       expect(mockConnector.fetchItems).toHaveBeenCalledTimes(1);
     });
 

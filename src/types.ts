@@ -121,6 +121,8 @@ export interface CogniteTimeSeries {
   };
   targetUnit?: string;
   targetUnitSystem?: string;
+  type?: "numeric" | "state" | "string";
+  displayAsNumeric?: boolean;
 }
 
 export interface CogniteActivityQuery {
@@ -254,6 +256,8 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableLegacyDataModelFeatures?: boolean;
   // Core data model (CDM) features
   enableCogniteTimeSeries?: boolean;
+  /** Beta: state time series querying with cdf-version: beta on relevant APIs */
+  enableStateTimeSeries?: boolean;
   enableCogniteActivities?: boolean;
   enableFlexibleDataModelling?: boolean;
   // Legacy data model features

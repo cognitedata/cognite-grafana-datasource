@@ -27,6 +27,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorEnabled.isCogniteTimeSeriesEnabled()).toBe(true);
 
@@ -50,6 +51,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorMasterDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
 
@@ -73,6 +75,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorFeatureDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
 
@@ -96,8 +99,57 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorBothDisabled.isCogniteTimeSeriesEnabled()).toBe(false);
+    });
+
+    it("should enable state time series only when core, Cognite Time Series, and state flags are enabled", () => {
+      const connectorAllOn = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true, // enableCoreDataModelFeatures
+        true, // enableLegacyDataModelFeatures
+        true, // enableCogniteTimeSeries
+        true, // enableCogniteActivities
+        true, // enableFlexibleDataModelling
+        true,
+        true,
+        true,
+        true,
+        true, // legacy features (5 total)
+        false,
+        false,
+        false, // deprecated features (3 total)
+        true, // enableStateTimeSeries
+      );
+      expect(connectorAllOn.isStateTimeSeriesEnabled()).toBe(true);
+
+      const connectorStateOff = new Connector(
+        project,
+        protocol,
+        fetcher,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false, // enableStateTimeSeries
+      );
+      expect(connectorStateOff.isStateTimeSeriesEnabled()).toBe(false);
     });
 
     it("should enable CogniteActivities only when both master and feature flags are enabled", () => {
@@ -120,6 +172,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorEnabled.isCogniteActivitiesEnabled()).toBe(true);
 
@@ -142,6 +195,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorMasterDisabled.isCogniteActivitiesEnabled()).toBe(false);
 
@@ -164,6 +218,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorFeatureDisabled.isCogniteActivitiesEnabled()).toBe(false);
 
@@ -186,6 +241,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorBothDisabled.isCogniteActivitiesEnabled()).toBe(false);
     });
@@ -211,6 +267,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorEnabled.isFlexibleDataModellingEnabled()).toBe(true);
 
@@ -234,6 +291,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorMasterDisabled.isFlexibleDataModellingEnabled()).toBe(
         false,
@@ -259,6 +317,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorFeatureDisabled.isFlexibleDataModellingEnabled()).toBe(
         false,
@@ -288,6 +347,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorEnabled.isTimeseriesSearchEnabled()).toBe(true);
 
@@ -311,6 +371,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorMasterDisabled.isTimeseriesSearchEnabled()).toBe(false);
 
@@ -334,6 +395,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorFeatureDisabled.isTimeseriesSearchEnabled()).toBe(false);
     });
@@ -359,6 +421,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorEnabled.isEventsAdvancedFilteringEnabled()).toBe(true);
 
@@ -382,6 +445,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorMasterDisabled.isEventsAdvancedFilteringEnabled()).toBe(
         false,
@@ -407,6 +471,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
       expect(connectorFeatureDisabled.isEventsAdvancedFilteringEnabled()).toBe(
         false,
@@ -433,6 +498,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
 
       expect(connector.isTimeseriesSearchEnabled()).toBe(true);
@@ -462,6 +528,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // deprecated features (3 total)
+        false, // enableStateTimeSeries
       );
 
       expect(connector.isTimeseriesSearchEnabled()).toBe(false);
@@ -493,6 +560,7 @@ describe("Connector Feature Flags", () => {
         true,
         true,
         true, // all deprecated features enabled
+        false, // enableStateTimeSeries
       );
 
       // Deprecated features should work regardless of master toggles
@@ -521,6 +589,7 @@ describe("Connector Feature Flags", () => {
         false,
         false,
         false, // all deprecated features disabled
+        false, // enableStateTimeSeries
       );
 
       expect(connector.isTemplatesEnabled()).toBe(false);
@@ -550,6 +619,7 @@ describe("Connector Feature Flags", () => {
         true,
         true,
         true, // deprecated features
+        false, // enableStateTimeSeries
       );
 
       // Core features should work (master enabled)

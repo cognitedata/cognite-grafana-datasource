@@ -84,6 +84,7 @@ export const getMockedDataSource = (
     true, // enableTemplates
     true, // enableExtractionPipelines
     true, // enableRelationships
+    true, // enableStateTimeSeries (tests may exercise state TS paths)
   );
   ds.initSources(connector);
   return ds;

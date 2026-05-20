@@ -1,10 +1,20 @@
 import { dateTime } from '@grafana/data';
 import { formQueryForItems } from '../cdf/client';
 import { Connector } from '../connector';
-import { defaultQuery, CogniteQuery, QueryOptions } from '../types';
+import { defaultQuery, CogniteQuery, QueryOptions, Tab, defaultCogniteTimeSeries } from '../types';
 import { getDataQueryRequestItems } from '../datasources/TimeseriesDatasource';
 
 const defaultCogniteQuery = defaultQuery as CogniteQuery;
+
+const stateTsQueryBase: CogniteQuery = {
+  ...(defaultQuery as CogniteQuery),
+  tab: Tab.CogniteTimeSeriesSearch,
+  cogniteTimeSeries: {
+    ...defaultCogniteTimeSeries,
+    type: 'state',
+    instanceId: { space: 'sp', externalId: 'ts1' },
+  },
+};
 
 describe('getDataQueryRequestItems: generate cdf data points request items', () => {
   const connector: Connector = {
@@ -107,5 +117,25 @@ describe('formQueryForItems: enrich items with additional props for request', ()
         },
       ],
     });
+  });
+
+  it.each([
+    ['stateDuration', ['stateDuration']],
+    ['stateCount', ['stateCount']],
+    ['stateTransitions', ['stateTransitions']],
+  ] as const)('for state CogniteTimeSeries %s forwards aggregates', (aggregation, expectedAggregates) => {
+    const queryItems = formQueryForItems(
+      {
+        items: [{ externalId: 'ext' }],
+        type: 'data',
+        target: {
+          ...stateTsQueryBase,
+          aggregation,
+        },
+      },
+      queryOptions
+    );
+
+    expect(queryItems.aggregates).toEqual(expectedAggregates);
   });
 });

@@ -43,6 +43,8 @@ export class Connector {
     private enableTemplates?: boolean,
     private enableExtractionPipelines?: boolean,
     private enableRelationships?: boolean,
+    /** Beta CDM feature — requires Core + Cognite Time Series toggles */
+    private enableStateTimeSeries?: boolean,
   ) {}
 
   cachedRequests = new Map<string, Promise<any>>();
@@ -157,6 +159,15 @@ export class Connector {
   // Core data model (CDM) features
   isCogniteTimeSeriesEnabled() {
     return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
+  }
+
+  /** State time series (beta) */
+  isStateTimeSeriesEnabled() {
+    return (
+      this.enableCoreDataModelFeatures &&
+      this.enableCogniteTimeSeries &&
+      !!this.enableStateTimeSeries
+    );
   }
 
   isCogniteActivitiesEnabled() {
