@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: grafana/plugin-actions/build-plugin@main
+      - uses: grafana/plugin-actions/build-plugin@2ecc2ba7168309f04010b5b637530b877d67e4ff # main
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           attestation: true
