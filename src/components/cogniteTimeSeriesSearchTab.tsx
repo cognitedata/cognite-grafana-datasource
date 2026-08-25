@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Select, AsyncSelect, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
-import { searchDMSInstances, fetchCogniteUnits, getTimeSeriesProperties, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
+import { searchDMSInstances, getCogniteUnitIndex, getTimeSeriesProperties, stringifyError, fetchCogniteTimeSeriesViews, fetchCogniteActivityViews } from '../cdf/client';
 import { DMSInstance, DMSSearchRequest, CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
@@ -158,8 +158,10 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     const loadUnits = async () => {
       try {
         setLoadingUnits(true);
-        const unitsData = await fetchCogniteUnits(connector);
-        setUnits(unitsData);
+        // Shares the cached catalog with label interpolation, so the units are fetched
+        // and indexed once per connector.
+        const unitIndex = await getCogniteUnitIndex(connector);
+        setUnits([...unitIndex.values()]);
       } catch (err) {
         console.warn('Failed to load units:', stringifyError(err));
       } finally {

@@ -58,6 +58,7 @@ import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 
 const { Asset, Custom, Timeseries } = Tab;
 const variableLabelRegex = /{{([^{}]+)}}/g;
+const UNITS_SPACE = 'cdf_cdm_units';
 
 export function formQueryForItems(
   { items, type, target }: QueriesDataItem,
@@ -156,7 +157,19 @@ export async function getLabelsForTarget(
             fetchCogniteTimeSeriesInstance(connector, viewSpec, target.cogniteTimeSeries.instanceId),
             fetchDMSViewProperties(connector, viewSpec),
           ]);
-          return [interpolateCogniteTimeSeriesInstanceLabel(labelSrc, props, viewProps)];
+          // `unit` on the instance is a direct relation to the storage unit, which is not
+          // what the data points are in once a target unit is applied. Swap in the fully
+          // resolved unit so `{{unit}}` and `{{unit.symbol}}` & co. describe the values
+          // actually plotted.
+          const effectiveUnit = labelReferencesProp(labelSrc, 'unit')
+            ? await resolveEffectiveUnit(
+                connector,
+                props.unit,
+                target.cogniteTimeSeries.targetUnit
+              )
+            : undefined;
+          const labelProps = effectiveUnit ? { ...props, unit: effectiveUnit } : props;
+          return [interpolateCogniteTimeSeriesInstanceLabel(labelSrc, labelProps, viewProps)];
         }
         return [labelSrc || instanceLabel];
       }
@@ -198,6 +211,11 @@ export function labelContainsVariableProps(label: string): boolean {
   return label && !!label.match(variableLabelRegex);
 }
 
+/** True when the label has a `{{prop}}` or `{{prop.path}}` token rooted at `prop`. */
+export function labelReferencesProp(label: string, prop: string): boolean {
+  return [...label.matchAll(variableLabelRegex)].some(([, group]) => group.split('.')[0] === prop);
+}
+
 /** Interpolate `{{property}}` tokens from a CogniteTimeSeries DMS instance + view schema. */
 export function interpolateCogniteTimeSeriesInstanceLabel(
   labelSrc: string,
@@ -209,7 +227,9 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
   return labelSrc.replace(variableLabelRegex, (_full, group) => {
     const rootKey = group.split('.')[0];
-    if (!validPropNames.has(rootKey)) {
+    // Own props resolved by the caller (e.g. the effective `unit`) count as valid even when
+    // the view schema doesn't declare them.
+    if (!validPropNames.has(rootKey) && !Object.prototype.hasOwnProperty.call(props, rootKey)) {
       return `:${group}`;
     }
     const val = get(props, group);
@@ -217,6 +237,9 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
       return group.includes('.') ? `:${group}` : 'null';
     }
     if (typeof val === 'object') {
+      // Serializing the whole object is deliberate: a bare `{{unit}}` shows the resolved
+      // unit's full property bag, which is how users discover what `{{unit.<prop>}}`
+      // paths are available.
       return JSON.stringify(val);
     }
     return String(val);
@@ -595,28 +618,31 @@ export async function fetchCogniteUnits(
   connector: Connector
 ): Promise<CogniteUnit[]> {
   try {
+    const listUnitsRequest: DMSListRequest = {
+      sources: [{
+        source: {
+          type: 'view',
+          space: 'cdf_cdm',
+          externalId: 'CogniteUnit',
+          version: 'v1',
+        },
+      }],
+      instanceType: 'node',
+      limit: 5000,
+      filter: {
+        equals: {
+          property: ['node', 'space'],
+          value: UNITS_SPACE,
+        },
+      },
+    };
     const instances = await retryOnRateLimit(() =>
-      connector.fetchItems<DMSInstance>({
+      // The catalog can exceed a single page, so follow cursors instead of a one-shot list.
+      connector.fetchAndPaginate<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/list',
-        data: {
-          sources: [{
-            source: {
-              type: 'view',
-              space: 'cdf_cdm',
-              externalId: 'CogniteUnit',
-              version: 'v1',
-            },
-          }],
-          instanceType: 'node',
-          limit: 1000,
-          filter: {
-            equals: {
-              property: ['node', 'space'],
-              value: 'cdf_cdm_units',
-            },
-          },
-        },
+        data: listUnitsRequest,
+        cacheTime: CacheTime.Units,
       })
     );
     
@@ -637,6 +663,77 @@ export async function fetchCogniteUnits(
     console.warn('Failed to fetch units:', err);
     return [];
   }
+}
+
+/**
+ * The CogniteUnit catalog is static reference data shared by every query, so keep a
+ * per-connector index of it in memory instead of refetching (and re-indexing) it for each
+ * label interpolation. Backed by the connector request cache, so a cold start still costs
+ * at most one request.
+ */
+const unitIndexCache = new WeakMap<Connector, Promise<Map<string, CogniteUnit>>>();
+
+export async function getCogniteUnitIndex(
+  connector: Connector
+): Promise<Map<string, CogniteUnit>> {
+  const cached = unitIndexCache.get(connector);
+  if (cached) {
+    return cached;
+  }
+  const pending = fetchCogniteUnits(connector).then(
+    (units) => {
+      // `fetchCogniteUnits` swallows failures and returns `[]`; don't pin an empty catalog
+      // in the cache forever, let the next label interpolation retry.
+      if (!units.length) {
+        unitIndexCache.delete(connector);
+      }
+      return new Map(units.map((unit) => [unit.externalId, unit]));
+    },
+    (err) => {
+      unitIndexCache.delete(connector);
+      throw err;
+    }
+  );
+  unitIndexCache.set(connector, pending);
+  return pending;
+}
+
+/** Test seam: drops the in-memory unit index for a connector. */
+export function clearCogniteUnitIndexCache(connector: Connector) {
+  unitIndexCache.delete(connector);
+}
+
+/**
+ * Resolve the unit the returned data points are actually expressed in: the query's
+ * `targetUnit` when one is set, otherwise the time series' storage unit. The result is
+ * enriched from the unit catalog so labels can reference `{{unit.symbol}}`,
+ * `{{unit.name}}`, `{{unit.quantity}}` and the rest of the CogniteUnit properties.
+ */
+export async function resolveEffectiveUnit(
+  connector: Connector,
+  storageUnit: unknown,
+  targetUnit?: string
+): Promise<CogniteUnit | undefined> {
+  const storageUnitRef =
+    storageUnit && typeof storageUnit === 'object' ? (storageUnit as Partial<CogniteUnit>) : undefined;
+  const externalId =
+    targetUnit ||
+    (typeof storageUnitRef?.externalId === 'string' ? storageUnitRef.externalId : undefined);
+  if (!externalId) {
+    return undefined;
+  }
+  try {
+    const resolved = (await getCogniteUnitIndex(connector)).get(externalId);
+    if (resolved) {
+      return resolved;
+    }
+  } catch (err) {
+    console.warn('Failed to resolve unit for label:', err);
+  }
+  // Unknown unit (custom space, stale catalog, unreachable catalog): still expose the
+  // identifier so `{{unit}}` and `{{unit.externalId}}` resolve to something meaningful.
+  const space = targetUnit ? UNITS_SPACE : storageUnitRef?.space ?? UNITS_SPACE;
+  return { space, externalId, name: externalId };
 }
 
 export interface TimeSeriesProperties {

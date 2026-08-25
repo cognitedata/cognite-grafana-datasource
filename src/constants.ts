@@ -19,6 +19,8 @@ export const responseWarningEvent = eventFactory<QueryWarning>('request-warning'
 export const CacheTime = {
   TimeseriesList: '61s',
   ResourceByIds: '61m',
+  // The CogniteUnit catalog is static reference data, so it can be cached aggressively.
+  Units: '61m',
   Default: '11s',
   Dropdown: '3m',
 };

@@ -3,6 +3,7 @@ import {
   datapoints2Tuples,
   reduceTimeseries,
   labelContainsVariableProps,
+  labelReferencesProp,
   interpolateCogniteTimeSeriesInstanceLabel,
   concurrent,
   convertItemsToTable,
@@ -149,6 +150,66 @@ describe('CDF client', () => {
       );
 
       expect(out).toBe('inst_s/inst_e/N');
+    });
+
+    it('resolves unit properties injected by the caller, even if absent from the view', () => {
+      const props = {
+        space: 'inst_s',
+        externalId: 'inst_e',
+        name: 'TS-A',
+        unit: {
+          space: 'cdf_cdm_units',
+          externalId: 'volume_flow_rate:ft3-per-hr',
+          name: 'Cubic Foot Per Hour',
+          symbol: 'ft\u00b3/h',
+          quantity: 'Volume Flow Rate',
+        },
+      };
+
+      const out = interpolateCogniteTimeSeriesInstanceLabel(
+        '{{name}} - {{unit.symbol}} ({{unit.quantity}})',
+        props,
+        ['name']
+      );
+
+      expect(out).toBe('TS-A - ft\u00b3/h (Volume Flow Rate)');
+    });
+
+    it('does not treat inherited object properties as caller-injected props', () => {
+      const out = interpolateCogniteTimeSeriesInstanceLabel(
+        '{{toString}}/{{constructor}}',
+        { name: 'TS-A' },
+        ['name']
+      );
+
+      expect(out).toBe(':toString/:constructor');
+    });
+
+    it('serializes a bare {{unit}} so the available dot-notation props are discoverable', () => {
+      const unit = {
+        space: 'cdf_cdm_units',
+        externalId: 'volume_flow_rate:ft3-per-hr',
+        name: 'Cubic Foot Per Hour',
+        symbol: 'ft\u00b3/h',
+        quantity: 'Volume Flow Rate',
+      };
+
+      expect(interpolateCogniteTimeSeriesInstanceLabel('{{unit}}', { unit }, ['unit'])).toBe(
+        JSON.stringify(unit)
+      );
+    });
+  });
+
+  describe('labelReferencesProp', () => {
+    test.each([
+      ['{{unit}}', true],
+      ['{{unit.symbol}}', true],
+      ['{{name}} - {{unit.symbol}}', true],
+      ['{{name}}', false],
+      ['{{unitless}}', false],
+      ['', false],
+    ])('%s -> %s', (label, expected) => {
+      expect(labelReferencesProp(label, 'unit')).toBe(expected);
     });
   });
 
