@@ -3,7 +3,7 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
-## Unreleased
+## 4.5.2 - August 25th, 2026
 
 ### Features
 
@@ -12,7 +12,7 @@ Data Source for Grafana**.
 - A bare `{{unit}}` serializes the full resolved unit, so the properties available for dot notation are discoverable straight from the label
 - The `CogniteUnit` catalog is fetched and indexed once per connection and shared between the Target Unit selector and label interpolation, so unit tokens don't add a request per query
 
-### Fixes
+### Bug fixes
 
 - The unit catalog fetch now follows pagination cursors, so catalogs with more than 1000 units are fully available in the Target Unit selector and in labels
 
