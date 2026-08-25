@@ -260,6 +260,12 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   const EVENTS_QUERY_PANEL_ID = '3';
   const panelEditPage = await dashboardPage.gotoPanelEditPage(EVENTS_QUERY_PANEL_ID)
 
+  // The test_event fixtures in the CDF project have fixed timestamps, so the dashboard's
+  // relative time range (now-1y) eventually stops matching them. Pin the window to a
+  // superset of the one that was current on the last green run (2026-05-12), when the
+  // events matched; the extra padding keeps it a superset in any local timezone.
+  await panelEditPage.timeRange.set({ from: '2025-05-01 00:00:00', to: '2026-05-14 00:00:00' });
+
   await expect(panelEditPage.panel.fieldNames).toContainText(["externalId", "description", "startTime", "endTime"]);
 
   const deleteColumnButtonPattern = /event-remove-col-/;
