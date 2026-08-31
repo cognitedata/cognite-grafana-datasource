@@ -183,6 +183,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     externalId,
     version,
     resourceType,
+    instanceView,
     instanceSpace,
     assetInstances,
   } = cogniteActivityTabQuery ?? {
@@ -190,14 +191,24 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     externalId: 'CogniteActivity',
     version: 'v1',
     resourceType: 'CogniteAsset' as CogniteActivityResourceType,
+    instanceView: undefined,
     instanceSpace: '',
     assetInstances: [],
   };
 
-  const [selectedInstanceView, setSelectedInstanceView] = useState<InvolvedView | null>(null);
+  // The loaded instance views, lifted out of the picker to derive the default below.
+  const [instanceViewCandidates, setInstanceViewCandidates] = useState<InvolvedView[]>([]);
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
   const [viewProperties, setViewProperties] = useState<string[]>([]);
+
+  // Queries saved before the instance view was persisted fall back to the cdf_cdm
+  // standard view, or the first available one — the default the tab always applied.
+  const effectiveInstanceView =
+    instanceView ??
+    instanceViewCandidates.find((v) => v.space === 'cdf_cdm') ??
+    instanceViewCandidates[0] ??
+    null;
 
   const loadViewProperties = useCallback(
     async (viewSpec: { space: string; externalId: string; version: string }) => {
@@ -266,28 +277,25 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
 
   const handleResourceTypeChange = (selected: SelectableValue<CogniteActivityResourceType>) => {
     if (selected?.value) {
-      setSelectedInstanceView(null);
+      setInstanceViewCandidates([]);
       onQueryChange({
         cogniteActivityTabQuery: {
           ...cogniteActivityTabQuery,
           resourceType: selected.value,
+          instanceView: undefined,
           assetInstances: [],
         },
       });
     }
   };
 
-  // Pick the cdf_cdm standard view by default, falling back to the first available.
-  const handleInstanceViewsLoaded = (views: InvolvedView[]) => {
-    setSelectedInstanceView(views.find((v) => v.space === 'cdf_cdm') ?? views[0] ?? null);
-  };
-
   const handleInstanceViewChange = (view: InvolvedView | null) => {
     if (view) {
-      setSelectedInstanceView(view);
+      // Persisted so the instances keep the view they were searched in across reloads
       onQueryChange({
         cogniteActivityTabQuery: {
           ...cogniteActivityTabQuery,
+          instanceView: view,
           assetInstances: [],
         },
       });
@@ -367,9 +375,9 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           <ViewPicker
             connector={connector}
             container={resourceType}
-            value={selectedInstanceView}
+            value={effectiveInstanceView}
             onChange={handleInstanceViewChange}
-            onViewsLoaded={handleInstanceViewsLoaded}
+            onViewsLoaded={setInstanceViewCandidates}
             placeholder={`Select a ${resourceType} view`}
             isClearable={false}
             width={40}
@@ -402,9 +410,9 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           <InstancePicker
             connector={connector}
             view={{
-              space: selectedInstanceView?.space ?? '',
-              externalId: selectedInstanceView?.externalId ?? '',
-              version: selectedInstanceView?.version ?? '',
+              space: effectiveInstanceView?.space ?? '',
+              externalId: effectiveInstanceView?.externalId ?? '',
+              version: effectiveInstanceView?.version ?? '',
             }}
             multi
             limit={100}
