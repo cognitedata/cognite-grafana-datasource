@@ -16,6 +16,9 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
+      # Persist Grafana state (grafana.db: datasources, dashboards, users, prefs)
+      # on the host so it survives container recreation and Docker reinstalls
+      - ./grafana-data:/var/lib/grafana
       - ./dist:/var/lib/grafana/plugins/cognitedata-datasource
       - ./provisioning:/etc/grafana/provisioning
       - .:/root/cognitedata-datasource
