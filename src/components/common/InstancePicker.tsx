@@ -186,24 +186,45 @@ export const InstancePicker = ({
   const pending = useRef<ReturnType<typeof setTimeout>>();
   /** Settles the in-flight search when a newer keystroke replaces it. */
   const supersede = useRef<(() => void) | undefined>();
+  /** Marks each search so a reply from a superseded one is dropped explicitly. */
+  const generation = useRef(0);
+
+  // Callers pass fresh `view`/`filter`/`onError` literals every render; primitives and
+  // refs keep the callbacks below stable instead of reconfiguring the select each time.
+  const filterKey = JSON.stringify(filter ?? null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- filterKey stands in for filter by value
+  const stableFilter = useMemo(() => filter, [filterKey]);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  const { space: viewSpace, externalId: viewExternalId, version: viewVersion } = view ?? {};
 
   const search = useCallback(
     async (query: string): Promise<InstanceOption[]> => {
-      if (!view?.space || !view?.externalId || !view?.version) {
+      if (!viewSpace || !viewExternalId || !viewVersion) {
         return [];
       }
+      const searchView = { space: viewSpace, externalId: viewExternalId, version: viewVersion };
+      const gen = ++generation.current;
       try {
-        const request = buildInstanceSearchRequest(view, query, filter, limit);
-        const options = toInstanceOptions(await searchDMSInstances(connector, request), view);
+        const request = buildInstanceSearchRequest(searchView, query, stableFilter, limit);
+        const instances = await searchDMSInstances(connector, request);
+        if (gen !== generation.current) {
+          // Superseded while in flight; the newer search owns the dropdown now
+          return [];
+        }
         // A search after a failure clears the caller's error surface again.
-        onError?.(null);
-        return options;
+        onErrorRef.current?.(null);
+        return toInstanceOptions(instances, searchView);
       } catch (error) {
-        onError?.(`Search failed: ${stringifyError(error)}`);
+        if (gen !== generation.current) {
+          return [];
+        }
+        onErrorRef.current?.(`Search failed: ${stringifyError(error)}`);
         return [];
       }
     },
-    [connector, view, filter, limit, onError]
+    [connector, viewSpace, viewExternalId, viewVersion, stableFilter, limit]
   );
 
   const loadOptions = useCallback(
@@ -247,7 +268,7 @@ export const InstancePicker = ({
 
   const options = toStoredOptions(value);
   // Remount when the searched view or scope changes so `defaultOptions` refetch.
-  const key = `${view.space}:${view.externalId}:${view.version}:${JSON.stringify(filter ?? null)}`;
+  const key = `${viewSpace}:${viewExternalId}:${viewVersion}:${filterKey}`;
 
   const shared = {
     key,
