@@ -248,17 +248,23 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   }));
 
   const handleActivityViewsLoaded = (views: InvolvedView[]) => {
-    if (views.length === 1) {
-      const v = views[0];
-      onQueryChange({
-        cogniteActivityTabQuery: {
-          ...cogniteActivityTabQuery,
-          space: v.space,
-          externalId: v.externalId,
-          version: v.version,
-        },
-      });
+    if (views.length !== 1) {
+      return;
     }
+    const v = views[0];
+    if (v.space === space && v.externalId === externalId && v.version === version) {
+      // Already saved: writing again would dirty the dashboard just by opening it
+      return;
+    }
+    onQueryChange({
+      cogniteActivityTabQuery: {
+        ...cogniteActivityTabQuery,
+        space: v.space,
+        externalId: v.externalId,
+        version: v.version,
+      },
+    });
+    loadViewProperties(v);
   };
 
   const handleActivityViewChange = (view: InvolvedView | null) => {
