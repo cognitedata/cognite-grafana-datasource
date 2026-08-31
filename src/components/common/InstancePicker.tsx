@@ -154,7 +154,8 @@ interface InstancePickerProps {
   limit?: number;
   /** Optional trailing badge, e.g. a time series' value type. */
   badgeOf?: (props: Record<string, any>) => { text: string; color: BadgeColor } | undefined;
-  onError?: (message: string) => void;
+  /** Notified with the failure message, and with null once a later search succeeds. */
+  onError?: (message: string | null) => void;
   placeholder?: string;
   width?: number;
   inputId?: string;
@@ -193,7 +194,10 @@ export const InstancePicker = ({
       }
       try {
         const request = buildInstanceSearchRequest(view, query, filter, limit);
-        return toInstanceOptions(await searchDMSInstances(connector, request), view);
+        const options = toInstanceOptions(await searchDMSInstances(connector, request), view);
+        // A search after a failure clears the caller's error surface again.
+        onError?.(null);
+        return options;
       } catch (error) {
         onError?.(`Search failed: ${stringifyError(error)}`);
         return [];

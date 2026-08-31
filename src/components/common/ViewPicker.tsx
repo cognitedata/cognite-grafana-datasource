@@ -65,6 +65,9 @@ export function useContainerViews(connector: Connector, container: string): Cont
     setLoading(true);
     setLoaded(false);
     setError(null);
+    // Empty immediately: the previous container's views must not stay selectable
+    // while the new container's fetch is in flight.
+    setViews([]);
     fetchContainerViews(connector, container)
       .then((result) => {
         if (!cancelled) {
@@ -101,7 +104,8 @@ export interface ViewPickerProps {
   onChange: (view: InvolvedView | null) => void;
   /** Fires once per successful load, e.g. to apply a default selection. */
   onViewsLoaded?: (views: InvolvedView[]) => void;
-  onError?: (message: string) => void;
+  /** Notified with the failure message, and with null once a later load succeeds. */
+  onError?: (message: string | null) => void;
   placeholder?: string;
   width?: number;
   inputId?: string;
@@ -143,6 +147,9 @@ export const ViewPicker = ({
   useEffect(() => {
     if (error) {
       (onErrorRef.current ?? console.warn)(error);
+    } else {
+      // A load after a failure clears the caller's error surface again.
+      onErrorRef.current?.(null);
     }
   }, [error]);
 
