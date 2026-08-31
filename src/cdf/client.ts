@@ -849,122 +849,53 @@ export async function fetchCogniteTimeSeriesInstance(
   }
 }
 
-// Fetch views that implement the CogniteTimeSeries container
-export async function fetchCogniteTimeSeriesViews(
-  connector: Connector
+/**
+ * Fetch views that implement a given cdf_cdm container. Throws on failure so callers
+ * that surface errors (the shared view picker) can report them.
+ */
+export async function fetchContainerViews(
+  connector: Connector,
+  containerExternalId: string
 ): Promise<InvolvedView[]> {
-  try {
-    const response = await retryOnRateLimit(() =>
-      connector.fetchData<{ data: ContainerInspectResponse }>({
-        method: HttpMethod.POST,
-        path: '/models/containers/inspect',
-        data: {
-          items: [
-            {
-              space: 'cdf_cdm',
-              externalId: 'CogniteTimeSeries',
-            },
-          ],
-          inspectionOperations: {
-            involvedViews: {
-              allVersions: true,
-            },
-            totalInvolvedViewCount: {
-              allVersions: true,
-              includeUnavailableViews: true,
-            },
-          },
+  const response = await retryOnRateLimit(() =>
+    connector.fetchData<{ data: ContainerInspectResponse }>({
+      method: HttpMethod.POST,
+      path: '/models/containers/inspect',
+      data: {
+        items: [{ space: 'cdf_cdm', externalId: containerExternalId }],
+        inspectionOperations: {
+          involvedViews: { allVersions: true },
         },
-        cacheTime: CacheTime.ResourceByIds,
-      })
-    );
-
-    const item = response.data?.items?.[0];
-    if (item?.inspectionResults?.involvedViews) {
-      return item.inspectionResults.involvedViews;
-    }
-    return [];
-  } catch (err) {
-    console.warn('Failed to fetch CogniteTimeSeries views:', err);
-    return [];
-  }
+      },
+      cacheTime: CacheTime.ResourceByIds,
+    })
+  );
+  return response.data?.items?.[0]?.inspectionResults?.involvedViews ?? [];
 }
 
-// Fetch views that implement the CogniteActivity container
-export async function fetchCogniteActivityViews(
-  connector: Connector
+async function fetchContainerViewsOrEmpty(
+  connector: Connector,
+  containerExternalId: string
 ): Promise<InvolvedView[]> {
   try {
-    const response = await retryOnRateLimit(() =>
-      connector.fetchData<{ data: ContainerInspectResponse }>({
-        method: HttpMethod.POST,
-        path: '/models/containers/inspect',
-        data: {
-          items: [
-            {
-              space: 'cdf_cdm',
-              externalId: 'CogniteActivity',
-            },
-          ],
-          inspectionOperations: {
-            involvedViews: {
-              allVersions: true,
-            },
-            totalInvolvedViewCount: {
-              allVersions: true,
-              includeUnavailableViews: true,
-            },
-          },
-        },
-        cacheTime: CacheTime.ResourceByIds,
-      })
-    );
-
-    const item = response.data?.items?.[0];
-    if (item?.inspectionResults?.involvedViews) {
-      return item.inspectionResults.involvedViews;
-    }
-    return [];
-  } catch (err) {
-    console.warn('Failed to fetch CogniteActivity views:', err);
-    return [];
-  }
-}
-
-async function fetchCogniteContainerViews(connector: Connector, containerExternalId: string): Promise<InvolvedView[]> {
-  try {
-    const response = await retryOnRateLimit(() =>
-      connector.fetchData<{ data: ContainerInspectResponse }>({
-        method: HttpMethod.POST,
-        path: '/models/containers/inspect',
-        data: {
-          items: [{ space: 'cdf_cdm', externalId: containerExternalId }],
-          inspectionOperations: {
-            involvedViews: { allVersions: true },
-            totalInvolvedViewCount: { allVersions: true, includeUnavailableViews: true },
-          },
-        },
-        cacheTime: CacheTime.ResourceByIds,
-      })
-    );
-    const item = response.data?.items?.[0];
-    if (item?.inspectionResults?.involvedViews) {
-      return item.inspectionResults.involvedViews;
-    }
-    return [];
+    return await fetchContainerViews(connector, containerExternalId);
   } catch (err) {
     console.warn(`Failed to fetch ${containerExternalId} views:`, err);
     return [];
   }
 }
 
-export function fetchCogniteAssetViews(connector: Connector): Promise<InvolvedView[]> {
-  return fetchCogniteContainerViews(connector, 'CogniteAsset');
-}
+export const fetchCogniteTimeSeriesViews = (connector: Connector): Promise<InvolvedView[]> =>
+  fetchContainerViewsOrEmpty(connector, 'CogniteTimeSeries');
 
-export function fetchCogniteEquipmentViews(connector: Connector): Promise<InvolvedView[]> {
-  return fetchCogniteContainerViews(connector, 'CogniteEquipment');
-}
+export const fetchCogniteActivityViews = (connector: Connector): Promise<InvolvedView[]> =>
+  fetchContainerViewsOrEmpty(connector, 'CogniteActivity');
+
+export const fetchCogniteAssetViews = (connector: Connector): Promise<InvolvedView[]> =>
+  fetchContainerViewsOrEmpty(connector, 'CogniteAsset');
+
+export const fetchCogniteEquipmentViews = (connector: Connector): Promise<InvolvedView[]> =>
+  fetchContainerViewsOrEmpty(connector, 'CogniteEquipment');
 
 // Fetch activities from DMS for a given time range, filtered to a specific time series
 export async function fetchActivitiesFromDMS(

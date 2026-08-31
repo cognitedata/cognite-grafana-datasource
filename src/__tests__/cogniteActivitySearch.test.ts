@@ -31,9 +31,6 @@ describe('CogniteActivity DMS Functions', () => {
               externalId: 'CogniteActivity',
               inspectionResults: {
                 involvedViews: mockActivityViews,
-                totalInvolvedViewCount: {
-                  allVersions: 2,
-                },
               },
             },
           ],
@@ -56,10 +53,6 @@ describe('CogniteActivity DMS Functions', () => {
           inspectionOperations: {
             involvedViews: {
               allVersions: true,
-            },
-            totalInvolvedViewCount: {
-              allVersions: true,
-              includeUnavailableViews: true,
             },
           },
         },
@@ -85,9 +78,6 @@ describe('CogniteActivity DMS Functions', () => {
               externalId: 'CogniteActivity',
               inspectionResults: {
                 involvedViews: [],
-                totalInvolvedViewCount: {
-                  allVersions: 0,
-                },
               },
             },
           ],
@@ -335,9 +325,6 @@ describe('CogniteActivity DMS Functions', () => {
                 externalId: 'CogniteActivity',
                 inspectionResults: {
                   involvedViews: mockSingleActivityView,
-                  totalInvolvedViewCount: {
-                    allVersions: 1,
-                  },
                 },
               },
             ],
