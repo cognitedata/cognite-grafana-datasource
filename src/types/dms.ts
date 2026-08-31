@@ -44,6 +44,12 @@ export interface DMSFilter {
   inSpace?: string;
 }
 
+/**
+ * How multiple search terms combine. 'OR' (the API default) matches an instance
+ * carrying any one term; 'AND' requires all of them, across the searched fields.
+ */
+export type DMSSearchOperator = 'AND' | 'OR';
+
 export interface DMSSearchRequest {
   view: {
     type: 'view';
@@ -55,6 +61,7 @@ export interface DMSSearchRequest {
   filter?: DMSFilter;
   limit?: number;
   properties?: string[];
+  operator?: DMSSearchOperator;
 }
 
 export interface DMSSearchResponse {
