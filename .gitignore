@@ -34,5 +34,6 @@ yarn-error.log*
 .env
 .envrc
 
-# local Grafana state from docker-compose dev server
+# Grafana dev state lives in a named Docker volume, but keep ignoring the legacy
+# bind-mount folder: a stray local copy contains credentials and must never be committed
 /grafana-data/

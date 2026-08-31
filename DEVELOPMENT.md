@@ -35,15 +35,15 @@ TOKEN_URL="..." # e.g. https://login.microsoftonline.com/{tenant}/oauth2/v2.0/to
 
 ### Persistence
 
-Grafana's state (manually added datasources, dashboards saved in the UI, users, preferences) is stored in `./grafana-data/` on the host, which is gitignored. Because it is a bind mount from the host, it survives `yarn server` re-runs and container recreation. To reset Grafana to a clean, freshly-provisioned state, stop the container and delete that folder:
+Grafana's state (manually added datasources, dashboards saved in the UI, users, preferences) is stored in a named Docker volume (`grafana-data`), so it survives `yarn server` re-runs and container recreation. Living outside the repository, it also cannot end up in a commit, and there are no root-owned files in your working tree. To reset Grafana to a clean, freshly-provisioned state:
 
 ```
-docker compose down && rm -rf grafana-data
+docker compose down -v
 ```
 
-Note that the datasources provisioned from `provisioning/datasources/datasources.yml` are re-applied on every startup, so changes made to them in the UI are overwritten on the next launch.
+Note that the datasources provisioned from `provisioning/datasources/datasources.yml` are re-applied on every startup, so changes made to them in the UI are overwritten on the next launch. Also note the volume does not survive a Docker Desktop reinstall or factory reset — export any dashboard you cannot afford to lose, or add it to provisioning.
 
-> ⚠️ `grafana-data/` contains sensitive local state — `grafana.db` holds datasource credentials and session cookies. It is gitignored on purpose: never commit it, copy it to another machine, or attach it to a bug report.
+> ⚠️ The volume's `grafana.db` holds datasource credentials and session cookies. Never export, copy or attach it anywhere (and if you have a `./grafana-data/` folder left over from the earlier bind-mount setup, treat it the same way — it is gitignored, and safe to delete once migrated).
 
 ## Building frontend
 
