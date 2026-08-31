@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Select,
-  AsyncMultiSelect,
   InlineFieldRow,
   InlineField,
   InlineSwitch,
@@ -13,17 +12,14 @@ import {
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps, CogniteActivityResourceType, ActivitySortProp, EventsOrderDirection, CogniteActivityTabQuery, defaultCogniteActivityTabQuery } from '../types';
 import {
-  fetchCogniteActivityViews,
-  fetchCogniteAssetViews,
-  fetchCogniteEquipmentViews,
-  fetchCogniteTimeSeriesViews,
   fetchDMSSpaces,
   fetchDMSViewProperties,
-  searchDMSInstances,
   stringifyError,
 } from '../cdf/client';
-import { DMSSearchRequest, InvolvedView } from '../types/dms';
+import { InvolvedView } from '../types/dms';
 import { Connector } from '../connector';
+import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
+import { ViewPicker } from './common/ViewPicker';
 
 interface CogniteActivityTabProps extends SelectedProps {
   connector: Connector;
@@ -36,29 +32,6 @@ const RESOURCE_TYPE_OPTIONS: Array<SelectableValue<CogniteActivityResourceType>>
 ];
 
 const LABEL_WIDTH = 16;
-
-async function fetchViewsForResourceType(
-  connector: Connector,
-  resourceType: CogniteActivityResourceType
-): Promise<InvolvedView[]> {
-  switch (resourceType) {
-    case 'CogniteEquipment':
-      return fetchCogniteEquipmentViews(connector);
-    case 'CogniteTimeSeries':
-      return fetchCogniteTimeSeriesViews(connector);
-    case 'CogniteAsset':
-    default:
-      return fetchCogniteAssetViews(connector);
-  }
-}
-
-function viewToOption(view: InvolvedView): SelectableValue<InvolvedView> {
-  return {
-    label: `${view.externalId} (${view.space}) ${view.version}`,
-    value: view,
-    description: `Space: ${view.space}, Version: ${view.version}`,
-  };
-}
 
 const ActivityOrderDirectionEditor = ({
   onChange,
@@ -221,10 +194,6 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     assetInstances: [],
   };
 
-  const [activityViewOptions, setActivityViewOptions] = useState<Array<SelectableValue<InvolvedView>>>([]);
-  const [loadingActivityViews, setLoadingActivityViews] = useState(false);
-  const [instanceViewOptions, setInstanceViewOptions] = useState<Array<SelectableValue<InvolvedView>>>([]);
-  const [loadingInstanceViews, setLoadingInstanceViews] = useState(false);
   const [selectedInstanceView, setSelectedInstanceView] = useState<InvolvedView | null>(null);
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
@@ -234,50 +203,6 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     async (viewSpec: { space: string; externalId: string; version: string }) => {
       const props = await fetchDMSViewProperties(connector, viewSpec);
       setViewProperties(props);
-    },
-    [connector]
-  );
-
-  const loadActivityViews = useCallback(async () => {
-    try {
-      setLoadingActivityViews(true);
-      const views = await fetchCogniteActivityViews(connector);
-      const options = views.map(viewToOption);
-      setActivityViewOptions(options);
-      if (options.length === 1) {
-        const v = options[0].value!;
-        onQueryChange({
-          cogniteActivityTabQuery: {
-            ...cogniteActivityTabQuery,
-            space: v.space,
-            externalId: v.externalId,
-            version: v.version,
-          },
-        });
-      }
-    } catch (err) {
-      console.warn('Failed to load CogniteActivity views:', stringifyError(err));
-    } finally {
-      setLoadingActivityViews(false);
-    }
-  }, [connector, onQueryChange]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadInstanceViews = useCallback(
-    async (type: CogniteActivityResourceType) => {
-      try {
-        setLoadingInstanceViews(true);
-        const views = await fetchViewsForResourceType(connector, type);
-        const options = views.map(viewToOption);
-        setInstanceViewOptions(options);
-        // Pick cdf_cdm standard view by default, fall back to first
-        const preferred =
-          views.find((v) => v.space === 'cdf_cdm') || views[0] || null;
-        setSelectedInstanceView(preferred);
-      } catch (err) {
-        console.warn(`Failed to load ${type} views:`, stringifyError(err));
-      } finally {
-        setLoadingInstanceViews(false);
-      }
     },
     [connector]
   );
@@ -298,80 +223,22 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   }, [connector]);
 
   useEffect(() => {
-    loadActivityViews();
     loadSpaces();
-    loadInstanceViews(resourceType);
     if (space && externalId && version) {
       loadViewProperties({ space, externalId, version });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: load once on mount; resource type changes handled by handleResourceTypeChange
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: load once on mount
 
-  const searchInstances = useCallback(
-    async (inputValue: string) => {
-      if (!selectedInstanceView) {
-        return [];
-      }
-      try {
-        const searchRequest: DMSSearchRequest = {
-          view: {
-            type: 'view',
-            space: selectedInstanceView.space,
-            externalId: selectedInstanceView.externalId,
-            version: selectedInstanceView.version,
-          },
-          query: inputValue,
-          filter: instanceSpace ? { inSpace: instanceSpace } : undefined,
-          limit: 100,
-        };
-        const instances = await searchDMSInstances(connector, searchRequest);
-        return instances.map((i) => {
-          const props =
-            i.properties?.[selectedInstanceView.space]?.[
-              `${selectedInstanceView.externalId}/${selectedInstanceView.version}`
-            ] ?? {};
-          const name = props.name ?? i.externalId;
-          return {
-            label: name,
-            value: `${i.space}:${i.externalId}`,
-            description: `Space: ${i.space} | ExternalId: ${i.externalId}`,
-            space: i.space,
-            externalId: i.externalId,
-          };
-        });
-      } catch (err) {
-        console.warn('Failed to search instances:', stringifyError(err));
-        return [];
-      }
-    },
-    [connector, selectedInstanceView, instanceSpace]
-  );
-
-  const selectedActivityViewOption =
-    activityViewOptions.find(
-      (o) =>
-        o.value?.space === space &&
-        o.value?.externalId === externalId &&
-        o.value?.version === version
-    ) ?? null;
-
-  const selectedInstanceViewOption =
-    instanceViewOptions.find(
-      (o) =>
-        o.value?.space === selectedInstanceView?.space &&
-        o.value?.externalId === selectedInstanceView?.externalId &&
-        o.value?.version === selectedInstanceView?.version
-    ) ?? null;
-
-  const selectedInstanceValues = assetInstances.map((a) => ({
-    label: a.name ?? a.externalId,
-    value: `${a.space}:${a.externalId}`,
+  const selectedInstanceValues: PickedInstance[] = assetInstances.map((a) => ({
+    value: encodeInstanceRef({ space: a.space, externalId: a.externalId }),
     space: a.space,
     externalId: a.externalId,
+    name: a.name,
   }));
 
-  const handleActivityViewChange = (selected: SelectableValue<InvolvedView>) => {
-    if (selected?.value) {
-      const v = selected.value;
+  const handleActivityViewsLoaded = (views: InvolvedView[]) => {
+    if (views.length === 1) {
+      const v = views[0];
       onQueryChange({
         cogniteActivityTabQuery: {
           ...cogniteActivityTabQuery,
@@ -380,12 +247,26 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           version: v.version,
         },
       });
-      loadViewProperties(v);
+    }
+  };
+
+  const handleActivityViewChange = (view: InvolvedView | null) => {
+    if (view) {
+      onQueryChange({
+        cogniteActivityTabQuery: {
+          ...cogniteActivityTabQuery,
+          space: view.space,
+          externalId: view.externalId,
+          version: view.version,
+        },
+      });
+      loadViewProperties(view);
     }
   };
 
   const handleResourceTypeChange = (selected: SelectableValue<CogniteActivityResourceType>) => {
     if (selected?.value) {
+      setSelectedInstanceView(null);
       onQueryChange({
         cogniteActivityTabQuery: {
           ...cogniteActivityTabQuery,
@@ -393,13 +274,17 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           assetInstances: [],
         },
       });
-      loadInstanceViews(selected.value);
     }
   };
 
-  const handleInstanceViewChange = (selected: SelectableValue<InvolvedView>) => {
-    if (selected?.value) {
-      setSelectedInstanceView(selected.value);
+  // Pick the cdf_cdm standard view by default, falling back to the first available.
+  const handleInstanceViewsLoaded = (views: InvolvedView[]) => {
+    setSelectedInstanceView(views.find((v) => v.space === 'cdf_cdm') ?? views[0] ?? null);
+  };
+
+  const handleInstanceViewChange = (view: InvolvedView | null) => {
+    if (view) {
+      setSelectedInstanceView(view);
       onQueryChange({
         cogniteActivityTabQuery: {
           ...cogniteActivityTabQuery,
@@ -420,15 +305,17 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     });
   };
 
-  const handleInstancesChange = (
-    values: Array<SelectableValue & { space?: string; externalId?: string }>
-  ) => {
+  const handleInstancesChange = (picked: PickedInstance[]) => {
     onQueryChange({
       cogniteActivityTabQuery: {
         ...cogniteActivityTabQuery,
-        assetInstances: values
+        assetInstances: picked
           .filter((v) => v.space && v.externalId)
-          .map((v) => ({ space: v.space!, externalId: v.externalId!, name: v.label })),
+          .map((v) => ({
+            space: v.space!,
+            externalId: v.externalId!,
+            name: v.name ?? v.externalId!,
+          })),
       },
     });
   };
@@ -445,12 +332,13 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           labelWidth={LABEL_WIDTH}
           tooltip="Select which CogniteActivity view to query"
         >
-          <Select
-            options={activityViewOptions}
-            value={selectedActivityViewOption}
+          <ViewPicker
+            connector={connector}
+            container="CogniteActivity"
+            value={{ space, externalId, version }}
             onChange={handleActivityViewChange}
+            onViewsLoaded={handleActivityViewsLoaded}
             placeholder="Select a CogniteActivity view"
-            isLoading={loadingActivityViews}
             isClearable={false}
             width={40}
           />
@@ -476,12 +364,13 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           labelWidth={LABEL_WIDTH}
           tooltip={`Select which ${resourceType} view to search instances in`}
         >
-          <Select
-            options={instanceViewOptions}
-            value={selectedInstanceViewOption}
+          <ViewPicker
+            connector={connector}
+            container={resourceType}
+            value={selectedInstanceView}
             onChange={handleInstanceViewChange}
+            onViewsLoaded={handleInstanceViewsLoaded}
             placeholder={`Select a ${resourceType} view`}
-            isLoading={loadingInstanceViews}
             isClearable={false}
             width={40}
           />
@@ -510,10 +399,16 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
           labelWidth={LABEL_WIDTH}
           tooltip={`Select one or more ${resourceType} instances. Activities related to these will be shown.`}
         >
-          <AsyncMultiSelect
-            key={`${selectedInstanceView?.space}:${selectedInstanceView?.externalId}:${selectedInstanceView?.version}:${instanceSpace}`}
-            loadOptions={searchInstances}
-            defaultOptions
+          <InstancePicker
+            connector={connector}
+            view={{
+              space: selectedInstanceView?.space ?? '',
+              externalId: selectedInstanceView?.externalId ?? '',
+              version: selectedInstanceView?.version ?? '',
+            }}
+            multi
+            limit={100}
+            filter={instanceSpace ? { inSpace: instanceSpace } : undefined}
             value={selectedInstanceValues}
             onChange={handleInstancesChange}
             placeholder={`Search ${resourceType} by name...`}
