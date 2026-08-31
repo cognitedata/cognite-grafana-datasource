@@ -33,3 +33,6 @@ yarn-error.log*
 
 .env
 .envrc
+
+# local Grafana state from docker-compose dev server
+/grafana-data/

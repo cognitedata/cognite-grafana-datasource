@@ -20,16 +20,30 @@ And then use another terminal to build backend and run Grafana in docker:
 yarn server
 ```
 
-This will start Grafana on `localhost:2999`, anf you will have to manually add the Cognite datasource to Grafana once you log in.
-If you prefer the server to bootstrap the connection to Cognite Data Fusion automatically, you need to set the following environment variables:
+This will start Grafana on `localhost:2999`, and you will have to manually add the Cognite datasource to Grafana once you log in.
+If you prefer the server to bootstrap the connection to Cognite Data Fusion automatically (via the provisioned datasources in [provisioning/datasources/datasources.yml](./provisioning/datasources/datasources.yml)), create a `.env` file at the repo root — docker compose loads it automatically — with the following keys:
 
 ```
-export CLIENT_ID="..." # Application (client) ID
-export CLIENT_SECRET="..." # Client secret
-export COGNITE_HOST="..." # e.g. api.cognitedata.com
-export COGNITE_PROJECT="..." # e.g. publicdata
-export TOKEN_URL="", e.g. "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+CLIENT_ID="..." # Application (client) ID
+CLIENT_SECRET="..." # Client secret
+COGNITE_HOST="..." # bare host, no scheme — e.g. api.cognitedata.com
+COGNITE_PROJECT="..." # e.g. publicdata
+TOKEN_URL="..." # e.g. https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
 ```
+
+(The same variables exported in your shell also work and take precedence over `.env`.)
+
+### Persistence
+
+Grafana's state (manually added datasources, dashboards saved in the UI, users, preferences) is stored in `./grafana-data/` on the host, which is gitignored. Because it is a bind mount from the host, it survives `yarn server` re-runs and container recreation. To reset Grafana to a clean, freshly-provisioned state, stop the container and delete that folder:
+
+```
+docker compose down && rm -rf grafana-data
+```
+
+Note that the datasources provisioned from `provisioning/datasources/datasources.yml` are re-applied on every startup, so changes made to them in the UI are overwritten on the next launch.
+
+> ⚠️ `grafana-data/` contains sensitive local state — `grafana.db` holds datasource credentials and session cookies. It is gitignored on purpose: never commit it, copy it to another machine, or attach it to a bug report.
 
 ## Building frontend
 
