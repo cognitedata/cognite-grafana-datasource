@@ -1,12 +1,10 @@
-import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect, PluginFixture } from '@grafana/plugin-e2e';
 import { Page, Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
-import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
-import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
+import { refreshPanel } from '../playwright/fixtures/refreshPanel';
+import { test } from '../playwright/fixtures/patchNavigationStrategy';
 import { addPanel as addPanelHelper } from '../playwright/fixtures/addPanel';
 import semver from 'semver';
-
-const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
 const expectedTs = [
   '59.9139-10.7522-current.clouds',
@@ -187,6 +185,9 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
 test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   test.setTimeout(90_000);
+  // Grafana 13's inline panel editor overlaps the viz picker with the panel
+  // header at the default viewport size, intercepting clicks.
+  await page.setViewportSize({ width: 1920, height: 1080 });
   const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   const dashboardPage = await gotoDashboardPage(dashboard);
@@ -203,25 +204,10 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
   await panelEditPage.datasource.set(ds.name);
 
-  // Select Table visualization (cross-version compatible).
-  // Grafana 13 inline editor shows a viz picker with "Suggestions" and "All visualizations" tabs.
-  // Older Grafana (9.5 – 12.x) uses a toggle-viz-picker button to open the picker.
-  const tableViz = page.locator('[aria-label="Plugin visualization item Table"]')
-    .or(page.getByTestId('data-testid Plugin visualization item Table'));
-  if (!(await tableViz.isVisible())) {
-    // Grafana 13: viz picker is open with a "All visualizations" tab
-    const allVizTab = page.getByRole('tab', { name: 'All visualizations' });
-    if (await allVizTab.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await allVizTab.click();
-    } else {
-      // Older Grafana: open picker via toggle button
-      await page.getByTestId('data-testid toggle-viz-picker').click();
-    }
-  }
-  await tableViz.click();
+  await panelEditPage.setVisualization('Table');
 
   for (const [index, tsExternalId] of tsExternalIds.entries()) {
-    await page.getByTestId(/query-tab-add-query/).click();
+    await panelEditPage.getByGrafanaSelector(selectors.components.QueryTab.addQuery).click();
     const editorRow = panelEditPage.getQueryEditorRow(panels[index]);
 
     await editorRow.getByText('Time series custom query').click();
@@ -238,7 +224,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   }
 
   await waitForQueriesToFinish(page);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
+  await expect(refreshPanel(panelEditPage, page, grafanaVersion, { waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
   // Grafana renamed this tab across versions; use a resilient role-based selector
   await page.getByRole('tab', { name: /Transform/ }).click();
@@ -288,7 +274,7 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   }
 
   await waitForQueriesToFinish(page);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
+  await expect(refreshPanel(panelEditPage, page, grafanaVersion, { waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
 
 
   await expect(panelEditPage.panel.fieldNames).toHaveText("externalId");
@@ -472,7 +458,7 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
 
   for (const [index, searchTerm] of searchTerms.entries()) {
     if (index > 0) {
-      await page.getByTestId(/query-tab-add-query/).click();
+      await panelEditPage.getByGrafanaSelector(selectors.components.QueryTab.addQuery).click();
     }
 
     const queryLetter = String.fromCharCode(65 + index);
