@@ -9,6 +9,7 @@ import {
 } from "@grafana/data";
 import { DataQuery } from "@grafana/schema";
 import { Datapoints, IdEither, Items, Limit } from "./cdf/types";
+import { ViewRef } from "./types/dms";
 import CogniteDatasource from "./datasource";
 
 export enum Tab {
@@ -197,6 +198,7 @@ export interface CogniteActivityTabQuery {
   externalId: string;
   version: string;
   resourceType: CogniteActivityResourceType;
+  instanceView?: ViewRef;
   instanceSpace: string;
   assetInstances: Array<{ space: string; externalId: string; name?: string }>;
   activeOnly?: boolean;

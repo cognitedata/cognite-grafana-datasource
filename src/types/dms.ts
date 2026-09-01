@@ -44,6 +44,12 @@ export interface DMSFilter {
   inSpace?: string;
 }
 
+/**
+ * How multiple search terms combine. 'OR' (the API default) matches an instance
+ * carrying any one term; 'AND' requires all of them, across the searched fields.
+ */
+export type DMSSearchOperator = 'AND' | 'OR';
+
 export interface DMSSearchRequest {
   view: {
     type: 'view';
@@ -55,6 +61,7 @@ export interface DMSSearchRequest {
   filter?: DMSFilter;
   limit?: number;
   properties?: string[];
+  operator?: DMSSearchOperator;
 }
 
 export interface DMSSearchResponse {
@@ -124,12 +131,15 @@ export interface DMSViewWithProperties {
   properties?: Record<string, DMSViewProperty>;
 }
 
-// Container inspect API types
-export interface InvolvedView {
+/** A reference to a data modelling view. */
+export interface ViewRef {
   space: string;
   externalId: string;
   version: string;
 }
+
+// Container inspect API types
+export type InvolvedView = ViewRef;
 
 export interface ContainerInspectResponse {
   items: Array<{
@@ -137,9 +147,6 @@ export interface ContainerInspectResponse {
     externalId: string;
     inspectionResults: {
       involvedViews: InvolvedView[];
-      totalInvolvedViewCount: {
-        allVersions: number;
-      };
     };
   }>;
 }
