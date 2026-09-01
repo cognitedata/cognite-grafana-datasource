@@ -1,6 +1,7 @@
 import { expect, PluginFixture } from '@grafana/plugin-e2e';
 import { Page, Response } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
+import { refreshPanel } from '../playwright/fixtures/refreshPanel';
 import { test } from '../playwright/fixtures/patchNavigationStrategy';
 import { addPanel as addPanelHelper } from '../playwright/fixtures/addPanel';
 import semver from 'semver';
@@ -223,7 +224,7 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
   }
 
   await waitForQueriesToFinish(page);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
+  await expect(refreshPanel(panelEditPage, page, grafanaVersion, { waitForResponsePredicateCallback: isCdfResponse('/timeseries/synthetic/query') })).toBeOK();
 
   // Grafana renamed this tab across versions; use a resilient role-based selector
   await page.getByRole('tab', { name: /Transform/ }).click();
@@ -273,7 +274,7 @@ test('"Event query" as table is OK', async ({ page, gotoDashboardPage, readProvi
   }
 
   await waitForQueriesToFinish(page);
-  await expect(panelEditPage.refreshPanel({ waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
+  await expect(refreshPanel(panelEditPage, page, grafanaVersion, { waitForResponsePredicateCallback: isCdfResponse('/events/list') })).toBeOK();
 
 
   await expect(panelEditPage.panel.fieldNames).toHaveText("externalId");
