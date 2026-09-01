@@ -1,9 +1,6 @@
-import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect } from '@grafana/plugin-e2e';
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from '../src/types';
-import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
-import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
-
-const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+import { test } from '../playwright/fixtures/patchNavigationStrategy';
 
 test('"Save & test" should be successful on provisioned data source', async ({
   readProvisionedDataSource,

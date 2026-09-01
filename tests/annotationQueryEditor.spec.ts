@@ -1,8 +1,6 @@
 import semver from 'semver';
-import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
-import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
-import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
-const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+import { expect } from '@grafana/plugin-e2e';
+import { test } from '../playwright/fixtures/patchNavigationStrategy';
 
 test('annotation query in provisioned dashboard should return a 200 response', async ({
     readProvisionedDashboard,

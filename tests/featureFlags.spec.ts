@@ -1,10 +1,7 @@
-import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
+import { expect } from '@grafana/plugin-e2e';
 import { Page } from '@playwright/test';
-import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
-import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
+import { test } from '../playwright/fixtures/patchNavigationStrategy';
 import { addPanel } from '../playwright/fixtures/addPanel';
-
-const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
 
 /**
  * Toggles a checkbox to the desired state using dispatchEvent('click').
