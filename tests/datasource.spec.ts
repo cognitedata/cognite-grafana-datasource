@@ -1,8 +1,5 @@
-import { expect, PluginFixture, PluginOptions } from '@grafana/plugin-e2e';
-import { readProvisionedDataSource } from '../playwright/fixtures/readProvisionedDataSource';
-import { test as patchedBase } from '../playwright/fixtures/patchNavigationStrategy';
-
-const test = patchedBase.extend<PluginFixture, PluginOptions>({ readProvisionedDataSource });
+import { expect } from '@grafana/plugin-e2e';
+import { test } from '../playwright/fixtures/patchNavigationStrategy';
 
 test('Panel with multiple time series queries rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });

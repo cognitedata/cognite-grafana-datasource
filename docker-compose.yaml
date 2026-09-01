@@ -16,6 +16,10 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
+      # Persist Grafana state (grafana.db: datasources, dashboards, users, prefs) in a
+      # named volume: it survives container recreation, and living outside the repo it
+      # can never be committed by accident (grafana.db holds datasource credentials).
+      - grafana-data:/var/lib/grafana
       - ./dist:/var/lib/grafana/plugins/cognitedata-datasource
       - ./provisioning:/etc/grafana/provisioning
       - .:/root/cognitedata-datasource
@@ -31,3 +35,6 @@ services:
       COGNITE_HOST: ${COGNITE_HOST}
       COGNITE_PROJECT: ${COGNITE_PROJECT}
       TOKEN_URL: ${TOKEN_URL}
+
+volumes:
+  grafana-data:
