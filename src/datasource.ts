@@ -21,6 +21,7 @@ import {
   runGraphqlQuery,
 } from "./cdf/graphqlVariables";
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
+import { CogniteVariableSupport } from "./variableSupport";
 import {
   AssetsFilterRequestParams,
   FilterRequest,
@@ -118,6 +119,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       this.connector,
       this.timeseriesDatasource,
     );
+    this.variables = new CogniteVariableSupport(this);
   }
 
   annotations = {

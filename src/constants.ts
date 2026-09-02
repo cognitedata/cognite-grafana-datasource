@@ -3,6 +3,9 @@ import { QueryWarning, QueryRequestError } from './types';
 
 export const API_V1 = 'api/v1/projects';
 
+/** Identifies the dashboard-variable editor in datasource error notifications. */
+export const VARIABLE_REF_ID = 'variables';
+
 export const DATAPOINTS_LIMIT_WARNING =
   `You have reached the data points limit, and some data points may not be displayed.\n` +
   `Try increasing the granularity, or choose a shorter time range.`;
