@@ -5,9 +5,23 @@ Data Source for Grafana**.
 
 ## Unreleased
 
+### Breaking changes
+
+- The minimum supported Grafana version is now 10.4.7 (previously 10.0.0). Grafana 10.0.0–10.4.6 is no longer supported; the GraphQL editor is built on `@grafana/plugin-ui`, which requires it.
+
+### Features
+
+- **GraphQL**: the panel tab is rebuilt on Grafana's editor layout. The query sits beside a **Response** pane, and **Test query** sends the query as it will be sent when it runs, interpolation included, and shows the untouched response — so what a query returns can be checked without saving anything. An **Examples** dialog replaces the page of documentation that used to sit under the editor.
+- **GraphQL**: a new panel query opens on the core data model with a query that runs as-is — the first 10 time series. Saved queries keep their own model and query.
+- **GraphQL**: the panel tab now plots every row, or nested field, that the data model's schema says is a `CogniteTimeSeries` (or a type extending it) — selecting `space` and `externalId` is enough. Selecting `type` is no longer required; when it is selected, rows that are not `numeric` are skipped as before. Aliased fields (`ts: timeSeries { … }`) are recognised by their alias.
+- **GraphQL**: the panel tab has a **Label** field naming each series from the response, interpolating any selected field with `{{field}}` — `{{name}} @ {{space}}`, say. Its tooltip lists the fields the current query offers, and a series reached through a relation can also use fields of the row it hangs off. Left empty, series keep the name they had. A field the response does not carry renders as `:field`, matching the Time Series tab's labels.
+
 ### Bug fixes
 
-- A GraphQL variable whose selected field was an object (such as `instanceId { space externalId }`) resolved to the literal string `[object Object]`. Object fields holding an instance reference now resolve correctly, and a failed query — GraphQL errors in the response, or the request itself failing — now fails the variable with the error message instead of leaving it silently empty.
+- **GraphQL**: typing in the panel tab's **Label** or **Granularity** field re-ran the whole query on every keystroke. Both are now applied when the field loses focus.
+- **GraphQL**: a dashboard variable used in the panel tab's **Label** was never interpolated, unlike every other tab's label. Interpolation is skipped when no label is set, which every query starts out as.
+- **GraphQL**: a data model whose schema could not be introspected made the panel tab throw while building autocomplete. A failed introspection now simply leaves the editor without suggestions.
+- **GraphQL**: an edit the parser rejects is reported beside the editor, and **Test query** waits until it is fixed; previously the panel kept running the last valid query with no sign that the text on screen was not it.
 - **Time Series**: a label token written with spaces inside the braces (`{{ name }}`) was rendered as an unknown field. Whitespace is now ignored, as it is in every other label.
 
 ## 4.5.2 - August 25th, 2026
