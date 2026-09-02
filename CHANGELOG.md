@@ -3,6 +3,13 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## Unreleased
+
+### Bug fixes
+
+- A GraphQL variable whose selected field was an object (such as `instanceId { space externalId }`) resolved to the literal string `[object Object]`. Object fields holding an instance reference now resolve correctly, and a GraphQL error surfaces instead of leaving the variable silently empty.
+- **Time Series**: a label token written with spaces inside the braces (`{{ name }}`) was rendered as an unknown field. Whitespace is now ignored, as it is in every other label.
+
 ## 4.5.2 - August 25th, 2026
 
 ### Features
