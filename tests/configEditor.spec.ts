@@ -25,7 +25,11 @@ test('"Save & test" should be successful when configuration is valid', async ({
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
   await page.getByLabel('Base URL').fill(ds.jsonData.cogniteApiUrl ?? '');
   
-  await page.getByLabel('OAuth2 client credentials').click();
+  // Located by the id the plugin sets: the switch has two labels (the form label
+  // and the switch's own), and only Grafana 12+ gives it a switch role. Clicked
+  // through dispatchEvent because the visual label overlays the checkbox -- the
+  // same pattern featureFlags.spec.ts uses.
+  await page.locator('#oauth-client-creds').dispatchEvent('click');
   
   await page.getByLabel('Token URL').fill(ds.jsonData.oauthTokenUrl ?? '');
   await page.getByLabel('Client ID').fill(ds.jsonData.oauthClientId ?? '');
@@ -49,7 +53,11 @@ test('"Save & test" should fail when configuration is invalid', async ({
   await page.getByRole('textbox', { name: 'Project' }).fill(ds.jsonData.cogniteProject ?? '');
   await page.getByLabel('Base URL').fill(ds.jsonData.cogniteApiUrl ?? '');
   
-  await page.getByLabel('OAuth2 client credentials').click();
+  // Located by the id the plugin sets: the switch has two labels (the form label
+  // and the switch's own), and only Grafana 12+ gives it a switch role. Clicked
+  // through dispatchEvent because the visual label overlays the checkbox -- the
+  // same pattern featureFlags.spec.ts uses.
+  await page.locator('#oauth-client-creds').dispatchEvent('click');
   
   await page.getByLabel('Token URL').fill(ds.jsonData.oauthTokenUrl ?? '');
   await page.getByLabel('Client ID').fill(ds.jsonData.oauthClientId ?? '');
