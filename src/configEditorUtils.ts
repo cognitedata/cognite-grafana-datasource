@@ -1,5 +1,4 @@
 import { ChangeEvent } from "react";
-import { FEATURE_DEFAULTS, FeatureKey } from "./featureDefaults";
 import { CogniteDataSourceOptions, CogniteSecureJsonData } from "./types";
 
 /**
@@ -78,38 +77,3 @@ export const resetSecretHandler = (
     },
   });
 
-/**
- * Handler for master toggle changes - manages underlying feature toggles based on master state
- */
-export const masterToggleHandler = (
-  masterKey: FeatureKey,
-  dependentKeys: FeatureKey[],
-  onJsonDataChange: (patch: Partial<CogniteDataSourceOptions>) => void,
-) =>
-(event: ChangeEvent<HTMLInputElement>) => {
-  const isEnabled = event.currentTarget.checked;
-
-  // Create patch object with master toggle and dependent features
-  const patch: Partial<Pick<CogniteDataSourceOptions, FeatureKey>> = {
-    [masterKey]: isEnabled,
-  };
-
-  // When enabling master toggle, enable all dependent features
-  // When disabling master toggle, set dependent features to false
-  dependentKeys.forEach((key) => {
-    if (isEnabled) {
-      // For Core data model (CDM) features, enable them when master is enabled
-      if (masterKey === "enableCoreDataModelFeatures") {
-        patch[key] = true;
-      } else {
-        // For other master toggles, use their defaults
-        patch[key] = FEATURE_DEFAULTS[key];
-      }
-    } else {
-      // When disabling master toggle, disable all dependent features
-      patch[key] = false;
-    }
-  });
-
-  onJsonDataChange(patch);
-};

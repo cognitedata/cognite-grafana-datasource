@@ -3,11 +3,9 @@ import {
   boolValueHandler, 
   secretValueHandler, 
   resetSecretHandler,
-  masterToggleHandler,
   sanitizeHostname,
   hostnameValueHandler
 } from '../configEditorUtils';
-import { FEATURE_DEFAULTS } from '../featureDefaults';
 
 describe('ConfigEditor Utility Functions', () => {
   let mockOnJsonDataChange: jest.Mock;
@@ -213,94 +211,4 @@ describe('ConfigEditor Utility Functions', () => {
     });
   });
 
-  describe('masterToggleHandler', () => {
-    it('should create a handler that enables master toggle and sets dependent features to defaults', () => {
-      const handler = masterToggleHandler(
-        'enableCoreDataModelFeatures',
-        ['enableCogniteTimeSeries', 'enableFlexibleDataModelling'],
-        mockOnJsonDataChange
-      );
-
-      const mockEvent = {
-        currentTarget: { checked: true }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      handler(mockEvent);
-
-      const call = mockOnJsonDataChange.mock.calls[0][0];
-      expect(call.enableCoreDataModelFeatures).toBe(true);
-      expect(call.enableCogniteTimeSeries).toBe(true); // Core features are enabled when master is enabled
-      expect(call.enableFlexibleDataModelling).toBe(true); // Core features are enabled when master is enabled
-    });
-
-    it('should create a handler that disables master toggle and sets dependent features to false', () => {
-      const handler = masterToggleHandler(
-        'enableCoreDataModelFeatures',
-        ['enableCogniteTimeSeries', 'enableFlexibleDataModelling'],
-        mockOnJsonDataChange
-      );
-
-      const mockEvent = {
-        currentTarget: { checked: false }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      handler(mockEvent);
-
-      const call = mockOnJsonDataChange.mock.calls[0][0];
-      expect(call.enableCoreDataModelFeatures).toBe(false);
-      expect(call.enableCogniteTimeSeries).toBe(false);
-      expect(call.enableFlexibleDataModelling).toBe(false);
-    });
-
-    it('should handle legacy data model features with correct defaults', () => {
-      const handler = masterToggleHandler(
-        'enableLegacyDataModelFeatures',
-        [
-          'enableTimeseriesSearch',
-          'enableTimeseriesFromAsset', 
-          'enableTimeseriesCustomQuery',
-          'enableEvents',
-          'enableEventsAdvancedFiltering'
-        ],
-        mockOnJsonDataChange
-      );
-
-      const mockEvent = {
-        currentTarget: { checked: true }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      handler(mockEvent);
-
-      const call = mockOnJsonDataChange.mock.calls[0][0];
-      expect(call.enableLegacyDataModelFeatures).toBe(true);
-      expect(call.enableTimeseriesSearch).toBe(FEATURE_DEFAULTS.enableTimeseriesSearch);
-      expect(call.enableTimeseriesFromAsset).toBe(FEATURE_DEFAULTS.enableTimeseriesFromAsset);
-      expect(call.enableTimeseriesCustomQuery).toBe(FEATURE_DEFAULTS.enableTimeseriesCustomQuery);
-      expect(call.enableEvents).toBe(FEATURE_DEFAULTS.enableEvents);
-      expect(call.enableEventsAdvancedFiltering).toBe(FEATURE_DEFAULTS.enableEventsAdvancedFiltering);
-      
-      // Verify that enableEventsAdvancedFiltering matches the default
-      expect(call.enableEventsAdvancedFiltering).toBe(false);
-      expect(FEATURE_DEFAULTS.enableEventsAdvancedFiltering).toBe(false);
-    });
-
-    it('should create a handler for legacy features that uses defaults when enabling', () => {
-      const handler = masterToggleHandler(
-        'enableLegacyDataModelFeatures',
-        ['enableTimeseriesSearch', 'enableEvents'],
-        mockOnJsonDataChange
-      );
-
-      const mockEvent = {
-        currentTarget: { checked: true }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      handler(mockEvent);
-
-      const call = mockOnJsonDataChange.mock.calls[0][0];
-      expect(call.enableLegacyDataModelFeatures).toBe(true);
-      expect(call.enableTimeseriesSearch).toBe(FEATURE_DEFAULTS.enableTimeseriesSearch); // Legacy uses defaults
-      expect(call.enableEvents).toBe(FEATURE_DEFAULTS.enableEvents); // Legacy uses defaults
-    });
   });
-});

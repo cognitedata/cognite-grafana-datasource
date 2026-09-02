@@ -14,36 +14,34 @@ import {
 import { Items, Limit } from "./cdf/types";
 import { getQueryString } from "./utils";
 import { API_V1, AuthType, CacheTime } from "./constants";
+import { FeatureFlags, FeatureKey } from "./featureDefaults";
 
 export interface Fetcher {
   fetch: (options: BackendSrvRequest) => Promise<FetchResponse<any>>;
 }
 
+/**
+ * Everything optional a connector is configured with.
+ *
+ * Named rather than positional: the flag list grows, and a list of interchangeable
+ * booleans silently mis-wires itself the moment one is inserted in the middle.
+ */
+export type ConnectorOptions = {
+  oauthPassThru?: boolean;
+  oauthClientCredentials?: boolean;
+} & Partial<FeatureFlags>;
+
 export class Connector {
+  private options: ConnectorOptions;
+
   constructor(
     private project: string,
     private apiUrl: string,
     private fetcher: Fetcher,
-    private oauthPassThru?: boolean,
-    private oauthClientCredentials?: boolean,
-    // Master toggles for feature sections
-    private enableCoreDataModelFeatures?: boolean,
-    private enableLegacyDataModelFeatures?: boolean,
-    // Core data model (CDM) features
-    private enableCogniteTimeSeries?: boolean,
-    private enableCogniteActivities?: boolean,
-    private enableFlexibleDataModelling?: boolean,
-    // Legacy data model features
-    private enableTimeseriesSearch?: boolean,
-    private enableTimeseriesFromAsset?: boolean,
-    private enableTimeseriesCustomQuery?: boolean,
-    private enableEvents?: boolean,
-    private enableEventsAdvancedFiltering?: boolean,
-    // Deprecated features
-    private enableTemplates?: boolean,
-    private enableExtractionPipelines?: boolean,
-    private enableRelationships?: boolean,
-  ) {}
+    options: ConnectorOptions = {},
+  ) {
+    this.options = options;
+  }
 
   cachedRequests = new Map<string, Promise<any>>();
 
@@ -142,10 +140,10 @@ export class Connector {
   private get apiUrlAuth() {
     let auth;
     switch (true) {
-      case !this.oauthPassThru && this.oauthClientCredentials:
+      case !this.options.oauthPassThru && this.options.oauthClientCredentials:
         auth = AuthType.OAuthClientCredentials;
         break;
-      case this.oauthPassThru:
+      case this.options.oauthPassThru:
         auth = AuthType.OAuth;
         break;
       default:
@@ -154,53 +152,72 @@ export class Connector {
     return `${this.apiUrl}/${auth}`;
   }
 
+  /** An unset flag reads as off, so every accessor answers a definite boolean. */
+  private flag(key: FeatureKey): boolean {
+    return !!this.options[key];
+  }
+
   // Core data model (CDM) features
   isCogniteTimeSeriesEnabled() {
-    return this.enableCoreDataModelFeatures && this.enableCogniteTimeSeries;
+    return this.flag("enableCoreDataModelFeatures") &&
+      this.flag("enableCogniteTimeSeries");
   }
 
   isCogniteActivitiesEnabled() {
-    return this.enableCoreDataModelFeatures && this.enableCogniteActivities;
+    return this.flag("enableCoreDataModelFeatures") &&
+      this.flag("enableCogniteActivities");
   }
 
   isFlexibleDataModellingEnabled() {
-    return this.enableCoreDataModelFeatures && this.enableFlexibleDataModelling;
+    return this.flag("enableCoreDataModelFeatures") &&
+      this.flag("enableFlexibleDataModelling");
   }
 
   // Legacy data model features
+  /**
+   * The master switch on its own. Asset-centric variable queries hit /assets/list,
+   * which no sub-flag covers, so the master is the only meaningful gate for them.
+   */
+  isLegacyDataModelFeaturesEnabled() {
+    return this.flag("enableLegacyDataModelFeatures");
+  }
+
   isTimeseriesSearchEnabled() {
-    return this.enableLegacyDataModelFeatures && this.enableTimeseriesSearch;
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableTimeseriesSearch");
   }
 
   isTimeseriesFromAssetEnabled() {
-    return this.enableLegacyDataModelFeatures && this.enableTimeseriesFromAsset;
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableTimeseriesFromAsset");
   }
 
   isTimeseriesCustomQueryEnabled() {
-    return this.enableLegacyDataModelFeatures &&
-      this.enableTimeseriesCustomQuery;
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableTimeseriesCustomQuery");
   }
 
   isEventsEnabled() {
-    return this.enableLegacyDataModelFeatures && this.enableEvents;
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableEvents");
   }
 
   isEventsAdvancedFilteringEnabled() {
-    return this.enableLegacyDataModelFeatures &&
-      this.enableEventsAdvancedFiltering;
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableEventsAdvancedFiltering");
   }
 
   // Deprecated features
   isRelationshipsEnabled() {
-    return this.enableRelationships;
+    return this.flag("enableRelationships");
   }
 
   isTemplatesEnabled() {
-    return this.enableTemplates;
+    return this.flag("enableTemplates");
   }
 
   isExtractionPipelinesEnabled() {
-    return this.enableExtractionPipelines;
+    return this.flag("enableExtractionPipelines");
   }
 
   public cachedRequest = async (
