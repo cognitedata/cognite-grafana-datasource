@@ -47,7 +47,7 @@ Note that the datasources provisioned from `provisioning/datasources/datasources
 
 ## Building frontend
 
-`yarn` followed by `yarn build` should work on systems with a shell.
+`yarn` followed by `yarn build` should work on systems with a shell. The repository is on yarn 1, and `.yarnrc` sets `ignore-engines` because `@grafana/plugin-ui` declares a yarn 4 engine.
 
 For debugging and development, use `yarn dev`, and for testing use `yarn test`.
 

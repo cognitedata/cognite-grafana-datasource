@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## Unreleased
+
+### Features
+
+- The minimum supported Grafana version is now 10.4.7, required by the shared editor components.
+
 ## 4.5.2 - August 25th, 2026
 
 ### Features
