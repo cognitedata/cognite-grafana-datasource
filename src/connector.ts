@@ -177,6 +177,8 @@ export class Connector {
   /**
    * The master switch on its own. Asset-centric variable queries hit /assets/list,
    * which no sub-flag covers, so the master is the only meaningful gate for them.
+   * CDM has no counterpart: every CDM code path belongs to a sub-flag, so there
+   * is deliberately no isCoreDataModelFeaturesEnabled().
    */
   isLegacyDataModelFeaturesEnabled() {
     return this.flag("enableLegacyDataModelFeatures");
