@@ -3,7 +3,11 @@ import { InlineFieldRow, InlineFormLabel, InlineSwitch } from "@grafana/ui";
 import { FeatureKey } from "../featureDefaults";
 import { FEATURE_TOOLTIPS } from "./featureTooltips";
 
-/** Shared by every toggle so the switches stay in one column. */
+/**
+ * Shared by every feature toggle so the switches stay in one column. Wider than
+ * the connection tab's 14 so the longest labels ("Time series from asset",
+ * "Events advanced filter") fit beside their tooltip icon on one line.
+ */
 const FEATURE_LABEL_WIDTH = 16;
 
 type FeatureToggleRowProps = {
