@@ -6,6 +6,11 @@ describe('resolveFeatureFlags', () => {
     expect(resolveFeatureFlags()).toEqual(FEATURE_DEFAULTS);
   });
 
+  it('treats an explicit undefined like an unset flag', () => {
+    const flags = resolveFeatureFlags({ enableCogniteTimeSeries: undefined });
+    expect(flags.enableCogniteTimeSeries).toBe(FEATURE_DEFAULTS.enableCogniteTimeSeries);
+  });
+
   it('keeps a flag that is set, including one set off', () => {
     const flags = resolveFeatureFlags({
       enableCoreDataModelFeatures: false,
