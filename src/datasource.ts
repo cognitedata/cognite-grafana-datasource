@@ -25,7 +25,7 @@ import {
 } from "./cdf/types";
 import { Connector } from "./connector";
 import { CacheTime } from "./constants";
-import { FEATURE_DEFAULTS } from "./featureDefaults";
+import { resolveFeatureFlags } from "./featureDefaults";
 import { parse as parseQuery } from "./parser/events-assets";
 import { ParsedFilter, QueryCondition } from "./parser/types";
 import {
@@ -85,62 +85,17 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     };
 
     const { url, jsonData } = instanceSettings;
-    const {
-      cogniteProject,
-      defaultProject,
-      oauthPassThru,
-      oauthClientCreds,
-      // Master toggles for feature sections
-      enableCoreDataModelFeatures =
-        FEATURE_DEFAULTS.enableCoreDataModelFeatures,
-      enableLegacyDataModelFeatures =
-        FEATURE_DEFAULTS.enableLegacyDataModelFeatures,
-      // Core data model (CDM) features
-      enableCogniteTimeSeries = FEATURE_DEFAULTS.enableCogniteTimeSeries,
-      enableCogniteActivities = FEATURE_DEFAULTS.enableCogniteActivities,
-      // Legacy data model features
-      enableTimeseriesSearch = FEATURE_DEFAULTS.enableTimeseriesSearch,
-      enableTimeseriesFromAsset = FEATURE_DEFAULTS.enableTimeseriesFromAsset,
-      enableTimeseriesCustomQuery =
-        FEATURE_DEFAULTS.enableTimeseriesCustomQuery,
-      enableEvents = FEATURE_DEFAULTS.enableEvents,
-      // Deprecated features
-      enableTemplates = FEATURE_DEFAULTS.enableTemplates,
-      enableEventsAdvancedFiltering =
-        FEATURE_DEFAULTS.enableEventsAdvancedFiltering,
-      enableFlexibleDataModelling =
-        FEATURE_DEFAULTS.enableFlexibleDataModelling,
-      enableExtractionPipelines = FEATURE_DEFAULTS.enableExtractionPipelines,
-      enableRelationships = FEATURE_DEFAULTS.enableRelationships,
-    } = jsonData;
+    const { cogniteProject, defaultProject, oauthPassThru, oauthClientCreds } =
+      jsonData;
     this.backendSrv = getBackendSrv();
     this.templateSrv = getTemplateSrv();
     this.url = url;
     this.project = cogniteProject ?? defaultProject;
-    const connector = new Connector(
-      this.project,
-      url,
-      defaultFetcher,
+    const connector = new Connector(this.project, url, defaultFetcher, {
       oauthPassThru,
-      oauthClientCreds,
-      // Master toggles for feature sections
-      enableCoreDataModelFeatures,
-      enableLegacyDataModelFeatures,
-      // Core data model (CDM) features
-      enableCogniteTimeSeries,
-      enableCogniteActivities,
-      enableFlexibleDataModelling,
-      // Legacy data model features
-      enableTimeseriesSearch,
-      enableTimeseriesFromAsset,
-      enableTimeseriesCustomQuery,
-      enableEvents,
-      enableEventsAdvancedFiltering,
-      // Deprecated features
-      enableTemplates,
-      enableExtractionPipelines,
-      enableRelationships,
-    );
+      oauthClientCredentials: oauthClientCreds,
+      ...resolveFeatureFlags(jsonData),
+    });
     this.initSources(connector);
   }
 

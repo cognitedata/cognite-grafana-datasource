@@ -268,7 +268,6 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableTemplates?: boolean;
   enableExtractionPipelines?: boolean;
   enableRelationships?: boolean;
-  featureFlags: { [s: string]: boolean };
 }
 
 export interface CogniteSecureJsonData {

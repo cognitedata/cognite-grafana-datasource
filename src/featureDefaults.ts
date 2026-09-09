@@ -11,7 +11,7 @@ export const FEATURE_DEFAULTS = {
   // Core data model (CDM) features - default to enabled when core master toggle is on
   enableCogniteTimeSeries: true,
   enableCogniteActivities: true,
-  enableFlexibleDataModelling: true, // GraphQL / Data Models tab
+  enableFlexibleDataModelling: true, // GraphQL tab
 
   // Legacy data model features - default to enabled for backward compatibility
   enableTimeseriesSearch: true,
@@ -30,3 +30,22 @@ export const FEATURE_DEFAULTS = {
  * Type representing all available feature flag keys
  */
 export type FeatureKey = keyof typeof FEATURE_DEFAULTS;
+
+/** Every flag resolved to a definite boolean. */
+export type FeatureFlags = Record<FeatureKey, boolean>;
+
+/**
+ * Fills in the flags a datasource's `jsonData` leaves unset.
+ *
+ * Reading the flags by name keeps the set extensible: adding a flag here reaches
+ * every consumer without anyone having to keep an argument list in the same order.
+ */
+export function resolveFeatureFlags(
+  jsonData: Partial<Record<FeatureKey, boolean>> = {},
+): FeatureFlags {
+  const keys = Object.keys(FEATURE_DEFAULTS) as FeatureKey[];
+  return keys.reduce((flags, key) => {
+    flags[key] = jsonData?.[key] ?? FEATURE_DEFAULTS[key];
+    return flags;
+  }, {} as FeatureFlags);
+}

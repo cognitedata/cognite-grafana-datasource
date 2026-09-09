@@ -8,6 +8,17 @@ import {
   QueryTarget,
 } from "./types";
 import { Connector, Fetcher } from "connector";
+import { FEATURE_DEFAULTS, FeatureFlags, FeatureKey } from "./featureDefaults";
+
+/**
+ * Every feature flag on. Derived from the flag list rather than written out, so a
+ * new flag reaches the test datasource without anyone remembering to add it.
+ */
+export const allFeaturesEnabled = (): FeatureFlags =>
+  (Object.keys(FEATURE_DEFAULTS) as FeatureKey[]).reduce((flags, key) => {
+    flags[key] = true;
+    return flags;
+  }, {} as FeatureFlags);
 
 export function getDataqueryResponse(
   { items, aggregates }: CDFDataQueryRequest,
@@ -65,25 +76,12 @@ export const getMockedDataSource = (
     instanceProps.jsonData.cogniteProject,
     instanceProps.url,
     fetcher,
-    options.oauthPassThru,
-    false, // oauthClientCredentials
-    // Master toggles - enabled for tests
-    true, // enableCoreDataModelFeatures
-    true, // enableLegacyDataModelFeatures
-    // Core data model (CDM) features - enabled for tests
-    true, // enableCogniteTimeSeries
-    true, // enableCogniteActivities
-    true, // enableFlexibleDataModelling
-    // Legacy data model features - enabled for tests
-    true, // enableTimeseriesSearch
-    true, // enableTimeseriesFromAsset
-    true, // enableTimeseriesCustomQuery
-    true, // enableEvents
-    true, // enableEventsAdvancedFiltering
-    // Deprecated features - enabled for tests
-    true, // enableTemplates
-    true, // enableExtractionPipelines
-    true, // enableRelationships
+    {
+      oauthPassThru: options.oauthPassThru,
+      oauthClientCredentials: false,
+      // Every feature on, so a test opts out rather than in.
+      ...allFeaturesEnabled(),
+    },
   );
   ds.initSources(connector);
   return ds;

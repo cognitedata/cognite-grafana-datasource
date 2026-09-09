@@ -114,6 +114,23 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-from-asset')).toBeChecked();
     await expect(page.locator('#enable-timeseries-custom-query')).toBeChecked();
     await expect(page.locator('#enable-events')).toBeChecked();
+    // Re-enabling restores the defaults, not "everything on": this is the one
+    // legacy flag that defaults to off.
+    await expect(page.locator('#enable-events-advanced-filtering')).not.toBeChecked();
+  });
+
+  test('The two master toggles are mutually exclusive', async () => {
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
+    await expect(page.locator('#enable-legacy-data-model-features')).toBeChecked();
+
+    await toggleCheckbox(page, '#enable-core-data-model-features', true);
+    await expect(page.locator('#enable-core-data-model-features')).toBeChecked();
+    await expect(page.locator('#enable-legacy-data-model-features')).not.toBeChecked();
+    await expect(page.locator('#enable-timeseries-search')).not.toBeVisible();
+
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
+    await expect(page.locator('#enable-core-data-model-features')).not.toBeChecked();
+    await expect(page.locator('#enable-cognite-timeseries')).not.toBeVisible();
   });
 
   test('Should toggle core data model features on/off', async () => {
@@ -203,8 +220,13 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(page.locator('#enable-timeseries-search')).not.toBeChecked();
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
 
+    // Restore the provisioned state (asset-centric on, CDM off) so the other
+    // config tests start from the fixture. The masters are mutually exclusive, so
+    // only one of them is turned back on.
     await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
-    await toggleCheckbox(page, '#enable-core-data-model-features', true);
+    await expect(page.locator('#enable-legacy-data-model-features')).toBeChecked();
+    await expect(page.locator('#enable-core-data-model-features')).not.toBeChecked();
+
     // Navigate back to Connection tab before second save for the same reason
     await page.locator('[role="tab"]').filter({ hasText: /^Connection$/ }).click();
     await page.getByTestId('data-testid Data source settings page Save and Test button').click();
