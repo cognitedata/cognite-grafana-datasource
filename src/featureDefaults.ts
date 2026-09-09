@@ -11,7 +11,7 @@ export const FEATURE_DEFAULTS = {
   // Core data model (CDM) features - default to enabled when core master toggle is on
   enableCogniteTimeSeries: true,
   enableCogniteActivities: true,
-  enableFlexibleDataModelling: true, // GraphQL / Data Models tab
+  enableFlexibleDataModelling: true, // GraphQL tab
 
   // Legacy data model features - default to enabled for backward compatibility
   enableTimeseriesSearch: true,
