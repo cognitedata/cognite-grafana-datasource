@@ -137,6 +137,9 @@ export function ConfigEditor(props: ConfigEditorProps) {
     const patch: Partial<CogniteDataSourceOptions> = {
       [masterKey]: isEnabled,
     };
+    // Re-enabling a master restores its sub-flags to their defaults; both
+    // masters follow this one rule. Every CDM sub-flag defaults on, so the
+    // CDM master still enables all of them.
     dependentKeys.forEach((key) => {
       patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
     });
