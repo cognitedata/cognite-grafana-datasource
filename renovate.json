@@ -4,5 +4,12 @@
     "local>cognitedata/renovate-config-public",
     ":automergeMinor"
   ],
-  "stabilityDays": 14
+  "stabilityDays": 14,
+  "packageRules": [
+    {
+      "description": "0.17+ peers @grafana/* at ^13, which would raise the runtime floor to Grafana 13",
+      "matchPackageNames": ["@grafana/plugin-ui"],
+      "allowedVersions": "<0.17.0"
+    }
+  ]
 }
