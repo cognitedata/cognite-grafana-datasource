@@ -12,6 +12,18 @@ import {
 import { uniq } from 'lodash';
 import { GRAPHQL_ROW_FIELDS } from './graphqlRows';
 
+/** The type of `fieldName` on an object or interface type, unwrapped of list and non-null. */
+const namedFieldType = (
+  type: GraphQLNamedType | null | undefined,
+  fieldName: string
+): GraphQLNamedType | undefined => {
+  if (!type || !(isObjectType(type) || isInterfaceType(type))) {
+    return undefined;
+  }
+  const field = type.getFields()[fieldName];
+  return field ? getNamedType(field.type) : undefined;
+};
+
 /**
  * `tsKeys` entries that are markers rather than field names.
  *
@@ -39,9 +51,19 @@ export const isTimeSeriesType = (type: GraphQLNamedType | null | undefined): boo
 };
 
 /**
+ * A connection of time series. The data modelling API types every to-many relation
+ * this way -- `timeSeries { items { … } }` or `timeSeries { edges { node { … } } }`
+ * -- so a relation field is rarely a time series itself.
+ */
+export const isTimeSeriesConnection = (type: GraphQLNamedType | null | undefined): boolean =>
+  isTimeSeriesType(namedFieldType(type, 'items')) ||
+  isTimeSeriesType(namedFieldType(namedFieldType(type, 'edges'), 'node'));
+
+/**
  * The `tsKeys` the schema can vouch for: TIME_SERIES_ROOT_KEY when the rows of the
  * query's first result set are time series, plus each row field that resolves to
- * one. Follows the same `items` / `node` envelope the datasource reads rows from.
+ * one, directly or through a connection. Follows the same `items` / `node` envelope
+ * the datasource reads rows from.
  * A query the parser rejects yields nothing, leaving the other heuristics to it.
  */
 export function timeSeriesKeysFromSchema(schema: GraphQLSchema, query: string): string[] {
@@ -79,7 +101,11 @@ export function timeSeriesKeysFromSchema(schema: GraphQLSchema, query: string): 
             }
             return;
           }
-          if (depth === rowDepth + 1 && node.selectionSet && isTimeSeriesType(type)) {
+          if (
+            depth === rowDepth + 1 &&
+            node.selectionSet &&
+            (isTimeSeriesType(type) || isTimeSeriesConnection(type))
+          ) {
             keys.push(name);
           }
         },

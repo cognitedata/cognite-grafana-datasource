@@ -7,7 +7,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
-- A GraphQL variable whose selected field was an object (such as `instanceId { space externalId }`) resolved to the literal string `[object Object]`. Object fields holding an instance reference now resolve correctly, and a GraphQL error surfaces instead of leaving the variable silently empty.
+- A GraphQL variable whose selected field was an object (such as `instanceId { space externalId }`) resolved to the literal string `[object Object]`. Object fields holding an instance reference now resolve correctly, and a failed query — GraphQL errors in the response, or the request itself failing — now fails the variable with the error message instead of leaving it silently empty.
 - **Time Series**: a label token written with spaces inside the braces (`{{ name }}`) was rendered as an unknown field. Whitespace is now ignored, as it is in every other label.
 
 ## 4.5.2 - August 25th, 2026

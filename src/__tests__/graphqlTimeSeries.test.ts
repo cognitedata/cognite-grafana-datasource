@@ -17,11 +17,14 @@ const CORE = buildSchema(`
   }
   type TimeSeriesEdge { node: CogniteTimeSeries }
   type TimeSeriesConnection { items: [CogniteTimeSeries], edges: [TimeSeriesEdge] }
+  type CogniteActivity { name: String, timeSeries: TimeSeriesConnection, assets: AssetConnection }
+  type ActivityConnection { items: [CogniteActivity] }
   type AssetConnection { items: [CogniteAsset] }
   type Query {
     listCogniteTimeSeries: TimeSeriesConnection
     listCogniteAsset: AssetConnection
     getCogniteAssetById: AssetConnection
+    listCogniteActivity: ActivityConnection
   }
 `);
 
@@ -78,6 +81,19 @@ describe('timeSeriesKeysFromSchema', () => {
 
   it('finds nothing in a query the parser rejects', () => {
     expect(timeSeriesKeysFromSchema(CORE, '{ listCogniteAsset { items {')).toEqual([]);
+  });
+
+  it('names a relation typed as a connection of time series, as the API types to-many relations', () => {
+    const items = timeSeriesKeysFromSchema(
+      CORE,
+      '{ listCogniteActivity { items { name assets { items { name } } timeSeries { items { space externalId } } } } }'
+    );
+    expect(items).toEqual(['timeSeries']);
+    const edges = timeSeriesKeysFromSchema(
+      CORE,
+      '{ listCogniteActivity { items { timeSeries { edges { node { space externalId } } } } } }'
+    );
+    expect(edges).toEqual(['timeSeries']);
   });
 
   it('names an aliased field by its alias, which is how the response is keyed', () => {
@@ -178,6 +194,21 @@ describe('plotting the series a GraphQL query returns', () => {
       '{ listCogniteTimeSeries { items { name parent { space externalId } timeSeries { space externalId } } } }'
     );
     expect(fetched).toEqual([{ space: 's', externalId: 'PUMP_RPM' }]);
+  });
+
+  it('fetches datapoints for every series of a nested connection or list', async () => {
+    const a = { space: 's', externalId: 'A' };
+    const b = { space: 's', externalId: 'B' };
+    const query =
+      '{ listCogniteTimeSeries { items { name timeSeries { items { space externalId } } } } }';
+    const keys = { schemaTsKeys: ['timeSeries'] };
+    expect(await run(keys, [{ name: 'Act', timeSeries: { items: [a, b] } }], query)).toEqual([a, b]);
+    expect(
+      await run(keys, [{ name: 'Act', timeSeries: { edges: [{ node: a }, { node: b }] } }], query)
+    ).toEqual([a, b]);
+    expect(await run(keys, [{ name: 'Act', timeSeries: [a, b] }], query)).toEqual([a, b]);
+    // Still only what the schema vouched for: an unvouched connection stays a table.
+    expect(await run({}, [{ name: 'Act', assets: { items: [a] } }], query)).toEqual([]);
   });
 
   it('still plots numeric rows found by the type heuristic', async () => {

@@ -41,9 +41,17 @@ export async function runGraphqlQuery(
   });
 }
 
-/** One line out of a GraphQL `errors` array, for a notification or an error pane. */
-export const formatGraphqlErrors = (errors: Array<{ message?: string }>): string =>
-  errors.map((e) => e?.message).filter(Boolean).join("; ") || JSON.stringify(errors);
+/**
+ * One line out of a GraphQL `errors` payload, for a notification or an error pane.
+ * The spec says an array of `{ message }`; a gateway in front of the API may answer
+ * with anything, and the message must survive that rather than throw its own error.
+ */
+export const formatGraphqlErrors = (errors: unknown): string => {
+  const messages = (Array.isArray(errors) ? errors : [errors])
+    .map((e) => (typeof e === "string" ? e : (e as { message?: unknown })?.message))
+    .filter((message): message is string => typeof message === "string" && !!message);
+  return messages.join("; ") || JSON.stringify(errors);
+};
 
 /**
  * Resolves a variable's GraphQL query to `{ text, value }` options: one per row,

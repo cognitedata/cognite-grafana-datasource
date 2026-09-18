@@ -414,6 +414,18 @@ describe('Metrics Query', () => {
       });
     });
 
+    it('surfaces an errors payload that is not the array the spec promises', async () => {
+      ds.connector.fetchQuery = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve({ errors: { message: 'Gateway said no' } }));
+      await expect(ds.metricFindQuery(base)).rejects.toThrow('Gateway said no');
+    });
+
+    it('fails the variable when the request itself fails', async () => {
+      ds.connector.fetchQuery = jest.fn().mockRejectedValue(new Error('Network down'));
+      await expect(ds.metricFindQuery(base)).rejects.toThrow('Network down');
+    });
+
     it('surfaces a GraphQL error instead of resolving to nothing', async () => {
       ds.connector.fetchQuery = jest
         .fn()

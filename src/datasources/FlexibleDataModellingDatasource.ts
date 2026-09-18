@@ -112,25 +112,30 @@ export class FlexibleDataModellingDatasource {
         });
       }
 
-      _.forEach(item, (value, key) => {
-        if (
-          tsKeys.includes(key) &&
-          _.isObject(value) &&
-          (value as any).__typename === 'TimeSeries' &&
-          (value as any).externalId
-        ) {
-          items.push({
-            type: 'target',
-            value: (value as any).externalId,
-            label: labelFor(value, item),
-          });
-        } else if (isPlottable(value, schemaTsKeys.includes(key))) {
-          items.push({
-            type: 'instanceId',
-            value: { space: (value as any).space, externalId: (value as any).externalId },
-            label: labelFor(value, item),
-          });
-        }
+      _.forEach(item, (field, key) => {
+        // A to-many relation arrives as a connection (`{ items }` / `{ edges }`) or a
+        // plain list, so every object it holds is considered, not the wrapper.
+        const candidates = readGraphqlRows(field)?.rows ?? [field];
+        candidates.forEach((value) => {
+          if (
+            tsKeys.includes(key) &&
+            _.isObject(value) &&
+            (value as any).__typename === 'TimeSeries' &&
+            (value as any).externalId
+          ) {
+            items.push({
+              type: 'target',
+              value: (value as any).externalId,
+              label: labelFor(value, item),
+            });
+          } else if (isPlottable(value, schemaTsKeys.includes(key))) {
+            items.push({
+              type: 'instanceId',
+              value: { space: (value as any).space, externalId: (value as any).externalId },
+              label: labelFor(value, item),
+            });
+          }
+        });
       });
     });
 
