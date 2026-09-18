@@ -7,6 +7,8 @@ import gql from 'graphql-tag';
 import { CogniteQuery, QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
 import { handleError } from './appEventHandler';
+import { NUMERIC_TYPE_KEY } from './cdf/graphqlTimeSeries';
+import { GRAPHQL_ROW_FIELDS } from './cdf/graphqlRows';
 
 export function getQueryString(obj: any) {
   return stringify(omitBy(obj, isNil));
@@ -77,10 +79,7 @@ const getNodeSelection = (selection) => {
   const { selectionSet } = head(selection) as any;
   if (selectionSet) {
     const { selections } = selectionSet;
-    if (selection[0]?.name.value === 'node') {
-      return selections;
-    }
-    if (selection[0]?.name.value === 'items') {
+    if (GRAPHQL_ROW_FIELDS.includes(selection[0]?.name.value)) {
       return selections;
     }
     return getNodeSelection(selections);
@@ -98,7 +97,7 @@ export const typeNameList = (selected) => {
   const hasTypeField = find(nodeSelections, ({ name: { value } }) => value === 'type');
   if (hasTypeField) {
     // Return a marker to indicate time series detection is active
-    return ['_numeric_type'];
+    return [NUMERIC_TYPE_KEY];
   }
   
   // Legacy: look for fields whose selectionSet contains __typename

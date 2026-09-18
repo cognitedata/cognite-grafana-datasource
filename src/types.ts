@@ -106,7 +106,20 @@ export interface FlexibleDataModellingQuery {
   version?: string;
   space?: string;
   graphQlQuery: string;
+  /** Row fields the query's shape marks as time series (`type` selected, `__typename`). */
   tsKeys: string[];
+  /**
+   * Row fields the data model's schema vouches for as time series, plus
+   * TIME_SERIES_ROOT_KEY when the rows themselves are. Kept apart from `tsKeys`
+   * because only the schema can vouch for an object that does not select `type`.
+   */
+  schemaTsKeys?: string[];
+  /**
+   * Series label template, interpolating fields of the response with {{field}}.
+   * Scoped to this query rather than reusing the panel-wide `label`, whose
+   * {{property}} tokens name time series properties instead of response fields.
+   */
+  label?: string;
   labels?: string[];
   targets?: string[];
   instanceIds?: Array<{ space: string; externalId: string }>;
@@ -579,6 +592,11 @@ export interface VariableQueryData {
     externalId?: string;
     version?: string;
   };
+  /**
+   * Optional field shown in the variable picker, independent of the emitted value.
+   * Unset, the picker text is the value itself.
+   */
+  displayField?: string;
 }
 
 export interface AnnotationQueryData extends DataQuery {

@@ -177,6 +177,16 @@ describe('toPickedInstance', () => {
       name: undefined,
     });
   });
+
+  it('keeps a variable verbatim, with no parts to derive', () => {
+    // Resolution happens in the datasource, long after the editor runs
+    expect(toPickedInstance({ label: '$asset', value: '$asset' })).toEqual({
+      value: '$asset',
+      space: undefined,
+      externalId: undefined,
+      name: undefined,
+    });
+  });
 });
 
 describe('toStoredOptions', () => {
@@ -196,6 +206,12 @@ describe('toStoredOptions', () => {
   it('shows an unreadable value as itself, with no invented description', () => {
     const [option] = toStoredOptions([{ value: 'legacy' }]);
     expect(option.label).toBe('legacy');
+    expect(option.description).toBeUndefined();
+  });
+
+  it('shows a variable as itself, with no invented description', () => {
+    const [option] = toStoredOptions([{ value: '$asset' }]);
+    expect(option.label).toBe('$asset');
     expect(option.description).toBeUndefined();
   });
 
