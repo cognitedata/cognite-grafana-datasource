@@ -1,8 +1,12 @@
 import React, { ChangeEvent } from 'react';
-import { InlineField, InlineSegmentGroup, InlineFieldRow, InlineFormLabel, Input, Select } from '@grafana/ui';
+import { InlineField, InlineSegmentGroup, InlineFieldRow, Input, Select } from '@grafana/ui';
 import { SelectedProps } from '../types';
 
-const aggregateOptions = [
+/** Shared with the GraphQL tab's own options row. */
+export const GRANULARITY_TOOLTIP =
+  `The granularity of the aggregate values. Use: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`;
+
+export const aggregateOptions = [
   { value: 'none', label: 'None' },
   { value: 'average', label: 'Average' },
   { value: 'max', label: 'Max' },
@@ -25,9 +29,7 @@ const GranularityEditor = (props: SelectedProps) => {
         <InlineField
           label="Granularity"
           labelWidth={14}
-          tooltip={
-            `The granularity of the aggregate values. Use: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`
-          }
+          tooltip={GRANULARITY_TOOLTIP}
         >
           <Input
             value={query.granularity}
@@ -86,10 +88,12 @@ export const LabelEditor = (props: SelectedProps) => {
   );
 };
 
-export const CommonEditors = ({ onQueryChange, query, ...etc }: SelectedProps & any) => (
+export const CommonEditors = (
+  { onQueryChange, query, hideAggregation }: SelectedProps & { hideAggregation?: boolean }
+) => (
   <InlineFieldRow>
-    {!etc?.hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
+    {!hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
     <GranularityEditor {...{ onQueryChange, query }} />
-    {!etc?.visible && <LabelEditor {...{ onQueryChange, query }} />}
+    <LabelEditor {...{ onQueryChange, query }} />
   </InlineFieldRow>
 );

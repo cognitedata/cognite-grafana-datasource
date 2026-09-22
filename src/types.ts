@@ -38,29 +38,50 @@ export const TabTitles = {
   [Tab.FlexibleDataModelling]: "GraphQL",
   [Tab.CogniteActivity]: "Activities",
 };
-const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
-  externalId: "",
-  graphQlQuery: `{
-  listMachine {
+/**
+ * The core data model ships with every CDM-enabled project, so it is a starting
+ * point that resolves everywhere rather than a model the user has to own.
+ */
+export const DEFAULT_GRAPHQL_DATA_MODEL = {
+  space: "cdf_cdm",
+  externalId: "CogniteCore",
+  version: "v1",
+};
+
+/**
+ * The panel tab's starting query: a panel usually plots time series, and `type`
+ * marks the rows it can plot. `first` is the page-size argument the data
+ * modelling API accepts; the default without it is 50.
+ */
+export const DEFAULT_GRAPHQL_PANEL_QUERY = `query MyQuery {
+  listCogniteTimeSeries(first: 10) {
     items {
-      __typename
-      MachineWeight
-      Model
-      Anomalies {
-        externalId
-        id
-        name
-        __typename
-      }
-      Availability {
-        id
-        name
-        externalId
-        __typename
-      }
+      space
+      externalId
+      name
+      type
     }
   }
-}`,
+}`;
+
+/**
+ * The variable editor's starting query: a dashboard variable usually picks
+ * assets. Selecting space and externalId unlocks the Instance ID value field,
+ * and name gives the picker a readable label.
+ */
+export const DEFAULT_GRAPHQL_VARIABLE_QUERY = `query MyQuery {
+  listCogniteAsset(first: 10) {
+    items {
+      space
+      externalId
+      name
+    }
+  }
+}`;
+
+const defaultFlexibleDataModellingQuery: FlexibleDataModellingQuery = {
+  ...DEFAULT_GRAPHQL_DATA_MODEL,
+  graphQlQuery: DEFAULT_GRAPHQL_PANEL_QUERY,
   tsKeys: [],
 };
 
