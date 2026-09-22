@@ -1,6 +1,7 @@
 import { cloneDeep } from 'lodash';
 import { getMockedDataSource } from '../test_utils';
 import { VariableQueryData } from '../types';
+import { INSTANCE_ID_FIELD } from '../cdf/instanceRef';
 
 jest.mock('@grafana/runtime');
 type Mock = jest.Mock;
@@ -260,6 +261,178 @@ describe('Metrics Query', () => {
         text: 'asset-2',
         value: 'asset-2',
       });
+    });
+  });
+
+  describe('Given a GraphQL variable query returning instance references', () => {
+    const base: VariableQueryData = {
+      query: '',
+      queryType: 'graphql',
+      graphqlQuery: 'query MyQuery { listCogniteAsset { items { space externalId name } } }',
+      dataModel: { space: 'test-space', externalId: 'test-model', version: '1' },
+      valueType: { value: INSTANCE_ID_FIELD, label: 'Instance ID' },
+    };
+
+    const respondWith = (items: any[]) => {
+      ds.connector.fetchQuery = jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve({ data: { listCogniteAsset: { items } } })
+        );
+    };
+
+    it('emits an encoded reference from top-level identifiers', async () => {
+      respondWith([
+        { space: 'paper_mill', externalId: 'ASSET_PM_AREA', name: '60-PM - Paper Machine Area' },
+        { space: 'paper_mill', externalId: 'ASSET_BL_AREA', name: '40-BL - Bleaching Area' },
+      ]);
+      const result = await ds.metricFindQuery(base);
+      // Unset display field: the text is the value itself, so what the picker
+      // shows is exactly what the variable emits.
+      expect(result).toEqual([
+        {
+          text: '{"space":"paper_mill","externalId":"ASSET_PM_AREA"}',
+          value: '{"space":"paper_mill","externalId":"ASSET_PM_AREA"}',
+        },
+        {
+          text: '{"space":"paper_mill","externalId":"ASSET_BL_AREA"}',
+          value: '{"space":"paper_mill","externalId":"ASSET_BL_AREA"}',
+        },
+      ]);
+    });
+
+    it('reads identifiers nested under a field', async () => {
+      respondWith([{ name: 'Pump', instanceId: { space: 's', externalId: 'e' } }]);
+      const result = await ds.metricFindQuery(base);
+      expect(result).toEqual([
+        { text: '{"space":"s","externalId":"e"}', value: '{"space":"s","externalId":"e"}' },
+      ]);
+    });
+
+    it('shows the encoded reference even when the item has a name', async () => {
+      // Readable text is opt-in via the display field; by default the picker
+      // shows the emitted reference so the two never disagree.
+      respondWith([{ space: 's', externalId: 'ASSET_1', name: 'Asset one' }]);
+      const result = await ds.metricFindQuery(base);
+      expect(result[0].text).toBe('{"space":"s","externalId":"ASSET_1"}');
+    });
+
+    it('skips items that carry no usable reference', async () => {
+      respondWith([{ space: 's', externalId: 'ok' }, { name: 'no ids here' }]);
+      const result = await ds.metricFindQuery(base);
+      expect(result).toHaveLength(1);
+      expect(result[0].value).toBe('{"space":"s","externalId":"ok"}');
+    });
+
+    it('never emits "[object Object]" for an object-valued field', async () => {
+      // Regression: String(val) used to turn a reference into a poison string that
+      // reached dashboards intact.
+      respondWith([{ name: 'Pump', instanceId: { space: 's', externalId: 'e' } }]);
+      const asObjectField = await ds.metricFindQuery({
+        ...base,
+        valueType: { value: 'instanceId', label: 'Instance Id' },
+      });
+      expect(asObjectField[0].value).toBe('{"space":"s","externalId":"e"}');
+      expect(JSON.stringify(asObjectField)).not.toContain('[object Object]');
+    });
+
+    it('skips a list-valued field rather than emitting its first element', async () => {
+      respondWith([
+        { name: 'Pump', assets: [{ space: 's', externalId: 'a' }, { space: 's', externalId: 'b' }] },
+        { name: 'Valve', assets: [] },
+      ]);
+      const result = await ds.metricFindQuery({
+        ...base,
+        valueType: { value: 'assets', label: 'assets' },
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('skips a row where two nested objects could be the reference', async () => {
+      respondWith([
+        {
+          name: 'Pump',
+          asset: { space: 's', externalId: 'ASSET' },
+          unit: { space: 's', externalId: 'UNIT' },
+        },
+      ]);
+      expect(await ds.metricFindQuery(base)).toEqual([]);
+    });
+
+    it('resolves a dotted path to a scalar', async () => {
+      respondWith([{ instanceId: { space: 'sp', externalId: 'e' } }]);
+      const result = await ds.metricFindQuery({
+        ...base,
+        valueType: { value: 'instanceId.space', label: 'Space' },
+      });
+      expect(result[0].value).toBe('sp');
+    });
+
+    describe('with an explicit display field', () => {
+      it('labels instance references with the chosen field', async () => {
+        respondWith([
+          {
+            space: 'paper_mill',
+            externalId: 'ASSET_PM_AREA',
+            name: '60-PM',
+            description: 'Paper Machine Area',
+          },
+        ]);
+        const result = await ds.metricFindQuery({ ...base, displayField: 'description' });
+        expect(result).toEqual([
+          {
+            text: 'Paper Machine Area',
+            value: '{"space":"paper_mill","externalId":"ASSET_PM_AREA"}',
+          },
+        ]);
+      });
+
+      it('labels scalar values with the chosen field', async () => {
+        respondWith([{ externalId: 'ASSET_1', name: 'Pump', description: 'Feed pump' }]);
+        const result = await ds.metricFindQuery({
+          ...base,
+          valueType: { value: 'externalId', label: 'externalId' },
+          displayField: 'description',
+        });
+        expect(result).toEqual([{ text: 'Feed pump', value: 'ASSET_1' }]);
+      });
+
+      it('resolves a dotted display path', async () => {
+        respondWith([{ externalId: 'e', metadata: { owner: 'Ops team' } }]);
+        const result = await ds.metricFindQuery({
+          ...base,
+          valueType: { value: 'externalId', label: 'externalId' },
+          displayField: 'metadata.owner',
+        });
+        expect(result[0].text).toBe('Ops team');
+      });
+
+      it('falls back to the value when the display field is empty on a row', async () => {
+        respondWith([{ space: 's', externalId: 'e', name: 'Pump' }]);
+        const result = await ds.metricFindQuery({ ...base, displayField: 'description' });
+        expect(result[0].text).toBe('{"space":"s","externalId":"e"}');
+      });
+    });
+
+    it('surfaces an errors payload that is not the array the spec promises', async () => {
+      ds.connector.fetchQuery = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve({ errors: { message: 'Gateway said no' } }));
+      await expect(ds.metricFindQuery(base)).rejects.toThrow('Gateway said no');
+    });
+
+    it('fails the variable when the request itself fails', async () => {
+      ds.connector.fetchQuery = jest.fn().mockRejectedValue(new Error('Network down'));
+      await expect(ds.metricFindQuery(base)).rejects.toThrow('Network down');
+    });
+
+    it('surfaces a GraphQL error instead of resolving to nothing', async () => {
+      ds.connector.fetchQuery = jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve({ errors: [{ message: 'Cannot query field "nope"' }] })
+        );
+      await expect(ds.metricFindQuery(base)).rejects.toThrow('Cannot query field "nope"');
     });
   });
 });

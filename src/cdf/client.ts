@@ -55,9 +55,9 @@ import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
+import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
 
 const { Asset, Custom, Timeseries } = Tab;
-const variableLabelRegex = /{{([^{}]+)}}/g;
 const UNITS_SPACE = 'cdf_cdm_units';
 
 export function formQueryForItems(
@@ -203,17 +203,16 @@ export function getLabelWithInjectedProps(
   label: string,
   timeseries: TimeSeriesResponseItem
 ): string {
-  // matches with any text within {{ }}
-  return label.replace(variableLabelRegex, (full, group) => get(timeseries, group, full));
+  return label.replace(LABEL_TOKEN, (full, group) => get(timeseries, group, full));
 }
 
 export function labelContainsVariableProps(label: string): boolean {
-  return label && !!label.match(variableLabelRegex);
+  return label && !!label.match(LABEL_TOKEN);
 }
 
 /** True when the label has a `{{prop}}` or `{{prop.path}}` token rooted at `prop`. */
 export function labelReferencesProp(label: string, prop: string): boolean {
-  return [...label.matchAll(variableLabelRegex)].some(([, group]) => group.split('.')[0] === prop);
+  return [...label.matchAll(LABEL_TOKEN)].some(([, group]) => group.split('.')[0] === prop);
 }
 
 /** Interpolate `{{property}}` tokens from a CogniteTimeSeries DMS instance + view schema. */
@@ -225,24 +224,14 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   // `space` and `externalId` come from the instance node itself (not the view
   // schema), but are exposed in `props` and useful in labels.
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
-  return labelSrc.replace(variableLabelRegex, (_full, group) => {
+  return labelSrc.replace(LABEL_TOKEN, (_full, group) => {
     const rootKey = group.split('.')[0];
     // Own props resolved by the caller (e.g. the effective `unit`) count as valid even when
     // the view schema doesn't declare them.
     if (!validPropNames.has(rootKey) && !Object.prototype.hasOwnProperty.call(props, rootKey)) {
-      return `:${group}`;
+      return renderLabelToken(group, { found: false });
     }
-    const val = get(props, group);
-    if (val == null) {
-      return group.includes('.') ? `:${group}` : 'null';
-    }
-    if (typeof val === 'object') {
-      // Serializing the whole object is deliberate: a bare `{{unit}}` shows the resolved
-      // unit's full property bag, which is how users discover what `{{unit.<prop>}}`
-      // paths are available.
-      return JSON.stringify(val);
-    }
-    return String(val);
+    return renderLabelToken(group, { found: true, value: get(props, group) });
   });
 }
 

@@ -6,6 +6,11 @@ import { Connector } from '../connector';
 import { handleError } from '../appEventHandler';
 import { TimeseriesDatasource } from './TimeseriesDatasource';
 import { convertItemsToTable } from '../cdf/client';
+import { graphqlEndpointPath } from '../cdf/graphqlEndpoint';
+import { readGraphqlRows } from '../cdf/graphqlRows';
+import { readScalarPath } from '../cdf/instanceRef';
+import { interpolateGraphqlLabel } from '../cdf/graphqlLabel';
+import { TIME_SERIES_ROOT_KEY } from '../cdf/graphqlTimeSeries';
 import { getFirstSelection } from '../utils';
 
 const getItemsTableData = (items): TableData => {
@@ -66,49 +71,71 @@ export class FlexibleDataModellingDatasource {
 
   /**
    * Extracts time series identifiers from FDM response items.
-   * Handles both legacy __typename === 'TimeSeries' and new type === 'numeric' detection.
+   *
+   * A row, or an object field of one, is a time series when the editor's schema
+   * lookup vouched for it in `schemaTsKeys` (TIME_SERIES_ROOT_KEY for the rows
+   * themselves, the field name for a nested one), or when its `type` reads
+   * numeric. Legacy `tsKeys` still name `__typename === 'TimeSeries'` objects; they
+   * never vouch on their own, since `typeNameList` accepts any type.
    */
   private extractTimeseriesItems(dataItems: any[], query: FlexibleDataModellingQuery): TimeseriesItem[] {
     const items: TimeseriesItem[] = [];
+    const tsKeys = query.tsKeys ?? [];
+    const schemaTsKeys = query.schemaTsKeys ?? [];
+    // An unset label falls back to the name, so a series is never unnamed. A
+    // mistyped field renders as `:field` (see renderLabelToken), same as the
+    // Time Series tab, so the typo shows instead of a silent fallback.
+    const labelFor = (series: unknown, row?: unknown) =>
+      interpolateGraphqlLabel(query.label ?? '', series, row) ||
+      readScalarPath(series, 'name') ||
+      '';
+
+    /**
+     * Whether the datapoints API can serve this object. When the query selects
+     * `type` and it is populated, only numeric series are plotted, whatever vouched
+     * for the object; otherwise the schema's word is needed.
+     */
+    const isPlottable = (value: any, vouchedFor: boolean): boolean => {
+      if (!_.isObject(value) || (value as any).space == null || (value as any).externalId == null) {
+        return false;
+      }
+      const type = (value as any).type;
+      return type == null ? vouchedFor : type === 'numeric';
+    };
 
     _.forEach(dataItems, (item) => {
-      // Check if the item itself is a numeric time series
-      if (item?.type === 'numeric' && item.space != null && item.externalId != null) {
+      if (isPlottable(item, schemaTsKeys.includes(TIME_SERIES_ROOT_KEY))) {
         items.push({
           type: 'instanceId',
           value: { space: item.space, externalId: item.externalId },
-          label: item.name || '',
+          label: labelFor(item),
         });
       }
 
-      // Also check nested properties within item
-      _.forEach(item, (value, key) => {
-        // Legacy behavior for __typename === 'TimeSeries'
-        if (
-          query.tsKeys.includes(key) &&
-          _.isObject(value) &&
-          (value as any).__typename === 'TimeSeries' &&
-          (value as any).externalId
-        ) {
-          items.push({
-            type: 'target',
-            value: (value as any).externalId,
-            label: (value as any).name || '',
-          });
-        }
-        // New detection for nested numeric time series
-        else if (
-          _.isObject(value) &&
-          (value as any).type === 'numeric' &&
-          (value as any).space != null &&
-          (value as any).externalId != null
-        ) {
-          items.push({
-            type: 'instanceId',
-            value: { space: (value as any).space, externalId: (value as any).externalId },
-            label: (value as any).name || '',
-          });
-        }
+      _.forEach(item, (field, key) => {
+        // A to-many relation arrives as a connection (`{ items }` / `{ edges }`) or a
+        // plain list, so every object it holds is considered, not the wrapper.
+        const candidates = readGraphqlRows(field)?.rows ?? [field];
+        candidates.forEach((value) => {
+          if (
+            tsKeys.includes(key) &&
+            _.isObject(value) &&
+            (value as any).__typename === 'TimeSeries' &&
+            (value as any).externalId
+          ) {
+            items.push({
+              type: 'target',
+              value: (value as any).externalId,
+              label: labelFor(value, item),
+            });
+          } else if (isPlottable(value, schemaTsKeys.includes(key))) {
+            items.push({
+              type: 'instanceId',
+              value: { space: (value as any).space, externalId: (value as any).externalId },
+              label: labelFor(value, item),
+            });
+          }
+        });
       });
     });
 
@@ -297,7 +324,7 @@ export class FlexibleDataModellingDatasource {
   ): Promise<Many<TimeSeries | TableData>> {
     try {
       const { data, errors } = await this.connector.fetchQuery({
-        path: `/userapis/spaces/${query.space}/datamodels/${query.externalId}/versions/${query.version}/graphql`,
+        path: graphqlEndpointPath(query),
         method: HttpMethod.POST,
         data: JSON.stringify({ query: query.graphQlQuery }),
       });
@@ -311,13 +338,12 @@ export class FlexibleDataModellingDatasource {
         getFirstNameValue(_.head(getFirstSelection(query.graphQlQuery, target.refId)))
       );
       if (firstResponse) {
-        if (_.has(firstResponse, 'edges')) {
-          const { edges } = firstResponse;
-          return this.postQueryEdges(edges, query, options, target);
+        const envelope = readGraphqlRows(firstResponse);
+        if (envelope?.kind === 'edges') {
+          return this.postQueryEdges(envelope.raw, query, options, target);
         }
-        if (_.has(firstResponse, 'items')) {
-          const { items } = firstResponse;
-          return this.postQueryItems(items, query, options, target);
+        if (envelope?.kind === 'items') {
+          return this.postQueryItems(envelope.raw, query, options, target);
         }
         return [];
       }
@@ -337,7 +363,7 @@ export class FlexibleDataModellingDatasource {
   ): Promise<IntrospectionQuery | undefined> {
     try {
       const { data, errors } = await this.connector.fetchQuery({
-        path: `/userapis/spaces/${query.space}/datamodels/${query.externalId}/versions/${query.version}/graphql`,
+        path: graphqlEndpointPath(query),
         method: HttpMethod.POST,
         data: JSON.stringify({ query: getIntrospectionQuery() }),
       });

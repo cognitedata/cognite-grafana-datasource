@@ -116,6 +116,14 @@ describe('CDF client', () => {
     test('no props', () => {
       expect(labelContainsVariableProps('pure text')).toEqual(false);
     });
+
+    test('tolerates whitespace inside the braces, as the GraphQL tab does', () => {
+      expect(labelContainsVariableProps('{{ prop }}')).toEqual(true);
+      expect(labelReferencesProp('{{ unit.symbol }}', 'unit')).toEqual(true);
+      expect(
+        interpolateCogniteTimeSeriesInstanceLabel('{{ name }}', { name: 'TS-A' }, ['name'])
+      ).toEqual('TS-A');
+    });
   });
 
   describe('CogniteTimeSeriesSearch label interpolation', () => {
