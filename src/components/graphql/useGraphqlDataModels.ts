@@ -110,6 +110,7 @@ export const useGraphqlDataModels = (
     versions,
     loadingDataModels,
     loadingVersions,
-    metadataError: modelsError ?? versionsError,
+    // Both can fail at once (expired credentials, say); each message is shown.
+    metadataError: [modelsError, versionsError].filter(Boolean).join(' ') || undefined,
   };
 };

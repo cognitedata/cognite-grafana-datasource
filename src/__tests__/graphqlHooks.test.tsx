@@ -43,6 +43,22 @@ describe('useGraphqlDataModels', () => {
     expect(result.current.metadataError).toBe('Failed to load data models.');
   });
 
+  it('reports both failures when the models and the versions fail together', async () => {
+    const datasource = graphqlDatasourceStub({
+      flexibleDataModellingDatasource: {
+        listFlexibleDataModelling: jest.fn().mockRejectedValue(new Error('401')),
+        listVersionByExternalIdAndSpace: jest.fn().mockRejectedValue(new Error('401')),
+      },
+    });
+    const { result } = renderHook(() => useGraphqlDataModels(datasource, 'A', 'sp', 'model'));
+
+    await waitFor(() => expect(result.current.loadingDataModels).toBe(false));
+    await waitFor(() => expect(result.current.loadingVersions).toBe(false));
+    expect(result.current.metadataError).toBe(
+      'Failed to load data models. Failed to load data model versions.'
+    );
+  });
+
   it('asks for no versions until a model is selected', () => {
     const datasource = graphqlDatasourceStub();
     renderHook(() => useGraphqlDataModels(datasource, 'A'));
@@ -101,6 +117,17 @@ describe('useGraphqlPreview', () => {
     await act(() => result.current.run());
 
     expect(result.current.response).toEqual({ error: 'Cannot query field "nope"; Second' });
+  });
+
+  it('runs the text it is handed instead of the saved query', async () => {
+    const datasource = graphqlDatasourceStub();
+    const { result } = renderHook(() => useGraphqlPreview(datasource, '{ saved }', MODEL));
+
+    await act(() => result.current.run('{ onScreen }'));
+
+    expect((datasource.runGraphqlQuery as jest.Mock).mock.calls[0][0].graphqlQuery).toBe(
+      '{ onScreen }'
+    );
   });
 
   it('cannot run without a complete data model', () => {

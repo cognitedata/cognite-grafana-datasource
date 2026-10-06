@@ -2,6 +2,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { CodeEditor, FieldValidationMessage, useStyles2 } from '@grafana/ui';
+import { GraphqlResponseState } from './useGraphqlPreview';
 
 const getStyles = (theme: GrafanaTheme2) => ({
   placeholder: css({
@@ -17,8 +18,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
     borderRadius: theme.shape.radius.default,
   }),
 });
-
-import { GraphqlResponseState } from './useGraphqlPreview';
 
 interface GraphqlResponsePaneProps {
   response?: GraphqlResponseState;

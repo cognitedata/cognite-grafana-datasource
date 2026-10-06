@@ -12,7 +12,8 @@ interface UseGraphqlPreview {
   response?: GraphqlResponseState;
   isRunning: boolean;
   canRun: boolean;
-  run: () => Promise<void>;
+  /** Runs `query` when given (the editor's current text), else the saved query. */
+  run: (query?: string) => Promise<void>;
 }
 
 /**
@@ -40,8 +41,9 @@ export const useGraphqlPreview = (
   const { space, externalId, version } = dataModel ?? {};
   const canRun = !!(graphqlQuery && space && externalId && version);
 
-  const run = useCallback(async () => {
-    if (!graphqlQuery || !space || !externalId || !version) {
+  const run = useCallback(async (query?: string) => {
+    const text = query ?? graphqlQuery;
+    if (!text || !space || !externalId || !version) {
       return;
     }
     const mine = ++generation.current;
@@ -49,7 +51,7 @@ export const useGraphqlPreview = (
     setIsRunning(true);
     try {
       const { data, errors } = await datasource.runGraphqlQuery({
-        graphqlQuery,
+        graphqlQuery: text,
         dataModel: { space, externalId, version },
       });
       if (!isCurrent()) {

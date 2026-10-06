@@ -1,7 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { GraphQLSchema } from 'graphql';
+import { css } from '@emotion/css';
+import { GraphQLSchema, parse } from 'graphql';
+import { GrafanaTheme2 } from '@grafana/data';
 import { EditorField, EditorFieldGroup, EditorRow, FlexItem } from '@grafana/plugin-ui';
-import { Button, CodeEditor, FieldValidationMessage, MonacoEditor, Select, Stack } from '@grafana/ui';
+import {
+  Button,
+  CodeEditor,
+  FieldValidationMessage,
+  MonacoEditor,
+  Select,
+  Stack,
+  useStyles2,
+} from '@grafana/ui';
 import CogniteDatasource from '../../datasource';
 import { getGraphqlSuggestions } from '../graphqlAutocomplete';
 import { GraphqlResponsePane } from './GraphqlResponsePane';
@@ -16,6 +26,28 @@ import { useGraphqlPreview } from './useGraphqlPreview';
 
 /** Tall enough to hold a typical query without scrolling. */
 const GRAPHQL_EDITOR_HEIGHT = 320;
+
+const getStyles = (theme: GrafanaTheme2) => ({
+  // Query and response side by side, each taking half the row.
+  panes: css({
+    display: 'flex',
+    gap: theme.spacing(1),
+    width: '100%',
+  }),
+  pane: css({
+    flex: 1,
+    minWidth: 0,
+  }),
+});
+
+const parses = (query: string): boolean => {
+  try {
+    parse(query);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 interface GraphqlQueryEditorProps {
   datasource: CogniteDatasource;
@@ -55,6 +87,7 @@ export const GraphqlQueryEditor = ({
   onSchemaChange,
 }: GraphqlQueryEditorProps) => {
   const [editor, setEditor] = useState<MonacoEditor>();
+  const styles = useStyles2(getStyles);
 
   const { space, externalId, version } = dataModel ?? {};
   const { dataModelOptions, versions, loadingDataModels, loadingVersions, metadataError } =
@@ -73,6 +106,24 @@ export const GraphqlQueryEditor = ({
   // Stable between renders: the code editor re-registers its completion provider
   // whenever this callback changes.
   const getSuggestions = useCallback(() => getGraphqlSuggestions(schema, editor), [schema, editor]);
+  /**
+   * Tests the text on screen, not only what was last saved. The editor saves on
+   * blur, and Monaco reports blur a tick late, so a quick click could otherwise test
+   * the previous query. Unsaved text is saved first -- which reports a parse error
+   * beside the editor -- and is run only if it parses.
+   */
+  const handleRun = () => {
+    const text = editor?.getValue();
+    if (text === undefined || text === graphqlQuery) {
+      run();
+      return;
+    }
+    onQueryChange(text);
+    if (parses(text)) {
+      run(text);
+    }
+  };
+
   // While the shown text has not been accepted, a run would test something other
   // than what the panel or variable will execute.
   const runTooltip = queryError
@@ -142,7 +193,7 @@ export const GraphqlQueryEditor = ({
             size="sm"
             icon="play"
             disabled={!canRun || isRunning || !!queryError}
-            onClick={run}
+            onClick={handleRun}
             tooltip={runTooltip}
           >
             Test query
@@ -160,8 +211,8 @@ export const GraphqlQueryEditor = ({
       <EditorRow>
         {/* Query and response side by side, so what is being extracted can be checked
             against the shape the query actually returns. */}
-        <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div className={styles.panes}>
+          <div className={styles.pane}>
             <EditorField
               label="Query"
               tooltip="The GraphQL query to run. Dashboard variables are interpolated with $variable or ${variable}."
@@ -181,7 +232,7 @@ export const GraphqlQueryEditor = ({
             </EditorField>
             {queryError && <FieldValidationMessage>{queryError}</FieldValidationMessage>}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={styles.pane}>
             <EditorField
               label="Response"
               tooltip="The response from a test run."

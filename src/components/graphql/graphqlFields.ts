@@ -64,13 +64,6 @@ const extractFieldNamesFromSelections = (
   return [...new Set(fieldNames)];
 };
 
-/**
- * Field names selected by a query, or [] when it cannot be parsed.
- *
- * Only the first root field is read, matching execution: the datasource unwraps a
- * single root field before mapping rows, so fields from a second one would be
- * offered but never resolve. `refId` routes parse errors to the caller's own query.
- */
 /** True when the selections are a row envelope: the field is a connection or a list. */
 const isConnection = (selections: readonly GraphQLSelection[]): boolean =>
   selections.some(
@@ -80,6 +73,13 @@ const isConnection = (selections: readonly GraphQLSelection[]): boolean =>
       GRAPHQL_ENVELOPE_FIELDS.includes(selection.name.value)
   );
 
+/**
+ * Field names selected by a query, or [] when it cannot be parsed.
+ *
+ * Only the first root field is read, matching execution: the datasource unwraps a
+ * single root field before mapping rows, so fields from a second one would be
+ * offered but never resolve. `refId` routes parse errors to the caller's own query.
+ */
 export const extractFieldNamesFromQuery = (
   graphqlQuery: string,
   refId: string
