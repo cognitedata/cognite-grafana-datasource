@@ -1,16 +1,12 @@
 import _ from 'lodash';
 import { CogniteQuery, Tab } from '../types';
-import { getMockedDataSource } from '../test_utils';
+import { getMockedDataSource, messageEmits } from '../test_utils';
 import { ExtractionPipelinesResponse } from '../cdf/types';
-import { eventBusService } from '../appEventHandler';
 import { lastValueFrom } from 'rxjs';
 
-type Mock = jest.Mock;
 type QueryTargetLike = Partial<CogniteQuery>;
 
 jest.mock('@grafana/data');
-
-const appEvents = eventBusService;
 
 const { ExtractionPipelines } = Tab;
 const fetcher = { fetch: jest.fn() };
@@ -132,10 +128,10 @@ describe('extraction pipelines', () => {
           results = await lastValueFrom(ds.query(options));
         });
         it('emits error', () => {
-          expect(appEvents.emit).toHaveBeenCalledTimes(1);
+          expect(messageEmits()).toHaveLength(1);
         });
         it('error message', () => {
-          expect((appEvents.emit as Mock).mock.calls[0][1]).toEqual(noSelectedRunsError);
+          expect(messageEmits()[0][1]).toEqual(noSelectedRunsError);
         });
         it('empty tabledata', () => {
           expect(results.data[0].rows).toEqual([]);
@@ -167,7 +163,7 @@ describe('extraction pipelines', () => {
           runsList = extpipesWithRunsValues(extpipesRes);
         });
         it('dont emits error', () => {
-          expect(appEvents.emit).toHaveBeenCalledTimes(0);
+          expect(messageEmits()).toHaveLength(0);
         });
         it('columns', () => {
           expect(results.data[0].columns).toEqual(columns.map((text) => ({ text })));
@@ -203,7 +199,7 @@ describe('extraction pipelines', () => {
           runsList = extpipesWithRunsValues(extpipesByIdRes);
         });
         it('dont emits error', () => {
-          expect(appEvents.emit).toHaveBeenCalledTimes(0);
+          expect(messageEmits()).toHaveLength(0);
         });
         it('table data', () => {
           expect(results.data[0].rows).toEqual(runsList);
@@ -245,7 +241,7 @@ describe('extraction pipelines', () => {
             results = await lastValueFrom(ds.query(options));
         });
         it('dont emits error', () => {
-          expect(appEvents.emit).toHaveBeenCalledTimes(0);
+          expect(messageEmits()).toHaveLength(0);
         });
         it(`has results data length of ${extpipesRunsListRes.length}`, () => {
           expect(results.data.length).toEqual(3);

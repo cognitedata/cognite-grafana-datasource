@@ -21,6 +21,7 @@ import {
   runGraphqlQuery,
 } from "./cdf/graphqlVariables";
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
+import { clearQueryMessages } from "./appEventHandler";
 import { CogniteVariableSupport } from "./variableSupport";
 import {
   AssetsFilterRequestParams,
@@ -146,6 +147,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   query(
     options: DataQueryRequest<CogniteQuery>,
   ): Observable<DataQueryResponse> {
+    // Before any datasource runs, so the messages this run emits are the ones shown.
+    options.targets.forEach(({ refId }) => clearQueryMessages(refId));
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
