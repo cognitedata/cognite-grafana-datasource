@@ -137,9 +137,11 @@ export const VARIABLE_GRAPHQL_EXAMPLES: GraphqlExample[] = [
   getCogniteAssetById(instance: \${asset}) {
     items {
       children {
-        space
-        externalId
-        name
+        items {
+          space
+          externalId
+          name
+        }
       }
     }
   }

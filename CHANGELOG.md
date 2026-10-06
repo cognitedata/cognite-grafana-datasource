@@ -15,6 +15,13 @@ Data Source for Grafana**.
 - **GraphQL**: a new panel query opens on the core data model with a query that runs as-is — the first 10 time series. Saved queries keep their own model and query.
 - **GraphQL**: the panel tab now plots every row, or nested field, that the data model's schema says is a `CogniteTimeSeries` (or a type extending it) — selecting `space` and `externalId` is enough. Selecting `type` is no longer required; when it is selected, rows that are not `numeric` are skipped as before. Aliased fields (`ts: timeSeries { … }`) are recognised by their alias.
 - **GraphQL**: the panel tab has a **Label** field naming each series from the response, interpolating any selected field with `{{field}}` — `{{name}} @ {{space}}`, say. Its tooltip lists the fields the current query offers, and a series reached through a relation can also use fields of the row it hangs off. Left empty, series keep the name they had. A field the response does not carry renders as `:field`, matching the Time Series tab's labels.
+- **GraphQL variables can carry whole instances.** Select `space` and `externalId` on the same object in the query (the rows themselves, or one nested field), then choose the **Instance ID** value field; the variable then emits a JSON instance reference that can filter on a direct relation, single- or multi-valued.
+- **Instance references work inside GraphQL queries.** In both the panel tab and a variable's query, `${asset}` (or `$asset`, `[[asset]]`) is written as a GraphQL instance argument (`{space: "…", externalId: "…"}`, or a list for a multi-value variable, **All** included), and `${asset.space}` / `${asset.externalId}` give one part of it. Variables holding anything else interpolate exactly as before.
+- **The GraphQL panel tab and the GraphQL variable editor are now one editor.** Data model, version, query and response are laid out identically, explained by the same tooltips, and built from one shared component, so a fix to either reaches both. The dashboard-variable tab is renamed from **Data Modeling** to **GraphQL** to match.
+- **Dashboard variables**: a new GraphQL variable opens on the core data model with a query that runs as-is — the first 10 assets, since a variable is usually picking assets. Saved variables keep their own model and query.
+- **Dashboard variables**: an optional **Display text** field chooses which field the variable picker shows, independently of the value the variable carries. Left unset, the picker shows the value itself, so what the user sees is exactly what the variable emits.
+- **Dashboard variables**: each tab follows its feature toggle, as the panel tabs do: **Assets** is offered when asset-centric features are on, **GraphQL** when the GraphQL feature is on. A variable already saved on either tab keeps that tab even when the toggle is off, so existing dashboards stay editable, and saved variables keep resolving regardless of the toggles.
+- Variable queries now run through Grafana's current `CustomVariableSupport` API. Saved variables are unaffected.
 
 ### Bug fixes
 
@@ -24,6 +31,11 @@ Data Source for Grafana**.
 - **GraphQL**: a dashboard variable used in the panel tab's **Label** was never interpolated, unlike every other tab's label. Interpolation is skipped when no label is set, which every query starts out as.
 - **GraphQL**: a data model whose schema could not be introspected made the panel tab throw while building autocomplete. A failed introspection now simply leaves the editor without suggestions.
 - **GraphQL**: an edit the parser rejects is reported beside the editor, and **Test query** waits until it is fixed; previously the panel kept running the last valid query with no sign that the text on screen was not it.
+- **Dashboard variables**: opening the **GraphQL** tab on a variable saved as an assets query overwrote the asset expression with the GraphQL text, losing it. Each tab now keeps its own query, so switching between them — and saving from either — preserves both.
+- **Dashboard variables**: an incomplete edit no longer clears a working variable, and a refused save now says why instead of appearing to succeed.
+- **Dashboard variables**: reopening a saved GraphQL variable left the **Version** dropdown empty until the data model was picked again. Versions are now loaded for the saved model as the editor opens.
+- **Dashboard variables**: choosing a data model or a version is saved straight away, rather than only when some other field happened to lose focus.
+- **Dashboard variables**: the value-field list offered paths prefixed with the query's root field (`listCogniteAsset.name`), which never matched a result row and silently fell back to another field. It now offers the fields as they appear on a row (`name`, `instanceId.space`), and no longer offers pagination fields such as `hasNextPage`, which describe the page rather than a row.
 
 ## 4.5.2 - August 25th, 2026
 

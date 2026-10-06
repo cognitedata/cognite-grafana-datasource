@@ -607,6 +607,11 @@ export interface VariableQueryData {
     value: string;
   };
   queryType?: "assets" | "graphql";
+  /**
+   * The asset expression, parked here while the GraphQL tab owns `query`. Additive:
+   * a variable saved before this existed simply has no other tab to restore.
+   */
+  assetsQuery?: string;
   graphqlQuery?: string;
   dataModel?: {
     space?: string;
@@ -625,11 +630,14 @@ export interface AnnotationQueryData extends DataQuery {
   error?: string;
 }
 
+/**
+ * Props passed by `CustomVariableSupport`. `query` is a bare string for variables
+ * saved before the object model existed.
+ */
 export interface VariableQueryProps {
   query: string | VariableQueryData;
-  onChange: (query: VariableQueryData, description: string) => void;
-  datasource: any;
-  templateSrv: any;
+  onChange: (query: VariableQueryData) => void;
+  datasource: CogniteDatasource;
 }
 
 export interface QueryRequestError {
