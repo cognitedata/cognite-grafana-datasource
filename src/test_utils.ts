@@ -92,6 +92,37 @@ export const getDataSourceWithMocks = (fetcher: Fetcher, options?: any) => {
   return { ds, backendSrv: ds.backendSrv, templateSrv: ds.templateSrv };
 };
 
+/**
+ * The slice of a datasource the GraphQL editors touch, with every call answering
+ * an empty but well-formed response. Pass overrides for the call under test.
+ */
+export const graphqlDatasourceStub = (
+  overrides: {
+    flexibleDataModellingDatasource?: Record<string, jest.Mock>;
+    connector?: Record<string, unknown>;
+    runGraphqlQuery?: jest.Mock;
+  } = {},
+) =>
+  ({
+    connector: {
+      isLegacyDataModelFeaturesEnabled: () => true,
+      isFlexibleDataModellingEnabled: () => true,
+      ...overrides.connector,
+    },
+    flexibleDataModellingDatasource: {
+      listFlexibleDataModelling: jest
+        .fn()
+        .mockResolvedValue({ listGraphQlDmlVersions: { items: [] } }),
+      listVersionByExternalIdAndSpace: jest
+        .fn()
+        .mockResolvedValue({ graphQlDmlVersionsById: { items: [] } }),
+      runIntrospectionQuery: jest.fn().mockResolvedValue(undefined),
+      ...overrides.flexibleDataModellingDatasource,
+    },
+    runGraphqlQuery: overrides.runGraphqlQuery ?? jest.fn().mockResolvedValue({ data: {} }),
+    replaceVariable: (value: string) => value,
+  }) as unknown as CogniteDatasource;
+
 export function getMeta(id, aggregation, labels, type = "data") {
   return {
     labels,

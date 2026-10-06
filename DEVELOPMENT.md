@@ -41,7 +41,15 @@ Grafana's state (manually added datasources, dashboards saved in the UI, users, 
 docker compose down -v
 ```
 
-Note that the datasources provisioned from `provisioning/datasources/datasources.yml` are re-applied on every startup, so changes made to them in the UI are overwritten on the next launch. Also note the volume does not survive a Docker Desktop reinstall or factory reset — export any dashboard you cannot afford to lose, or add it to provisioning.
+The datasources provisioned from `provisioning/datasources/datasources.yml` are re-applied from the file on every startup, with the values from `.env` substituted in. Edits made to them in the UI only last until the next launch; everything else in the volume is left alone. After changing credentials, project or cluster in `.env`, recreate the container so it picks up the new environment:
+
+```
+yarn docker-recreate
+```
+
+(or `yarn server`, which rebuilds the backend first). There is no need to wipe the volume. The entries deliberately have no `version` field: with one, Grafana skips the file whenever the stored version is higher, and every UI save raises it, so the datasources silently keep their old values.
+
+Also note the volume does not survive a Docker Desktop reinstall or factory reset — export any dashboard you cannot afford to lose, or add it to provisioning.
 
 > ⚠️ The volume's `grafana.db` holds datasource credentials and session cookies. Never export, copy or attach it anywhere (and if you have a `./grafana-data/` folder left over from the earlier bind-mount setup, treat it the same way — it is gitignored, and safe to delete once migrated).
 

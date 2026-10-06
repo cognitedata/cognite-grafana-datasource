@@ -394,7 +394,7 @@ export function QueryEditor(props: EditorProps) {
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {activeTab === Tabs.FlexibleDataModelling && (
-          <FlexibleDataModellingTab {...{ onQueryChange, query, onRunQuery, datasource }} />
+          <FlexibleDataModellingTab {...{ onQueryChange, query, datasource }} />
         )}
         {activeTab === Tabs.CogniteTimeSeriesSearch && (
           <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />

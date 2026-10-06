@@ -418,7 +418,7 @@
           }
         }
       ],
-      "title": "Data Modeling - GraphQL CogniteTimeSeries",
+      "title": "GraphQL CogniteTimeSeries",
       "type": "timeseries"
     },
     {
