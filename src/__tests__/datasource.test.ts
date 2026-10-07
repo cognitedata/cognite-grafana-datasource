@@ -720,7 +720,7 @@ describe('Datasource Query', () => {
     const REF_2 = '{"space":"paper_mill","externalId":"ASSET_BL_AREA"}';
 
     const interpolate = (filters: any[]) =>
-      (ds as any).replaceVariablesInRecordsQuery(
+      (ds as any).interpolateRecordsQuery(
         { filters, sort: [], columns: [] },
         {}
       ).filters;

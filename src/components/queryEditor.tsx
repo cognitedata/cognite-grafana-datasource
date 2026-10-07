@@ -26,6 +26,7 @@ import {
   EditorProps,
   SelectedProps,
   OnQueryChange,
+  RecordsQuery,
 } from '../types';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
@@ -430,6 +431,8 @@ export function QueryEditor(props: EditorProps) {
               query,
               connector: datasource.connector,
               range: props.range,
+              interpolate: (recordsQuery: RecordsQuery) =>
+                datasource.interpolateRecordsQuery(recordsQuery, props.data?.request?.scopedVars),
             }}
           />
         )}

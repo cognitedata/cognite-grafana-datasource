@@ -7,9 +7,8 @@ import { RecordViewDefinition } from '../types/records';
 
 jest.mock('@grafana/ui', () => ({
   ...jest.requireActual('@grafana/ui'),
-  // Monaco does not resolve under jest, and the request preview is not what these
-  // tests are about.
-  CodeEditor: () => <div data-testid="code-editor" />,
+  // Monaco does not resolve under jest; the stand-in shows the text it is given.
+  CodeEditor: ({ value }: { value: string }) => <pre data-testid="code-editor">{value}</pre>,
 }));
 
 /** Two views exposing the same property name with different types and containers. */
@@ -154,5 +153,33 @@ describe('RecordsTab view switching', () => {
     const { recordsQuery } = onQueryChange.mock.calls[0][0];
     expect(recordsQuery.filters).toEqual([]);
     expect(recordsQuery.columns).toEqual([]);
+  });
+});
+
+describe('RecordsTab request preview', () => {
+  it('shows the body sent to CDF, with dashboard variables filled in', async () => {
+    const recordsQuery: RecordsQuery = {
+      ...defaultRecordsQuery,
+      view: selectedAlarms,
+      filters: [{ property: 'severity', propertyType: 'enum', operator: 'equals', value: '$level' }],
+    };
+    // Stands in for the datasource's interpolation
+    const interpolate = (query: RecordsQuery): RecordsQuery => ({
+      ...query,
+      filters: query.filters.map((row) => ({ ...row, value: row.value === '$level' ? 'HIGH' : row.value })),
+    });
+    render(
+      <RecordsTab
+        query={{ refId: 'A', tab: Tab.Records, recordsQuery } as unknown as CogniteQuery}
+        onQueryChange={jest.fn()}
+        connector={makeConnector()}
+        interpolate={interpolate}
+      />
+    );
+    fireEvent.click(await screen.findByTestId('records-open-request-preview'));
+    const body = JSON.parse((await screen.findByTestId('code-editor')).textContent ?? '{}');
+    expect(body.filter).toEqual({
+      equals: { property: ['alarm_schema', 'AlarmEvent/v1', 'severity'], value: 'HIGH' },
+    });
   });
 });

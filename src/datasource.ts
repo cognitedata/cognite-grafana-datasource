@@ -426,7 +426,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     const templatedRecordsQuery =
       target.tab === Tab.Records && target.recordsQuery
         ? {
-          recordsQuery: this.replaceVariablesInRecordsQuery(
+          recordsQuery: this.interpolateRecordsQuery(
             target.recordsQuery,
             scopedVars,
           ),
@@ -451,10 +451,11 @@ export default class CogniteDatasource extends DataSourceWithBackend<
    * Filter values accept dashboard variables. Multi-value variables are expanded with
    * the csv format so a single `$var` can fill an "is any of" row with every selected
    * value.
+   * Public: the editor's request preview calls it, so the preview shows the values sent.
    */
-  private replaceVariablesInRecordsQuery(
+  interpolateRecordsQuery(
     recordsQuery: RecordsQuery,
-    scopedVars: ScopedVars,
+    scopedVars: ScopedVars = {},
   ): RecordsQuery {
     const replace = (value?: string) =>
       value === undefined ? value : this.replaceVariable(value, scopedVars);

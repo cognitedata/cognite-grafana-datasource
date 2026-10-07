@@ -16,7 +16,7 @@ import {
   RecordsSortRow,
   Tuple,
 } from '../types';
-import { INSTANCE_REF_HINT, isVariableToken, parseInstanceRef } from './instanceRef';
+import { INSTANCE_REF_HINT, parseInstanceRef } from './instanceRef';
 import {
   RecordsFilterDefinition,
   RecordsFilterRequest,
@@ -162,17 +162,8 @@ export function operatorsForType(
  * malformed reference with 200 and zero rows, so failing loudly here is the only way
  * the user learns why the panel is empty.
  */
-function coerceValue(
-  raw: string,
-  type?: string,
-  property?: string,
-  keepVariables = false
-): unknown {
+function coerceValue(raw: string, type?: string, property?: string): unknown {
   const value = raw.trim();
-  // The request preview runs before interpolation, so a variable is shown as typed.
-  if (keepVariables && isVariableToken(value)) {
-    return value;
-  }
   if (isNumericType(type)) {
     const n = Number(value);
     return Number.isFinite(n) ? n : value;
@@ -209,10 +200,9 @@ const hasText = (v?: string) => typeof v === 'string' && v.trim() !== '';
 /** Builds a single filter leaf, or null when the row is incomplete. */
 export function buildFilterLeaf(
   row: RecordsFilterRow,
-  view: { space: string; externalId: string; version: string },
-  keepVariables = false
+  view: { space: string; externalId: string; version: string }
 ): RecordsFilterDefinition | null {
-  const leaf = buildPositiveLeaf(row, view, keepVariables);
+  const leaf = buildPositiveLeaf(row, view);
   if (!leaf) {
     return null;
   }
@@ -223,8 +213,7 @@ export function buildFilterLeaf(
 
 function buildPositiveLeaf(
   row: RecordsFilterRow,
-  view: { space: string; externalId: string; version: string },
-  keepVariables: boolean
+  view: { space: string; externalId: string; version: string }
 ): RecordsFilterDefinition | null {
   if (!row?.property) {
     return null;
@@ -237,7 +226,7 @@ function buildPositiveLeaf(
       return { exists: { property } };
     case 'equals':
       return hasText(row.value)
-        ? { equals: { property, value: coerceValue(row.value!, type, row.property, keepVariables) } }
+        ? { equals: { property, value: coerceValue(row.value!, type, row.property) } }
         : null;
     case 'prefix':
       return hasText(row.value) ? { prefix: { property, value: row.value!.trim() } } : null;
@@ -246,7 +235,7 @@ function buildPositiveLeaf(
     case 'containsAny': {
       const values = (row.values ?? [])
         .filter(hasText)
-        .map((v) => coerceValue(v, type, row.property, keepVariables));
+        .map((v) => coerceValue(v, type, row.property));
       if (!values.length) {
         return null;
       }
@@ -260,7 +249,7 @@ function buildPositiveLeaf(
       const bounds: Record<string, unknown> = {};
       (['gte', 'lte'] as const).forEach((key) => {
         if (hasText(row[key])) {
-          bounds[key] = coerceValue(row[key]!, type, row.property, keepVariables);
+          bounds[key] = coerceValue(row[key]!, type, row.property);
         }
       });
       return Object.keys(bounds).length ? { range: { property, ...bounds } } : null;
@@ -271,15 +260,14 @@ function buildPositiveLeaf(
 }
 
 export function buildFilter(
-  query: RecordsQuery,
-  options: RecordsBuildOptions = {}
+  query: RecordsQuery
 ): RecordsFilterDefinition | undefined {
   const { view, filters } = query;
   if (!view) {
     return undefined;
   }
   const leaves = (filters ?? [])
-    .map((row) => buildFilterLeaf(row, view, options.keepVariables))
+    .map((row) => buildFilterLeaf(row, view))
     .filter((leaf): leaf is RecordsFilterDefinition => leaf !== null);
 
   if (!leaves.length) {
@@ -339,12 +327,6 @@ export function buildSort(
 }
 
 export interface RecordsBuildOptions {
-  /**
-   * Leave dashboard variables as typed instead of coercing them. Only the request
-   * preview sets it: it runs before interpolation, where coercing `$asset` as an
-   * instance reference would fail. A real query is interpolated first.
-   */
-  keepVariables?: boolean;
   /** The selected view's stream limit, which the time range must stay within. */
   maxFilteringIntervalMs?: number;
   /** CDF project, so the preview shows the real URL rather than a placeholder. */
@@ -367,10 +349,66 @@ export function resolveTimeWindow(
   return { gte: range[0], lte: range[1] };
 }
 
+// ---------------------------------------------------------------------------
+// Stream rules -- shared by the datasource and the request preview, so the preview
+// is the request that is sent
+// ---------------------------------------------------------------------------
+
+const IMMUTABLE_TIME_RANGE_WARNING =
+  `This stream is immutable, so the CDF requires a time range. ` +
+  `The dashboard time range was applied to lastUpdatedTime.`;
+
+/** Build options a stream implies: its filtering limit. */
+export const streamBuildOptions = (
+  stream: StreamDefinition | null,
+  options: RecordsBuildOptions = {}
+): RecordsBuildOptions => ({
+  ...options,
+  maxFilteringIntervalMs:
+    parseIsoDurationMs(stream?.settings?.limits?.maxFilteringInterval) ??
+    options.maxFilteringIntervalMs,
+});
+
+/**
+ * The query the datasource actually runs on a stream. Stream metadata is advisory:
+ * without it the query runs as configured.
+ */
+export function applyStreamConstraints(
+  query: RecordsQuery,
+  stream: StreamDefinition | null,
+  range: Tuple<number>,
+  options: RecordsBuildOptions
+): { query: RecordsQuery; warnings: string[] } {
+  const warnings: string[] = [];
+  if (!stream) {
+    return { query, warnings };
+  }
+
+  let effective = query;
+  const immutable = stream.type === 'Immutable';
+  if (immutable && query.timeFilterMode === 'none') {
+    warnings.push(IMMUTABLE_TIME_RANGE_WARNING);
+    effective = { ...query, timeFilterMode: 'dashboard' };
+  }
+
+  if (effective.timeFilterMode !== 'none') {
+    const maxInterval = options.maxFilteringIntervalMs ?? null;
+    const span = range[1] - range[0];
+    if (maxInterval && span > maxInterval) {
+      const days = (ms: number) => Math.round(ms / (24 * 60 * 60 * 1000));
+      warnings.push(
+        `The dashboard time range spans ${days(span)} days, but stream "${stream.externalId}" ` +
+          `accepts at most ${days(maxInterval)} days per request. Shorten the time range.`
+      );
+    }
+  }
+
+  return { query: effective, warnings };
+}
+
 export function buildRecordsFilterRequest(
   query: RecordsQuery,
-  range: Tuple<number> | null,
-  options: RecordsBuildOptions = {}
+  range: Tuple<number> | null
 ): RecordsFilterRequest {
   const { view } = query;
   if (!view) {
@@ -383,7 +421,7 @@ export function buildRecordsFilterRequest(
   const lastUpdatedTime = resolveTimeWindow(query, range);
   // Built once each: `buildFilter` can throw on a malformed value, and calling it
   // twice ran that failure path twice.
-  const filter = buildFilter(query, options);
+  const filter = buildFilter(query);
   const sort = buildSort(query.sort);
 
   return {
@@ -407,8 +445,9 @@ export function buildRecordsFilterRequest(
 }
 
 /**
- * The request as configured, rendered for the editor's read-only
- * preview. Kept here rather than in the component so it can be tested directly.
+ * The request the datasource sends for a query, rendered for the editor's read-only
+ * preview so it can be copied and replayed as is. The query must arrive interpolated,
+ * as the datasource interpolates it. Kept here so it can be tested directly.
  */
 export interface RecordsRequestPreviewParts {
   /** e.g. "POST /api/v1/projects/my-project/streams/my-stream/records/filter" */
@@ -422,7 +461,8 @@ export interface RecordsRequestPreviewParts {
 export function buildRequestPreviewParts(
   query: RecordsQuery,
   range: Tuple<number> | null,
-  options: RecordsBuildOptions = {}
+  options: RecordsBuildOptions = {},
+  stream: StreamDefinition | null = null
 ): RecordsRequestPreviewParts | null {
   const { view } = query;
   if (!view?.streamId) {
@@ -430,8 +470,12 @@ export function buildRequestPreviewParts(
   }
   const project = options.project?.trim() || '{project}';
   const path = `POST /api/v1/projects/${project}/streams/${view.streamId}/records/filter`;
+  // The datasource's own steps, in its order: the query arrives interpolated, the
+  // stream's options and rules apply, then the same builder runs.
+  const buildOptions = streamBuildOptions(stream, options);
+  const effective = range ? applyStreamConstraints(query, stream, range, buildOptions).query : query;
   try {
-    const body = buildRecordsFilterRequest(query, range, { ...options, keepVariables: true });
+    const body = buildRecordsFilterRequest(effective, range);
     return { path, body: JSON.stringify(body, null, 2) };
   } catch (error) {
     return { path, body: '', error: String(error) };

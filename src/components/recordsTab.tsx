@@ -30,6 +30,11 @@ import { RequestPreview } from './records/RequestPreview';
 interface RecordsTabProps extends SelectedProps {
   connector: Connector;
   range?: TimeRange;
+  /**
+   * Fills in dashboard variables as the datasource does, so the request preview is
+   * the body sent to CDF.
+   */
+  interpolate?: (query: RecordsQuery) => RecordsQuery;
 }
 
 export const RecordsTab: React.FC<RecordsTabProps> = ({
@@ -37,6 +42,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   onQueryChange,
   connector,
   range,
+  interpolate = (recordsQuery) => recordsQuery,
 }) => {
   // `defaults()` in the query editor merges only the top level, so a dashboard
   // saved with a partial recordsQuery would otherwise reach the lists as undefined.
@@ -192,8 +198,13 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
 
   const previewParts = useMemo(
     () =>
-      buildRequestPreviewParts(recordsQuery, timeRange, { project: connector.projectName }),
-    [recordsQuery, timeRange, connector]
+      buildRequestPreviewParts(
+        interpolate(recordsQuery),
+        timeRange,
+        { project: connector.projectName },
+        stream
+      ),
+    [recordsQuery, timeRange, connector, stream, interpolate]
   );
 
   // Top-level record properties are selectable here even though they never reach
