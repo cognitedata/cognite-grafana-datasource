@@ -252,6 +252,12 @@ export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
   sort: [{ property: 'startTime', order: 'asc' }],
 };
 
+// Records query-model types live in ./types/recordsQuery and are re-exported
+// here, so every existing `from "./types"` import keeps working.
+import { RecordsQuery } from "./types/recordsQuery";
+
+export * from "./types/recordsQuery";
+
 export const defaultQuery: Partial<CogniteQuery> = {
   target: "",
   latestValue: false,
@@ -404,6 +410,7 @@ export interface CogniteQueryBase extends DataQuery {
   extractionPipelinesQuery: ExtractionPipelinesQuery;
   flexibleDataModellingQuery: FlexibleDataModellingQuery;
   cogniteTimeSeries: CogniteTimeSeries;
+  recordsQuery: RecordsQuery;
   cogniteActivityQuery: CogniteActivityQuery;
   cogniteActivityTabQuery: CogniteActivityTabQuery;
 }

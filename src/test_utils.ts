@@ -2,6 +2,7 @@ import ms from "ms";
 import { DataSourceInstanceSettings } from "@grafana/data";
 import _ from "lodash";
 import CogniteDatasource from "./datasource";
+import { eventBusService } from "./appEventHandler";
 import {
   CDFDataQueryRequest,
   CogniteDataSourceOptions,
@@ -133,3 +134,13 @@ export function getMeta(id, aggregation, labels, type = "data") {
     type,
   };
 }
+
+/**
+ * The messages a test emitted on the event bus, minus the empty ones `query()` sends
+ * to clear each row before it runs. Suites that use it automock `@grafana/data`, so
+ * `emit` is a jest mock.
+ */
+export const messageEmits = (): any[][] =>
+  (eventBusService.emit as jest.Mock).mock.calls.filter(
+    ([, payload]) => payload?.error !== '' && payload?.warning !== ''
+  );

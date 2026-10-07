@@ -9,7 +9,7 @@ datasources:
     uid: 42
     type: 'cognitedata-datasource'
     access: proxy
-    isDefault: false
+    isDefault: true
     orgId: 1
     editable: true
     jsonData:

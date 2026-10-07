@@ -13,6 +13,15 @@ export function handleError(error: any, refId: string) {
   const errMessage = stringifyError(error);
   emitEvent(failedResponseEvent, { refId, error: errMessage });
 }
+/**
+ * Clears a query row's error and warning when that query is issued again, so a
+ * message only ever describes the latest run. The editor shows whatever it last
+ * received for a refId, and an empty message clears it.
+ */
+export function clearQueryMessages(refId: string) {
+  emitEvent(failedResponseEvent, { refId, error: '' });
+  emitEvent(responseWarningEvent, { refId, warning: '' });
+}
 export function handleWarning(warningMessage: string, refId: string) {
   emitEvent(responseWarningEvent, { refId, warning: warningMessage });
 }
