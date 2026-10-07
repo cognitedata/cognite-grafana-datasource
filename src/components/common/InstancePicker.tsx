@@ -113,6 +113,8 @@ interface InstancePickerProps {
   /** Extra server-side scoping, e.g. `{ inSpace }`. */
   filter?: DMSFilter;
   limit?: number;
+  /** Lets the user type a raw reference or a `$variable`. */
+  allowCustomValue?: boolean;
   /** Optional trailing badge, e.g. a time series' value type. */
   badgeOf?: (props: Record<string, any>) => { text: string; color: BadgeColor } | undefined;
   /** Notified with the failure message, and with null once a later search succeeds. */
@@ -136,6 +138,7 @@ export const InstancePicker = ({
   onChange,
   filter,
   limit = MAX_LIMIT,
+  allowCustomValue,
   badgeOf,
   onError,
   placeholder = 'Search instances',
@@ -240,6 +243,7 @@ export const InstancePicker = ({
     inputId,
     noOptionsMessage,
     disabled,
+    allowCustomValue,
     formatOptionLabel,
   };
 

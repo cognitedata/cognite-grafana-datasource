@@ -54,6 +54,7 @@ const oAuthScopeTooltip =
 const CORE_DEPENDENT_KEYS: FeatureKey[] = [
   "enableCogniteTimeSeries",
   "enableCogniteActivities",
+  "enableRecords",
   "enableFlexibleDataModelling",
 ];
 const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
@@ -97,6 +98,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableLegacyDataModelFeatures,
     enableCogniteTimeSeries,
     enableCogniteActivities,
+    enableRecords,
     enableTimeseriesSearch,
     enableTimeseriesFromAsset,
     enableTimeseriesCustomQuery,
@@ -355,6 +357,14 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     label="Activities"
                     value={enableCogniteActivities}
                     onChange={onJsonBoolValueChange("enableCogniteActivities")}
+                  />
+                  <FeatureToggleRow
+                    id="enable-records"
+                    feature="enableRecords"
+                    label="Records"
+                    value={enableRecords}
+                    onChange={onJsonBoolValueChange("enableRecords")}
+                    badge={<Badge text="Beta" color="blue" />}
                   />
                   <FeatureToggleRow
                     id="enable-flexible-data-modelling"

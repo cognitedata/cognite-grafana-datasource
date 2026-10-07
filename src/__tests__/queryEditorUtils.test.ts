@@ -1,6 +1,25 @@
-import { Tab as Tabs } from '../types';
+import { Tab as Tabs, TabTitles } from '../types';
 import { getMockedDataSource } from '../test_utils';
 import { isTabDisabled, isTabHidden, getFirstAvailableTab, getActiveTab } from '../queryEditorUtils';
+import { TAB_SUFFIX_TEXT } from '../components/queryEditor';
+
+describe('Tab titles', () => {
+  // The tab bar skips title-less tabs, otherwise they render as nameless, clickable
+  // tabs. DataModellingV2 is routed to the Go backend and is deliberately hidden;
+  // any new tab added without a title would silently join it.
+  it('only DataModellingV2 is intentionally without a title', () => {
+    const untitled = Object.values(Tabs).filter((tab) => !TabTitles[tab]);
+    expect(untitled).toEqual([Tabs.DataModellingV2]);
+  });
+
+  it('gives every user-facing tab a non-empty label', () => {
+    Object.values(Tabs)
+      .filter((tab) => tab !== Tabs.DataModellingV2)
+      .forEach((tab) => {
+        expect(TabTitles[tab]).toBeTruthy();
+      });
+  });
+});
 
 describe('QueryEditor Utility Functions', () => {
   let mockDataSource: any;
@@ -36,6 +55,15 @@ describe('QueryEditor Utility Functions', () => {
       expect(isTabDisabled(Tabs.CogniteTimeSeriesSearch, mockDataSource)).toBe(false);
       expect(isTabDisabled(Tabs.CogniteActivity, mockDataSource)).toBe(false);
       expect(isTabDisabled(Tabs.FlexibleDataModelling, mockDataSource)).toBe(false);
+    });
+
+    it('should gate the Records tab on isRecordsEnabled', () => {
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      expect(isTabDisabled(Tabs.Records, mockDataSource)).toBe(true);
+
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(true);
+      expect(isTabDisabled(Tabs.Records, mockDataSource)).toBe(false);
+      expect(mockDataSource.connector.isRecordsEnabled).toHaveBeenCalled();
     });
 
     it('should gate Activities tab on enableCogniteActivities independent of Time Series', () => {
@@ -128,6 +156,7 @@ describe('QueryEditor Utility Functions', () => {
       // Ensure other tabs are also properly mocked
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -156,6 +185,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -175,6 +205,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);
       // Disable remaining tabs
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -210,6 +241,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesFromAssetEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -229,6 +261,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);
       // Disable remaining tabs to ensure Events is the first available
+      mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -238,5 +271,17 @@ describe('QueryEditor Utility Functions', () => {
       const result = getActiveTab(Tabs.Timeseries, mockDataSource);
       expect(result).toBe(Tabs.Event); // First available tab
     });
+  });
+});
+
+describe('tab chips', () => {
+  it('marks Records as Beta and the deprecated tabs as Preview', () => {
+    // The chip lives in the tab's `suffix`, never in TabTitles: the e2e specs match
+    // the tab by its exact label text.
+    expect(TabTitles[Tabs.Records]).toBe('Records');
+    expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Beta');
+    expect(TAB_SUFFIX_TEXT[Tabs.Templates]).toBe('Preview');
+    expect(TAB_SUFFIX_TEXT[Tabs.ExtractionPipelines]).toBe('Preview');
+    expect(TAB_SUFFIX_TEXT[Tabs.CogniteTimeSeriesSearch]).toBeUndefined();
   });
 });

@@ -22,6 +22,7 @@ Data Source for Grafana**.
 - **Dashboard variables**: an optional **Display text** field chooses which field the variable picker shows, independently of the value the variable carries. Left unset, the picker shows the value itself, so what the user sees is exactly what the variable emits.
 - **Dashboard variables**: each tab follows its feature toggle, as the panel tabs do: **Assets** is offered when asset-centric features are on, **GraphQL** when the GraphQL feature is on. A variable already saved on either tab keeps that tab even when the toggle is off, so existing dashboards stay editable, and saved variables keep resolving regardless of the toggles.
 - Variable queries now run through Grafana's current `CustomVariableSupport` API. Saved variables are unaffected.
+- **Records (Beta)**: a new query tab for reading records from streams, enabled by default alongside the other Core Data Model features and marked Beta. Pick a record view and its records come back as rows, with selectable columns, sorting and a result limit. Filters cover every property of the view: a direct relation gets a searchable instance picker when its view names a target, and filter values accept dashboard variables, including a variable holding instance references. Records are read from the dashboard time range, or from the whole stream when the time window is **None** (not offered on immutable streams, which require one). **Request preview** shows the request as configured, before variable interpolation.
 
 ### Bug fixes
 
@@ -37,6 +38,7 @@ Data Source for Grafana**.
 - **Dashboard variables**: choosing a data model or a version is saved straight away, rather than only when some other field happened to lose focus.
 - **Dashboard variables**: the value-field list offered paths prefixed with the query's root field (`listCogniteAsset.name`), which never matched a result row and silently fell back to another field. It now offers the fields as they appear on a row (`name`, `instanceId.space`), and no longer offers pagination fields such as `hasNextPage`, which describe the page rather than a row.
 - An error or warning shown under a query now clears when the query runs again, so it always describes the latest run. Before, it stayed on screen until the query was edited, even after a time range change had fixed the cause.
+- The query editor's tab bar no longer ends in an extra, unnamed tab with nothing behind it.
 
 ## 4.5.2 - August 25th, 2026
 

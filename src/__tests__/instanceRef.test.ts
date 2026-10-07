@@ -1,4 +1,10 @@
-import { encodeInstanceRef, parseInstanceRef, readInstanceRef } from '../cdf/instanceRef';
+import {
+  encodeInstanceRef,
+  isVariableToken,
+  parseInstanceRef,
+  readInstanceRef,
+  splitTopLevel,
+} from '../cdf/instanceRef';
 
 describe('encodeInstanceRef', () => {
   it('emits only the two fields the API accepts', () => {
@@ -85,5 +91,56 @@ describe('readInstanceRef', () => {
   it('never takes one element of a list for the whole', () => {
     expect(readInstanceRef({ assets: [{ space: 's', externalId: 'a' }] })).toBeNull();
     expect(readInstanceRef([{ space: 's', externalId: 'a' }] as any)).toBeNull();
+  });
+});
+
+describe('isVariableToken', () => {
+  it('recognises every syntax Grafana accepts', () => {
+    expect(isVariableToken('$asset')).toBe(true);
+    expect(isVariableToken('${asset}')).toBe(true);
+    expect(isVariableToken('[[asset]]')).toBe(true);
+    expect(isVariableToken('  $asset  ')).toBe(true);
+  });
+
+  it('does not mistake a reference or plain text for a variable', () => {
+    expect(isVariableToken('{"space":"s","externalId":"e"}')).toBe(false);
+    expect(isVariableToken('asset')).toBe(false);
+    expect(isVariableToken('')).toBe(false);
+  });
+});
+
+describe('splitTopLevel', () => {
+  it('behaves like split(",") when there is no structure', () => {
+    expect(splitTopLevel('a,b,c')).toEqual(['a', 'b', 'c']);
+    expect(splitTopLevel('a')).toEqual(['a']);
+    expect(splitTopLevel('')).toEqual([]);
+  });
+
+  it('trims and drops empties, as the old splitter did', () => {
+    expect(splitTopLevel(' a , b ,, c ')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('keeps each instance reference whole', () => {
+    // A plain split(',') tears these in half
+    expect(
+      splitTopLevel('{"space":"s","externalId":"a"},{"space":"s","externalId":"b"}')
+    ).toEqual(['{"space":"s","externalId":"a"}', '{"space":"s","externalId":"b"}']);
+  });
+
+  it('ignores commas inside quoted strings', () => {
+    expect(splitTopLevel('{"space":"s","externalId":"a,b"}')).toEqual([
+      '{"space":"s","externalId":"a,b"}',
+    ]);
+  });
+
+  it('handles escaped quotes and nested arrays', () => {
+    expect(splitTopLevel('{"a":"x\\",y"},{"b":[1,2]}')).toEqual([
+      '{"a":"x\\",y"}',
+      '{"b":[1,2]}',
+    ]);
+  });
+
+  it('does not run away on unbalanced input', () => {
+    expect(splitTopLevel('},a')).toEqual(['}', 'a']);
   });
 });
