@@ -86,6 +86,12 @@ describe('RecordsTab', () => {
     expect(html).toContain('Filters');
   });
 
+  it('hides unit conversion for a view with no unit-bearing properties', () => {
+    // The stub view declares no units, so the section must not appear at all
+    const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
+    expect(html).not.toContain('Storage units');
+  });
+
   it('offers the request preview as a modal trigger, not an inline panel', () => {
     const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
     expect(html).toContain('Request preview');
