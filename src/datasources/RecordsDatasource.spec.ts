@@ -17,10 +17,13 @@ const view = {
 
 const baseQuery = (overrides: Partial<RecordsQuery> = {}): RecordsQuery => ({
   view,
+  mode: 'list',
   filters: [],
   sort: [],
   limit: 1000,
   columns: [],
+  buckets: [],
+  metrics: [],
   timeFilterMode: 'dashboard',
   ...overrides,
 });
@@ -165,7 +168,9 @@ describe('RecordsDatasource', () => {
         : Promise.reject(apiError)
     );
     const ds = new RecordsDatasource({ fetchData } as unknown as Connector);
-    const result = await ds.query(options(baseQuery()));
+    const result = await ds.query(
+      options(baseQuery({ mode: 'aggregate', metrics: [{ name: 'c', function: 'count' }] }))
+    );
 
     expect(result.data).toEqual([]);
     expect(result.errors).toEqual([{ refId: 'A', message: 'Size is too large' }]);
@@ -199,7 +204,7 @@ describe('RecordsDatasource', () => {
       { items: [] }
     );
     // Only the fields an older dashboard might carry
-    const partial = { view } as unknown as RecordsQuery;
+    const partial = { view, mode: 'list' } as unknown as RecordsQuery;
     const result = await new RecordsDatasource(connector).query(options(partial));
 
     expect(result.data).toHaveLength(1);
@@ -220,4 +225,19 @@ describe('RecordsDatasource', () => {
     expect(post.headers?.['cdf-version']).toBeUndefined();
   });
 
+  it('routes aggregate mode to the aggregate endpoint', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'alarms_live', type: 'Mutable' },
+      { aggregates: { count: { count: 42 } } }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(
+      options(
+        baseQuery({ mode: 'aggregate', metrics: [{ name: 'count', function: 'count' }] })
+      )
+    );
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.path).toBe('/streams/alarms_live/records/aggregate');
+  });
 });

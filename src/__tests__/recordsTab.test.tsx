@@ -34,15 +34,32 @@ describe('RecordsTab', () => {
   it('renders with no view selected', () => {
     const html = renderTab(defaultRecordsQuery);
     expect(html).toContain('Record view');
+    expect(html).toContain('Query type');
     // Nothing to preview until a stream is known
     expect(html).not.toContain('records-request-preview');
   });
 
-  it('renders the list controls once a view is selected', () => {
-    const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
+  it('renders list mode controls once a view is selected', () => {
+    const html = renderTab({ ...defaultRecordsQuery, view: selectedView, mode: 'list' });
     expect(html).toContain('Columns');
     expect(html).toContain('Sort by');
     expect(html).toContain('Limit');
+    expect(html).not.toContain('Group by');
+    expect(html).not.toContain('Compute');
+  });
+
+  it('renders aggregate mode controls instead of list controls', () => {
+    const html = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      buckets: [{ kind: 'timeHistogram', property: 'timestamp', interval: '1h' }],
+      metrics: [{ name: 'alarmCount', function: 'count' }],
+    });
+    expect(html).toContain('Group by');
+    expect(html).toContain('Compute');
+    expect(html).not.toContain('Columns');
+    expect(html).not.toContain('Sort by');
   });
 
   it('renders every filter row shape without crashing', () => {
@@ -78,8 +95,69 @@ describe('RecordsTab', () => {
   });
 
   it('labels the empty sort state with an explicit action', () => {
-    const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
+    const html = renderTab({ ...defaultRecordsQuery, view: selectedView, mode: 'list' });
     expect(html).toContain('Add sort');
   });
 
+  it('renders bucket reorder buttons and API-primitive gutter hints', () => {
+    const html = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      buckets: [
+        { kind: 'timeHistogram', property: 'timestamp', interval: '1h' },
+        { kind: 'uniqueValues', property: 'severity', size: 10 },
+      ],
+      metrics: [{ name: 'alarmCount', function: 'avg', property: 'value' }],
+    });
+    expect(html).toContain('Move bucket 1 up');
+    expect(html).toContain('Move bucket 2 down');
+    expect(html).toContain('records-bucket-hint-0');
+    expect(html).toContain('timeHistogram');
+    expect(html).toContain('uniqueValues');
+    // Metric gutter hint names the aggregate primitive
+    expect(html).toContain('records-metric-hint-0');
+  });
+
+  it('names the derived result shape in aggregate mode', () => {
+    const timeseries = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      buckets: [
+        { kind: 'timeHistogram', property: 'timestamp', interval: '1h' },
+        { kind: 'uniqueValues', property: 'severity', size: 10 },
+      ],
+      metrics: [{ name: 'count', function: 'count' }],
+    });
+    expect(timeseries).toContain('Time series · one series per severity');
+
+    const table = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      buckets: [{ kind: 'uniqueValues', property: 'severity', size: 10 }],
+      metrics: [{ name: 'count', function: 'count' }],
+    });
+    expect(table).toContain('Table · grouped by severity');
+
+    const single = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      buckets: [],
+      metrics: [{ name: 'count', function: 'count' }],
+    });
+    expect(single).toContain('Single row');
+  });
+
+  it('shows a validation error for a reserved metric name', () => {
+    const html = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      mode: 'aggregate',
+      metrics: [{ name: '_count', function: 'count' }],
+    });
+    expect(html).toContain('reserved by the API');
+  });
 });

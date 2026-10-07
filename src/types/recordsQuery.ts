@@ -6,6 +6,8 @@
  */
 import { RECORDS_PAGE_LIMIT } from "../constants";
 
+export type RecordsQueryMode = "list" | "aggregate";
+
 export type RecordsFilterOperator =
   | "equals"
   | "in"
@@ -53,6 +55,29 @@ export interface RecordsSortRow {
   containerPropertyIdentifier?: string;
 }
 
+export interface RecordsTimeBucket {
+  kind: "timeHistogram";
+  property: string;
+  interval: string;
+}
+
+export interface RecordsValuesBucket {
+  kind: "uniqueValues";
+  property: string;
+  size: number;
+}
+
+export type RecordsBucket = RecordsTimeBucket | RecordsValuesBucket;
+
+export type RecordsMetricFunction = "count" | "avg" | "min" | "max" | "sum";
+
+export interface RecordsMetric {
+  /** Aggregate identifier in the request and the column name in the frame */
+  name: string;
+  function: RecordsMetricFunction;
+  property?: string;
+}
+
 /**
  * How the lastUpdatedTime window is chosen. Immutable streams always need one
  */
@@ -60,19 +85,26 @@ export type RecordsTimeFilterMode = "dashboard" | "none";
 
 export interface RecordsQuery {
   view?: RecordsViewRef;
+  mode: RecordsQueryMode;
   /** Flat rows, combined with AND */
   filters: RecordsFilterRow[];
   sort: RecordsSortRow[];
   limit: number;
   /** Empty means all view properties */
   columns: string[];
+  /** Ordered outermost first; order is the nesting order in the aggregate tree */
+  buckets: RecordsBucket[];
+  metrics: RecordsMetric[];
   timeFilterMode: RecordsTimeFilterMode;
 }
 
 export const defaultRecordsQuery: RecordsQuery = {
+  mode: "list",
   filters: [],
   sort: [],
   limit: RECORDS_PAGE_LIMIT,
   columns: [],
+  buckets: [],
+  metrics: [{ name: "count", function: "count" }],
   timeFilterMode: "dashboard",
 };

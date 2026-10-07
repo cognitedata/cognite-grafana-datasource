@@ -7,15 +7,19 @@ import {
   Tuple,
 } from '../types';
 import {
+  RecordsAggregateResponse,
   RecordsFilterResponse,
   StreamDefinition,
 } from '../types/records';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
 import {
+  buildRecordsAggregateRequest,
   buildRecordsFilterRequest,
   fetchStream,
   unmappedSortRows,
+  RecordsBuildOptions,
+  recordsAggregateToDataFrames,
   recordsToDataFrame,
   applyStreamConstraints,
   streamBuildOptions,
@@ -53,7 +57,9 @@ export class RecordsDatasource {
   async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
     const range = getRange(options.range);
     const results = await Promise.all(
-      options.targets.map((target) => this.handleTarget(target, range))
+      options.targets.map((target) =>
+        this.handleTarget(target, range, options.maxDataPoints)
+      )
     );
     const data = results.flatMap((result) => result.frames);
     const errors = results
@@ -65,7 +71,8 @@ export class RecordsDatasource {
 
   private async handleTarget(
     target: CogniteQuery,
-    range: Tuple<number>
+    range: Tuple<number>,
+    maxDataPoints?: number
   ): Promise<{ frames: DataFrame[]; error?: DataQueryError }> {
     const { refId } = target;
     const view = target.recordsQuery?.view;
@@ -83,7 +90,7 @@ export class RecordsDatasource {
     const warnings: string[] = [];
     try {
       const stream = await this.loadStream(view.streamId);
-      const buildOptions = streamBuildOptions(stream);
+      const buildOptions = streamBuildOptions(stream, { maxDataPoints });
       const { query: effectiveQuery, warnings: streamWarnings } = applyStreamConstraints(
         recordsQuery,
         stream,
@@ -92,7 +99,10 @@ export class RecordsDatasource {
       );
       warnings.push(...streamWarnings);
 
-      const frames = await this.queryList(effectiveQuery, range, refId, warnings);
+      const frames =
+        effectiveQuery.mode === 'aggregate'
+          ? await this.queryAggregate(effectiveQuery, range, refId, buildOptions, warnings)
+          : await this.queryList(effectiveQuery, range, refId, warnings);
       return { frames };
     } catch (e) {
       return { frames: [], error: { refId, message: describeError(e) } };
@@ -136,5 +146,26 @@ export class RecordsDatasource {
       warnings.push(RECORDS_LIMIT_WARNING);
     }
     return [recordsToDataFrame(items, data?.typing, query, refId)];
+  }
+
+  private async queryAggregate(
+    query: RecordsQuery,
+    range: Tuple<number>,
+    refId: string,
+    options: RecordsBuildOptions,
+    warnings: string[]
+  ): Promise<DataFrame[]> {
+    const { request, warnings: buildWarnings } = buildRecordsAggregateRequest(query, range, options);
+    warnings.push(...buildWarnings);
+
+    const { data } = await this.connector.fetchData<{
+      data: RecordsAggregateResponse;
+    }>({
+      method: HttpMethod.POST,
+      path: `/streams/${encodeURIComponent(query.view!.streamId)}/records/aggregate`,
+      data: request
+    });
+
+    return recordsAggregateToDataFrames(data, query, refId);
   }
 }

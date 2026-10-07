@@ -22,6 +22,7 @@ import {
 } from "./cdf/graphqlVariables";
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
 import { splitTopLevel } from "./cdf/instanceRef";
+import { isAutoInterval } from "./cdf/records";
 import { clearQueryMessages } from "./appEventHandler";
 import { CogniteVariableSupport } from "./variableSupport";
 import {
@@ -448,9 +449,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   }
 
   /**
-   * Filter values accept dashboard variables. Multi-value variables are expanded with
-   * the csv format so a single `$var` can fill an "is any of" row with every selected
-   * value.
+   * Filter values and the aggregate interval accept dashboard variables. Multi-value
+   * variables are expanded with the csv format so a single `$var` can fill an
+   * "is any of" row with every selected value.
    * Public: the editor's request preview calls it, so the preview shows the values sent.
    */
   interpolateRecordsQuery(
@@ -474,6 +475,14 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         gte: replace(row.gte),
         lte: replace(row.lte),
       })),
+      buckets: (recordsQuery.buckets ?? []).map((bucket) =>
+        // An auto interval, `$__interval` included, is left for the request builder:
+        // it keeps the bucket count under the API's ceiling, and the editor's preview
+        // shows the same value the request sends.
+        bucket.kind === "timeHistogram" && !isAutoInterval(bucket.interval)
+          ? { ...bucket, interval: replace(bucket.interval) ?? bucket.interval }
+          : bucket,
+      ),
     };
   }
   replaceVariable(query = "", scopedVars?: ScopedVars): string {
