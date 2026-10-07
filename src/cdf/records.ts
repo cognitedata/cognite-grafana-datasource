@@ -16,7 +16,7 @@ import {
   RecordsSortRow,
   Tuple,
 } from '../types';
-import { INSTANCE_REF_HINT, parseInstanceRef } from './instanceRef';
+import { INSTANCE_REF_HINT, isVariableToken, parseInstanceRef } from './instanceRef';
 import {
   RecordsFilterDefinition,
   RecordsFilterRequest,
@@ -162,8 +162,17 @@ export function operatorsForType(
  * malformed reference with 200 and zero rows, so failing loudly here is the only way
  * the user learns why the panel is empty.
  */
-function coerceValue(raw: string, type?: string, property?: string): unknown {
+function coerceValue(
+  raw: string,
+  type?: string,
+  property?: string,
+  keepVariables = false
+): unknown {
   const value = raw.trim();
+  // The request preview runs before interpolation, so a variable is shown as typed.
+  if (keepVariables && isVariableToken(value)) {
+    return value;
+  }
   if (isNumericType(type)) {
     const n = Number(value);
     return Number.isFinite(n) ? n : value;
@@ -200,9 +209,10 @@ const hasText = (v?: string) => typeof v === 'string' && v.trim() !== '';
 /** Builds a single filter leaf, or null when the row is incomplete. */
 export function buildFilterLeaf(
   row: RecordsFilterRow,
-  view: { space: string; externalId: string; version: string }
+  view: { space: string; externalId: string; version: string },
+  keepVariables = false
 ): RecordsFilterDefinition | null {
-  const leaf = buildPositiveLeaf(row, view);
+  const leaf = buildPositiveLeaf(row, view, keepVariables);
   if (!leaf) {
     return null;
   }
@@ -213,7 +223,8 @@ export function buildFilterLeaf(
 
 function buildPositiveLeaf(
   row: RecordsFilterRow,
-  view: { space: string; externalId: string; version: string }
+  view: { space: string; externalId: string; version: string },
+  keepVariables: boolean
 ): RecordsFilterDefinition | null {
   if (!row?.property) {
     return null;
@@ -226,7 +237,7 @@ function buildPositiveLeaf(
       return { exists: { property } };
     case 'equals':
       return hasText(row.value)
-        ? { equals: { property, value: coerceValue(row.value!, type, row.property) } }
+        ? { equals: { property, value: coerceValue(row.value!, type, row.property, keepVariables) } }
         : null;
     case 'prefix':
       return hasText(row.value) ? { prefix: { property, value: row.value!.trim() } } : null;
@@ -235,7 +246,7 @@ function buildPositiveLeaf(
     case 'containsAny': {
       const values = (row.values ?? [])
         .filter(hasText)
-        .map((v) => coerceValue(v, type, row.property));
+        .map((v) => coerceValue(v, type, row.property, keepVariables));
       if (!values.length) {
         return null;
       }
@@ -249,7 +260,7 @@ function buildPositiveLeaf(
       const bounds: Record<string, unknown> = {};
       (['gte', 'lte'] as const).forEach((key) => {
         if (hasText(row[key])) {
-          bounds[key] = coerceValue(row[key]!, type, row.property);
+          bounds[key] = coerceValue(row[key]!, type, row.property, keepVariables);
         }
       });
       return Object.keys(bounds).length ? { range: { property, ...bounds } } : null;
@@ -260,14 +271,15 @@ function buildPositiveLeaf(
 }
 
 export function buildFilter(
-  query: RecordsQuery
+  query: RecordsQuery,
+  options: RecordsBuildOptions = {}
 ): RecordsFilterDefinition | undefined {
   const { view, filters } = query;
   if (!view) {
     return undefined;
   }
   const leaves = (filters ?? [])
-    .map((row) => buildFilterLeaf(row, view))
+    .map((row) => buildFilterLeaf(row, view, options.keepVariables))
     .filter((leaf): leaf is RecordsFilterDefinition => leaf !== null);
 
   if (!leaves.length) {
@@ -327,6 +339,12 @@ export function buildSort(
 }
 
 export interface RecordsBuildOptions {
+  /**
+   * Leave dashboard variables as typed instead of coercing them. Only the request
+   * preview sets it: it runs before interpolation, where coercing `$asset` as an
+   * instance reference would fail. A real query is interpolated first.
+   */
+  keepVariables?: boolean;
   /** The selected view's stream limit, which the time range must stay within. */
   maxFilteringIntervalMs?: number;
   /** CDF project, so the preview shows the real URL rather than a placeholder. */
@@ -351,7 +369,8 @@ export function resolveTimeWindow(
 
 export function buildRecordsFilterRequest(
   query: RecordsQuery,
-  range: Tuple<number> | null
+  range: Tuple<number> | null,
+  options: RecordsBuildOptions = {}
 ): RecordsFilterRequest {
   const { view } = query;
   if (!view) {
@@ -364,7 +383,7 @@ export function buildRecordsFilterRequest(
   const lastUpdatedTime = resolveTimeWindow(query, range);
   // Built once each: `buildFilter` can throw on a malformed value, and calling it
   // twice ran that failure path twice.
-  const filter = buildFilter(query);
+  const filter = buildFilter(query, options);
   const sort = buildSort(query.sort);
 
   return {
@@ -412,7 +431,7 @@ export function buildRequestPreviewParts(
   const project = options.project?.trim() || '{project}';
   const path = `POST /api/v1/projects/${project}/streams/${view.streamId}/records/filter`;
   try {
-    const body = buildRecordsFilterRequest(query, range);
+    const body = buildRecordsFilterRequest(query, range, { ...options, keepVariables: true });
     return { path, body: JSON.stringify(body, null, 2) };
   } catch (error) {
     return { path, body: '', error: String(error) };

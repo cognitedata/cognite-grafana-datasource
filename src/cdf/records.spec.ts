@@ -239,6 +239,42 @@ describe('records request builders', () => {
       });
     });
 
+    it('keeps dashboard variables as typed in the request preview', () => {
+      // The preview runs before interpolation; coercing $asset as a reference failed.
+      const parts = buildRequestPreviewParts(
+        baseQuery({
+          filters: [
+            { property: 'asset', propertyType: 'direct', operator: 'equals', value: '$asset' },
+            { property: 'asset', propertyType: 'direct', operator: 'in', values: ['${assets}'] },
+            { property: 'acknowledged', propertyType: 'boolean', operator: 'equals', value: '$ack' },
+          ],
+        }),
+        RANGE
+      )!;
+      expect(parts.error).toBeUndefined();
+      expect(JSON.parse(parts.body).filter).toEqual({
+        and: [
+          { equals: { property: viewPath('asset'), value: '$asset' } },
+          { in: { property: viewPath('asset'), values: ['${assets}'] } },
+          { equals: { property: viewPath('acknowledged'), value: '$ack' } },
+        ],
+      });
+    });
+
+    it('still rejects a variable left unresolved in a real request', () => {
+      // A query is interpolated before it is built, so a token here means the
+      // variable does not exist, and the API would quietly match nothing.
+      expect(() =>
+        buildFilter(
+          baseQuery({
+            filters: [
+              { property: 'asset', propertyType: 'direct', operator: 'equals', value: '$asset' },
+            ],
+          })
+        )
+      ).toThrow(/needs an instance reference/);
+    });
+
     it('skips incomplete rows so a half-edited filter cannot break the panel', () => {
       const filter = buildFilter(
         baseQuery({
