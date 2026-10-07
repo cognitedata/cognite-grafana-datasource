@@ -39,6 +39,7 @@ Data Source for Grafana**.
 - **Dashboard variables**: the value-field list offered paths prefixed with the query's root field (`listCogniteAsset.name`), which never matched a result row and silently fell back to another field. It now offers the fields as they appear on a row (`name`, `instanceId.space`), and no longer offers pagination fields such as `hasNextPage`, which describe the page rather than a row.
 - An error or warning shown under a query now clears when the query runs again, so it always describes the latest run. Before, it stayed on screen until the query was edited, even after a time range change had fixed the cause.
 - The query editor's tab bar no longer ends in an extra, unnamed tab with nothing behind it.
+- A query run from Explore could fail with "HTTP header is larger than 8192 bytes". Explore keeps the whole query in the page URL, and Grafana forwarded that URL to CDF as the `Referer` header, so a long query could push the request's headers past CDF's size limit. The plugin's routes now send an empty `Referer` instead.
 
 ## 4.5.2 - August 25th, 2026
 
