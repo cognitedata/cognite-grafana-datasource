@@ -14,6 +14,7 @@ describe('interpolating a panel query built from the defaults', () => {
   const fetcher = { fetch: jest.fn().mockResolvedValue({ data: { items: [] } }) };
 
   it.each([
+    ['Records', Tab.Records],
     ['Time series', Tab.Timeseries],
     ['GraphQL', Tab.FlexibleDataModelling],
   ])('does not throw on the %s tab when no label is set', (_name, tab) => {

@@ -16,6 +16,7 @@ type Accessor = keyof {
 const CDM_FEATURES: Array<[FeatureKey, Accessor]> = [
   ["enableCogniteTimeSeries", "isCogniteTimeSeriesEnabled"],
   ["enableCogniteActivities", "isCogniteActivitiesEnabled"],
+  ["enableRecords", "isRecordsEnabled"],
   ["enableFlexibleDataModelling", "isFlexibleDataModellingEnabled"],
 ];
 
@@ -92,6 +93,7 @@ describe("Connector feature flags", () => {
     it("reads an omitted flag as off rather than undefined", () => {
       const connector = connectorWith({});
       expect(connector.isFlexibleDataModellingEnabled()).toBe(false);
+      expect(connector.isRecordsEnabled()).toBe(false);
       expect(connector.isRelationshipsEnabled()).toBe(false);
       expect(connector.isLegacyDataModelFeaturesEnabled()).toBe(false);
     });

@@ -43,6 +43,11 @@ export class Connector {
     this.options = options;
   }
 
+  /** The CDF project these requests target, for display in the request preview. */
+  get projectName(): string {
+    return this.project;
+  }
+
   cachedRequests = new Map<string, Promise<any>>();
 
   fetchData<T>(request: RequestParams): Promise<T> {
@@ -166,6 +171,11 @@ export class Connector {
   isCogniteActivitiesEnabled() {
     return this.flag("enableCoreDataModelFeatures") &&
       this.flag("enableCogniteActivities");
+  }
+
+  isRecordsEnabled() {
+    return this.flag("enableCoreDataModelFeatures") &&
+      this.flag("enableRecords");
   }
 
   isFlexibleDataModellingEnabled() {

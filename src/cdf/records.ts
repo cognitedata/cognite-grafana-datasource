@@ -349,6 +349,63 @@ export function resolveTimeWindow(
   return { gte: range[0], lte: range[1] };
 }
 
+// ---------------------------------------------------------------------------
+// Stream rules -- shared by the datasource and the request preview, so the preview
+// is the request that is sent
+// ---------------------------------------------------------------------------
+
+const IMMUTABLE_TIME_RANGE_WARNING =
+  `This stream is immutable, so the CDF requires a time range. ` +
+  `The dashboard time range was applied to lastUpdatedTime.`;
+
+/** Build options a stream implies: its filtering limit. */
+export const streamBuildOptions = (
+  stream: StreamDefinition | null,
+  options: RecordsBuildOptions = {}
+): RecordsBuildOptions => ({
+  ...options,
+  maxFilteringIntervalMs:
+    parseIsoDurationMs(stream?.settings?.limits?.maxFilteringInterval) ??
+    options.maxFilteringIntervalMs,
+});
+
+/**
+ * The query the datasource actually runs on a stream. Stream metadata is advisory:
+ * without it the query runs as configured.
+ */
+export function applyStreamConstraints(
+  query: RecordsQuery,
+  stream: StreamDefinition | null,
+  range: Tuple<number>,
+  options: RecordsBuildOptions
+): { query: RecordsQuery; warnings: string[] } {
+  const warnings: string[] = [];
+  if (!stream) {
+    return { query, warnings };
+  }
+
+  let effective = query;
+  const immutable = stream.type === 'Immutable';
+  if (immutable && query.timeFilterMode === 'none') {
+    warnings.push(IMMUTABLE_TIME_RANGE_WARNING);
+    effective = { ...query, timeFilterMode: 'dashboard' };
+  }
+
+  if (effective.timeFilterMode !== 'none') {
+    const maxInterval = options.maxFilteringIntervalMs ?? null;
+    const span = range[1] - range[0];
+    if (maxInterval && span > maxInterval) {
+      const days = (ms: number) => Math.round(ms / (24 * 60 * 60 * 1000));
+      warnings.push(
+        `The dashboard time range spans ${days(span)} days, but stream "${stream.externalId}" ` +
+          `accepts at most ${days(maxInterval)} days per request. Shorten the time range.`
+      );
+    }
+  }
+
+  return { query: effective, warnings };
+}
+
 export function buildRecordsFilterRequest(
   query: RecordsQuery,
   range: Tuple<number> | null
@@ -388,8 +445,9 @@ export function buildRecordsFilterRequest(
 }
 
 /**
- * The request as configured, rendered for the editor's read-only
- * preview. Kept here rather than in the component so it can be tested directly.
+ * The request the datasource sends for a query, rendered for the editor's read-only
+ * preview so it can be copied and replayed as is. The query must arrive interpolated,
+ * as the datasource interpolates it. Kept here so it can be tested directly.
  */
 export interface RecordsRequestPreviewParts {
   /** e.g. "POST /api/v1/projects/my-project/streams/my-stream/records/filter" */
@@ -403,7 +461,8 @@ export interface RecordsRequestPreviewParts {
 export function buildRequestPreviewParts(
   query: RecordsQuery,
   range: Tuple<number> | null,
-  options: RecordsBuildOptions = {}
+  options: RecordsBuildOptions = {},
+  stream: StreamDefinition | null = null
 ): RecordsRequestPreviewParts | null {
   const { view } = query;
   if (!view?.streamId) {
@@ -411,8 +470,12 @@ export function buildRequestPreviewParts(
   }
   const project = options.project?.trim() || '{project}';
   const path = `POST /api/v1/projects/${project}/streams/${view.streamId}/records/filter`;
+  // The datasource's own steps, in its order: the query arrives interpolated, the
+  // stream's options and rules apply, then the same builder runs.
+  const buildOptions = streamBuildOptions(stream, options);
+  const effective = range ? applyStreamConstraints(query, stream, range, buildOptions).query : query;
   try {
-    const body = buildRecordsFilterRequest(query, range);
+    const body = buildRecordsFilterRequest(effective, range);
     return { path, body: JSON.stringify(body, null, 2) };
   } catch (error) {
     return { path, body: '', error: String(error) };

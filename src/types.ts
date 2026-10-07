@@ -16,6 +16,7 @@ export enum Tab {
   Timeseries = "Timeseries",
   CogniteTimeSeriesSearch = "CogniteTimeSeries",
   CogniteActivity = "CogniteActivity",
+  Records = "Records",
   Asset = "Asset",
   Custom = "Custom",
   Event = "Event",
@@ -37,6 +38,7 @@ export const TabTitles = {
   [Tab.Templates]: "Templates",
   [Tab.FlexibleDataModelling]: "GraphQL",
   [Tab.CogniteActivity]: "Activities",
+  [Tab.Records]: "Records",
 };
 /**
  * The core data model ships with every CDM-enabled project, so it is a starting
@@ -254,7 +256,7 @@ export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
 
 // Records query-model types live in ./types/recordsQuery and are re-exported
 // here, so every existing `from "./types"` import keeps working.
-import { RecordsQuery } from "./types/recordsQuery";
+import { RecordsQuery, defaultRecordsQuery } from "./types/recordsQuery";
 
 export * from "./types/recordsQuery";
 
@@ -275,6 +277,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   cogniteTimeSeries: defaultCogniteTimeSeries,
   cogniteActivityQuery: defaultCogniteActivityQuery,
   cogniteActivityTabQuery: defaultCogniteActivityTabQuery,
+  recordsQuery: defaultRecordsQuery,
 };
 
 /**
@@ -297,6 +300,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   // Core data model (CDM) features
   enableCogniteTimeSeries?: boolean;
   enableCogniteActivities?: boolean;
+  enableRecords?: boolean;
   enableFlexibleDataModelling?: boolean;
   // Legacy data model features
   enableTimeseriesSearch?: boolean;

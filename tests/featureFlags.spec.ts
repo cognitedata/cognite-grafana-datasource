@@ -42,6 +42,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     await expect(editorRow.getByText('Time Series', { exact: true })).not.toBeVisible();
     await expect(editorRow.getByText('GraphQL', { exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText(/^Records/)).not.toBeVisible();
   });
 
   test('Core-only dashboard should show only core data model tabs', async ({
@@ -61,6 +62,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     const cogniteTimeSeriesTab = editorRow.getByText('Time Series', { exact: true });
     await expect(cogniteTimeSeriesTab).toBeVisible();
     await expect(editorRow.getByText('GraphQL', { exact: true })).toBeVisible();
+    await expect(editorRow.getByText(/^Records/)).toBeVisible();
 
     await cogniteTimeSeriesTab.click();
     await expect(cogniteTimeSeriesTab).toHaveAttribute('aria-selected', 'true');
@@ -142,18 +144,21 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(coreMasterToggle).toBeChecked();
 
     await expect(page.locator('#enable-cognite-timeseries')).toBeVisible();
+    await expect(page.locator('#enable-records')).toBeVisible();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeVisible();
 
     await toggleCheckbox(page, '#enable-core-data-model-features', false);
     await expect(coreMasterToggle).not.toBeChecked();
 
     await expect(page.locator('#enable-cognite-timeseries')).not.toBeChecked();
+    await expect(page.locator('#enable-records')).not.toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).not.toBeChecked();
 
     await toggleCheckbox(page, '#enable-core-data-model-features', true);
     await expect(coreMasterToggle).toBeChecked();
 
     await expect(page.locator('#enable-cognite-timeseries')).toBeChecked();
+    await expect(page.locator('#enable-records')).toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeChecked();
   });
 

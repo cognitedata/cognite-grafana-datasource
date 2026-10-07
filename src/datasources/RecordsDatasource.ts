@@ -15,10 +15,10 @@ import { getRange } from '../utils';
 import {
   buildRecordsFilterRequest,
   fetchStream,
-  parseIsoDurationMs,
   unmappedSortRows,
-  RecordsBuildOptions,
   recordsToDataFrame,
+  applyStreamConstraints,
+  streamBuildOptions,
 } from '../cdf/records';
 import { RECORDS_LIMIT_WARNING } from '../constants';
 import { handleWarning } from '../appEventHandler';
@@ -46,10 +46,6 @@ function describeError(error: any): string {
     String(error)
   );
 }
-
-const IMMUTABLE_TIME_RANGE_WARNING =
-  `This stream is immutable, so the CDF requires a time range. ` +
-  `The dashboard time range was applied to lastUpdatedTime.`;
 
 export class RecordsDatasource {
   constructor(private connector: Connector) {}
@@ -87,18 +83,14 @@ export class RecordsDatasource {
     const warnings: string[] = [];
     try {
       const stream = await this.loadStream(view.streamId);
-      const buildOptions: RecordsBuildOptions = {
-        maxFilteringIntervalMs:
-          parseIsoDurationMs(stream?.settings?.limits?.maxFilteringInterval) ??
-          undefined,
-      };
-      const effectiveQuery = this.applyStreamConstraints(
+      const buildOptions = streamBuildOptions(stream);
+      const { query: effectiveQuery, warnings: streamWarnings } = applyStreamConstraints(
         recordsQuery,
         stream,
         range,
-        buildOptions,
-        warnings
+        buildOptions
       );
+      warnings.push(...streamWarnings);
 
       const frames = await this.queryList(effectiveQuery, range, refId, warnings);
       return { frames };
@@ -116,39 +108,6 @@ export class RecordsDatasource {
     } catch {
       return null;
     }
-  }
-
-  private applyStreamConstraints(
-    query: RecordsQuery,
-    stream: StreamDefinition | null,
-    range: Tuple<number>,
-    options: RecordsBuildOptions,
-    warnings: string[]
-  ): RecordsQuery {
-    if (!stream) {
-      return query;
-    }
-
-    let effective = query;
-    const immutable = stream.type === 'Immutable';
-    if (immutable && query.timeFilterMode === 'none') {
-      warnings.push(IMMUTABLE_TIME_RANGE_WARNING);
-      effective = { ...query, timeFilterMode: 'dashboard' };
-    }
-
-    if (effective.timeFilterMode !== 'none') {
-      const maxInterval = options.maxFilteringIntervalMs ?? null;
-      const span = range[1] - range[0];
-      if (maxInterval && span > maxInterval) {
-        const days = (ms: number) => Math.round(ms / (24 * 60 * 60 * 1000));
-        warnings.push(
-          `The dashboard time range spans ${days(span)} days, but stream "${stream.externalId}" ` +
-            `accepts at most ${days(maxInterval)} days per request. Shorten the time range.`
-        );
-      }
-    }
-
-    return effective;
   }
 
   private async queryList(

@@ -713,6 +713,61 @@ describe('Datasource Query', () => {
     });
   });
 
+  describe('records filter interpolation', () => {
+    const fetcher = { fetch: jest.fn() };
+    const ds = getMockedDataSource(fetcher);
+    const REF_1 = '{"space":"paper_mill","externalId":"ASSET_PM_AREA"}';
+    const REF_2 = '{"space":"paper_mill","externalId":"ASSET_BL_AREA"}';
+
+    const interpolate = (filters: any[]) =>
+      (ds as any).interpolateRecordsQuery(
+        { filters, sort: [], columns: [] },
+        {}
+      ).filters;
+
+    it('interpolates only a Records target, not the default every query carries', () => {
+      const recordsQuery = {
+        filters: [{ property: 'asset', propertyType: 'direct', operator: 'equals', value: '$AssetRef' }],
+        sort: [],
+        columns: [],
+      };
+      const interpolated = (tab: Tab) =>
+        (ds as any).replaceVariablesInTarget({ refId: 'A', tab, recordsQuery }, {}).recordsQuery
+          .filters[0].value;
+      expect(interpolated(Tab.Records)).toBe(REF_1);
+      expect(interpolated(Tab.Timeseries)).toBe('$AssetRef');
+    });
+
+    it('resolves a single instance reference from a variable', () => {
+      const [row] = interpolate([
+        { property: 'asset', propertyType: 'direct', operator: 'equals', value: '$AssetRef' },
+      ]);
+      expect(row.value).toBe(REF_1);
+    });
+
+    it('fans a multi-value variable out into one reference per entry', () => {
+      // Each reference contains commas, so a naive split(',') would produce four
+      // broken fragments instead of two references.
+      const [row] = interpolate([
+        { property: 'asset', propertyType: 'direct', operator: 'in', values: ['$AssetRefs'] },
+      ]);
+      expect(row.values).toEqual([REF_1, REF_2]);
+    });
+
+    it('still expands plain scalar variables the way it always did', () => {
+      const [row] = interpolate([
+        { property: 'name', propertyType: 'text', operator: 'in', values: ['$MultiValue'] },
+      ]);
+      expect(row.values).toEqual(['123', '456']);
+    });
+
+    it('leaves literal values untouched', () => {
+      const [row] = interpolate([
+        { property: 'asset', propertyType: 'direct', operator: 'equals', value: REF_1 },
+      ]);
+      expect(row.value).toBe(REF_1);
+    });
+  });
 });
 describe('Given custom query with pure text label', () => {
   const fetcher = { fetch: jest.fn() };

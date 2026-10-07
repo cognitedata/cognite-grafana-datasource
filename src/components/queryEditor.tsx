@@ -13,7 +13,7 @@ import {
   InlineSwitch,
   useTheme2,
 } from '@grafana/ui';
-import { SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -26,6 +26,7 @@ import {
   EditorProps,
   SelectedProps,
   OnQueryChange,
+  RecordsQuery,
 } from '../types';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
@@ -37,6 +38,7 @@ import { ExtractionPipelinesTab } from './extractionPipelinesTab';
 import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CogniteActivityTab } from './cogniteActivityTab';
+import { RecordsTab } from './recordsTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { eventBusService } from '../appEventHandler';
@@ -280,6 +282,32 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
     </>
   );
 }
+/**
+ * The chip after a tab's name. `Tab` takes a plain string label, so this slot is the
+ * only place a tab can carry one.
+ */
+export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
+  [Tabs.Templates]: 'Preview',
+  [Tabs.ExtractionPipelines]: 'Preview',
+  [Tabs.Records]: 'Beta',
+};
+
+const tabSuffix = (
+  tab: Tabs,
+  showingDisabledTab: boolean,
+  theme: GrafanaTheme2
+): (() => JSX.Element) | undefined => {
+  if (showingDisabledTab) {
+    return () => (
+      <p className="preview-label" style={{ color: theme.colors.error.text }}>
+        Disabled
+      </p>
+    );
+  }
+  const text = TAB_SUFFIX_TEXT[tab];
+  return text ? () => <p className="preview-label">{text}</p> : undefined;
+};
+
 export function QueryEditor(props: EditorProps) {
   const theme = useTheme2();
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
@@ -352,7 +380,9 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => {
-          if (hiddenTab(t)) {
+          // Tab.DataModellingV2 is routed to the Go backend and deliberately has no
+          // title; without this it renders as a nameless, clickable tab.
+          if (hiddenTab(t) || !TabTitles[t]) {
             return null;
           }
           const tabIsDisabled = isTabDisabled(t, datasource);
@@ -366,15 +396,7 @@ export function QueryEditor(props: EditorProps) {
               active={activeTab === t}
               onChangeTab={onSelectTab(t)}
               style={{ display: 'flex' }}
-              suffix={
-                showingDisabledTab
-                  ? () => (
-                      <p className="preview-label" style={{ color: theme.colors.error.text }}>Disabled</p>
-                    )
-                  : t === Tabs.Templates || t === Tabs.ExtractionPipelines
-                  ? () => <p className="preview-label">Preview</p>
-                  : undefined
-              }
+              suffix={tabSuffix(t, showingDisabledTab, theme)}
             />
           );
         })}
@@ -401,6 +423,18 @@ export function QueryEditor(props: EditorProps) {
         )}
         {activeTab === Tabs.CogniteActivity && (
           <CogniteActivityTab {...{ onQueryChange, query, connector: datasource.connector }} />
+        )}
+        {activeTab === Tabs.Records && (
+          <RecordsTab
+            {...{
+              onQueryChange,
+              query,
+              connector: datasource.connector,
+              range: props.range,
+              interpolate: (recordsQuery: RecordsQuery) =>
+                datasource.interpolateRecordsQuery(recordsQuery, props.data?.request?.scopedVars),
+            }}
+          />
         )}
       </TabContent>
       {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}

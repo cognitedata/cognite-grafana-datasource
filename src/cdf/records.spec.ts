@@ -422,6 +422,18 @@ describe('records request builders', () => {
       expect(parseIsoDurationMs(undefined)).toBeNull();
     });
 
+    it('applies the stream rules the datasource applies, so the body is the one sent', () => {
+      const immutable = { externalId: 'alarms_live', type: 'Immutable' as const };
+      const parts = buildRequestPreviewParts(
+        baseQuery({ timeFilterMode: 'none' }),
+        RANGE,
+        {},
+        immutable
+      )!;
+      // An immutable stream rejects an unbounded request, so the dashboard range is sent.
+      expect(JSON.parse(parts.body).lastUpdatedTime).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+    });
+
     it('renders no preview when no view is selected', () => {
       expect(buildRequestPreviewParts(baseQuery({ view: undefined }), RANGE)).toBeNull();
     });

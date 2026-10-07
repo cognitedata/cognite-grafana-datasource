@@ -21,6 +21,7 @@ import {
   runGraphqlQuery,
 } from "./cdf/graphqlVariables";
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
+import { splitTopLevel } from "./cdf/instanceRef";
 import { clearQueryMessages } from "./appEventHandler";
 import { CogniteVariableSupport } from "./variableSupport";
 import {
@@ -41,12 +42,14 @@ import {
   HttpMethod,
   MetricDescription,
   QueryTarget,
+  RecordsQuery,
   Tab,
   VariableQueryData,
 } from "./types";
 import { applyFilters, isAnnotationTarget } from "./utils";
 import {
   ActivityDatasource,
+  RecordsDatasource,
   EventsDatasource,
   ExtractionPipelinesDatasource,
   FlexibleDataModellingDatasource,
@@ -78,6 +81,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
   timeseriesDatasource: TimeseriesDatasource;
   flexibleDataModellingDatasource: FlexibleDataModellingDatasource;
   activityDatasource: ActivityDatasource;
+  recordsDatasource: RecordsDatasource;
 
   constructor(
     instanceSettings: DataSourceInstanceSettings<CogniteDataSourceOptions>,
@@ -112,6 +116,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     this.timeseriesDatasource = new TimeseriesDatasource(this.connector);
     this.eventsDatasource = new EventsDatasource(this.connector);
     this.activityDatasource = new ActivityDatasource(this.connector);
+    this.recordsDatasource = new RecordsDatasource(this.connector);
     this.relationshipsDatasource = new RelationshipsDatasource(this.connector);
     this.extractionPipelinesDatasource = new ExtractionPipelinesDatasource(
       this.connector,
@@ -162,6 +167,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       flexibleDataModellingTargets,
       activityTargets,
       cogniteActivityTabTargets,
+      recordsTargets,
     } = groupTargets(queryTargets);
 
     let observables: Array<Observable<DataQueryResponse>> = [];
@@ -256,6 +262,18 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(cogniteActivityTabObservable);
       }
+
+      if (recordsTargets.length) {
+        const recordsObservable = from(
+          this.recordsDatasource.query({
+            ...options,
+            targets: recordsTargets,
+          }),
+          // Errors are forwarded, not just data: a failed records query must
+          // reach the panel instead of rendering as an empty result.
+        ).pipe(map((result) => ({ data: result.data, errors: result.errors })));
+        observables.push(recordsObservable);
+      }
     }
 
     return this.mergeObservables(observables);
@@ -278,6 +296,12 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         obs.subscribe({
           next: (response) => {
             allData = [...allData, ...response.data];
+            // A datasource can report a per-target failure while still returning
+            // frames for its other targets; without this those errors are dropped
+            // and the panel renders a bare "No data".
+            if (response.errors?.length) {
+              allErrors.push(...response.errors);
+            }
           },
           error: (err) => {
             allErrors.push({
@@ -397,6 +421,18 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         targetUnitSystem: cogniteTimeSeriesTargetUnitSystemTemplated,
       },
     };
+    // Every panel query carries a default recordsQuery, so only a Records target's
+    // is interpolated.
+    const templatedRecordsQuery =
+      target.tab === Tab.Records && target.recordsQuery
+        ? {
+          recordsQuery: this.interpolateRecordsQuery(
+            target.recordsQuery,
+            scopedVars,
+          ),
+        }
+        : undefined;
+
     return {
       ...target,
       ...templatedAssetQuery,
@@ -404,9 +440,40 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       ...templatedTemplateQuery,
       ...templatedflexibleDataModellingQuery,
       ...templatedCogniteTimeSeries,
+      ...templatedRecordsQuery,
       query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
+    };
+  }
+
+  /**
+   * Filter values accept dashboard variables. Multi-value variables are expanded with
+   * the csv format so a single `$var` can fill an "is any of" row with every selected
+   * value.
+   * Public: the editor's request preview calls it, so the preview shows the values sent.
+   */
+  interpolateRecordsQuery(
+    recordsQuery: RecordsQuery,
+    scopedVars: ScopedVars = {},
+  ): RecordsQuery {
+    const replace = (value?: string) =>
+      value === undefined ? value : this.replaceVariable(value, scopedVars);
+
+    // splitTopLevel, not split(","): an encoded instance reference contains commas of
+    // its own, so a plain split would tear each reference in half.
+    const expand = (value: string) =>
+      splitTopLevel(this.templateSrv.replace(value.trim(), scopedVars, "csv"));
+
+    return {
+      ...recordsQuery,
+      filters: (recordsQuery.filters ?? []).map((row) => ({
+        ...row,
+        value: replace(row.value),
+        values: row.values?.flatMap(expand),
+        gte: replace(row.gte),
+        lte: replace(row.lte),
+      })),
     };
   }
   replaceVariable(query = "", scopedVars?: ScopedVars): string {
@@ -604,6 +671,8 @@ export function filterEmptyQueryTargets(
           return !!cogniteTimeSeries?.instanceId;
         case Tab.CogniteActivity:
           return !!target.cogniteActivityTabQuery?.assetInstances?.length;
+        case Tab.Records:
+          return !!target.recordsQuery?.view?.streamId;
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -654,6 +723,7 @@ function groupTargets(targets: CogniteQuery[]) {
     flexibleDataModellingTargets: groupedByTab[Tab.FlexibleDataModelling] ?? [],
     activityTargets,
     cogniteActivityTabTargets: groupedByTab[Tab.CogniteActivity] ?? [],
+    recordsTargets: groupedByTab[Tab.Records] ?? [],
     tsTargets: [
       ...(groupedByTab[Tab.Timeseries] ?? []),
       ...(groupedByTab[Tab.Asset] ?? []),
