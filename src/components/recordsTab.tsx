@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { EditorRow, EditorRows, FlexItem } from '@grafana/plugin-ui';
+import { Stack } from '@grafana/ui';
 import { SelectableValue, TimeRange } from '@grafana/data';
 import {
   RecordsFilterRow,
@@ -12,6 +13,7 @@ import {
 import { RecordViewDefinition, StreamDefinition } from '../types/records';
 import {
   buildRequestPreviewParts,
+  computeAutoInterval,
   fetchRecordViews,
   fetchStream,
   isTopLevelProperty,
@@ -25,6 +27,9 @@ import { TimeWindowEditor } from './records/TimeWindowEditor';
 import { FilterList } from './records/FilterList';
 import { SortEditor } from './records/SortEditor';
 import { ListOptionsEditor } from './records/ListOptionsEditor';
+import { BucketList } from './records/BucketList';
+import { MetricList } from './records/MetricList';
+import { ResultShapeBadge } from './records/ResultShapeBadge';
 import { RequestPreview } from './records/RequestPreview';
 
 interface RecordsTabProps extends SelectedProps {
@@ -35,6 +40,8 @@ interface RecordsTabProps extends SelectedProps {
    * the body sent to CDF.
    */
   interpolate?: (query: RecordsQuery) => RecordsQuery;
+  /** Panel resolution target, used to resolve the "auto" bucket interval. */
+  maxDataPoints?: number;
 }
 
 export const RecordsTab: React.FC<RecordsTabProps> = ({
@@ -43,6 +50,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   connector,
   range,
   interpolate = (recordsQuery) => recordsQuery,
+  maxDataPoints,
 }) => {
   // `defaults()` in the query editor merges only the top level, so a dashboard
   // saved with a partial recordsQuery would otherwise reach the lists as undefined.
@@ -50,7 +58,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     () => ({ ...defaultRecordsQuery, ...query.recordsQuery }),
     [query.recordsQuery]
   );
-  const { view } = recordsQuery;
+  const { view, mode } = recordsQuery;
 
   const [viewDefs, setViewDefs] = useState<RecordViewDefinition[]>([]);
   const [loadingViews, setLoadingViews] = useState(false);
@@ -170,6 +178,10 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       filters: recordsQuery.filters.filter((row) => known(row.property)).map(retype),
       sort: recordsQuery.sort.filter((row) => known(row.property)).map(remap),
       columns: recordsQuery.columns.filter((column) => known(column)),
+      buckets: recordsQuery.buckets.filter((bucket) => known(bucket.property)),
+      metrics: recordsQuery.metrics.filter(
+        (metric) => !metric.property || known(metric.property)
+      ),
     });
   };
 
@@ -196,15 +208,24 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     [range]
   );
 
+  // Mirrors what the datasource will send, so the editor shows the real value.
+  const autoInterval = useMemo(
+    () => computeAutoInterval(timeRange ? timeRange[1] - timeRange[0] : 0, maxDataPoints),
+    [timeRange, maxDataPoints]
+  );
+
   const previewParts = useMemo(
     () =>
       buildRequestPreviewParts(
         interpolate(recordsQuery),
         timeRange,
-        { project: connector.projectName },
+        {
+          maxDataPoints,
+          project: connector.projectName,
+        },
         stream
       ),
-    [recordsQuery, timeRange, connector, stream, interpolate]
+    [recordsQuery, timeRange, maxDataPoints, connector, stream, interpolate]
   );
 
   // Top-level record properties are selectable here even though they never reach
@@ -216,12 +237,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     <EditorRows>
       <EditorRow>
         <RecordsQueryHeader
+          mode={mode}
           view={view}
           viewOptions={viewOptions}
           selectedViewValue={selectedViewValue}
           loadingViews={loadingViews}
           stream={stream}
           maxInterval={maxInterval}
+          onModeChange={(value) => patchQuery({ mode: value })}
           onViewChange={onViewChange}
           preview={
             previewParts && (
@@ -255,19 +278,43 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
         />
       </EditorRow>
 
-      <EditorRow>
-        <SortEditor
-          sort={recordsQuery.sort}
-          viewDef={viewDef}
-          onChange={(sort) => patchQuery({ sort })}
-        />
-        <ListOptionsEditor
-          columns={recordsQuery.columns}
-          columnOptions={columnOptions}
-          limit={recordsQuery.limit}
-          onChange={patchQuery}
-        />
-      </EditorRow>
+      {mode === 'list' ? (
+        <EditorRow>
+          <SortEditor
+            sort={recordsQuery.sort}
+            viewDef={viewDef}
+            onChange={(sort) => patchQuery({ sort })}
+          />
+          <ListOptionsEditor
+            columns={recordsQuery.columns}
+            columnOptions={columnOptions}
+            limit={recordsQuery.limit}
+            onChange={patchQuery}
+          />
+        </EditorRow>
+      ) : (
+        <>
+          <EditorRow>
+            <BucketList
+              buckets={recordsQuery.buckets}
+              viewDef={viewDef}
+              autoInterval={autoInterval}
+              onChange={(buckets) => patchQuery({ buckets })}
+            />
+          </EditorRow>
+          <EditorRow>
+            <MetricList
+              metrics={recordsQuery.metrics}
+              viewDef={viewDef}
+              onChange={(metrics) => patchQuery({ metrics })}
+            />
+            <FlexItem grow={1} />
+            <Stack gap={1} alignItems="center">
+              <ResultShapeBadge buckets={recordsQuery.buckets} />
+            </Stack>
+          </EditorRow>
+        </>
+      )}
     </EditorRows>
   );
 };

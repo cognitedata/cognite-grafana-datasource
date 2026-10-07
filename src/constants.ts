@@ -18,7 +18,7 @@ export const EVENTS_LIMIT_WARNING =
   `To get better results, use more specific push-down filters, for example, events{externalIdPrefix='fail'} instead of events{externalId=~'fail.*'} or choose a shorter time range.`;
 export const RECORDS_LIMIT_WARNING =
   `This request returned the maximum number of items, so this panel shows only part of the matching records.\n` +
-  `Narrow the time range or add filters.`;
+  `Narrow the time range, add filters, or switch to Aggregate if you only need counts.`;
 
 export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
 export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');

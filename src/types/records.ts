@@ -130,3 +130,68 @@ export interface RecordsFilterResponse {
   items: RecordsItem[];
   typing?: RecordsTyping;
 }
+
+// --- Aggregates ---
+
+export interface RecordsMetricAggregate {
+  count?: { property?: RecordsPropertyRef };
+  avg?: { property: RecordsPropertyRef };
+  min?: { property: RecordsPropertyRef };
+  max?: { property: RecordsPropertyRef };
+  sum?: { property: RecordsPropertyRef };
+}
+
+export interface RecordsBucketAggregate {
+  uniqueValues?: {
+    property: RecordsPropertyRef;
+    size?: number;
+    aggregates?: RecordsAggregateTree;
+  };
+  timeHistogram?: {
+    property: RecordsPropertyRef;
+    fixedInterval?: string;
+    calendarInterval?: string;
+    /** ISO-8601 date-time strings only; epoch milliseconds are rejected. */
+    hardBounds?: { min?: string; max?: string };
+    aggregates?: RecordsAggregateTree;
+  };
+}
+
+export type RecordsAggregateDefinition =
+  & RecordsMetricAggregate
+  & RecordsBucketAggregate;
+
+export type RecordsAggregateTree = Record<string, RecordsAggregateDefinition>;
+
+export interface RecordsAggregateRequest {
+  lastUpdatedTime?: RecordsTimeRange;
+  filter?: RecordsFilterDefinition;
+  aggregates: RecordsAggregateTree;
+  includeTyping?: boolean;
+}
+
+export interface RecordsAggregateResultNode {
+  // Metric results
+  count?: number;
+  avg?: number;
+  // An ISO-8601 string when the property is a timestamp
+  min?: number | string;
+  max?: number | string;
+  sum?: number;
+  // Bucket results
+  uniqueValueBuckets?: Array<{
+    value: string | number | boolean;
+    count: number;
+    aggregates?: Record<string, RecordsAggregateResultNode>;
+  }>;
+  timeHistogramBuckets?: Array<{
+    intervalStart: string;
+    count: number;
+    aggregates?: Record<string, RecordsAggregateResultNode>;
+  }>;
+}
+
+export interface RecordsAggregateResponse {
+  aggregates: Record<string, RecordsAggregateResultNode>;
+  typing?: RecordsTyping;
+}
