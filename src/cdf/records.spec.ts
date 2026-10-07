@@ -451,10 +451,14 @@ describe('records request builders', () => {
       );
       const hist = (request.aggregates.bucket_0 as any).timeHistogram;
       expect(hist.fixedInterval).toMatch(/^[1-9][0-9]*(ms|s|m|h|d)$/);
-      // Without bounds an open-ended property blows past the bucket ceiling
-      expect(hist.hardBounds).toEqual({
-        min: new Date(RANGE[0]).toISOString(),
-        max: new Date(RANGE[1]).toISOString(),
+      // Bounded by a range filter on its axis, not by hardBounds
+      expect(hist.hardBounds).toBeUndefined();
+      expect(request.filter).toEqual({
+        range: {
+          property: viewPath('timestamp'),
+          gte: new Date(RANGE[0]).toISOString(),
+          lte: new Date(RANGE[1]).toISOString(),
+        },
       });
     });
 
@@ -474,6 +478,32 @@ describe('records request builders', () => {
       expect(sizes).toEqual([10000, 10, 10, 2, 25]);
     });
 
+    it('bounds a time bucket beside the query filters, never with hardBounds', () => {
+      const { request } = buildRecordsAggregateRequest(
+        baseQuery({
+          mode: 'aggregate',
+          filters: [{ property: 'severity', propertyType: 'text', operator: 'equals', value: 'HIGH' }],
+          buckets: [{ kind: 'timeHistogram', property: 'createdTime', interval: '1h' }],
+          metrics: [{ name: 'count', function: 'count' }],
+        }),
+        RANGE
+      );
+      // On a view property, hardBounds that hold no record make the API answer 500
+      expect(JSON.stringify(request)).not.toContain('hardBounds');
+      expect(request.filter).toEqual({
+        and: [
+          { equals: { property: viewPath('severity'), value: 'HIGH' } },
+          {
+            range: {
+              property: ['createdTime'],
+              gte: new Date(RANGE[0]).toISOString(),
+              lte: new Date(RANGE[1]).toISOString(),
+            },
+          },
+        ],
+      });
+    });
+
     it('honours an explicit interval instead of deriving one', () => {
       const { request } = buildRecordsAggregateRequest(
         baseQuery({
@@ -487,7 +517,7 @@ describe('records request builders', () => {
       expect((request.aggregates.bucket_0 as any).timeHistogram.fixedInterval).toBe('15m');
     });
 
-    it('omits hardBounds when the time range is not bound', () => {
+    it('adds no axis filter when the time range is not bound', () => {
       const { request } = buildRecordsAggregateRequest(
         baseQuery({
           mode: 'aggregate',
@@ -497,7 +527,7 @@ describe('records request builders', () => {
         }),
         RANGE
       );
-      expect((request.aggregates.bucket_0 as any).timeHistogram.hardBounds).toBeUndefined();
+      expect(request.filter).toBeUndefined();
     });
 
     it('nests buckets outermost-first with the metrics at the innermost level', () => {
@@ -521,10 +551,6 @@ describe('records request builders', () => {
           timeHistogram: {
             property: viewPath('timestamp'),
             fixedInterval: '1h',
-            hardBounds: {
-              min: new Date(RANGE[0]).toISOString(),
-              max: new Date(RANGE[1]).toISOString(),
-            },
             aggregates: {
               bucket_1: {
                 uniqueValues: {

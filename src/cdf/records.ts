@@ -675,24 +675,33 @@ export function buildRecordsAggregateRequest(
     metricTree.count = { count: {} };
   }
 
-  // hardBounds only accepts ISO-8601 strings, never epoch milliseconds.
+  // The query window, which also bounds every time bucket.
   const boundsWindow = resolveTimeWindow(query, range);
-  const hardBounds = boundsWindow
-    ? {
-        min: new Date(boundsWindow.gte).toISOString(),
-        max: new Date(boundsWindow.lte).toISOString(),
-      }
-    : undefined;
 
   // Fold buckets right-to-left so buckets[0] ends up outermost.
   const buckets = (query.buckets ?? []).filter((b) => b?.property);
   let aggregates: RecordsAggregateTree = metricTree;
+  // Each time bucket is bounded to the window by a range filter on its axis, so
+  // only buckets inside the panel come back and the bucket count stays bounded.
+  // Not hardBounds: on a view property the API answers 500 when no record falls
+  // inside them, where a range filter returns no buckets. The filter also takes
+  // ISO-8601 only for a view timestamp, so the bounds are sent in that form.
+  const axisFilters: RecordsFilterDefinition[] = [];
   for (let i = buckets.length - 1; i >= 0; i -= 1) {
     const bucket = buckets[i];
     const property = viewPropertyRef(view, bucket.property);
     let definition: RecordsAggregateDefinition | null = null;
 
     if (bucket.kind === 'timeHistogram') {
+      if (boundsWindow) {
+        axisFilters.push({
+          range: {
+            property,
+            gte: new Date(boundsWindow.gte).toISOString(),
+            lte: new Date(boundsWindow.lte).toISOString(),
+          },
+        });
+      }
       const spanMs = boundsWindow
         ? boundsWindow.lte - boundsWindow.gte
         : range
@@ -715,11 +724,6 @@ export function buildRecordsAggregateRequest(
         timeHistogram: {
           property,
           fixedInterval,
-          // Without bounds the histogram spans the property's entire data
-          // range, which on an archive stream is far wider than the panel and
-          // trips the API's bucket ceiling. Bounding it to the dashboard
-          // window also stops Grafana from clipping off-screen buckets.
-          ...(hardBounds && { hardBounds }),
           aggregates,
         },
       };
@@ -738,7 +742,10 @@ export function buildRecordsAggregateRequest(
     }
   }
 
-  const filter = buildFilter(query);
+  const leaves = [buildFilter(query), ...axisFilters].filter(
+    (leaf): leaf is RecordsFilterDefinition => !!leaf
+  );
+  const filter = leaves.length > 1 ? { and: leaves } : leaves[0];
 
   return {
     request: {
