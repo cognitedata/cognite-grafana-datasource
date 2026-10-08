@@ -78,6 +78,38 @@ describe('RecordsTab', () => {
     expect(html).toContain('Filters');
   });
 
+  it('renders the custom time window editor with resolved bounds', () => {
+    const html = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      timeFilterMode: 'custom',
+      timeFilterFrom: '2026-08-01T00:00:00Z',
+      timeFilterTo: '2026-08-08T00:00:00Z',
+    });
+    expect(html).toContain('Window bounds');
+    // Both bounds resolve, so the editor previews the window it will request
+    expect(html).toContain('2026-08-01T00:00:00.000Z');
+    expect(html).toContain('2026-08-08T00:00:00.000Z');
+  });
+
+  it('flags an unusable time expression inline', () => {
+    const html = renderTab({
+      ...defaultRecordsQuery,
+      view: selectedView,
+      timeFilterMode: 'custom',
+      timeFilterFrom: '{{nope}}',
+      timeFilterTo: '{{endTime}}',
+    });
+    expect(html).toContain('Unknown variable');
+  });
+
+  it('hides the window bounds editor unless the mode is custom', () => {
+    const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
+    // The mode selector is always shown; only its bounds row is conditional
+    expect(html).toContain('Time window');
+    expect(html).not.toContain('Window bounds');
+  });
+
   it('names the read window and the property filters distinctly', () => {
     const html = renderTab({ ...defaultRecordsQuery, view: selectedView });
     // "filter" must not name both stages, or the two sections read as duplicates

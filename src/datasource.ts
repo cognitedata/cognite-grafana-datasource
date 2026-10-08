@@ -477,8 +477,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       })),
       buckets: (recordsQuery.buckets ?? []).map((bucket) =>
         // An auto interval, `$__interval` included, is left for the request builder:
-        // it keeps the bucket count under the API's ceiling, and the editor's preview
-        // shows the same value the request sends.
+        // it sizes buckets from the window actually queried, which a custom window
+        // makes different from the dashboard range Grafana derives `$__interval` from.
         bucket.kind === "timeHistogram" && !isAutoInterval(bucket.interval)
           ? { ...bucket, interval: replace(bucket.interval) ?? bucket.interval }
           : bucket,

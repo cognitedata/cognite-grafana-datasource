@@ -10,6 +10,7 @@ import {
   SelectedProps,
   defaultRecordsQuery,
 } from '../types';
+import { evaluateTimeExpression } from '../cdf/timeExpression';
 import { RecordViewDefinition, StreamDefinition, UnitSystem } from '../types/records';
 import {
   buildRequestPreviewParts,
@@ -222,26 +223,55 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   // "No filter" is not offered on immutable streams: the API rejects it outright.
   const timeFilterOptions: Array<SelectableValue<RecordsTimeFilterMode>> = [
     { label: 'Dashboard range', value: 'dashboard' },
+    { label: 'Custom', value: 'custom' },
     ...(isImmutable ? [] : [{ label: 'None', value: 'none' as const }]),
   ];
 
+  const expressionContext = useMemo(
+    () => ({
+      startTime: range?.from?.valueOf(),
+      endTime: range?.to?.valueOf(),
+      maxFilteringIntervalMs,
+    }),
+    [range, maxFilteringIntervalMs]
+  );
+  const customFrom = useMemo(
+    () => evaluateTimeExpression(recordsQuery.timeFilterFrom ?? '', expressionContext),
+    [recordsQuery.timeFilterFrom, expressionContext]
+  );
+  const customTo = useMemo(
+    () => evaluateTimeExpression(recordsQuery.timeFilterTo ?? '', expressionContext),
+    [recordsQuery.timeFilterTo, expressionContext]
+  );
+  // Checked against the window actually requested, as the datasource does: a custom
+  // window replaces the dashboard range.
   const rangeExceedsLimit = useMemo(() => {
-    if (!maxFilteringIntervalMs || timeFilterMode === 'none' || !range) {
+    const limit = parseIsoDurationMs(maxInterval);
+    if (!limit || timeFilterMode === 'none') {
       return false;
     }
-    return range.to.valueOf() - range.from.valueOf() > maxFilteringIntervalMs;
-  }, [maxFilteringIntervalMs, timeFilterMode, range]);
+    if (timeFilterMode === 'custom') {
+      return customFrom.ms != null && customTo.ms != null && customTo.ms - customFrom.ms > limit;
+    }
+    return !!range && range.to.valueOf() - range.from.valueOf() > limit;
+  }, [maxInterval, range, timeFilterMode, customFrom, customTo]);
 
   const timeRange: [number, number] | null = useMemo(
     () => (range ? [range.from.valueOf(), range.to.valueOf()] : null),
     [range]
   );
 
-  // Mirrors what the datasource will send, so the editor shows the real value.
-  const autoInterval = useMemo(
-    () => computeAutoInterval(timeRange ? timeRange[1] - timeRange[0] : 0, maxDataPoints),
-    [timeRange, maxDataPoints]
-  );
+  // Mirrors what the datasource will send, so the editor shows the real value. A
+  // custom window is what the request is bucketed over, so the badge is computed
+  // from the resolved window rather than from the dashboard range.
+  const autoInterval = useMemo(() => {
+    const custom =
+      timeFilterMode === 'custom' && customFrom.ms != null && customTo.ms != null
+        ? customTo.ms - customFrom.ms
+        : null;
+    const span = custom ?? (timeRange ? timeRange[1] - timeRange[0] : 0);
+    return computeAutoInterval(span, maxDataPoints);
+  }, [timeFilterMode, customFrom, customTo, timeRange, maxDataPoints]);
 
   const previewParts = useMemo(
     () =>
@@ -289,11 +319,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
 
       <EditorRow>
         <TimeWindowEditor
+          recordsQuery={recordsQuery}
           timeFilterMode={timeFilterMode}
           timeFilterOptions={timeFilterOptions}
           isImmutable={isImmutable}
           rangeExceedsLimit={rangeExceedsLimit}
           maxInterval={maxInterval}
+          customFrom={customFrom}
+          customTo={customTo}
           onChange={patchQuery}
         />
       </EditorRow>
