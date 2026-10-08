@@ -19,6 +19,7 @@ import {
   fetchStream,
   unmappedSortRows,
   RecordsBuildOptions,
+  resolveTimeWindow,
   recordsAggregateToDataFrames,
   recordsToDataFrame,
   applyStreamConstraints,
@@ -92,7 +93,11 @@ export class RecordsDatasource {
     const warnings: string[] = [];
     try {
       const stream = await this.loadStream(view.streamId);
-      const buildOptions = streamBuildOptions(stream, { maxDataPoints });
+      // One instant for the whole query. `{{now}}` is resolved more than once (the
+      // stream checks, the request and its warnings), and reading the clock in each
+      // left them describing slightly different moments.
+      const now = Date.now();
+      const buildOptions = streamBuildOptions(stream, { maxDataPoints, now });
       const { query: effectiveQuery, warnings: streamWarnings } = applyStreamConstraints(
         recordsQuery,
         stream,
@@ -106,7 +111,7 @@ export class RecordsDatasource {
       const frames =
         effectiveQuery.mode === 'aggregate'
           ? await this.queryAggregate(effectiveQuery, range, refId, buildOptions, warnings, unitIndex)
-          : await this.queryList(effectiveQuery, range, refId, warnings, unitIndex);
+          : await this.queryList(effectiveQuery, range, refId, buildOptions, warnings, unitIndex);
       return { frames };
     } catch (e) {
       return { frames: [], error: { refId, message: describeError(e) } };
@@ -140,9 +145,11 @@ export class RecordsDatasource {
     query: RecordsQuery,
     range: Tuple<number>,
     refId: string,
+    options: RecordsBuildOptions,
     warnings: string[],
     unitIndex?: Map<string, CogniteUnit>
   ): Promise<DataFrame[]> {
+    warnings.push(...resolveTimeWindow(query, range, options).warnings);
     // Silently unsorted results look like the API ignoring the request; say so.
     const unmapped = unmappedSortRows(query.sort);
     if (unmapped.length) {
@@ -151,7 +158,7 @@ export class RecordsDatasource {
           `mapped by this view. Re-select it under "Sort by".`
       );
     }
-    const request = buildRecordsFilterRequest(query, range);
+    const request = buildRecordsFilterRequest(query, range, options);
     const { data } = await this.connector.fetchData<{ data: RecordsFilterResponse }>({
       method: HttpMethod.POST,
       path: `/streams/${encodeURIComponent(query.view!.streamId)}/records/filter`,

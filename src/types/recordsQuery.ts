@@ -81,7 +81,7 @@ export interface RecordsMetric {
 /**
  * How the lastUpdatedTime window is chosen. Immutable streams always need one
  */
-export type RecordsTimeFilterMode = "dashboard" | "none";
+export type RecordsTimeFilterMode = "dashboard" | "custom" | "none";
 
 /**
  * One property converted to a specific unit. The property is referenced exactly
@@ -108,6 +108,13 @@ export interface RecordsQuery {
   buckets: RecordsBucket[];
   metrics: RecordsMetric[];
   timeFilterMode: RecordsTimeFilterMode;
+  /**
+   * Time expressions, used when timeFilterMode is "custom". Unset means the default
+   * for the selected stream (see `defaultWindowBounds`), so bounds nobody edited
+   * follow the stream when the view changes.
+   */
+  timeFilterFrom?: string;
+  timeFilterTo?: string;
   /**
    * Unit conversion. The API models these as a oneOf, so at most one applies:
    * a unit system converts everything convertible, target units convert

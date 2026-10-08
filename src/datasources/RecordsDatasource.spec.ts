@@ -109,6 +109,89 @@ describe('RecordsDatasource', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('immutable'), 'A');
   });
 
+  it('falls back to the dashboard range when a custom window does not resolve', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'live', type: 'Mutable', settings: { limits: {} } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(
+      options(
+        baseQuery({ timeFilterMode: 'custom', timeFilterFrom: 'yesterday', timeFilterTo: '{{endTime}}' })
+      )
+    );
+
+    // A mutable stream would otherwise be read in full, which is not what was asked
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+    const [message] = warnSpy.mock.calls.find(([, refId]) => refId === 'A')!;
+    expect(message).toContain('Time filter "from" is invalid');
+    expect(message).toContain('the dashboard time range was used instead');
+  });
+
+  it('falls back when the window needs a stream limit that cannot be read', async () => {
+    const fetchData = jest.fn((request: any) =>
+      request.method === 'GET'
+        ? Promise.reject(new Error('403'))
+        : Promise.resolve({ data: { items: [] } })
+    );
+    const ds = new RecordsDatasource({ fetchData } as unknown as Connector);
+    await ds.query(
+      options(
+        baseQuery({
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}} - {{maxFilteringInterval}}',
+          timeFilterTo: '{{endTime}}',
+        })
+      )
+    );
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('maxFilteringInterval'), 'A');
+  });
+
+  it('defaults a custom window to the latest slice a limited stream accepts', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'archive', type: 'Immutable', settings: { limits: { maxFilteringInterval: 'PT1H' } } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(options(baseQuery({ timeFilterMode: 'custom' })));
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[1] - 3_600_000, lte: RANGE[1] });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('defaults a custom window to the dashboard range on a stream without a limit', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'live', type: 'Mutable', settings: { limits: {} } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(options(baseQuery({ timeFilterMode: 'custom' })));
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('sends a custom window that resolves, without a warning', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'live', type: 'Mutable', settings: { limits: {} } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(
+      options(baseQuery({ timeFilterMode: 'custom', timeFilterFrom: '{{endTime}} - 1h', timeFilterTo: '{{endTime}}' }))
+    );
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[1] - 3_600_000, lte: RANGE[1] });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   it('warns when the range exceeds the stream maxFilteringInterval', async () => {
     const { connector } = connectorWith(
       {

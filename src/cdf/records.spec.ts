@@ -17,6 +17,8 @@ import {
   recordsAggregateToDataFrames,
   recordsToDataFrame,
   resolveTimeWindow,
+  defaultWindowBounds,
+  windowBounds,
   validateMetricName,
 } from '../cdf/records';
 import { RecordsQuery } from '../types';
@@ -481,13 +483,105 @@ describe('records request builders', () => {
       baseQuery({ mode: 'aggregate', metrics: [{ name: 'c', function: 'count' }], ...over });
 
     it('uses the dashboard range by default', () => {
-      expect(resolveTimeWindow(withMode({}), RANGE)).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+      const { window } = resolveTimeWindow(withMode({}), RANGE);
+      expect(window).toEqual({ gte: RANGE[0], lte: RANGE[1] });
     });
 
     it('omits the window entirely in "none" mode', () => {
-      expect(resolveTimeWindow(withMode({ timeFilterMode: 'none' }), RANGE)).toBeUndefined();
+      const { window } = resolveTimeWindow(withMode({ timeFilterMode: 'none' }), RANGE);
+      expect(window).toBeUndefined();
     });
 
+    it('evaluates custom expressions against the stream limit', () => {
+      const sevenDays = 7 * 24 * 3600 * 1000;
+      const { window, warnings } = resolveTimeWindow(
+        withMode({
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}} - 2 * {{maxFilteringInterval}}',
+          timeFilterTo: '{{endTime}} - {{maxFilteringInterval}}',
+        }),
+        RANGE,
+        { maxFilteringIntervalMs: sevenDays }
+      );
+      expect(warnings).toEqual([]);
+      expect(window).toEqual({
+        gte: RANGE[1] - 2 * sevenDays,
+        lte: RANGE[1] - sevenDays,
+      });
+    });
+
+    it('defaults unset bounds to what the stream supports', () => {
+      const sevenDays = 7 * 24 * 3600 * 1000;
+      const custom = withMode({ timeFilterMode: 'custom' });
+
+      // A limited stream starts from its latest slice...
+      const limited = resolveTimeWindow(custom, RANGE, { maxFilteringIntervalMs: sevenDays });
+      expect(limited).toEqual({ window: { gte: RANGE[1] - sevenDays, lte: RANGE[1] }, warnings: [] });
+
+      // ...and a stream without a limit from the dashboard range, where
+      // {{maxFilteringInterval}} would not resolve.
+      const unlimited = resolveTimeWindow(custom, RANGE);
+      expect(unlimited).toEqual({ window: { gte: RANGE[0], lte: RANGE[1] }, warnings: [] });
+    });
+
+    it('keeps a bound the user set, defaulting only the other one', () => {
+      expect(windowBounds({ timeFilterFrom: '{{endTime}} - 1h' })).toEqual({
+        from: '{{endTime}} - 1h',
+        to: '{{endTime}}',
+      });
+      expect(windowBounds({}, 1000)).toEqual(defaultWindowBounds(1000));
+    });
+
+    it('reports an unusable custom window instead of sending it', () => {
+      const bad = resolveTimeWindow(
+        withMode({
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}}',
+          timeFilterTo: '{{startTime}}',
+        }),
+        RANGE
+      );
+      expect(bad.window).toBeUndefined();
+      expect(bad.warnings[0]).toMatch(/earlier than/);
+
+      const broken = resolveTimeWindow(
+        withMode({ timeFilterMode: 'custom', timeFilterFrom: '{{nope}}', timeFilterTo: '{{endTime}}' }),
+        RANGE
+      );
+      expect(broken.warnings[0]).toMatch(/Unknown variable/);
+    });
+
+    it('bounds the histogram to the custom window, not the dashboard range', () => {
+      const day = 24 * 3600 * 1000;
+      const { request } = buildRecordsAggregateRequest(
+        withMode({
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}} - 2d',
+          timeFilterTo: '{{endTime}} - 1d',
+          buckets: [{ kind: 'timeHistogram', property: 'timestamp', interval: '1h' }],
+        }),
+        RANGE
+      );
+      expect(request.lastUpdatedTime).toEqual({
+        gte: RANGE[1] - 2 * day,
+        lte: RANGE[1] - day,
+      });
+      expect(request.filter).toEqual({
+        range: {
+          property: viewPath('timestamp'),
+          gte: new Date(RANGE[1] - 2 * day).toISOString(),
+          lte: new Date(RANGE[1] - day).toISOString(),
+        },
+      });
+    });
+
+    it('surfaces custom-window problems as aggregate warnings', () => {
+      const { warnings } = buildRecordsAggregateRequest(
+        withMode({ timeFilterMode: 'custom', timeFilterFrom: '1d + 2h', timeFilterTo: '{{endTime}}' }),
+        RANGE
+      );
+      expect(warnings.some((w) => /Time filter "from" is invalid/.test(w))).toBe(true);
+    });
   });
 
   describe('buildRecordsAggregateRequest', () => {
@@ -776,6 +870,26 @@ describe('records request builders', () => {
       expect(aggPreview.body).toContain('timeHistogram');
     });
 
+    it('previews the custom window using the stream limit', () => {
+      const sevenDays = 7 * 24 * 3600 * 1000;
+      const preview = buildRequestPreviewParts(
+        baseQuery({
+          mode: 'aggregate',
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}} - {{maxFilteringInterval}}',
+          timeFilterTo: '{{endTime}}',
+          buckets: [{ kind: 'timeHistogram', property: 'timestamp', interval: 'auto' }],
+          metrics: [{ name: 'count', function: 'count' }],
+        }),
+        RANGE,
+        { maxDataPoints: 1000, maxFilteringIntervalMs: sevenDays }
+      )!;
+      // Without the stream limit the anchor cannot resolve and the window vanishes
+      expect(preview.body).toContain('lastUpdatedTime');
+      expect(preview.body).toContain('"range"');
+      expect(preview.body).toContain(new Date(RANGE[1] - sevenDays).toISOString());
+    });
+
     it('applies the stream rules the datasource applies, so the body is the one sent', () => {
       const immutable = { externalId: 'alarms_live', type: 'Immutable' as const };
       const parts = buildRequestPreviewParts(
@@ -804,6 +918,24 @@ describe('records request builders', () => {
       expect(parts.body).toContain('"includeTyping": true');
       expect(parts.error).toBeUndefined();
       expect(buildRequestPreviewParts(baseQuery({ view: undefined }), RANGE)).toBeNull();
+    });
+
+    it('resolves a custom window in the list-mode preview using the stream limit', () => {
+      // Regression: the filter branch previously dropped build options, so the
+      // preview lost the window whenever {{maxFilteringInterval}} was used.
+      const sevenDays = 7 * 24 * 3600 * 1000;
+      const parts = buildRequestPreviewParts(
+        baseQuery({
+          mode: 'list',
+          timeFilterMode: 'custom',
+          timeFilterFrom: '{{endTime}} - {{maxFilteringInterval}}',
+          timeFilterTo: '{{endTime}}',
+        }),
+        RANGE,
+        { maxFilteringIntervalMs: sevenDays }
+      )!;
+      expect(parts.body).toContain('lastUpdatedTime');
+      expect(parts.body).toContain(String(RANGE[1] - sevenDays));
     });
 
     it('offers only operators the API accepts for the property type', () => {

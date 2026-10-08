@@ -6,6 +6,7 @@ import {
   HOUR,
   MINUTE,
   SECOND,
+  evaluateTimeExpression,
   parseDurationMs,
 } from './timeExpression';
 import {
@@ -426,8 +427,10 @@ export function buildTargetUnits(
 export interface RecordsBuildOptions {
   /** Panel resolution target; drives the "auto" bucket interval. */
   maxDataPoints?: number;
-  /** The selected view's stream limit, which the time range must stay within. */
+  /** The selected view's stream limit, for {{maxFilteringInterval}}. */
   maxFilteringIntervalMs?: number;
+  /** Injected so "{{now}}" is reproducible in tests. */
+  now?: number;
   /** CDF project, so the preview shows the real URL rather than a placeholder. */
   project?: string;
 }
@@ -437,15 +440,76 @@ export interface RecordsTimeWindow {
   lte: number;
 }
 
-/** Resolves the lastUpdatedTime window for a query: the dashboard range, or none. */
+/**
+ * The bounds a custom window starts from until the user edits them: the latest slice
+ * a stream with a filtering limit accepts, or the dashboard range on a stream without
+ * one, where {{maxFilteringInterval}} has nothing to resolve to.
+ */
+export const defaultWindowBounds = (maxFilteringIntervalMs?: number) => ({
+  from: maxFilteringIntervalMs ? '{{endTime}} - {{maxFilteringInterval}}' : '{{startTime}}',
+  to: '{{endTime}}',
+});
+
+/** A custom window's bounds, with the stream's defaults for any left unset. */
+export function windowBounds(
+  query: Pick<RecordsQuery, 'timeFilterFrom' | 'timeFilterTo'>,
+  maxFilteringIntervalMs?: number
+): { from: string; to: string } {
+  const defaults = defaultWindowBounds(maxFilteringIntervalMs);
+  return {
+    from: query.timeFilterFrom ?? defaults.from,
+    to: query.timeFilterTo ?? defaults.to,
+  };
+}
+
+/**
+ * Resolves the lastUpdatedTime window for a query. "custom" evaluates the user's
+ * expressions; anything that fails to resolve is reported rather than silently
+ * dropped, because a missing window is a hard error on immutable streams.
+ */
 export function resolveTimeWindow(
   query: RecordsQuery,
-  range: Tuple<number> | null
-): RecordsTimeWindow | undefined {
-  if (query.timeFilterMode === 'none' || !range) {
-    return undefined;
+  range: Tuple<number> | null,
+  options: RecordsBuildOptions = {}
+): { window?: RecordsTimeWindow; warnings: string[] } {
+  const warnings: string[] = [];
+  const mode = query.timeFilterMode ?? 'dashboard';
+
+  if (mode === 'none') {
+    return { warnings };
   }
-  return { gte: range[0], lte: range[1] };
+
+  if (mode === 'custom') {
+    const ctx = {
+      startTime: range ? range[0] : undefined,
+      endTime: range ? range[1] : undefined,
+      now: options.now,
+      maxFilteringIntervalMs: options.maxFilteringIntervalMs,
+    };
+    const bounds = windowBounds(query, options.maxFilteringIntervalMs);
+    const from = evaluateTimeExpression(bounds.from, ctx);
+    const to = evaluateTimeExpression(bounds.to, ctx);
+
+    if (from.error) {
+      warnings.push(`Time filter "from" is invalid: ${from.error}.`);
+    }
+    if (to.error) {
+      warnings.push(`Time filter "to" is invalid: ${to.error}.`);
+    }
+    if (from.ms === undefined || to.ms === undefined) {
+      return { warnings };
+    }
+    if (from.ms >= to.ms) {
+      warnings.push('Time filter "from" must be earlier than "to".');
+      return { warnings };
+    }
+    return { window: { gte: from.ms, lte: to.ms }, warnings };
+  }
+
+  if (!range) {
+    return { warnings };
+  }
+  return { window: { gte: range[0], lte: range[1] }, warnings };
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +520,8 @@ export function resolveTimeWindow(
 const IMMUTABLE_TIME_RANGE_WARNING =
   `This stream is immutable, so the CDF requires a time range. ` +
   `The dashboard time range was applied to lastUpdatedTime.`;
+const CUSTOM_WINDOW_FALLBACK_WARNING =
+  'The custom time window could not be resolved, so the dashboard time range was used instead.';
 
 /** Build options a stream implies: its filtering limit. */
 export const streamBuildOptions = (
@@ -479,25 +545,41 @@ export function applyStreamConstraints(
   options: RecordsBuildOptions
 ): { query: RecordsQuery; warnings: string[] } {
   const warnings: string[] = [];
-  if (!stream) {
-    return { query, warnings };
+  let effective = query;
+
+  // A custom window that does not resolve falls back to the dashboard range on every
+  // stream, whether or not its metadata could be read: an immutable stream rejects a
+  // request without a window, and on a mutable one dropping it would read the whole
+  // stream instead of the range the user meant. The reasons are kept in the warning.
+  if (effective.timeFilterMode === 'custom') {
+    const resolved = resolveTimeWindow(effective, range, options);
+    if (!resolved.window) {
+      warnings.push(...resolved.warnings, CUSTOM_WINDOW_FALLBACK_WARNING);
+      effective = { ...effective, timeFilterMode: 'dashboard' };
+    }
   }
 
-  let effective = query;
+  if (!stream) {
+    return { query: effective, warnings };
+  }
+
   const immutable = stream.type === 'Immutable';
-  if (immutable && query.timeFilterMode === 'none') {
+  if (immutable && effective.timeFilterMode === 'none') {
     warnings.push(IMMUTABLE_TIME_RANGE_WARNING);
-    effective = { ...query, timeFilterMode: 'dashboard' };
+    effective = { ...effective, timeFilterMode: 'dashboard' };
   }
 
   if (effective.timeFilterMode !== 'none') {
     const maxInterval = options.maxFilteringIntervalMs ?? null;
-    const span = range[1] - range[0];
+    const window = resolveTimeWindow(effective, range, options).window;
+    const span = window ? window.lte - window.gte : range[1] - range[0];
     if (maxInterval && span > maxInterval) {
       const days = (ms: number) => Math.round(ms / (24 * 60 * 60 * 1000));
+      const custom = effective.timeFilterMode === 'custom';
       warnings.push(
-        `The dashboard time range spans ${days(span)} days, but stream "${stream.externalId}" ` +
-          `accepts at most ${days(maxInterval)} days per request. Shorten the time range.`
+        `The ${custom ? 'custom time window' : 'dashboard time range'} spans ${days(span)} days, ` +
+          `but stream "${stream.externalId}" accepts at most ${days(maxInterval)} days per request. ` +
+          (custom ? 'Narrow the window bounds.' : 'Shorten the time range.')
       );
     }
   }
@@ -507,7 +589,8 @@ export function applyStreamConstraints(
 
 export function buildRecordsFilterRequest(
   query: RecordsQuery,
-  range: Tuple<number> | null
+  range: Tuple<number> | null,
+  options: RecordsBuildOptions = {}
 ): RecordsFilterRequest {
   const { view } = query;
   if (!view) {
@@ -517,7 +600,7 @@ export function buildRecordsFilterRequest(
   // returns space/externalId/createdTime/lastUpdatedTime on every record regardless,
   // so a selected top-level property is dropped from the request rather than sent.
   const columns = (query.columns ?? []).filter(hasText).filter((c) => !isTopLevelProperty(c));
-  const lastUpdatedTime = resolveTimeWindow(query, range);
+  const { window: lastUpdatedTime } = resolveTimeWindow(query, range, options);
   // Built once each: `buildFilter` can throw on a malformed value, and calling it
   // twice ran that failure path twice.
   const filter = buildFilter(query);
@@ -749,8 +832,12 @@ export function buildRecordsAggregateRequest(
     metricTree.count = { count: {} };
   }
 
-  // The query window, which also bounds every time bucket.
-  const boundsWindow = resolveTimeWindow(query, range);
+  // The resolved window, a custom one included, also bounds every time bucket.
+  const { window: boundsWindow, warnings: timeWarnings } = resolveTimeWindow(
+    query,
+    range,
+    options
+  );
 
   // Fold buckets right-to-left so buckets[0] ends up outermost.
   const buckets = (query.buckets ?? []).filter((b) => b?.property);
@@ -816,6 +903,7 @@ export function buildRecordsAggregateRequest(
     }
   }
 
+  warnings.push(...timeWarnings);
   const leaves = [buildFilter(query), ...axisFilters].filter(
     (leaf): leaf is RecordsFilterDefinition => !!leaf
   );
@@ -869,7 +957,7 @@ export function buildRequestPreviewParts(
     const body =
       mode === 'aggregate'
         ? buildRecordsAggregateRequest(effective, range, buildOptions).request
-        : buildRecordsFilterRequest(effective, range);
+        : buildRecordsFilterRequest(effective, range, buildOptions);
     return { path, body: JSON.stringify(body, null, 2) };
   } catch (error) {
     return { path, body: '', error: String(error) };
@@ -931,7 +1019,11 @@ export function formatDurationHuman(duration?: string): string | undefined {
   return `${ms} ms`;
 }
 
-/** Approximates months/years -- good enough for a guardrail warning, never for a request. */
+/**
+ * Approximates months/years -- good enough for a guardrail warning, never for a
+ * request. Delegates to the time-expression parser so a stream limit and a custom
+ * window agree on what a duration means.
+ */
 export function parseIsoDurationMs(duration?: string): number | null {
   return duration ? parseDurationMs(duration) : null;
 }
