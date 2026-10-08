@@ -10,20 +10,31 @@ import {
 } from './timeExpression';
 import {
   HttpMethod,
+  RecordsBucket,
   RecordsFilterOperator,
   RecordsFilterRow,
+  RecordsMetric,
   RecordsQuery,
   RecordsSortRow,
   Tuple,
 } from '../types';
+import { CogniteUnit } from '../types/dms';
+import { withUnitSuffix } from './units';
 import { INSTANCE_REF_HINT, parseInstanceRef } from './instanceRef';
 import {
+  RecordsAggregateDefinition,
+  RecordsAggregateRequest,
+  RecordsAggregateResponse,
+  RecordsAggregateResultNode,
+  RecordsAggregateTree,
   RecordsFilterDefinition,
   RecordsFilterRequest,
   RecordsItem,
   RecordsPropertyRef,
   RecordsSortSpec,
+  RecordsTargetUnits,
   RecordsTyping,
+  UnitSystem,
   RecordViewDefinition,
   RecordViewProperty,
   StreamDefinition,
@@ -64,9 +75,49 @@ export async function fetchStream(
   return data;
 }
 
+/**
+ * Unit systems the project knows about (Default, Imperial, ...). Each carries the
+ * unit it maps every quantity to, which is what makes a system a one-click
+ * alternative to naming a target unit per property.
+ */
+export async function fetchUnitSystems(
+  connector: Connector
+): Promise<UnitSystem[]> {
+  try {
+    return await connector.fetchItems<UnitSystem>({
+      method: HttpMethod.GET,
+      path: '/units/systems',
+      data: undefined,
+      cacheTime: CacheTime.Units,
+    });
+  } catch (error) {
+    // The picker simply hides when the catalog is unavailable.
+    console.warn('Failed to load unit systems', error);
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // View schema helpers
 // ---------------------------------------------------------------------------
+
+/** The unit a view property's container declares, if any. */
+export const propertyUnitExternalId = (
+  viewDef: RecordViewDefinition | null | undefined,
+  property: string
+): string | undefined => viewDef?.properties?.[property]?.type?.unit?.externalId;
+
+/** View properties whose container declares a unit — the convertible ones. */
+export function unitBearingProperties(
+  viewDef: RecordViewDefinition | null | undefined
+): Array<{ property: string; unitExternalId: string }> {
+  return Object.entries(viewDef?.properties ?? {})
+    .filter(([, def]) => !!def.type?.unit?.externalId)
+    .map(([property, def]) => ({
+      property,
+      unitExternalId: def.type!.unit!.externalId,
+    }));
+}
 
 export const viewSourceKey = (view: { externalId: string; version: string }) =>
   `${view.externalId}/${view.version}`;
@@ -97,13 +148,31 @@ export interface TopLevelProperty {
   name: string;
   type: string;
   operators: RecordsFilterOperator[];
+  /** Valid as a timeHistogram axis. */
+  timeBucket?: boolean;
+  /** Valid as a uniqueValues bucket. */
+  valuesBucket?: boolean;
+  /** Valid as a min/max metric property. */
+  minMax?: boolean;
 }
 
 export const TOP_LEVEL_PROPERTIES: TopLevelProperty[] = [
-  { name: 'space', type: 'text', operators: ['equals', 'in', 'prefix'] },
+  { name: 'space', type: 'text', operators: ['equals', 'in', 'prefix'], valuesBucket: true },
   { name: 'externalId', type: 'text', operators: ['equals', 'in', 'prefix'] },
-  { name: 'createdTime', type: 'timestamp', operators: ['range', 'equals', 'in'] },
-  { name: 'lastUpdatedTime', type: 'timestamp', operators: ['range', 'equals', 'in'] },
+  {
+    name: 'createdTime',
+    type: 'timestamp',
+    operators: ['range', 'equals', 'in'],
+    timeBucket: true,
+    minMax: true,
+  },
+  {
+    name: 'lastUpdatedTime',
+    type: 'timestamp',
+    operators: ['range', 'equals', 'in'],
+    timeBucket: true,
+    minMax: true,
+  },
 ];
 
 const TOP_LEVEL_BY_NAME = new Map(TOP_LEVEL_PROPERTIES.map((p) => [p.name, p]));
@@ -326,7 +395,37 @@ export function buildSort(
   return specs.length ? specs.slice(0, 5) : undefined;
 }
 
+/**
+ * Builds the targetUnits clause. Property references are view paths — the same
+ * form used by filters, sort targets and aggregates — because the API matches
+ * targetUnits by exact reference: a container path alongside a view-path query
+ * returns 200 and quietly performs no conversion.
+ *
+ * unitSystem and per-property targetUnits are a oneOf in the API; the system
+ * wins when both are somehow set, so a stale saved query can never send both.
+ */
+export function buildTargetUnits(
+  query: RecordsQuery
+): RecordsTargetUnits | undefined {
+  const { view } = query;
+  if (!view) {
+    return undefined;
+  }
+  if (hasText(query.unitSystem)) {
+    return { unitSystemName: query.unitSystem!.trim() };
+  }
+  const properties = (query.targetUnits ?? [])
+    .filter((entry) => hasText(entry?.property) && hasText(entry?.unitExternalId))
+    .map((entry) => ({
+      property: viewPropertyRef(view, entry.property),
+      unit: { externalId: entry.unitExternalId.trim() },
+    }));
+  return properties.length ? { properties } : undefined;
+}
+
 export interface RecordsBuildOptions {
+  /** Panel resolution target; drives the "auto" bucket interval. */
+  maxDataPoints?: number;
   /** The selected view's stream limit, which the time range must stay within. */
   maxFilteringIntervalMs?: number;
   /** CDF project, so the preview shows the real URL rather than a placeholder. */
@@ -423,6 +522,7 @@ export function buildRecordsFilterRequest(
   // twice ran that failure path twice.
   const filter = buildFilter(query);
   const sort = buildSort(query.sort);
+  const targetUnits = buildTargetUnits(query);
 
   return {
     ...(lastUpdatedTime && { lastUpdatedTime }),
@@ -440,7 +540,297 @@ export function buildRecordsFilterRequest(
     ...(filter && { filter }),
     ...(sort && { sort }),
     limit: Math.min(Math.max(query.limit || RECORDS_PAGE_LIMIT, 1), RECORDS_PAGE_LIMIT),
+    ...(targetUnits && { targetUnits }),
     includeTyping: true,
+  };
+}
+
+/** Aggregate identifiers the API reserves or rejects. */
+const RESERVED_METRIC_NAMES = ['_count', '_bucket_count'];
+
+export function validateMetricName(
+  name: string,
+  otherNames: string[] = []
+): string | null {
+  const trimmed = (name ?? '').trim();
+  if (!trimmed) {
+    return 'Name is required';
+  }
+  if (/[.[\]>]/.test(trimmed)) {
+    return 'Name cannot contain . [ ] or >';
+  }
+  if (RESERVED_METRIC_NAMES.includes(trimmed)) {
+    return `"${trimmed}" is reserved by the API`;
+  }
+  // The response walker treats every `bucket_*` key as a nesting level, so a metric
+  // named this way is accepted, sent, and then silently dropped from the frame.
+  if (trimmed.startsWith('bucket_')) {
+    return '"bucket_" is a reserved prefix';
+  }
+  if (otherNames.filter((n) => n === trimmed).length > 0) {
+    return 'Names must be unique';
+  }
+  return null;
+}
+
+/**
+ * The records API accepts exactly `[1-9][0-9]*(ms|s|m|h|d)` for fixedInterval —
+ * verified against the API, which rejects `5w`/`5M`/`5y` outright. Grafana's
+ * `$__interval` happily produces values outside that set, so everything is
+ * normalised through here before it reaches a request.
+ */
+const FIXED_INTERVAL_PATTERN = /^(\d+)(ms|s|m|h|d|w|M|y)$/;
+
+/** The API rejects a histogram that would produce more buckets than this. */
+export const MAX_HISTOGRAM_BUCKETS = 10000;
+
+/** The API rejects a uniqueValues size above this ("Size is too large"). */
+export const MAX_UNIQUE_VALUES_SIZE = 10000;
+
+/** A uniqueValues size the API accepts: a whole number from 1 to the maximum. */
+export function clampBucketSize(size: number): number {
+  const whole = Math.floor(Number(size));
+  if (!Number.isFinite(whole) || whole < 1) {
+    return 10;
+  }
+  return Math.min(whole, MAX_UNIQUE_VALUES_SIZE);
+}
+
+/**
+ * Candidate auto intervals, ascending. Every entry is expressible in the API's
+ * fixedInterval grammar and reads as a "round" number on a time axis.
+ */
+const AUTO_INTERVAL_LADDER_MS = [
+  10, 20, 50, 100, 200, 500,
+  SECOND, 2 * SECOND, 5 * SECOND, 10 * SECOND, 15 * SECOND, 30 * SECOND,
+  MINUTE, 2 * MINUTE, 5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE,
+  HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR,
+  DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 90 * DAY, 180 * DAY, 365 * DAY,
+];
+
+/** Renders a duration using the largest unit that divides it evenly. */
+export function formatFixedInterval(ms: number): string {
+  const amount = Math.max(1, Math.round(ms));
+  for (const [unitMs, suffix] of [
+    [DAY, 'd'],
+    [HOUR, 'h'],
+    [MINUTE, 'm'],
+    [SECOND, 's'],
+  ] as Array<[number, string]>) {
+    if (amount % unitMs === 0) {
+      return `${amount / unitMs}${suffix}`;
+    }
+  }
+  return `${amount}ms`;
+}
+
+/**
+ * Picks a bucket size for "auto": the smallest ladder step that both hits the
+ * panel's resolution target and stays under the API's bucket ceiling. Because it
+ * derives from the time range, it re-resolves whenever the range changes.
+ */
+export function computeAutoInterval(
+  spanMs: number,
+  maxDataPoints?: number
+): string {
+  const span = Math.max(spanMs || 0, 1);
+  const points = Math.max(maxDataPoints || 0, 1);
+  const target = span / points;
+  const ceiling = span / MAX_HISTOGRAM_BUCKETS;
+
+  const chosen =
+    AUTO_INTERVAL_LADDER_MS.find((step) => step >= target && step > ceiling) ??
+    AUTO_INTERVAL_LADDER_MS[AUTO_INTERVAL_LADDER_MS.length - 1];
+
+  return formatFixedInterval(chosen);
+}
+
+/** True when the interval field is asking us to derive the value. */
+export const isAutoInterval = (interval?: string) => {
+  const value = (interval ?? '').trim().toLowerCase();
+  return value === '' || value === 'auto' || value === '$__interval';
+};
+
+/**
+ * Grafana's `$__interval` resolves to values the records API does not all accept
+ * (it takes ms/s/m/h/d only). Normalise what we can and reject the rest.
+ */
+export function normalizeInterval(
+  interval: string
+): { interval?: string; warning?: string } {
+  const value = (interval ?? '').trim();
+  if (!value) {
+    return { warning: 'A time bucket interval is required.' };
+  }
+  const match = FIXED_INTERVAL_PATTERN.exec(value);
+  if (!match) {
+    return { warning: `Interval "${value}" is not a valid fixed interval.` };
+  }
+  const [, amountRaw, unit] = match;
+  const amount = Number(amountRaw);
+  if (amount <= 0) {
+    return { warning: `Interval "${value}" must be greater than zero.` };
+  }
+  // w/M/y are valid Grafana units but the API rejects them, so fold to days.
+  if (unit === 'w') {
+    return { interval: `${amount * 7}d` };
+  }
+  if (unit === 'M') {
+    return { interval: `${amount * 30}d` };
+  }
+  if (unit === 'y') {
+    return { interval: `${amount * 365}d` };
+  }
+  return { interval: `${amount}${unit}` };
+}
+
+/** Deterministic node names so the response walker can find its way back down. */
+export const bucketNodeName = (index: number) => `bucket_${index}`;
+
+function metricDefinition(
+  metric: RecordsMetric,
+  view: { space: string; externalId: string; version: string }
+): RecordsAggregateDefinition | null {
+  if (metric.function === 'count') {
+    return { count: {} };
+  }
+  if (!metric.property) {
+    return null;
+  }
+  const property = viewPropertyRef(view, metric.property);
+  switch (metric.function) {
+    case 'avg':
+      return { avg: { property } };
+    case 'min':
+      return { min: { property } };
+    case 'max':
+      return { max: { property } };
+    case 'sum':
+      return { sum: { property } };
+    default:
+      return null;
+  }
+}
+
+export function buildRecordsAggregateRequest(
+  query: RecordsQuery,
+  range: Tuple<number> | null,
+  options: RecordsBuildOptions = {}
+): { request: RecordsAggregateRequest; warnings: string[] } {
+  const { view } = query;
+  if (!view) {
+    throw new Error('A record view must be selected before building a request.');
+  }
+  const warnings: string[] = [];
+
+  // Metrics form the innermost level of the tree.
+  const metricTree: RecordsAggregateTree = {};
+  const usedNames: string[] = [];
+  (query.metrics ?? []).forEach((metric) => {
+    const nameError = validateMetricName(metric.name, usedNames);
+    if (nameError) {
+      warnings.push(`Metric "${metric.name}" was skipped: ${nameError.toLowerCase()}.`);
+      return;
+    }
+    const definition = metricDefinition(metric, view);
+    if (!definition) {
+      warnings.push(
+        `Metric "${metric.name}" was skipped: ${metric.function} requires a property.`
+      );
+      return;
+    }
+    usedNames.push(metric.name.trim());
+    metricTree[metric.name.trim()] = definition;
+  });
+
+  if (!Object.keys(metricTree).length) {
+    // Every bucket already reports `count`, so an empty Compute list still returns
+    // something useful rather than a rejected request.
+    metricTree.count = { count: {} };
+  }
+
+  // The query window, which also bounds every time bucket.
+  const boundsWindow = resolveTimeWindow(query, range);
+
+  // Fold buckets right-to-left so buckets[0] ends up outermost.
+  const buckets = (query.buckets ?? []).filter((b) => b?.property);
+  let aggregates: RecordsAggregateTree = metricTree;
+  // Each time bucket is bounded to the window by a range filter on its axis, so
+  // only buckets inside the panel come back and the bucket count stays bounded.
+  // Not hardBounds: on a view property the API answers 500 when no record falls
+  // inside them, where a range filter returns no buckets. The filter also takes
+  // ISO-8601 only for a view timestamp, so the bounds are sent in that form.
+  const axisFilters: RecordsFilterDefinition[] = [];
+  for (let i = buckets.length - 1; i >= 0; i -= 1) {
+    const bucket = buckets[i];
+    const property = viewPropertyRef(view, bucket.property);
+    let definition: RecordsAggregateDefinition | null = null;
+
+    if (bucket.kind === 'timeHistogram') {
+      if (boundsWindow) {
+        axisFilters.push({
+          range: {
+            property,
+            gte: new Date(boundsWindow.gte).toISOString(),
+            lte: new Date(boundsWindow.lte).toISOString(),
+          },
+        });
+      }
+      const spanMs = boundsWindow
+        ? boundsWindow.lte - boundsWindow.gte
+        : range
+          ? range[1] - range[0]
+          : 0;
+      // "auto" is resolved here rather than by Grafana, because $__interval can
+      // land on units the API rejects and on bucket counts it refuses to serve.
+      const autoInterval = () => computeAutoInterval(spanMs, options.maxDataPoints);
+      const resolved = isAutoInterval(bucket.interval)
+        ? { interval: autoInterval() }
+        : normalizeInterval(bucket.interval);
+      // Every level must stay in the tree: the response walker finds levels by
+      // index, so dropping one would misalign it and lose all the levels below.
+      let fixedInterval = resolved.interval;
+      if (resolved.warning || !fixedInterval) {
+        fixedInterval = autoInterval();
+        warnings.push(`${resolved.warning} Using ${fixedInterval} (auto) instead.`);
+      }
+      definition = {
+        timeHistogram: {
+          property,
+          fixedInterval,
+          aggregates,
+        },
+      };
+    } else {
+      definition = {
+        uniqueValues: {
+          property,
+          size: clampBucketSize(bucket.size),
+          aggregates,
+        },
+      };
+    }
+
+    if (definition) {
+      aggregates = { [bucketNodeName(i)]: definition };
+    }
+  }
+
+  const leaves = [buildFilter(query), ...axisFilters].filter(
+    (leaf): leaf is RecordsFilterDefinition => !!leaf
+  );
+  const filter = leaves.length > 1 ? { and: leaves } : leaves[0];
+  const targetUnits = buildTargetUnits(query);
+
+  return {
+    request: {
+      ...(boundsWindow && { lastUpdatedTime: boundsWindow }),
+      ...(filter && { filter }),
+      aggregates,
+      ...(targetUnits && { targetUnits }),
+      includeTyping: true,
+    },
+    warnings,
   };
 }
 
@@ -464,24 +854,52 @@ export function buildRequestPreviewParts(
   options: RecordsBuildOptions = {},
   stream: StreamDefinition | null = null
 ): RecordsRequestPreviewParts | null {
-  const { view } = query;
+  const { view, mode } = query;
   if (!view?.streamId) {
     return null;
   }
+  const endpoint = mode === 'aggregate' ? 'aggregate' : 'filter';
   const project = options.project?.trim() || '{project}';
-  const path = `POST /api/v1/projects/${project}/streams/${view.streamId}/records/filter`;
+  const path = `POST /api/v1/projects/${project}/streams/${view.streamId}/records/${endpoint}`;
   // The datasource's own steps, in its order: the query arrives interpolated, the
   // stream's options and rules apply, then the same builder runs.
   const buildOptions = streamBuildOptions(stream, options);
   const effective = range ? applyStreamConstraints(query, stream, range, buildOptions).query : query;
   try {
-    const body = buildRecordsFilterRequest(effective, range);
+    const body =
+      mode === 'aggregate'
+        ? buildRecordsAggregateRequest(effective, range, buildOptions).request
+        : buildRecordsFilterRequest(effective, range);
     return { path, body: JSON.stringify(body, null, 2) };
   } catch (error) {
     return { path, body: '', error: String(error) };
   }
 }
 
+
+/**
+ * The frame shape recordsAggregateToDataFrames will produce for this bucket
+ * configuration — mirrors its exact filtering and grouping rules so the
+ * editor's shape hint can never disagree with the actual result.
+ */
+export type RecordsResultShape =
+  | { kind: 'timeseries'; seriesBy: string[] }
+  | { kind: 'table'; groupBy: string[] }
+  | { kind: 'single' };
+
+export function deriveResultShape(buckets: RecordsBucket[]): RecordsResultShape {
+  const complete = (buckets ?? []).filter((b) => b?.property);
+  if (!complete.length) {
+    return { kind: 'single' };
+  }
+  const hasTimeBucket = complete.some((b) => b.kind === 'timeHistogram');
+  const labelKeys = complete
+    .filter((b) => b.kind === 'uniqueValues')
+    .map((b) => b.property);
+  return hasTimeBucket
+    ? { kind: 'timeseries', seriesBy: labelKeys }
+    : { kind: 'table', groupBy: labelKeys };
+}
 
 // ---------------------------------------------------------------------------
 // ISO-8601 duration parsing (only used for the maxFilteringInterval warning)
@@ -522,6 +940,17 @@ export function parseIsoDurationMs(duration?: string): number | null {
 // Response → DataFrame
 // ---------------------------------------------------------------------------
 
+/**
+ * Effective unit of a view property, as reported by the response's typing block --
+ * which already reflects any conversion applied by targetUnits, so this is the unit
+ * the values are actually in rather than the storage one.
+ */
+const effectiveUnitOf = (
+  viewTyping: Record<string, RecordViewProperty> | undefined,
+  property?: string
+): string | undefined =>
+  property ? viewTyping?.[property]?.type?.unit?.externalId : undefined;
+
 function fieldTypeFor(property?: RecordViewProperty): FieldType {
   const type = property?.type?.type;
   if (property?.type?.list) {
@@ -548,7 +977,8 @@ function fieldTypeFor(property?: RecordViewProperty): FieldType {
 
 /**
  * How a non-scalar property value reads in a frame. Direct relations come back as
- * `{ space, externalId }` and would otherwise stringify to "[object Object]".
+ * `{ space, externalId }` -- both as record properties and as uniqueValues bucket
+ * values -- and would otherwise stringify to "[object Object]".
  */
 export function formatComplexValue(value: any): string {
   if (value === null || value === undefined) {
@@ -588,7 +1018,8 @@ export function recordsToDataFrame(
   items: RecordsItem[],
   typing: RecordsTyping | undefined,
   query: RecordsQuery,
-  refId?: string
+  refId?: string,
+  unitIndex?: Map<string, CogniteUnit>
 ): DataFrame {
   const { view } = query;
   const sourceKey = view ? viewSourceKey(view) : '';
@@ -639,8 +1070,17 @@ export function recordsToDataFrame(
     return fieldTypeFor(viewTyping?.[name]);
   };
 
+  // The unit is appended to the column name rather than set as field.config.unit, so
+  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  const labelOf = (name: string): string =>
+    topLevelProperty(name)
+      ? name
+      : query.hideUnitSuffix
+        ? name
+        : withUnitSuffix(name, effectiveUnitOf(viewTyping, name), unitIndex);
+
   columnNames.forEach((name) => {
-    frame.addField({ name, type: typeOf(name) });
+    frame.addField({ name: labelOf(name), type: typeOf(name) });
   });
 
   items.forEach((item) => {
@@ -650,10 +1090,245 @@ export function recordsToDataFrame(
       const raw = topLevelProperty(name)
         ? (item as Record<string, any>)[name]
         : properties[name];
-      row[name] = normalizeValue(raw, typeOf(name));
+      row[labelOf(name)] = normalizeValue(raw, typeOf(name));
     });
     frame.add(row);
   });
 
   return frame;
+}
+
+interface FlatAggregateRow {
+  /** Bucket values keyed by the bucket's property name; time buckets use epoch ms. */
+  keys: Record<string, any>;
+  timestamp?: number;
+  /** Numbers, or an ISO-8601 string for min/max over a timestamp. */
+  metrics: Record<string, number | string | null>;
+}
+
+function metricValue(node: RecordsAggregateResultNode): number | string | null {
+  const keys = ['avg', 'min', 'max', 'sum', 'count'] as const;
+  for (const key of keys) {
+    const value = node[key];
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+  }
+  return null;
+}
+
+/**
+ * Walks the nested bucket tree, emitting one flat row per innermost bucket.
+ *
+ * Only the metrics the user configured become columns. The API also reports a
+ * record count on every bucket, but surfacing it unasked would add a duplicate
+ * column whenever the user already has a Count metric — and in a time series
+ * panel every numeric field is a series, so it would draw a phantom line too.
+ * An empty Compute list already gets a count metric from the request builder.
+ */
+function flattenAggregates(
+  node: Record<string, RecordsAggregateResultNode>,
+  buckets: RecordsBucket[],
+  depth: number,
+  keys: Record<string, any>,
+  timestamp: number | undefined,
+  rows: FlatAggregateRow[]
+): void {
+  const bucket = buckets[depth];
+  const bucketNode = bucket ? node?.[bucketNodeName(depth)] : undefined;
+
+  if (bucket && bucketNode) {
+    if (bucket.kind === 'timeHistogram') {
+      (bucketNode.timeHistogramBuckets ?? []).forEach((b) => {
+        flattenAggregates(
+          b.aggregates ?? {},
+          buckets,
+          depth + 1,
+          keys,
+          new Date(b.intervalStart).getTime(),
+          rows
+        );
+      });
+      return;
+    }
+    (bucketNode.uniqueValueBuckets ?? []).forEach((b) => {
+      flattenAggregates(
+        b.aggregates ?? {},
+        buckets,
+        depth + 1,
+        { ...keys, [bucket.property]: b.value },
+        timestamp,
+        rows
+      );
+    });
+    return;
+  }
+
+  // Innermost level: collect the metric values.
+  const metrics: Record<string, number | string | null> = {};
+  Object.entries(node ?? {}).forEach(([name, value]) => {
+    if (name.startsWith('bucket_')) {
+      return;
+    }
+    metrics[name] = metricValue(value);
+  });
+  rows.push({ keys, timestamp, metrics });
+}
+
+/**
+ * The metrics whose result is an instant: min or max over a timestamp property. The
+ * API returns those as ISO-8601 strings, so they become time fields, not numbers.
+ */
+function timestampMetricNames(
+  query: RecordsQuery,
+  typing: RecordsTyping | undefined
+): Set<string> {
+  const viewTyping = query.view
+    ? typing?.[query.view.space]?.[viewSourceKey(query.view)]
+    : undefined;
+  const typeOf = (property: string) =>
+    topLevelProperty(property)?.type ?? viewTyping?.[property]?.type?.type;
+  return new Set(
+    (query.metrics ?? [])
+      .filter((m) => m.function === 'min' || m.function === 'max')
+      .filter((m) => !!m.property && typeOf(m.property) === 'timestamp')
+      .map((m) => m.name.trim())
+  );
+}
+
+/**
+ * Aggregate results become labeled time series when a time bucket is present, so
+ * time series panels render them without a transform; otherwise one table frame.
+ */
+export function recordsAggregateToDataFrames(
+  response: RecordsAggregateResponse,
+  query: RecordsQuery,
+  refId?: string,
+  unitIndex?: Map<string, CogniteUnit>
+): DataFrame[] {
+  // count has no source property, so it stays unitless; avg/min/max/sum inherit
+  // the (already converted) unit of the property they aggregate.
+  const viewTyping = query.view
+    ? response.typing?.[query.view.space]?.[viewSourceKey(query.view)]
+    : undefined;
+  // The unit is appended to the series name rather than set as field.config.unit, so
+  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  const labelForMetric = (metricName: string): string => {
+    const metric = (query.metrics ?? []).find((m) => m.name.trim() === metricName);
+    if (!metric?.property || metric.function === 'count') {
+      return metricName;
+    }
+    return query.hideUnitSuffix
+      ? metricName
+      : withUnitSuffix(
+        metricName,
+        effectiveUnitOf(viewTyping, metric.property),
+        unitIndex,
+      );
+  };
+  const buckets = (query.buckets ?? []).filter((b) => b?.property);
+  const rows: FlatAggregateRow[] = [];
+  flattenAggregates(response.aggregates ?? {}, buckets, 0, {}, undefined, rows);
+
+  if (!rows.length) {
+    return [new MutableDataFrame({ refId, fields: [] })];
+  }
+
+  const metricNames = Array.from(
+    rows.reduce((acc, row) => {
+      Object.keys(row.metrics).forEach((name) => acc.add(name));
+      return acc;
+    }, new Set<string>())
+  );
+  const timeMetrics = timestampMetricNames(query, response.typing);
+  const metricType = (name: string) =>
+    timeMetrics.has(name) ? FieldType.time : FieldType.number;
+  // A bucket with no values for the property reports 0 rather than null, for a
+  // timestamp too, where a real result is always a string. So only a string is read
+  // as an instant, and the 0 becomes an empty cell instead of 1 January 1970.
+  const metricCell = (row: FlatAggregateRow, name: string) => {
+    const value = row.metrics[name];
+    if (timeMetrics.has(name)) {
+      return typeof value === 'string' ? normalizeValue(value, FieldType.time) : null;
+    }
+    return typeof value === 'number' ? value : null;
+  };
+  const hasTimeBucket = buckets.some((b) => b.kind === 'timeHistogram');
+  const labelKeys = buckets
+    .filter((b) => b.kind === 'uniqueValues')
+    .map((b) => b.property);
+
+  if (!hasTimeBucket) {
+    const frame = new MutableDataFrame({ refId, name: 'aggregates', fields: [] });
+    labelKeys.forEach((key) => frame.addField({ name: key, type: FieldType.string }));
+    metricNames.forEach((name) => {
+      frame.addField({ name: labelForMetric(name), type: metricType(name) });
+    });
+    rows.forEach((row) => {
+      const out: Record<string, any> = {};
+      labelKeys.forEach((key) => {
+        // Bucket values are objects for direct relations, so they are rendered the
+        // same way the property itself is rendered in a list frame.
+        out[key] = key in row.keys ? formatComplexValue(row.keys[key]) : null;
+      });
+      metricNames.forEach((name) => {
+        out[labelForMetric(name)] = metricCell(row, name);
+      });
+      frame.add(out);
+    });
+    return [frame];
+  }
+
+  // One frame per distinct combination of non-time bucket values.
+  const groups = new Map<string, FlatAggregateRow[]>();
+  rows.forEach((row) => {
+    const key = labelKeys.map((k) => formatComplexValue(row.keys[k])).join(' · ');
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(row);
+    } else {
+      groups.set(key, [row]);
+    }
+  });
+
+  return Array.from(groups.entries()).map(([groupKey, groupRows]) => {
+    const labels = labelKeys.reduce<Record<string, string>>((acc, key) => {
+      acc[key] = formatComplexValue(groupRows[0].keys[key]);
+      return acc;
+    }, {});
+
+    const sorted = [...groupRows].sort(
+      (a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0)
+    );
+    const frame = new MutableDataFrame({
+      refId,
+      name: groupKey || 'aggregates',
+      fields: [],
+    });
+    frame.addField({ name: 'time', type: FieldType.time });
+    metricNames.forEach((name) => {
+      const metricLabel = labelForMetric(name);
+      frame.addField({
+        name: metricLabel,
+        type: metricType(name),
+        // Labels are kept so "group by label" transformations and series overrides
+        // can match on the bucket value...
+        labels: labelKeys.length ? labels : undefined,
+        config: {
+          // ...but the series name is set explicitly, because Grafana would otherwise
+          // compose it from the frame name, the field name and the labels, printing
+          // the bucket value twice ("i=10523 duration (s) i=10523").
+          displayNameFromDS: groupKey ? `${groupKey} · ${metricLabel}` : metricLabel,
+        },
+      });
+    });
+    sorted.forEach((row) => {
+      const out: Record<string, any> = { time: row.timestamp ?? null };
+      metricNames.forEach((name) => {
+        out[labelForMetric(name)] = metricCell(row, name);
+      });
+      frame.add(out);
+    });
+    return frame;
+  });
 }

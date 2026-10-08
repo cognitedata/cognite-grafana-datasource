@@ -25,7 +25,7 @@ const ALARMS: RecordViewDefinition = {
       containerPropertyIdentifier: 'severity',
     },
     pressure: {
-      type: { type: 'float64', list: false } as any,
+      type: { type: 'float64', list: false, unit: { externalId: 'pressure:pa' } } as any,
       container: { type: 'container', space: 'alarm_schema', externalId: 'alarm_common' },
       containerPropertyIdentifier: 'pressure',
     },
@@ -135,6 +135,39 @@ describe('RecordsTab view switching', () => {
       containerExternalId: 'reading_common',
       containerPropertyIdentifier: 'level',
     });
+  });
+
+  it('clears a unit system the new view cannot act on', async () => {
+    // Only AlarmEvent has a unit-bearing property, so the Units section disappears
+    // on the way to Reading -- and a system left set would keep converting unseen.
+    const onQueryChange = await renderTab({
+      ...defaultRecordsQuery,
+      view: selectedAlarms,
+      unitSystem: 'SI',
+    });
+
+    await chooseView(/Reading/);
+
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalled());
+    expect(onQueryChange.mock.calls[0][0].recordsQuery.unitSystem).toBeUndefined();
+  });
+
+  it('keeps a unit system when the new view still converts something', async () => {
+    const onQueryChange = await renderTab({
+      ...defaultRecordsQuery,
+      view: {
+        space: 'reading_schema',
+        externalId: 'Reading',
+        version: 'v1',
+        streamId: 'readings_live',
+      },
+      unitSystem: 'SI',
+    });
+
+    await chooseView(/AlarmEvent/);
+
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalled());
+    expect(onQueryChange.mock.calls[0][0].recordsQuery.unitSystem).toBe('SI');
   });
 
   it('drops rows whose property the new view does not expose at all', async () => {

@@ -5,6 +5,7 @@
 export interface RecordPropertyType {
   type: string; // 'text' | 'boolean' | 'float64' | 'int64' | 'timestamp' | 'date' | 'json' | 'direct' | 'enum' | ...
   list?: boolean;
+  unit?: { externalId: string };
   /** Present for enum properties; keys are the allowed values */
   values?: Record<string, { name?: string; description?: string }>;
   /**
@@ -56,6 +57,12 @@ export interface StreamDefinition {
   };
 }
 
+/** An entry from GET /units/systems. */
+export interface UnitSystem {
+  name: string;
+  quantities?: Array<{ name: string; unitExternalId: string }>;
+}
+
 export interface RecordsViewSource {
   type: 'view';
   space: string;
@@ -102,12 +109,26 @@ export interface RecordsSortSpec {
   direction: 'ascending' | 'descending';
 }
 
+/**
+ * oneOf: convert everything to a system, or convert named properties. Property
+ * references must match those used in the rest of the request.
+ */
+export type RecordsTargetUnits =
+  | { unitSystemName: string }
+  | {
+      properties: Array<{
+        property: RecordsPropertyRef;
+        unit: { externalId: string } | { unitSystemName: string };
+      }>;
+    };
+
 export interface RecordsFilterRequest {
   lastUpdatedTime?: RecordsTimeRange;
   sources: RecordsSourceSelector[];
   filter?: RecordsFilterDefinition;
   sort?: RecordsSortSpec[];
   limit: number;
+  targetUnits?: RecordsTargetUnits;
   includeTyping?: boolean;
 }
 
@@ -128,5 +149,71 @@ export interface RecordsItem {
 
 export interface RecordsFilterResponse {
   items: RecordsItem[];
+  typing?: RecordsTyping;
+}
+
+// --- Aggregates ---
+
+export interface RecordsMetricAggregate {
+  count?: { property?: RecordsPropertyRef };
+  avg?: { property: RecordsPropertyRef };
+  min?: { property: RecordsPropertyRef };
+  max?: { property: RecordsPropertyRef };
+  sum?: { property: RecordsPropertyRef };
+}
+
+export interface RecordsBucketAggregate {
+  uniqueValues?: {
+    property: RecordsPropertyRef;
+    size?: number;
+    aggregates?: RecordsAggregateTree;
+  };
+  timeHistogram?: {
+    property: RecordsPropertyRef;
+    fixedInterval?: string;
+    calendarInterval?: string;
+    /** ISO-8601 date-time strings only; epoch milliseconds are rejected. */
+    hardBounds?: { min?: string; max?: string };
+    aggregates?: RecordsAggregateTree;
+  };
+}
+
+export type RecordsAggregateDefinition =
+  & RecordsMetricAggregate
+  & RecordsBucketAggregate;
+
+export type RecordsAggregateTree = Record<string, RecordsAggregateDefinition>;
+
+export interface RecordsAggregateRequest {
+  lastUpdatedTime?: RecordsTimeRange;
+  filter?: RecordsFilterDefinition;
+  aggregates: RecordsAggregateTree;
+  targetUnits?: RecordsTargetUnits;
+  includeTyping?: boolean;
+}
+
+export interface RecordsAggregateResultNode {
+  // Metric results
+  count?: number;
+  avg?: number;
+  // An ISO-8601 string when the property is a timestamp
+  min?: number | string;
+  max?: number | string;
+  sum?: number;
+  // Bucket results
+  uniqueValueBuckets?: Array<{
+    value: string | number | boolean;
+    count: number;
+    aggregates?: Record<string, RecordsAggregateResultNode>;
+  }>;
+  timeHistogramBuckets?: Array<{
+    intervalStart: string;
+    count: number;
+    aggregates?: Record<string, RecordsAggregateResultNode>;
+  }>;
+}
+
+export interface RecordsAggregateResponse {
+  aggregates: Record<string, RecordsAggregateResultNode>;
   typing?: RecordsTyping;
 }

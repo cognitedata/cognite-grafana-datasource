@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { EditorRow, EditorRows, FlexItem } from '@grafana/plugin-ui';
+import { Stack } from '@grafana/ui';
 import { SelectableValue, TimeRange } from '@grafana/data';
 import {
   RecordsFilterRow,
@@ -9,14 +10,19 @@ import {
   SelectedProps,
   defaultRecordsQuery,
 } from '../types';
-import { RecordViewDefinition, StreamDefinition } from '../types/records';
+import { RecordViewDefinition, StreamDefinition, UnitSystem } from '../types/records';
 import {
   buildRequestPreviewParts,
+  computeAutoInterval,
   fetchRecordViews,
   fetchStream,
+  fetchUnitSystems,
   isTopLevelProperty,
+  unitBearingProperties,
   parseIsoDurationMs,
 } from '../cdf/records';
+import { getCogniteUnitIndex } from '../cdf/client';
+import { CogniteUnit } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeViewRef } from './common/ViewPicker';
 import { propertyOptions, propertyTypeOf, viewLabel } from './records/shared';
@@ -25,7 +31,11 @@ import { TimeWindowEditor } from './records/TimeWindowEditor';
 import { FilterList } from './records/FilterList';
 import { SortEditor } from './records/SortEditor';
 import { ListOptionsEditor } from './records/ListOptionsEditor';
+import { BucketList } from './records/BucketList';
+import { MetricList } from './records/MetricList';
+import { ResultShapeBadge } from './records/ResultShapeBadge';
 import { RequestPreview } from './records/RequestPreview';
+import { UnitsEditor } from './records/UnitsEditor';
 
 interface RecordsTabProps extends SelectedProps {
   connector: Connector;
@@ -35,6 +45,8 @@ interface RecordsTabProps extends SelectedProps {
    * the body sent to CDF.
    */
   interpolate?: (query: RecordsQuery) => RecordsQuery;
+  /** Panel resolution target, used to resolve the "auto" bucket interval. */
+  maxDataPoints?: number;
 }
 
 export const RecordsTab: React.FC<RecordsTabProps> = ({
@@ -43,6 +55,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   connector,
   range,
   interpolate = (recordsQuery) => recordsQuery,
+  maxDataPoints,
 }) => {
   // `defaults()` in the query editor merges only the top level, so a dashboard
   // saved with a partial recordsQuery would otherwise reach the lists as undefined.
@@ -50,12 +63,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     () => ({ ...defaultRecordsQuery, ...query.recordsQuery }),
     [query.recordsQuery]
   );
-  const { view } = recordsQuery;
+  const { view, mode } = recordsQuery;
 
   const [viewDefs, setViewDefs] = useState<RecordViewDefinition[]>([]);
   const [loadingViews, setLoadingViews] = useState(false);
   const [stream, setStream] = useState<StreamDefinition | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
+  const [unitSystems, setUnitSystems] = useState<UnitSystem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +106,21 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       cancelled = true;
     };
   }, [connector, view?.streamId]);
+
+  // Both are static reference data behind long-lived caches, so this is a single
+  // fetch per connector no matter how many query rows are open.
+  useEffect(() => {
+    let cancelled = false;
+    getCogniteUnitIndex(connector)
+      .then((index) => !cancelled && setUnitIndex(index))
+      .catch(() => !cancelled && setUnitIndex(new Map()));
+    fetchUnitSystems(connector)
+      .then((systems) => !cancelled && setUnitSystems(systems ?? []))
+      .catch(() => !cancelled && setUnitSystems([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [connector]);
 
   const viewDef = useMemo(
     () =>
@@ -160,6 +190,9 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       };
     };
 
+    const targetUnits = (recordsQuery.targetUnits ?? []).filter((entry) =>
+      known(entry.property)
+    );
     patchQuery({
       view: {
         space: next.space,
@@ -170,6 +203,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       filters: recordsQuery.filters.filter((row) => known(row.property)).map(retype),
       sort: recordsQuery.sort.filter((row) => known(row.property)).map(remap),
       columns: recordsQuery.columns.filter((column) => known(column)),
+      buckets: recordsQuery.buckets.filter((bucket) => known(bucket.property)),
+      metrics: recordsQuery.metrics.filter(
+        (metric) => !metric.property || known(metric.property)
+      ),
+      targetUnits,
+      // The Units section hides itself when the new view converts nothing, so a
+      // system left set here would keep converting from a control nobody can see.
+      unitSystem: unitBearingProperties(next).length ? recordsQuery.unitSystem : undefined,
     });
   };
 
@@ -196,15 +237,24 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     [range]
   );
 
+  // Mirrors what the datasource will send, so the editor shows the real value.
+  const autoInterval = useMemo(
+    () => computeAutoInterval(timeRange ? timeRange[1] - timeRange[0] : 0, maxDataPoints),
+    [timeRange, maxDataPoints]
+  );
+
   const previewParts = useMemo(
     () =>
       buildRequestPreviewParts(
         interpolate(recordsQuery),
         timeRange,
-        { project: connector.projectName },
+        {
+          maxDataPoints,
+          project: connector.projectName,
+        },
         stream
       ),
-    [recordsQuery, timeRange, connector, stream, interpolate]
+    [recordsQuery, timeRange, maxDataPoints, connector, stream, interpolate]
   );
 
   // Top-level record properties are selectable here even though they never reach
@@ -216,12 +266,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     <EditorRows>
       <EditorRow>
         <RecordsQueryHeader
+          mode={mode}
           view={view}
           viewOptions={viewOptions}
           selectedViewValue={selectedViewValue}
           loadingViews={loadingViews}
           stream={stream}
           maxInterval={maxInterval}
+          onModeChange={(value) => patchQuery({ mode: value })}
           onViewChange={onViewChange}
           preview={
             previewParts && (
@@ -246,6 +298,20 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
         />
       </EditorRow>
 
+      {unitBearingProperties(viewDef).length > 0 && (
+        <EditorRow>
+          <UnitsEditor
+            viewDef={viewDef}
+            unitSystem={recordsQuery.unitSystem}
+            targetUnits={recordsQuery.targetUnits ?? []}
+            hideUnitSuffix={recordsQuery.hideUnitSuffix}
+            unitSystems={unitSystems}
+            unitIndex={unitIndex}
+            onChange={patchQuery}
+          />
+        </EditorRow>
+      )}
+
       <EditorRow>
         <FilterList
           filters={recordsQuery.filters}
@@ -255,19 +321,43 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
         />
       </EditorRow>
 
-      <EditorRow>
-        <SortEditor
-          sort={recordsQuery.sort}
-          viewDef={viewDef}
-          onChange={(sort) => patchQuery({ sort })}
-        />
-        <ListOptionsEditor
-          columns={recordsQuery.columns}
-          columnOptions={columnOptions}
-          limit={recordsQuery.limit}
-          onChange={patchQuery}
-        />
-      </EditorRow>
+      {mode === 'list' ? (
+        <EditorRow>
+          <SortEditor
+            sort={recordsQuery.sort}
+            viewDef={viewDef}
+            onChange={(sort) => patchQuery({ sort })}
+          />
+          <ListOptionsEditor
+            columns={recordsQuery.columns}
+            columnOptions={columnOptions}
+            limit={recordsQuery.limit}
+            onChange={patchQuery}
+          />
+        </EditorRow>
+      ) : (
+        <>
+          <EditorRow>
+            <BucketList
+              buckets={recordsQuery.buckets}
+              viewDef={viewDef}
+              autoInterval={autoInterval}
+              onChange={(buckets) => patchQuery({ buckets })}
+            />
+          </EditorRow>
+          <EditorRow>
+            <MetricList
+              metrics={recordsQuery.metrics}
+              viewDef={viewDef}
+              onChange={(metrics) => patchQuery({ metrics })}
+            />
+            <FlexItem grow={1} />
+            <Stack gap={1} alignItems="center">
+              <ResultShapeBadge buckets={recordsQuery.buckets} />
+            </Stack>
+          </EditorRow>
+        </>
+      )}
     </EditorRows>
   );
 };

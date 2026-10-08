@@ -23,6 +23,8 @@ Data Source for Grafana**.
 - **Dashboard variables**: each tab follows its feature toggle, as the panel tabs do: **Assets** is offered when asset-centric features are on, **GraphQL** when the GraphQL feature is on. A variable already saved on either tab keeps that tab even when the toggle is off, so existing dashboards stay editable, and saved variables keep resolving regardless of the toggles.
 - Variable queries now run through Grafana's current `CustomVariableSupport` API. Saved variables are unaffected.
 - **Records (Beta)**: a new query tab for reading records from streams, enabled by default alongside the other Core Data Model features and marked Beta. Pick a record view and its records come back as rows, with selectable columns, sorting and a result limit. Filters cover every property of the view: a direct relation gets a searchable instance picker when its view names a target, and filter values accept dashboard variables, including a variable holding instance references. Records are read from the dashboard time range, or from the whole stream when the time window is **None** (not offered on immutable streams, which require one). **Request preview** shows the exact request sent to CDF, dashboard variables filled in, ready to copy and replay.
+- **Records**: an **Aggregate** mode returns server-side statistics instead of rows: up to four **Group by** levels (time histograms and unique values) and up to five metrics (count, average, min, max and sum). With a time histogram the result is one time series per group; without one it is a table.
+- **Records**: unit conversion, to a unit system or per property, for properties whose view declares a unit. Columns and series name the unit their values are in, which can be switched off.
 
 ### Bug fixes
 

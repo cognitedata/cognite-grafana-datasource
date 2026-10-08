@@ -713,6 +713,25 @@ describe('Datasource Query', () => {
     });
   });
 
+  it('leaves an auto bucket interval for the records builder to size', () => {
+    const ds = getMockedDataSource({ fetch: jest.fn() });
+    const replace = (ds as any).templateSrv.replace as Mock;
+    replace.mockClear();
+    const { buckets } = (ds as any).interpolateRecordsQuery(
+      {
+        mode: 'aggregate',
+        filters: [],
+        buckets: [
+          { kind: 'timeHistogram', property: 't', interval: '$__interval' },
+          { kind: 'timeHistogram', property: 't', interval: '$TimeseriesVariable' },
+        ],
+      },
+      {}
+    );
+    expect(buckets.map((b: any) => b.interval)).toEqual(['$__interval', 'Timeseries1']);
+    expect(replace.mock.calls.map(([q]) => q)).not.toContain('$__interval');
+  });
+
   describe('records filter interpolation', () => {
     const fetcher = { fetch: jest.fn() };
     const ds = getMockedDataSource(fetcher);
@@ -721,7 +740,7 @@ describe('Datasource Query', () => {
 
     const interpolate = (filters: any[]) =>
       (ds as any).interpolateRecordsQuery(
-        { filters, sort: [], columns: [] },
+        { mode: 'list', filters, sort: [], columns: [], buckets: [], metrics: [] },
         {}
       ).filters;
 

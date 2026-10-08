@@ -433,6 +433,7 @@ export function QueryEditor(props: EditorProps) {
               range: props.range,
               interpolate: (recordsQuery: RecordsQuery) =>
                 datasource.interpolateRecordsQuery(recordsQuery, props.data?.request?.scopedVars),
+              maxDataPoints: props.data?.request?.maxDataPoints,
             }}
           />
         )}
