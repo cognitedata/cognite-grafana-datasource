@@ -20,15 +20,12 @@ import {
   defaultQuery,
   CogniteQuery,
   Tab as Tabs,
-  QueryRequestError,
-  QueryWarning,
   TabTitles,
   EditorProps,
   SelectedProps,
   OnQueryChange,
   RecordsQuery,
 } from '../types';
-import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
 import '../css/common.css';
@@ -41,7 +38,7 @@ import { CogniteActivityTab } from './cogniteActivityTab';
 import { RecordsTab } from './recordsTab';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { EventsTab } from './eventsTab';
-import { eventBusService } from '../appEventHandler';
+import { useQueryMessages } from './useQueryMessages';
 import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
@@ -313,8 +310,7 @@ export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
-  const [errorMessage, setErrorMessage] = useState('');
-  const [warningMessage, setWarningMessage] = useState('');
+  const { errorMessage, warningMessage, clearMessages } = useQueryMessages(thisRefId);
 
   // At the top of the component, after defining `query`
   const queryRef = React.useRef(query);
@@ -324,49 +320,17 @@ export function QueryEditor(props: EditorProps) {
   const onQueryChange: OnQueryChange = React.useCallback((patch, shouldRunQuery = true) => {
     onChange({ ...queryRef.current, ...patch } as CogniteQuery);
     if (shouldRunQuery) {
-      setErrorMessage('');
-      setWarningMessage('');
+      clearMessages();
       onRunQuery();
     }
-  }, [onChange, onRunQuery]); // Dependencies are now stable
+  }, [onChange, onRunQuery, clearMessages]); // Dependencies are now stable
 
   const onSelectTab = (tab: Tabs) => () => {
     onQueryChange({ tab });
   };
 
-  const handleError = ({ refId, error }: QueryRequestError) => {
-    if (thisRefId === refId) {
-      setErrorMessage(error);
-    }
-  };
-  const handleWarning = ({ refId, warning }: QueryWarning) => {
-    if (thisRefId === refId) {
-      setWarningMessage(warning);
-    }
-  };
-
-  const eventsSubscribe = async () => {
-    const appEvents = eventBusService;
-    appEvents.on(failedResponseEvent, handleError);
-    appEvents.on(responseWarningEvent, handleWarning);
-  };
-
-  const eventsUnsubscribe = async () => {
-    const appEvents = eventBusService;
-    appEvents.off(failedResponseEvent, handleError);
-    appEvents.on(responseWarningEvent, handleWarning);
-  };
-
   // Use utility functions for tab logic
   const hiddenTab = (t: Tabs) => isTabHidden(t, tab, datasource);
-
-  useEffect(() => {
-    eventsSubscribe();
-    return () => {
-      eventsUnsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
 
   const activeTab = getActiveTab(tab, datasource);
 
