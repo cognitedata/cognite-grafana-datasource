@@ -21,6 +21,8 @@ import {
   isTopLevelProperty,
   unitBearingProperties,
   parseIsoDurationMs,
+  defaultWindowBounds,
+  windowBounds,
 } from '../cdf/records';
 import { getCogniteUnitIndex } from '../cdf/client';
 import { CogniteUnit } from '../types/dms';
@@ -235,13 +237,18 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     }),
     [range, maxFilteringIntervalMs]
   );
+  // Resolved the way the datasource resolves them, stream defaults included.
+  const bounds = useMemo(
+    () => windowBounds(recordsQuery, maxFilteringIntervalMs),
+    [recordsQuery, maxFilteringIntervalMs]
+  );
   const customFrom = useMemo(
-    () => evaluateTimeExpression(recordsQuery.timeFilterFrom ?? '', expressionContext),
-    [recordsQuery.timeFilterFrom, expressionContext]
+    () => evaluateTimeExpression(bounds.from, expressionContext),
+    [bounds.from, expressionContext]
   );
   const customTo = useMemo(
-    () => evaluateTimeExpression(recordsQuery.timeFilterTo ?? '', expressionContext),
-    [recordsQuery.timeFilterTo, expressionContext]
+    () => evaluateTimeExpression(bounds.to, expressionContext),
+    [bounds.to, expressionContext]
   );
   // Checked against the window actually requested, as the datasource does: a custom
   // window replaces the dashboard range.
@@ -319,7 +326,8 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
 
       <EditorRow>
         <TimeWindowEditor
-          recordsQuery={recordsQuery}
+          bounds={bounds}
+          defaultBounds={defaultWindowBounds(maxFilteringIntervalMs)}
           timeFilterMode={timeFilterMode}
           timeFilterOptions={timeFilterOptions}
           isImmutable={isImmutable}

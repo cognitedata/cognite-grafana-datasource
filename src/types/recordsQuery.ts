@@ -108,7 +108,11 @@ export interface RecordsQuery {
   buckets: RecordsBucket[];
   metrics: RecordsMetric[];
   timeFilterMode: RecordsTimeFilterMode;
-  /** Time expressions, used when timeFilterMode is "custom". */
+  /**
+   * Time expressions, used when timeFilterMode is "custom". Unset means the default
+   * for the selected stream (see `defaultWindowBounds`), so bounds nobody edited
+   * follow the stream when the view changes.
+   */
   timeFilterFrom?: string;
   timeFilterTo?: string;
   /**
@@ -134,6 +138,4 @@ export const defaultRecordsQuery: RecordsQuery = {
   buckets: [],
   metrics: [{ name: "count", function: "count" }],
   timeFilterMode: "dashboard",
-  timeFilterFrom: "{{endTime}} - {{maxFilteringInterval}}",
-  timeFilterTo: "{{endTime}}",
 };

@@ -441,6 +441,28 @@ export interface RecordsTimeWindow {
 }
 
 /**
+ * The bounds a custom window starts from until the user edits them: the latest slice
+ * a stream with a filtering limit accepts, or the dashboard range on a stream without
+ * one, where {{maxFilteringInterval}} has nothing to resolve to.
+ */
+export const defaultWindowBounds = (maxFilteringIntervalMs?: number) => ({
+  from: maxFilteringIntervalMs ? '{{endTime}} - {{maxFilteringInterval}}' : '{{startTime}}',
+  to: '{{endTime}}',
+});
+
+/** A custom window's bounds, with the stream's defaults for any left unset. */
+export function windowBounds(
+  query: Pick<RecordsQuery, 'timeFilterFrom' | 'timeFilterTo'>,
+  maxFilteringIntervalMs?: number
+): { from: string; to: string } {
+  const defaults = defaultWindowBounds(maxFilteringIntervalMs);
+  return {
+    from: query.timeFilterFrom ?? defaults.from,
+    to: query.timeFilterTo ?? defaults.to,
+  };
+}
+
+/**
  * Resolves the lastUpdatedTime window for a query. "custom" evaluates the user's
  * expressions; anything that fails to resolve is reported rather than silently
  * dropped, because a missing window is a hard error on immutable streams.
@@ -464,8 +486,9 @@ export function resolveTimeWindow(
       now: options.now,
       maxFilteringIntervalMs: options.maxFilteringIntervalMs,
     };
-    const from = evaluateTimeExpression(query.timeFilterFrom ?? '', ctx);
-    const to = evaluateTimeExpression(query.timeFilterTo ?? '', ctx);
+    const bounds = windowBounds(query, options.maxFilteringIntervalMs);
+    const from = evaluateTimeExpression(bounds.from, ctx);
+    const to = evaluateTimeExpression(bounds.to, ctx);
 
     if (from.error) {
       warnings.push(`Time filter "from" is invalid: ${from.error}.`);

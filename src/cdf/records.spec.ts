@@ -17,6 +17,8 @@ import {
   recordsAggregateToDataFrames,
   recordsToDataFrame,
   resolveTimeWindow,
+  defaultWindowBounds,
+  windowBounds,
   validateMetricName,
 } from '../cdf/records';
 import { RecordsQuery } from '../types';
@@ -506,6 +508,28 @@ describe('records request builders', () => {
         gte: RANGE[1] - 2 * sevenDays,
         lte: RANGE[1] - sevenDays,
       });
+    });
+
+    it('defaults unset bounds to what the stream supports', () => {
+      const sevenDays = 7 * 24 * 3600 * 1000;
+      const custom = withMode({ timeFilterMode: 'custom' });
+
+      // A limited stream starts from its latest slice...
+      const limited = resolveTimeWindow(custom, RANGE, { maxFilteringIntervalMs: sevenDays });
+      expect(limited).toEqual({ window: { gte: RANGE[1] - sevenDays, lte: RANGE[1] }, warnings: [] });
+
+      // ...and a stream without a limit from the dashboard range, where
+      // {{maxFilteringInterval}} would not resolve.
+      const unlimited = resolveTimeWindow(custom, RANGE);
+      expect(unlimited).toEqual({ window: { gte: RANGE[0], lte: RANGE[1] }, warnings: [] });
+    });
+
+    it('keeps a bound the user set, defaulting only the other one', () => {
+      expect(windowBounds({ timeFilterFrom: '{{endTime}} - 1h' })).toEqual({
+        from: '{{endTime}} - 1h',
+        to: '{{endTime}}',
+      });
+      expect(windowBounds({}, 1000)).toEqual(defaultWindowBounds(1000));
     });
 
     it('reports an unusable custom window instead of sending it', () => {

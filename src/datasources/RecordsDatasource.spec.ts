@@ -151,6 +151,32 @@ describe('RecordsDatasource', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('maxFilteringInterval'), 'A');
   });
 
+  it('defaults a custom window to the latest slice a limited stream accepts', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'archive', type: 'Immutable', settings: { limits: { maxFilteringInterval: 'PT1H' } } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(options(baseQuery({ timeFilterMode: 'custom' })));
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[1] - 3_600_000, lte: RANGE[1] });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('defaults a custom window to the dashboard range on a stream without a limit', async () => {
+    const { connector, fetchData } = connectorWith(
+      { externalId: 'live', type: 'Mutable', settings: { limits: {} } },
+      { items: [] }
+    );
+    const ds = new RecordsDatasource(connector);
+    await ds.query(options(baseQuery({ timeFilterMode: 'custom' })));
+
+    const post = fetchData.mock.calls.find(([r]) => r.method === 'POST')![0];
+    expect(post.data.lastUpdatedTime).toEqual({ gte: RANGE[0], lte: RANGE[1] });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   it('sends a custom window that resolves, without a warning', async () => {
     const { connector, fetchData } = connectorWith(
       { externalId: 'live', type: 'Mutable', settings: { limits: {} } },

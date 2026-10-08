@@ -13,7 +13,10 @@ import { TIME_EXPRESSION_ANCHORS, TimeExpressionResult } from '../../cdf/timeExp
 import { BlurInput } from './BlurInput';
 
 interface TimeWindowEditorProps {
-  recordsQuery: RecordsQuery;
+  /** The bounds in effect, the stream's defaults filling any the user left unset. */
+  bounds: { from: string; to: string };
+  /** The stream's defaults, shown as placeholders when a bound is cleared. */
+  defaultBounds: { from: string; to: string };
   timeFilterMode: RecordsTimeFilterMode;
   timeFilterOptions: Array<SelectableValue<RecordsTimeFilterMode>>;
   isImmutable: boolean;
@@ -25,7 +28,8 @@ interface TimeWindowEditorProps {
 }
 
 export const TimeWindowEditor = ({
-  recordsQuery,
+  bounds,
+  defaultBounds,
   timeFilterMode,
   timeFilterOptions,
   isImmutable,
@@ -77,17 +81,17 @@ export const TimeWindowEditor = ({
               <BlurInput
                 width={40}
                 prefix="from"
-                value={recordsQuery.timeFilterFrom ?? ''}
+                value={bounds.from}
                 invalid={!!customFrom.error}
-                placeholder="{{endTime}} - {{maxFilteringInterval}}"
+                placeholder={defaultBounds.from}
                 onCommit={(timeFilterFrom) => onChange({ timeFilterFrom })}
               />
               <BlurInput
                 width={40}
                 prefix="to"
-                value={recordsQuery.timeFilterTo ?? ''}
+                value={bounds.to}
                 invalid={!!customTo.error}
-                placeholder="{{endTime}}"
+                placeholder={defaultBounds.to}
                 onCommit={(timeFilterTo) => onChange({ timeFilterTo })}
               />
             </InputGroup>

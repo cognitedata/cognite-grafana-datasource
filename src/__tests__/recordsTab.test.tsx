@@ -92,6 +92,15 @@ describe('RecordsTab', () => {
     expect(html).toContain('2026-08-08T00:00:00.000Z');
   });
 
+  it('starts a custom window from the dashboard range on a stream without a limit', () => {
+    // No stream metadata, so no limit: {{maxFilteringInterval}} would not resolve
+    const html = renderTab({ ...defaultRecordsQuery, view: selectedView, timeFilterMode: 'custom' });
+    expect(html).toContain('value="{{startTime}}"');
+    expect(html).toContain('value="{{endTime}}"');
+    expect(html).not.toContain('value="{{endTime}} - {{maxFilteringInterval}}"');
+    expect(html).not.toContain('is only available on streams that declare one');
+  });
+
   it('flags an unusable time expression inline', () => {
     const html = renderTab({
       ...defaultRecordsQuery,
