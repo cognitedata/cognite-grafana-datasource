@@ -6,6 +6,7 @@ import {
   buildRequestPreviewParts,
   buildSort,
   unmappedSortRows,
+  buildTargetUnits,
   deriveResultShape,
   formatDurationHuman,
   computeAutoInterval,
@@ -20,6 +21,7 @@ import {
 } from '../cdf/records';
 import { RecordsQuery } from '../types';
 import { RecordViewDefinition } from '../types/records';
+import { CogniteUnit } from '../types/dms';
 
 const view = {
   space: 'alarm_schema',
@@ -340,6 +342,56 @@ describe('records request builders', () => {
     it('clamps the limit to the API maximum', () => {
       expect(buildRecordsFilterRequest(baseQuery({ limit: 5000 }), RANGE).limit).toBe(1000);
       expect(buildRecordsFilterRequest(baseQuery({ limit: 10 }), RANGE).limit).toBe(10);
+    });
+  });
+
+  describe('buildTargetUnits', () => {
+    it('references properties by view path, matching the rest of the request', () => {
+      // The API matches targetUnits by exact reference: a container path against
+      // a view-path query is accepted and then silently does nothing.
+      expect(
+        buildTargetUnits(
+          baseQuery({ targetUnits: [{ property: 'value', unitExternalId: 'pressure:psi' }] })
+        )
+      ).toEqual({
+        properties: [{ property: viewPath('value'), unit: { externalId: 'pressure:psi' } }],
+      });
+    });
+
+    it('prefers a unit system over per-property units (the API is a oneOf)', () => {
+      expect(
+        buildTargetUnits(
+          baseQuery({
+            unitSystem: 'Imperial',
+            targetUnits: [{ property: 'value', unitExternalId: 'pressure:psi' }],
+          })
+        )
+      ).toEqual({ unitSystemName: 'Imperial' });
+    });
+
+    it('omits the clause when nothing is configured', () => {
+      expect(buildTargetUnits(baseQuery())).toBeUndefined();
+      expect(buildTargetUnits(baseQuery({ unitSystem: '   ' }))).toBeUndefined();
+      expect(
+        buildTargetUnits(baseQuery({ targetUnits: [{ property: '', unitExternalId: 'x' }] }))
+      ).toBeUndefined();
+      expect(
+        buildTargetUnits(baseQuery({ targetUnits: [{ property: 'value', unitExternalId: '' }] }))
+      ).toBeUndefined();
+    });
+
+    it('reaches both endpoints', () => {
+      const withUnits = { targetUnits: [{ property: 'value', unitExternalId: 'pressure:psi' }] };
+      expect(buildRecordsFilterRequest(baseQuery(withUnits), RANGE).targetUnits).toEqual({
+        properties: [{ property: viewPath('value'), unit: { externalId: 'pressure:psi' } }],
+      });
+      const { request } = buildRecordsAggregateRequest(
+        baseQuery({ ...withUnits, mode: 'aggregate', metrics: [{ name: 'c', function: 'count' }] }),
+        RANGE
+      );
+      expect(request.targetUnits).toEqual({
+        properties: [{ property: viewPath('value'), unit: { externalId: 'pressure:psi' } }],
+      });
     });
   });
 
@@ -935,7 +987,7 @@ describe('aggregate series naming', () => {
     typing: {
       alarm_schema: {
         'AlarmEvent/v1': {
-          value: { type: { type: 'float64' } },
+          value: { type: { type: 'float64', unit: { externalId: 'time:sec' } } },
         },
       },
     },
@@ -975,16 +1027,20 @@ describe('aggregate series naming', () => {
     ],
     metrics: [{ name: 'duration', function: 'avg', property: 'value' }],
   });
+  const SECONDS = new Map<string, CogniteUnit>([
+    ['time:sec', { space: 'u', externalId: 'time:sec', name: 'SEC', description: 'second', symbol: 's' }],
+  ]);
+
   it('names each series once, not once per source of the bucket value', () => {
     // Regression: the frame name and the field labels both carried the bucket value,
-    // so Grafana composed "i=10523 duration i=10523".
-    const frames = recordsAggregateToDataFrames(RESPONSE as any, QUERY, 'A');
+    // so Grafana composed "i=10523 duration (s) i=10523".
+    const frames = recordsAggregateToDataFrames(RESPONSE as any, QUERY, 'A', SECONDS);
     const names = frames.map((f) => f.fields[1].config?.displayNameFromDS);
-    expect(names).toEqual(['i=10523 · duration', 'i=2782 · duration']);
+    expect(names).toEqual(['i=10523 · duration (s)', 'i=2782 · duration (s)']);
   });
 
   it('keeps the bucket value as a label for transformations and overrides', () => {
-    const [frame] = recordsAggregateToDataFrames(RESPONSE as any, QUERY, 'A');
+    const [frame] = recordsAggregateToDataFrames(RESPONSE as any, QUERY, 'A', SECONDS);
     expect(frame.fields[1].labels).toEqual({ EventType: 'i=10523' });
   });
 
@@ -1006,12 +1062,25 @@ describe('aggregate series naming', () => {
         buckets: [{ kind: 'timeHistogram', property: 'Time', interval: 'auto' }],
         metrics: [{ name: 'duration', function: 'avg', property: 'value' }],
       }),
-      'A'
+      'A',
+      SECONDS
     );
-    expect(frame.fields[1].config?.displayNameFromDS).toBe('duration');
+    expect(frame.fields[1].config?.displayNameFromDS).toBe('duration (s)');
     expect(frame.fields[1].labels).toBeUndefined();
   });
 
+  it('drops the unit suffix when the query opts out', () => {
+    // "max (min)" reads like a contradiction; the suffix is on by default but a
+    // query can turn it off without losing the conversion itself.
+    const frames = recordsAggregateToDataFrames(
+      RESPONSE as any,
+      { ...QUERY, hideUnitSuffix: true },
+      'A',
+      SECONDS
+    );
+    const names = frames.map((f) => f.fields[1].config?.displayNameFromDS);
+    expect(names).toEqual(['i=10523 · duration', 'i=2782 · duration']);
+  });
 });
 
 describe('records response conversion', () => {
@@ -1108,6 +1177,99 @@ describe('records response conversion', () => {
     // Grafana render the previous day for any viewer west of UTC.
     expect(byName.day.type).toBe(FieldType.string);
     expect(byName.day.values.get(0)).toBe('2026-08-25');
+  });
+
+  describe('unit labelling', () => {
+    const UNIT_INDEX = new Map<string, CogniteUnit>([
+      [
+        'pressure:bar',
+        { space: 'u', externalId: 'pressure:bar', name: 'BAR', description: 'bar', symbol: 'bar' },
+      ],
+      [
+        'pressure:psi',
+        {
+          space: 'u',
+          externalId: 'pressure:psi',
+          name: 'PSI',
+          description: 'pound per square inch',
+          symbol: 'psi',
+        },
+      ],
+    ]);
+
+    const ITEMS = [
+      {
+        space: 's',
+        externalId: 'a',
+        createdTime: 1,
+        lastUpdatedTime: 2,
+        properties: { alarm_schema: { 'AlarmEvent/v1': { pressure: 68.394 } } },
+      },
+    ];
+    // Typing reports the *converted* unit once targetUnits is applied
+    const typingWith = (unit: string) => ({
+      alarm_schema: {
+        'AlarmEvent/v1': { pressure: { type: { type: 'float64', unit: { externalId: unit } } } },
+      },
+    });
+
+    it('puts the unit in the column name and leaves values numeric', () => {
+      const frame = recordsToDataFrame(
+        ITEMS,
+        typingWith('pressure:psi'),
+        baseQuery({ columns: ['pressure'] }),
+        'A',
+        UNIT_INDEX
+      );
+      const [field] = frame.fields;
+      expect(field.name).toBe('pressure (psi)');
+      // No display suffix: the raw value is what downstream transforms see
+      expect(field.config?.unit).toBeUndefined();
+      expect(field.values.get(0)).toBe(68.394);
+      expect(field.type).toBe(FieldType.number);
+    });
+
+    it('drops the suffix from column names when the query opts out', () => {
+      const frame = recordsToDataFrame(
+        ITEMS,
+        typingWith('pressure:psi'),
+        baseQuery({ columns: ['pressure'], hideUnitSuffix: true }),
+        'A',
+        UNIT_INDEX
+      );
+      expect(frame.fields[0].name).toBe('pressure');
+      // The values themselves are still whatever unit the request asked for.
+      expect(frame.fields[0].values.get(0)).toBe(68.394);
+    });
+
+    it('labels with the converted unit rather than the storage one', () => {
+      const named = (unit: string) =>
+        recordsToDataFrame(ITEMS, typingWith(unit), baseQuery({ columns: ['pressure'] }), 'A', UNIT_INDEX)
+          .fields[0].name;
+      expect(named('pressure:bar')).toBe('pressure (bar)');
+      expect(named('pressure:psi')).toBe('pressure (psi)');
+    });
+
+    it('falls back to the externalId suffix when the catalog is unavailable', () => {
+      const frame = recordsToDataFrame(
+        ITEMS,
+        typingWith('pressure:psi'),
+        baseQuery({ columns: ['pressure'] }),
+        'A'
+      );
+      expect(frame.fields[0].name).toBe('pressure (psi)');
+    });
+
+    it('leaves unitless properties untouched', () => {
+      const frame = recordsToDataFrame(
+        ITEMS,
+        { alarm_schema: { 'AlarmEvent/v1': { pressure: { type: { type: 'float64' } } } } },
+        baseQuery({ columns: ['pressure'] }),
+        'A',
+        UNIT_INDEX
+      );
+      expect(frame.fields[0].name).toBe('pressure');
+    });
   });
 
   describe('column selection', () => {

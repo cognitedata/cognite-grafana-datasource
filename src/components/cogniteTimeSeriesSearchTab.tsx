@@ -3,6 +3,7 @@ import { Select, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSw
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
 import { getCogniteUnitIndex, getTimeSeriesProperties, stringifyError } from '../cdf/client';
+import { storageUnitLabel, unitDisplayName } from '../cdf/units';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
@@ -167,15 +168,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     });
   };
 
-  // Get the display name for a unit
-  const getUnitDisplayName = (unitExternalId: string): string => {
-    const unit = units.find(u => u.externalId === unitExternalId);
-    if (!unit) {
-      return unitExternalId;
-    }
-    const displayName = unit.description || unit.name;
-    return unit.symbol ? `${displayName} (${unit.symbol})` : displayName;
-  };
+  // Shared with the Records tab so a unit reads the same way in both query editors
+  const unitLookup = useMemo(
+    () => new Map(units.map((unit) => [unit.externalId, unit])),
+    [units]
+  );
+  const getUnitDisplayName = (unitExternalId?: string): string =>
+    unitDisplayName(unitExternalId, unitLookup);
 
   // Get units filtered by selected quantity
   const getFilteredUnits = (): SelectableValue[] => {
@@ -189,15 +188,11 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       filteredUnits = units.filter((u) => u.quantity === tsUnit.quantity);
     }
 
-    const options = filteredUnits.map((unit) => {
-      const label = unit.symbol ? `${unit.description || unit.name} (${unit.symbol})` : (unit.description || unit.name);
-      return {
-        label,
-        value: unit.externalId,
-        description: unit.description,
-      };
-    });
-    return options;
+    return filteredUnits.map((unit) => ({
+      label: getUnitDisplayName(unit.externalId),
+      value: unit.externalId,
+      description: unit.description,
+    }));
   };
 
   const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
@@ -310,7 +305,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             {timeSeriesUnit && (
               <InlineField transparent style={{ alignItems: 'center' }}>
                 <Badge
-                  text={`Storage unit: ${getUnitDisplayName(timeSeriesUnit)}`}
+                  text={storageUnitLabel(timeSeriesUnit, unitLookup)}
                   color="darkgrey"
                 />
               </InlineField>

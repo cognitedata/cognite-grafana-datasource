@@ -83,6 +83,18 @@ export interface RecordsMetric {
  */
 export type RecordsTimeFilterMode = "dashboard" | "none";
 
+/**
+ * One property converted to a specific unit. The property is referenced exactly
+ * as it is elsewhere in the request (a view path) — the API matches targetUnits
+ * by reference, so a container path against a view-path query is accepted and
+ * then silently ignored.
+ */
+export interface RecordsTargetUnit {
+  property: string;
+  /** CogniteUnit externalId, e.g. "pressure:psi". */
+  unitExternalId: string;
+}
+
 export interface RecordsQuery {
   view?: RecordsViewRef;
   mode: RecordsQueryMode;
@@ -96,6 +108,18 @@ export interface RecordsQuery {
   buckets: RecordsBucket[];
   metrics: RecordsMetric[];
   timeFilterMode: RecordsTimeFilterMode;
+  /**
+   * Unit conversion. The API models these as a oneOf, so at most one applies:
+   * a unit system converts everything convertible, target units convert
+   * named properties. Absent/empty means values come back in storage units.
+   */
+  unitSystem?: string;
+  targetUnits?: RecordsTargetUnit[];
+  /**
+   * Drops the "(unit)" suffix from series and column names. Absent means the
+   * suffix is appended, which is the default.
+   */
+  hideUnitSuffix?: boolean;
 }
 
 export const defaultRecordsQuery: RecordsQuery = {

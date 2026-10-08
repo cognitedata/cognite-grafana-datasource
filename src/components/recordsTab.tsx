@@ -10,15 +10,19 @@ import {
   SelectedProps,
   defaultRecordsQuery,
 } from '../types';
-import { RecordViewDefinition, StreamDefinition } from '../types/records';
+import { RecordViewDefinition, StreamDefinition, UnitSystem } from '../types/records';
 import {
   buildRequestPreviewParts,
   computeAutoInterval,
   fetchRecordViews,
   fetchStream,
+  fetchUnitSystems,
   isTopLevelProperty,
+  unitBearingProperties,
   parseIsoDurationMs,
 } from '../cdf/records';
+import { getCogniteUnitIndex } from '../cdf/client';
+import { CogniteUnit } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeViewRef } from './common/ViewPicker';
 import { propertyOptions, propertyTypeOf, viewLabel } from './records/shared';
@@ -31,6 +35,7 @@ import { BucketList } from './records/BucketList';
 import { MetricList } from './records/MetricList';
 import { ResultShapeBadge } from './records/ResultShapeBadge';
 import { RequestPreview } from './records/RequestPreview';
+import { UnitsEditor } from './records/UnitsEditor';
 
 interface RecordsTabProps extends SelectedProps {
   connector: Connector;
@@ -64,6 +69,8 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   const [loadingViews, setLoadingViews] = useState(false);
   const [stream, setStream] = useState<StreamDefinition | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
+  const [unitSystems, setUnitSystems] = useState<UnitSystem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +106,21 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       cancelled = true;
     };
   }, [connector, view?.streamId]);
+
+  // Both are static reference data behind long-lived caches, so this is a single
+  // fetch per connector no matter how many query rows are open.
+  useEffect(() => {
+    let cancelled = false;
+    getCogniteUnitIndex(connector)
+      .then((index) => !cancelled && setUnitIndex(index))
+      .catch(() => !cancelled && setUnitIndex(new Map()));
+    fetchUnitSystems(connector)
+      .then((systems) => !cancelled && setUnitSystems(systems ?? []))
+      .catch(() => !cancelled && setUnitSystems([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [connector]);
 
   const viewDef = useMemo(
     () =>
@@ -168,6 +190,9 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       };
     };
 
+    const targetUnits = (recordsQuery.targetUnits ?? []).filter((entry) =>
+      known(entry.property)
+    );
     patchQuery({
       view: {
         space: next.space,
@@ -182,6 +207,10 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       metrics: recordsQuery.metrics.filter(
         (metric) => !metric.property || known(metric.property)
       ),
+      targetUnits,
+      // The Units section hides itself when the new view converts nothing, so a
+      // system left set here would keep converting from a control nobody can see.
+      unitSystem: unitBearingProperties(next).length ? recordsQuery.unitSystem : undefined,
     });
   };
 
@@ -268,6 +297,20 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
           onChange={patchQuery}
         />
       </EditorRow>
+
+      {unitBearingProperties(viewDef).length > 0 && (
+        <EditorRow>
+          <UnitsEditor
+            viewDef={viewDef}
+            unitSystem={recordsQuery.unitSystem}
+            targetUnits={recordsQuery.targetUnits ?? []}
+            hideUnitSuffix={recordsQuery.hideUnitSuffix}
+            unitSystems={unitSystems}
+            unitIndex={unitIndex}
+            onChange={patchQuery}
+          />
+        </EditorRow>
+      )}
 
       <EditorRow>
         <FilterList

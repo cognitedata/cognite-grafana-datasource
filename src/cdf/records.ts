@@ -18,6 +18,8 @@ import {
   RecordsSortRow,
   Tuple,
 } from '../types';
+import { CogniteUnit } from '../types/dms';
+import { withUnitSuffix } from './units';
 import { INSTANCE_REF_HINT, parseInstanceRef } from './instanceRef';
 import {
   RecordsAggregateDefinition,
@@ -30,7 +32,9 @@ import {
   RecordsItem,
   RecordsPropertyRef,
   RecordsSortSpec,
+  RecordsTargetUnits,
   RecordsTyping,
+  UnitSystem,
   RecordViewDefinition,
   RecordViewProperty,
   StreamDefinition,
@@ -71,9 +75,49 @@ export async function fetchStream(
   return data;
 }
 
+/**
+ * Unit systems the project knows about (Default, Imperial, ...). Each carries the
+ * unit it maps every quantity to, which is what makes a system a one-click
+ * alternative to naming a target unit per property.
+ */
+export async function fetchUnitSystems(
+  connector: Connector
+): Promise<UnitSystem[]> {
+  try {
+    return await connector.fetchItems<UnitSystem>({
+      method: HttpMethod.GET,
+      path: '/units/systems',
+      data: undefined,
+      cacheTime: CacheTime.Units,
+    });
+  } catch (error) {
+    // The picker simply hides when the catalog is unavailable.
+    console.warn('Failed to load unit systems', error);
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // View schema helpers
 // ---------------------------------------------------------------------------
+
+/** The unit a view property's container declares, if any. */
+export const propertyUnitExternalId = (
+  viewDef: RecordViewDefinition | null | undefined,
+  property: string
+): string | undefined => viewDef?.properties?.[property]?.type?.unit?.externalId;
+
+/** View properties whose container declares a unit — the convertible ones. */
+export function unitBearingProperties(
+  viewDef: RecordViewDefinition | null | undefined
+): Array<{ property: string; unitExternalId: string }> {
+  return Object.entries(viewDef?.properties ?? {})
+    .filter(([, def]) => !!def.type?.unit?.externalId)
+    .map(([property, def]) => ({
+      property,
+      unitExternalId: def.type!.unit!.externalId,
+    }));
+}
 
 export const viewSourceKey = (view: { externalId: string; version: string }) =>
   `${view.externalId}/${view.version}`;
@@ -351,6 +395,34 @@ export function buildSort(
   return specs.length ? specs.slice(0, 5) : undefined;
 }
 
+/**
+ * Builds the targetUnits clause. Property references are view paths — the same
+ * form used by filters, sort targets and aggregates — because the API matches
+ * targetUnits by exact reference: a container path alongside a view-path query
+ * returns 200 and quietly performs no conversion.
+ *
+ * unitSystem and per-property targetUnits are a oneOf in the API; the system
+ * wins when both are somehow set, so a stale saved query can never send both.
+ */
+export function buildTargetUnits(
+  query: RecordsQuery
+): RecordsTargetUnits | undefined {
+  const { view } = query;
+  if (!view) {
+    return undefined;
+  }
+  if (hasText(query.unitSystem)) {
+    return { unitSystemName: query.unitSystem!.trim() };
+  }
+  const properties = (query.targetUnits ?? [])
+    .filter((entry) => hasText(entry?.property) && hasText(entry?.unitExternalId))
+    .map((entry) => ({
+      property: viewPropertyRef(view, entry.property),
+      unit: { externalId: entry.unitExternalId.trim() },
+    }));
+  return properties.length ? { properties } : undefined;
+}
+
 export interface RecordsBuildOptions {
   /** Panel resolution target; drives the "auto" bucket interval. */
   maxDataPoints?: number;
@@ -450,6 +522,7 @@ export function buildRecordsFilterRequest(
   // twice ran that failure path twice.
   const filter = buildFilter(query);
   const sort = buildSort(query.sort);
+  const targetUnits = buildTargetUnits(query);
 
   return {
     ...(lastUpdatedTime && { lastUpdatedTime }),
@@ -467,6 +540,7 @@ export function buildRecordsFilterRequest(
     ...(filter && { filter }),
     ...(sort && { sort }),
     limit: Math.min(Math.max(query.limit || RECORDS_PAGE_LIMIT, 1), RECORDS_PAGE_LIMIT),
+    ...(targetUnits && { targetUnits }),
     includeTyping: true,
   };
 }
@@ -746,12 +820,14 @@ export function buildRecordsAggregateRequest(
     (leaf): leaf is RecordsFilterDefinition => !!leaf
   );
   const filter = leaves.length > 1 ? { and: leaves } : leaves[0];
+  const targetUnits = buildTargetUnits(query);
 
   return {
     request: {
       ...(boundsWindow && { lastUpdatedTime: boundsWindow }),
       ...(filter && { filter }),
       aggregates,
+      ...(targetUnits && { targetUnits }),
       includeTyping: true,
     },
     warnings,
@@ -864,6 +940,17 @@ export function parseIsoDurationMs(duration?: string): number | null {
 // Response → DataFrame
 // ---------------------------------------------------------------------------
 
+/**
+ * Effective unit of a view property, as reported by the response's typing block --
+ * which already reflects any conversion applied by targetUnits, so this is the unit
+ * the values are actually in rather than the storage one.
+ */
+const effectiveUnitOf = (
+  viewTyping: Record<string, RecordViewProperty> | undefined,
+  property?: string
+): string | undefined =>
+  property ? viewTyping?.[property]?.type?.unit?.externalId : undefined;
+
 function fieldTypeFor(property?: RecordViewProperty): FieldType {
   const type = property?.type?.type;
   if (property?.type?.list) {
@@ -931,7 +1018,8 @@ export function recordsToDataFrame(
   items: RecordsItem[],
   typing: RecordsTyping | undefined,
   query: RecordsQuery,
-  refId?: string
+  refId?: string,
+  unitIndex?: Map<string, CogniteUnit>
 ): DataFrame {
   const { view } = query;
   const sourceKey = view ? viewSourceKey(view) : '';
@@ -982,8 +1070,17 @@ export function recordsToDataFrame(
     return fieldTypeFor(viewTyping?.[name]);
   };
 
+  // The unit is appended to the column name rather than set as field.config.unit, so
+  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  const labelOf = (name: string): string =>
+    topLevelProperty(name)
+      ? name
+      : query.hideUnitSuffix
+        ? name
+        : withUnitSuffix(name, effectiveUnitOf(viewTyping, name), unitIndex);
+
   columnNames.forEach((name) => {
-    frame.addField({ name, type: typeOf(name) });
+    frame.addField({ name: labelOf(name), type: typeOf(name) });
   });
 
   items.forEach((item) => {
@@ -993,7 +1090,7 @@ export function recordsToDataFrame(
       const raw = topLevelProperty(name)
         ? (item as Record<string, any>)[name]
         : properties[name];
-      row[name] = normalizeValue(raw, typeOf(name));
+      row[labelOf(name)] = normalizeValue(raw, typeOf(name));
     });
     frame.add(row);
   });
@@ -1106,8 +1203,29 @@ function timestampMetricNames(
 export function recordsAggregateToDataFrames(
   response: RecordsAggregateResponse,
   query: RecordsQuery,
-  refId?: string
+  refId?: string,
+  unitIndex?: Map<string, CogniteUnit>
 ): DataFrame[] {
+  // count has no source property, so it stays unitless; avg/min/max/sum inherit
+  // the (already converted) unit of the property they aggregate.
+  const viewTyping = query.view
+    ? response.typing?.[query.view.space]?.[viewSourceKey(query.view)]
+    : undefined;
+  // The unit is appended to the series name rather than set as field.config.unit, so
+  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  const labelForMetric = (metricName: string): string => {
+    const metric = (query.metrics ?? []).find((m) => m.name.trim() === metricName);
+    if (!metric?.property || metric.function === 'count') {
+      return metricName;
+    }
+    return query.hideUnitSuffix
+      ? metricName
+      : withUnitSuffix(
+        metricName,
+        effectiveUnitOf(viewTyping, metric.property),
+        unitIndex,
+      );
+  };
   const buckets = (query.buckets ?? []).filter((b) => b?.property);
   const rows: FlatAggregateRow[] = [];
   flattenAggregates(response.aggregates ?? {}, buckets, 0, {}, undefined, rows);
@@ -1144,7 +1262,7 @@ export function recordsAggregateToDataFrames(
     const frame = new MutableDataFrame({ refId, name: 'aggregates', fields: [] });
     labelKeys.forEach((key) => frame.addField({ name: key, type: FieldType.string }));
     metricNames.forEach((name) => {
-      frame.addField({ name: name, type: metricType(name) });
+      frame.addField({ name: labelForMetric(name), type: metricType(name) });
     });
     rows.forEach((row) => {
       const out: Record<string, any> = {};
@@ -1154,7 +1272,7 @@ export function recordsAggregateToDataFrames(
         out[key] = key in row.keys ? formatComplexValue(row.keys[key]) : null;
       });
       metricNames.forEach((name) => {
-        out[name] = metricCell(row, name);
+        out[labelForMetric(name)] = metricCell(row, name);
       });
       frame.add(out);
     });
@@ -1189,8 +1307,9 @@ export function recordsAggregateToDataFrames(
     });
     frame.addField({ name: 'time', type: FieldType.time });
     metricNames.forEach((name) => {
+      const metricLabel = labelForMetric(name);
       frame.addField({
-        name,
+        name: metricLabel,
         type: metricType(name),
         // Labels are kept so "group by label" transformations and series overrides
         // can match on the bucket value...
@@ -1199,14 +1318,14 @@ export function recordsAggregateToDataFrames(
           // ...but the series name is set explicitly, because Grafana would otherwise
           // compose it from the frame name, the field name and the labels, printing
           // the bucket value twice ("i=10523 duration (s) i=10523").
-          displayNameFromDS: groupKey ? `${groupKey} · ${name}` : name,
+          displayNameFromDS: groupKey ? `${groupKey} · ${metricLabel}` : metricLabel,
         },
       });
     });
     sorted.forEach((row) => {
       const out: Record<string, any> = { time: row.timestamp ?? null };
       metricNames.forEach((name) => {
-        out[name] = metricCell(row, name);
+        out[labelForMetric(name)] = metricCell(row, name);
       });
       frame.add(out);
     });

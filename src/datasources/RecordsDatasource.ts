@@ -24,6 +24,8 @@ import {
   applyStreamConstraints,
   streamBuildOptions,
 } from '../cdf/records';
+import { getCogniteUnitIndex } from '../cdf/client';
+import { CogniteUnit } from '../types/dms';
 import { RECORDS_LIMIT_WARNING } from '../constants';
 import { handleWarning } from '../appEventHandler';
 
@@ -99,15 +101,29 @@ export class RecordsDatasource {
       );
       warnings.push(...streamWarnings);
 
+      const unitIndex = await this.loadUnitIndex();
+
       const frames =
         effectiveQuery.mode === 'aggregate'
-          ? await this.queryAggregate(effectiveQuery, range, refId, buildOptions, warnings)
-          : await this.queryList(effectiveQuery, range, refId, warnings);
+          ? await this.queryAggregate(effectiveQuery, range, refId, buildOptions, warnings, unitIndex)
+          : await this.queryList(effectiveQuery, range, refId, warnings, unitIndex);
       return { frames };
     } catch (e) {
       return { frames: [], error: { refId, message: describeError(e) } };
     } finally {
       warnAll(warnings, refId);
+    }
+  }
+
+  /**
+   * The unit catalog is static reference data behind a long-lived cache, and is
+   * only used to prettify field units, so a failure must not fail the query.
+   */
+  private async loadUnitIndex(): Promise<Map<string, CogniteUnit> | undefined> {
+    try {
+      return await getCogniteUnitIndex(this.connector);
+    } catch {
+      return undefined;
     }
   }
 
@@ -124,7 +140,8 @@ export class RecordsDatasource {
     query: RecordsQuery,
     range: Tuple<number>,
     refId: string,
-    warnings: string[]
+    warnings: string[],
+    unitIndex?: Map<string, CogniteUnit>
   ): Promise<DataFrame[]> {
     // Silently unsorted results look like the API ignoring the request; say so.
     const unmapped = unmappedSortRows(query.sort);
@@ -145,7 +162,7 @@ export class RecordsDatasource {
     if (items.length >= request.limit) {
       warnings.push(RECORDS_LIMIT_WARNING);
     }
-    return [recordsToDataFrame(items, data?.typing, query, refId)];
+    return [recordsToDataFrame(items, data?.typing, query, refId, unitIndex)];
   }
 
   private async queryAggregate(
@@ -153,7 +170,8 @@ export class RecordsDatasource {
     range: Tuple<number>,
     refId: string,
     options: RecordsBuildOptions,
-    warnings: string[]
+    warnings: string[],
+    unitIndex?: Map<string, CogniteUnit>
   ): Promise<DataFrame[]> {
     const { request, warnings: buildWarnings } = buildRecordsAggregateRequest(query, range, options);
     warnings.push(...buildWarnings);
@@ -166,6 +184,6 @@ export class RecordsDatasource {
       data: request
     });
 
-    return recordsAggregateToDataFrames(data, query, refId);
+    return recordsAggregateToDataFrames(data, query, refId, unitIndex);
   }
 }

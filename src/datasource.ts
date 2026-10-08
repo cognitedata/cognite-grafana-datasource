@@ -483,6 +483,11 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           ? { ...bucket, interval: replace(bucket.interval) ?? bucket.interval }
           : bucket,
       ),
+      unitSystem: replace(recordsQuery.unitSystem),
+      targetUnits: (recordsQuery.targetUnits ?? []).map((entry) => ({
+        ...entry,
+        unitExternalId: replace(entry.unitExternalId) ?? entry.unitExternalId,
+      })),
     };
   }
   replaceVariable(query = "", scopedVars?: ScopedVars): string {

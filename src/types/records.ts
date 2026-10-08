@@ -5,6 +5,7 @@
 export interface RecordPropertyType {
   type: string; // 'text' | 'boolean' | 'float64' | 'int64' | 'timestamp' | 'date' | 'json' | 'direct' | 'enum' | ...
   list?: boolean;
+  unit?: { externalId: string };
   /** Present for enum properties; keys are the allowed values */
   values?: Record<string, { name?: string; description?: string }>;
   /**
@@ -56,6 +57,12 @@ export interface StreamDefinition {
   };
 }
 
+/** An entry from GET /units/systems. */
+export interface UnitSystem {
+  name: string;
+  quantities?: Array<{ name: string; unitExternalId: string }>;
+}
+
 export interface RecordsViewSource {
   type: 'view';
   space: string;
@@ -102,12 +109,26 @@ export interface RecordsSortSpec {
   direction: 'ascending' | 'descending';
 }
 
+/**
+ * oneOf: convert everything to a system, or convert named properties. Property
+ * references must match those used in the rest of the request.
+ */
+export type RecordsTargetUnits =
+  | { unitSystemName: string }
+  | {
+      properties: Array<{
+        property: RecordsPropertyRef;
+        unit: { externalId: string } | { unitSystemName: string };
+      }>;
+    };
+
 export interface RecordsFilterRequest {
   lastUpdatedTime?: RecordsTimeRange;
   sources: RecordsSourceSelector[];
   filter?: RecordsFilterDefinition;
   sort?: RecordsSortSpec[];
   limit: number;
+  targetUnits?: RecordsTargetUnits;
   includeTyping?: boolean;
 }
 
@@ -167,6 +188,7 @@ export interface RecordsAggregateRequest {
   lastUpdatedTime?: RecordsTimeRange;
   filter?: RecordsFilterDefinition;
   aggregates: RecordsAggregateTree;
+  targetUnits?: RecordsTargetUnits;
   includeTyping?: boolean;
 }
 
