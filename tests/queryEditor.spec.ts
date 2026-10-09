@@ -377,6 +377,38 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await waitForQueriesToFinish(page);
 });
 
+test('"CogniteTimeSeries" gap filling reaches the request', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
+  await waitForQueriesToFinish(page);
+
+  const filled = page.waitForRequest((request) => {
+    if (!request.url().endsWith('/timeseries/data/list')) {
+      return false;
+    }
+    const body = request.postDataJSON();
+    return body?.items?.[0]?.fill?.limit !== undefined;
+  });
+  await editorRow.getByRole('radio', { name: '× granularity' }).click();
+  const body = (await filled).postDataJSON();
+
+  // The default multiple is 4: the limit is four times the granularity sent.
+  const toMs = (value: string) => {
+    const [, count, unit] = /^(\d+)([smhd])$/.exec(value)!;
+    return Number(count) * { s: 1e3, m: 6e4, h: 3.6e6, d: 8.64e7 }[unit as 's' | 'm' | 'h' | 'd'];
+  };
+  expect(toMs(body.items[0].fill.limit)).toBe(4 * toMs(body.granularity));
+  await expect(editorRow.getByTestId('gap-fill-badge-A')).toHaveText(`= ${body.items[0].fill.limit}`);
+});
+
 test('"CogniteTimeSeries" unit conversion is available for timeseries with units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,

@@ -160,6 +160,17 @@ export interface CogniteTimeSeries {
   targetUnitSystem?: string;
 }
 
+/**
+ * Gap filling on aggregate queries of the data modeling tabs. `duration` sends
+ * `limit` as is; `granularity` sends `multiple` times the query's granularity, so
+ * the limit follows an auto granularity as the time range changes. Absent: no fill.
+ */
+export interface GapFill {
+  mode: "duration" | "granularity";
+  limit?: string;
+  multiple?: number;
+}
+
 export interface CogniteActivityQuery {
   enabled: boolean;
   space: string;
@@ -400,6 +411,7 @@ export type CogniteQuery = CogniteQueryBase & CogniteTargetObj;
 export interface CogniteQueryBase extends DataQuery {
   aggregation: string;
   granularity: string;
+  gapFill?: GapFill;
   latestValue: boolean;
   error: string;
   label: string;
@@ -514,6 +526,7 @@ export interface DataQueryRequestResponse extends DataResponse<Datapoints> {
   config: {
     data: {
       aggregates: string;
+      granularity?: string;
       limit: number;
     };
   };
@@ -554,6 +567,8 @@ export type ResponseMetadata = {
   labels: string[];
   target: QueryTarget;
   type: DataQueryRequestType;
+  /** Shown on the query row once the request succeeds. */
+  warnings?: string[];
 };
 
 export type DataQueryRequestItem = {
@@ -572,6 +587,7 @@ export type DataQueryRequestItem = {
   };
   timeZone?: string;
   targetUnit?: string;
+  fill?: { limit: string };
 };
 
 export type Aggregates = Pick<CDFDataQueryRequest, "aggregates">;

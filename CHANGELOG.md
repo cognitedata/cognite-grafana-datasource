@@ -11,11 +11,16 @@ Data Source for Grafana**.
 - **Relationships** moves into the asset-centric group in the data source settings and now follows its master toggle, like the other asset-centric tabs: turning on the Core Data Model features turns it off. Saved Relationships queries keep their tab and keep running.
 - The **Templates** and **Extraction Pipelines** tabs are labelled **Deprecated** instead of **Preview**. In the data source settings they sit under **Other**, marked **Deprecated**.
 
+### Features
+
+- **Gap filling** on the **Time Series** and **GraphQL** tabs: aggregates can now cover intervals that have no data points. CDF interpolates across gaps in the raw data up to a limit and carries the last value forward for that limit after the last data point; longer gaps stay empty. The limit is either **Fixed** (for example `4h`) or a multiple of the granularity (**× granularity**), so it follows an auto granularity as the time range changes. A badge shows the limit sent, and a fixed limit shorter than the granularity is raised to it, with a warning, instead of failing the query.
+
 ### Bug fixes
 
 - The backend is now built with Go 1.27.3, which fixes a vulnerability in the Go standard library (`crypto/x509`, GO-2026-6809) that `govulncheck` reports.
 - **Time Series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
 - **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. Errors and warnings from the panel's series are now shown on the row, each once.
+- **Time series aggregates**: when the time range did not start on a whole interval (a range from 10:43 with a 1h granularity, say), the first interval was dropped, so series started blank until the next one. An interval that overlaps the range is now shown.
 
 ## 4.6.0 - October 14th, 2026
 

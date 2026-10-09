@@ -1,7 +1,7 @@
 import { dateTime } from '@grafana/data';
-import { formQueryForItems } from '../cdf/client';
+import { formQueryForItems, resolveTargetFill } from '../cdf/client';
 import { Connector } from '../connector';
-import { defaultQuery, CogniteQuery, QueryOptions } from '../types';
+import { defaultQuery, CogniteQuery, QueryOptions, Tab } from '../types';
 import { getDataQueryRequestItems } from '../datasources/TimeseriesDatasource';
 
 const defaultCogniteQuery = defaultQuery as CogniteQuery;
@@ -107,5 +107,105 @@ describe('formQueryForItems: enrich items with additional props for request', ()
         },
       ],
     });
+  });
+});
+
+describe('formQueryForItems: gap filling', () => {
+  const queryOptions = {
+    range: { from: dateTime(0), to: dateTime(3000) },
+    intervalMs: 60_000,
+    timeZone: 'UTC',
+  } as any;
+  const instanceItem = { instanceId: { space: 'sp', externalId: 'ts' } };
+  const cdmTarget = (patch: Partial<CogniteQuery> = {}) =>
+    ({
+      ...defaultCogniteQuery,
+      tab: Tab.CogniteTimeSeriesSearch,
+      gapFill: { mode: 'granularity', multiple: 4 },
+      ...patch,
+    }) as CogniteQuery;
+
+  it('adds fill to every item, scaled from the auto granularity', () => {
+    const request = formQueryForItems(
+      { items: [instanceItem, instanceItem], type: 'data', target: cdmTarget() },
+      queryOptions
+    );
+    expect(request.granularity).toBe('1m');
+    expect(request.items).toEqual([
+      { ...instanceItem, fill: { limit: '4m' } },
+      { ...instanceItem, fill: { limit: '4m' } },
+    ]);
+  });
+
+  it('scales from an explicit granularity', () => {
+    const request = formQueryForItems(
+      { items: [instanceItem], type: 'data', target: cdmTarget({ granularity: '2h' }) },
+      queryOptions
+    );
+    expect(request.items[0].fill).toEqual({ limit: '8h' });
+  });
+
+  it('sends a fixed limit, raised to the granularity when shorter', () => {
+    const fixed = (limit: string, granularity: string) =>
+      formQueryForItems(
+        {
+          items: [instanceItem],
+          type: 'data',
+          target: cdmTarget({ granularity, gapFill: { mode: 'duration', limit } }),
+        },
+        queryOptions
+      ).items[0].fill;
+    expect(fixed('6h', '1h')).toEqual({ limit: '6h' });
+    expect(fixed('30m', '1h')).toEqual({ limit: '1h' });
+  });
+
+  it('fills GraphQL series too', () => {
+    const request = formQueryForItems(
+      {
+        items: [instanceItem],
+        type: 'data',
+        target: cdmTarget({ tab: Tab.FlexibleDataModelling }),
+      },
+      queryOptions
+    );
+    expect(request.items[0].fill).toEqual({ limit: '4m' });
+  });
+
+  it.each([
+    ['legacy time series tab', { tab: Tab.Timeseries }, 'data'],
+    ['raw data points', { aggregation: 'none' }, 'data'],
+    ['totalVariation', { aggregation: 'totalVariation' }, 'data'],
+    ['gap filling off', { gapFill: undefined }, 'data'],
+    ['latest value', {}, 'latest'],
+  ] as const)('sends no fill for %s', (_, patch, type) => {
+    const request = formQueryForItems(
+      { items: [instanceItem], type, target: cdmTarget(patch as Partial<CogniteQuery>) },
+      queryOptions
+    );
+    expect(request.items[0]).not.toHaveProperty('fill');
+  });
+});
+
+describe('resolveTargetFill', () => {
+  it('reports why a fill was adjusted', () => {
+    const target = {
+      ...defaultCogniteQuery,
+      tab: Tab.CogniteTimeSeriesSearch,
+      granularity: '1d',
+      gapFill: { mode: 'duration', limit: '1h' },
+    } as CogniteQuery;
+    expect(resolveTargetFill(target, 'data', 1000)).toEqual({
+      limit: '1d',
+      warning: expect.stringMatching(/shorter than the granularity/),
+    });
+  });
+
+  it('stays silent outside the data modeling tabs', () => {
+    const target = {
+      ...defaultCogniteQuery,
+      tab: Tab.Timeseries,
+      gapFill: { mode: 'duration', limit: 'bogus' },
+    } as CogniteQuery;
+    expect(resolveTargetFill(target, 'data', 1000)).toEqual({});
   });
 });

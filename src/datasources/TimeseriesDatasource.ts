@@ -29,7 +29,7 @@ import {
   getTimeseries,
   reduceTimeseries,
   targetToIdEither,
-
+  resolveTargetFill,
 } from '../cdf/client';
 import { emitEvent, handleError, showWarnings } from '../appEventHandler';
 import { TimeSeriesResponseItem } from '../cdf/types';
@@ -170,7 +170,7 @@ export class TimeseriesDatasource {
     );
     const queries = formQueriesForTargets(queryData, options);
     const metadata = await Promise.all(
-      queryData.map(async ({ target, items, type }) => {
+      queryData.map(async ({ target, items, type }): Promise<ResponseMetadata> => {
         let labels = [];
         try {
           labels = target.flexibleDataModellingQuery?.labels?.length
@@ -179,7 +179,8 @@ export class TimeseriesDatasource {
         } catch (err) {
           handleError(err, target.refId);
         }
-        return { target, labels, type };
+        const { warning } = resolveTargetFill(target, type, options.intervalMs);
+        return { target, labels, type, ...(warning ? { warnings: [warning] } : {}) };
       })
     );
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
