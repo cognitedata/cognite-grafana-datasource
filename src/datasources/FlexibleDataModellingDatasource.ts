@@ -10,7 +10,7 @@ import { graphqlEndpointPath } from '../cdf/graphqlEndpoint';
 import { readGraphqlRows } from '../cdf/graphqlRows';
 import { readScalarPath } from '../cdf/instanceRef';
 import { interpolateGraphqlLabel } from '../cdf/graphqlLabel';
-import { TIME_SERIES_ROOT_KEY } from '../cdf/graphqlTimeSeries';
+import { graphqlSeriesRefId, TIME_SERIES_ROOT_KEY } from '../cdf/graphqlTimeSeries';
 import { getFirstSelection } from '../utils';
 
 const getItemsTableData = (items): TableData => {
@@ -169,7 +169,7 @@ export class FlexibleDataModellingDatasource {
         targets: [
           {
             ...target,
-            refId: `${target.refId}_fdm_${index}`,
+            refId: graphqlSeriesRefId(target.refId, index),
             flexibleDataModellingQuery: {
               ...query,
               targets,

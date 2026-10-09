@@ -57,4 +57,23 @@ describe('useQueryMessages', () => {
     expect(result.current).toMatchObject({ errorMessage: '', warningMessage: '' });
     unmount();
   });
+
+  it('shows a GraphQL series message on the row it came from, and adds up warnings', () => {
+    const { result, unmount } = renderHook(() => useQueryMessages('A'));
+
+    act(() => {
+      emitEvent(failedResponseEvent, { refId: 'A_fdm_2', error: 'series 2 failed' });
+      handleWarning('series 0 is empty', 'A_fdm_0');
+      handleWarning('series 1 is empty', 'A_fdm_1');
+      handleWarning('series 1 is empty', 'A_fdm_1');
+      handleWarning('not this row', 'AB_fdm_0');
+    });
+    expect(result.current.errorMessage).toBe('series 2 failed');
+    expect(result.current.warningMessage).toBe('series 0 is empty\n\nseries 1 is empty');
+
+    // The empty warning sent before each run clears what had added up.
+    act(() => handleWarning('', 'A'));
+    expect(result.current.warningMessage).toBe('');
+    unmount();
+  });
 });

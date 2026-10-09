@@ -24,6 +24,25 @@ export function unitDisplayName(
   return unit.symbol ? `${name} (${unit.symbol})` : name;
 }
 
+/**
+ * Whether a target unit can still convert a series stored in `storageUnit`: both
+ * must measure the same quantity. A series without a unit (every string or state
+ * series among them) cannot be converted at all. When the catalog cannot place
+ * either unit (not loaded yet, say), the target unit is kept: CDF still checks it.
+ */
+export function targetUnitApplies(
+  targetUnit: string | undefined,
+  storageUnit: string | undefined,
+  unitIndex: Map<string, CogniteUnit>
+): boolean {
+  if (!targetUnit || !storageUnit) {
+    return false;
+  }
+  const quantity = unitIndex.get(storageUnit)?.quantity;
+  const targetQuantity = unitIndex.get(targetUnit)?.quantity;
+  return !quantity || !targetQuantity || quantity === targetQuantity;
+}
+
 /** Badge text for the unit a property is stored in, before any conversion. */
 export const storageUnitLabel = (
   unitExternalId?: string,

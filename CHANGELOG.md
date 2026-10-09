@@ -11,6 +11,11 @@ Data Source for Grafana**.
 - **Relationships** moves into the asset-centric group in the data source settings and now follows its master toggle, like the other asset-centric tabs: turning on the Core Data Model features turns it off. Saved Relationships queries keep their tab and keep running.
 - The **Templates** and **Extraction Pipelines** tabs are labelled **Deprecated** instead of **Preview**. In the data source settings they sit under **Other**, marked **Deprecated**.
 
+### Bug fixes
+
+- **Time Series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
+- **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. It is now shown on the row.
+
 ## 4.6.0 - October 14th, 2026
 
 ### Breaking changes

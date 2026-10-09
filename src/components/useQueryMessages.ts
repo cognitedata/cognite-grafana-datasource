@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { eventBusService } from '../appEventHandler';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
 import { QueryRequestError, QueryWarning } from '../types';
+import { isMessageForRow } from '../cdf/graphqlTimeSeries';
 
 interface UseQueryMessages {
   errorMessage: string;
@@ -22,13 +23,17 @@ export const useQueryMessages = (refId: string): UseQueryMessages => {
 
   useEffect(() => {
     const handleError = ({ refId, error }: QueryRequestError) => {
-      if (refIdRef.current === refId) {
+      if (isMessageForRow(refId, refIdRef.current)) {
         setErrorMessage(error);
       }
     };
+    // A row can get several warnings in one run (the GraphQL tab fetches each series
+    // on its own), so they add up; the empty warning sent before each run clears them.
     const handleWarning = ({ refId, warning }: QueryWarning) => {
-      if (refIdRef.current === refId) {
-        setWarningMessage(warning);
+      if (isMessageForRow(refId, refIdRef.current)) {
+        setWarningMessage((current) =>
+          !warning || !current ? warning : current.includes(warning) ? current : `${current}\n\n${warning}`
+        );
       }
     };
     eventBusService.on(failedResponseEvent, handleError);

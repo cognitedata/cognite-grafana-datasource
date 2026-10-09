@@ -3,7 +3,7 @@ import { Select, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSw
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
 import { getCogniteUnitIndex, getTimeSeriesProperties, stringifyError } from '../cdf/client';
-import { storageUnitLabel, unitDisplayName } from '../cdf/units';
+import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/units';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
@@ -130,9 +130,14 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     const selected = picked[0];
     const type = selected?.props?.type;
     setTimeSeriesType(type);
+    // A conversion chosen for the previous series only carries over to one that
+    // measures the same quantity; otherwise CDF would refuse the request.
+    const storageUnit = selected?.props?.unit?.externalId;
+    const keepTargetUnit = targetUnitApplies(cogniteTimeSeries.targetUnit, storageUnit, unitLookup);
     onQueryChange({
       cogniteTimeSeries: {
         ...cogniteTimeSeries,
+        targetUnit: keepTargetUnit ? cogniteTimeSeries.targetUnit : undefined,
         instanceId: selected?.space && selected?.externalId ? {
           // PR Feedback: We need space field here because top-level space (e.g., "cdf_cdm")
           // is used for searching/listing in DMS view, while instanceId.space

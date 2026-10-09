@@ -1,6 +1,8 @@
 import { buildSchema } from 'graphql';
 import {
   NUMERIC_TYPE_KEY,
+  graphqlSeriesRefId,
+  isMessageForRow,
   TIME_SERIES_ROOT_KEY,
   timeSeriesKeysFromSchema,
 } from '../cdf/graphqlTimeSeries';
@@ -263,5 +265,15 @@ describe('plotting the series a GraphQL query returns', () => {
       );
       expect(labels).toEqual(['rpm / Pump']);
     });
+  });
+});
+
+describe('GraphQL series refIds', () => {
+  it('routes a series message to the query row it came from', () => {
+    expect(graphqlSeriesRefId('A', 3)).toBe('A_fdm_3');
+    expect(isMessageForRow('A_fdm_3', 'A')).toBe(true);
+    expect(isMessageForRow('A', 'A')).toBe(true);
+    expect(isMessageForRow('AB_fdm_0', 'A')).toBe(false);
+    expect(isMessageForRow('B', 'A')).toBe(false);
   });
 });
