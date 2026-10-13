@@ -36,7 +36,7 @@ describe('Metrics Query', () => {
       const result = await ds.metricFindQuery(variableQuery);
 
       expect(result).toEqual([]);
-      expect(fetcher.fetch).not.toBeCalled();
+      expect(fetcher.fetch).not.toHaveBeenCalled();
     });
   });
 
@@ -57,7 +57,7 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -81,7 +81,7 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -107,7 +107,7 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -133,7 +133,7 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -149,7 +149,7 @@ describe('Metrics Query', () => {
     it('should return an empty array', async () => {
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(fetcher.fetch).not.toBeCalled();
+      expect(fetcher.fetch).not.toHaveBeenCalled();
     });
   });
 
@@ -160,14 +160,14 @@ describe('Metrics Query', () => {
       };
       const result = await ds.metricFindQuery(variableQuery);
       expect(result).toEqual([]);
-      expect(fetcher.fetch).not.toBeCalled();
+      expect(fetcher.fetch).not.toHaveBeenCalled();
     });
     it('should throw an error if filter regexp is wrong', async () => {
       const variableQuery: VariableQueryData = {
         query: "assets{name=~'*.foo'}",
       };
       expect(ds.metricFindQuery(variableQuery)).rejects.toMatchSnapshot();
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -184,7 +184,7 @@ describe('Metrics Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
   });
@@ -231,7 +231,7 @@ describe('Metrics Query', () => {
     it('should interpolate variables in GraphQL query', async () => {
       await ds.metricFindQuery(variableQuery);
       
-      expect(ds.connector.fetchQuery).toBeCalledTimes(1);
+      expect(ds.connector.fetchQuery).toHaveBeenCalledTimes(1);
       const call = (ds.connector.fetchQuery as Mock).mock.calls[0][0];
       const requestBody = JSON.parse(call.data);
       
@@ -243,7 +243,7 @@ describe('Metrics Query', () => {
     it('should generate the correct GraphQL endpoint request', async () => {
       await ds.metricFindQuery(variableQuery);
       
-      expect(ds.connector.fetchQuery).toBeCalledTimes(1);
+      expect(ds.connector.fetchQuery).toHaveBeenCalledTimes(1);
       const call = (ds.connector.fetchQuery as Mock).mock.calls[0][0];
       expect(call.path).toBe('/userapis/spaces/test-space/datamodels/test-model/versions/1/graphql');
       expect(call.method).toBe('POST');

@@ -26,7 +26,7 @@ describe('Login with OAuth2', () => {
     });
 
     it('should send a correct request', async () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 

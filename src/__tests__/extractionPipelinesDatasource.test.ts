@@ -104,7 +104,7 @@ describe('extraction pipelines', () => {
       results = await ds.extractionPipelinesDatasource.getExtractionPipelinesDropdowns('a');
     });
     it('it is called 1 times', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
     });
     it('returns response data', () => {
       expect(results).toEqual(extpipesRes.items);

@@ -131,7 +131,7 @@ describe('connector', () => {
       fetcher.fetch.mockImplementation(response);
       await connector.cachedRequest(request);
       const cached = await connector.cachedRequest(request);
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect(cached.data.items).toEqual([1]);
     });
 
@@ -140,14 +140,14 @@ describe('connector', () => {
       await connector.cachedRequest(request, '1s');
       jest.advanceTimersByTime(2000);
       await connector.cachedRequest(request);
-      expect(fetcher.fetch).toBeCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
     });
 
     it('no cache if url is different', async () => {
       fetcher.fetch.mockImplementation(response);
       await connector.cachedRequest(request);
       await connector.cachedRequest({ ...request, url: '/other' });
-      expect(fetcher.fetch).toBeCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
     });
 
     const error = { error: { message: 1 } };
@@ -181,7 +181,7 @@ describe('connector', () => {
       } catch (e) {
         // silent
       }
-      expect(fetcher.fetch).toBeCalledTimes(2);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(2);
     });
   });
 
