@@ -43,6 +43,7 @@ Data Source for Grafana**.
 - An error or warning shown under a query now clears when the query runs again, so it always describes the latest run. Before, it stayed on screen until the query was edited, even after a time range change had fixed the cause.
 - The query editor's tab bar no longer ends in an extra, unnamed tab with nothing behind it.
 - A query run from Explore could fail with "HTTP header is larger than 8192 bytes". Explore keeps the whole query in the page URL, and Grafana forwarded that URL to CDF as the `Referer` header, so a long query could push the request's headers past CDF's size limit. The plugin's routes now send an empty `Referer` instead.
+- Closing a query editor subscribed its warning listener again instead of removing it, so listeners piled up each time an editor was opened and closed, and closed editors kept receiving warnings. Each editor now removes both its error and warning listeners when it closes, and follows a change of query letter (refId) without resubscribing.
 
 ## 4.5.2 - August 25th, 2026
 
