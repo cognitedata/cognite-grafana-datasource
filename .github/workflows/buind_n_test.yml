@@ -52,7 +52,9 @@ jobs:
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
-          go-version: '1.26'
+          # An exact version: setup-go sets GOTOOLCHAIN=local, so go.mod's toolchain
+          # line is ignored and a bare '1.26' builds with whatever the runner caches.
+          go-version: '1.27.2'
 
       - name: Test backend
         env:
@@ -69,6 +71,12 @@ jobs:
         with:
           version: latest
           args: buildAll
+
+      - name: Scan backend for Go vulnerabilities
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./pkg/...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -mode binary dist/gpx_cognite_datasource_linux_amd64
 
       - name: Check for E2E
         id: check-for-e2e
