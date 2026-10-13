@@ -20,4 +20,9 @@ describe('resolveFeatureFlags', () => {
     expect(flags.enableEventsAdvancedFiltering).toBe(true);
     expect(flags.enableLegacyDataModelFeatures).toBe(FEATURE_DEFAULTS.enableLegacyDataModelFeatures);
   });
+
+  it('leaves Records, an alpha, off unless a datasource turns it on', () => {
+    expect(resolveFeatureFlags({}).enableRecords).toBe(false);
+    expect(resolveFeatureFlags({ enableRecords: true }).enableRecords).toBe(true);
+  });
 });

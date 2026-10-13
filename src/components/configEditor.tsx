@@ -140,8 +140,8 @@ export function ConfigEditor(props: ConfigEditorProps) {
       [masterKey]: isEnabled,
     };
     // Re-enabling a master restores its sub-flags to their defaults; both
-    // masters follow this one rule. Every CDM sub-flag defaults on, so the
-    // CDM master still enables all of them.
+    // masters follow this one rule. Records, an alpha, defaults off, so the
+    // CDM master leaves it off.
     dependentKeys.forEach((key) => {
       patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
     });
@@ -364,7 +364,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     label="Records"
                     value={enableRecords}
                     onChange={onJsonBoolValueChange("enableRecords")}
-                    badge={<Badge text="Beta" color="blue" />}
+                    badge={<Badge text="Alpha" color="purple" />}
                   />
                   <FeatureToggleRow
                     id="enable-flexible-data-modelling"
