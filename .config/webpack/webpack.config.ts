@@ -6,7 +6,6 @@
  */
 
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-import ESLintPlugin from 'eslint-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import LiveReloadPlugin from 'webpack-livereload-plugin';
 import path from 'path';
@@ -181,12 +180,9 @@ const config = async (env): Promise<Configuration> => ({
       },
       typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
     }),
-    new ESLintPlugin({
-      extensions: ['.ts', '.tsx'],
-      configType: 'flat',
-      lintDirtyModulesOnly: Boolean(env.development), 
-      overrideConfigFile: path.resolve(__dirname, '../../.eslintrc.cjs'), 
-    }),
+    // No ESLintPlugin: eslint-webpack-plugin depends on micromatch, which pulls in
+    // braces (CVE-2026-93687, no fixed release), and the plugin validator rejects
+    // the release over it. `yarn lint` runs as its own CI step instead.
     ...(env.development ? [new LiveReloadPlugin()] : []),
   ],
 

@@ -70,7 +70,7 @@ describe('Dropdown Options Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -91,7 +91,7 @@ describe('Dropdown Options Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -115,7 +115,7 @@ describe('Dropdown Options Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -134,7 +134,7 @@ describe('Dropdown Options Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 
@@ -155,7 +155,7 @@ describe('Dropdown Options Query', () => {
     });
 
     it('should generate the correct request', () => {
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
     });
 

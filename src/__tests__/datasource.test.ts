@@ -84,7 +84,7 @@ describe('Datasource Query', () => {
         options
       );
 
-      expect(fetcher.fetch).toBeCalledTimes(1);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0].data).toEqual({
         end,
         start,
@@ -151,7 +151,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct queries', () => {
-      expect(fetcher.fetch).toBeCalledTimes(4);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(4);
       expect((fetcher.fetch as Mock).mock.calls[0][0]).toMatchSnapshot();
       expect((fetcher.fetch as Mock).mock.calls[1][0]).toMatchSnapshot();
       expect((fetcher.fetch as Mock).mock.calls[2][0]).toMatchSnapshot();
@@ -440,7 +440,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(fetcher.fetch).toBeCalledTimes(5);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(5);
       for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
         expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
@@ -513,7 +513,7 @@ describe('Datasource Query', () => {
     });
 
     it('should generate the correct filtered queries', () => {
-      expect(fetcher.fetch).toBeCalledTimes(5);
+      expect(fetcher.fetch).toHaveBeenCalledTimes(5);
       for (let i = 0; i < (fetcher.fetch as Mock).mock.calls.length; i += 1) {
         expect((fetcher.fetch as Mock).mock.calls[i][0]).toMatchSnapshot();
       }
