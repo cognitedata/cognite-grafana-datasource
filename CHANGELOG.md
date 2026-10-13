@@ -44,6 +44,7 @@ Data Source for Grafana**.
 - The query editor's tab bar no longer ends in an extra, unnamed tab with nothing behind it.
 - A query run from Explore could fail with "HTTP header is larger than 8192 bytes". Explore keeps the whole query in the page URL, and Grafana forwarded that URL to CDF as the `Referer` header, so a long query could push the request's headers past CDF's size limit. The plugin's routes now send an empty `Referer` instead.
 - Closing a query editor subscribed its warning listener again instead of removing it, so listeners piled up each time an editor was opened and closed, and closed editors kept receiving warnings. Each editor now removes both its error and warning listeners when it closes, and follows a change of query letter (refId) without resubscribing.
+- The backend is now built with Go 1.26.9 and `golang.org/x/net` v0.60.0, which fix vulnerabilities in the Go standard library (`net/http`, `crypto/tls`, `html/template`, `net/textproto`) and in `x/net` that Grafana's plugin validator reported.
 
 ## 4.5.2 - August 25th, 2026
 
