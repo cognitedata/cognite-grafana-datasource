@@ -12,11 +12,58 @@ jobs:
       id-token: write
       contents: write
       attestations: write
+    # The steps of grafana/plugin-actions/build-plugin, inlined: that action calls
+    # package-plugin@main, and the organization only allows actions pinned to a
+    # full commit SHA, nested ones included.
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: grafana/plugin-actions/build-plugin@979f3c7da9cf6f8f53d6d3c1e03b4298b4108c29 # main
+      - name: Package plugin
+        id: package-plugin
+        uses: grafana/plugin-actions/package-plugin@8377a91095147d68ea3a51681aa1773ed7f0025c # package-plugin/v1.3.3
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          attestation: true
           go-version: '1.26'
+          node-version: '20'
+
+      - name: Check package version
+        shell: bash
+        env:
+          PLUGIN_VERSION: ${{ steps.package-plugin.outputs.plugin-version }}
+        run: |
+          if [ "v${PLUGIN_VERSION}" != "${GITHUB_REF_NAME}" ]; then
+            printf "\033[0;31mPlugin version doesn't match tag name. The tag should be v${PLUGIN_VERSION}\033[0m\n"
+            exit 1
+          fi
+
+      - name: Generate artifact attestation
+        id: attestation
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.package-plugin.outputs.archive }}
+
+      - name: Create Github release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            ./${{ steps.package-plugin.outputs.archive }}
+            ./${{ steps.package-plugin.outputs.archive-sha1sum }}
+          body: |
+            **This Github draft release has been created for your plugin.**
+
+            If you would like to submit this release to Grafana please consider the following steps:
+
+            - Check the Validate plugin step in the [release workflow](https://github.com/${{ github.repository }}/commit/${{ github.sha }}/checks/${{ github.run_id }}) for any warnings that need attention
+            - **Edit this draft release**, adjust these notes accordingly and click **Publish Release**
+            - Navigate to https://grafana.com/auth/sign-in/ to sign into your account
+            - Once logged in click **My Plugins** in the admin navigation
+            - Click the **Submit Plugin** button
+            - Fill in the Plugin Submission form:
+              - Paste this [.zip asset link](https://github.com/${{ github.repository }}/releases/download/v${{ steps.package-plugin.outputs.plugin-version }}/${{ steps.package-plugin.outputs.archive }}) in the Plugin URL field
+              - Paste this [.zip.sha1 link](https://github.com/${{ github.repository }}/releases/download/v${{ steps.package-plugin.outputs.plugin-version }}/${{ steps.package-plugin.outputs.archive-sha1sum }}) in the SHA1 field
+
+            If the links above are not working, you must first edit this draft release and publish it.
+
+            This build has been attested. You can view the attestation details [here](${{ steps.attestation.outputs.attestation-url }}).
