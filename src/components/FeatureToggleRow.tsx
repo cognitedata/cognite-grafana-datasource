@@ -17,7 +17,7 @@ type FeatureToggleRowProps = {
   value: boolean;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   labelWidth?: number;
-  /** Rendered after the label, e.g. a Beta chip. */
+  /** Rendered after the label, e.g. an Alpha chip. */
   badge?: React.ReactNode;
 } & (
   /** A feature flag, explained by its entry in FEATURE_TOOLTIPS. */

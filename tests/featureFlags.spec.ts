@@ -158,7 +158,8 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(coreMasterToggle).toBeChecked();
 
     await expect(page.locator('#enable-cognite-timeseries')).toBeChecked();
-    await expect(page.locator('#enable-records')).toBeChecked();
+    // Records is an alpha and defaults off, so re-enabling the master leaves it off.
+    await expect(page.locator('#enable-records')).not.toBeChecked();
     await expect(page.locator('#enable-flexible-data-modelling')).toBeChecked();
   });
 

@@ -275,11 +275,11 @@ describe('QueryEditor Utility Functions', () => {
 });
 
 describe('tab chips', () => {
-  it('marks Records as Beta and the deprecated tabs as Preview', () => {
+  it('marks Records as Alpha and the deprecated tabs as Preview', () => {
     // The chip lives in the tab's `suffix`, never in TabTitles: the e2e specs match
     // the tab by its exact label text.
     expect(TabTitles[Tabs.Records]).toBe('Records');
-    expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Beta');
+    expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Alpha');
     expect(TAB_SUFFIX_TEXT[Tabs.Templates]).toBe('Preview');
     expect(TAB_SUFFIX_TEXT[Tabs.ExtractionPipelines]).toBe('Preview');
     expect(TAB_SUFFIX_TEXT[Tabs.CogniteTimeSeriesSearch]).toBeUndefined();

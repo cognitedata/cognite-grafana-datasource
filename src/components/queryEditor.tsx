@@ -286,7 +286,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
 export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
   [Tabs.Templates]: 'Preview',
   [Tabs.ExtractionPipelines]: 'Preview',
-  [Tabs.Records]: 'Beta',
+  [Tabs.Records]: 'Alpha',
 };
 
 const tabSuffix = (
