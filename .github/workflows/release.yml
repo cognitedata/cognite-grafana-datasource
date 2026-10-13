@@ -23,8 +23,20 @@ jobs:
         uses: grafana/plugin-actions/package-plugin@8377a91095147d68ea3a51681aa1773ed7f0025c # package-plugin/v1.3.3
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          go-version: '1.26'
+          # An exact version: setup-go sets GOTOOLCHAIN=local, so go.mod's toolchain
+          # line is ignored and a bare '1.26' builds with whatever the runner caches.
+          go-version: '1.27.2'
           node-version: '20'
+
+      - name: Scan the packaged backend for Go vulnerabilities
+        shell: bash
+        env:
+          PLUGIN_ARCHIVE: ${{ steps.package-plugin.outputs.archive }}
+        run: |
+          unzip -q -o "$PLUGIN_ARCHIVE" -d "$RUNNER_TEMP/plugin"
+          for bin in "$RUNNER_TEMP"/plugin/*/gpx_*_linux_amd64; do
+            go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -mode binary "$bin"
+          done
 
       - name: Check package version
         shell: bash
