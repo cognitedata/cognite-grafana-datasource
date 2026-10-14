@@ -35,7 +35,7 @@ export function propertyTypeToken(
 const getStyles = (theme: GrafanaTheme2) => {
   const base = css({
     fontFamily: theme.typography.fontFamilyMonospace,
-    fontSize: 10,
+    fontSize: theme.typography.bodySmall.fontSize,
     fontWeight: theme.typography.fontWeightMedium,
     letterSpacing: '0.04em',
     padding: theme.spacing(0, 0.5),
@@ -52,7 +52,7 @@ const getStyles = (theme: GrafanaTheme2) => {
     other: cx(base, css({ color: theme.colors.text.secondary })),
     recordMarker: css({
       fontFamily: theme.typography.fontFamilyMonospace,
-      fontSize: 10,
+      fontSize: theme.typography.bodySmall.fontSize,
       color: theme.colors.text.disabled,
     }),
   };
