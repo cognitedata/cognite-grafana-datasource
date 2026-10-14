@@ -1,9 +1,10 @@
 import { expect, PluginFixture } from '@grafana/plugin-e2e';
-import { Page, Response } from 'playwright';
+import { Page } from 'playwright';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { refreshPanel } from '../playwright/fixtures/refreshPanel';
 import { test } from '../playwright/fixtures/patchNavigationStrategy';
 import { addPanel as addPanelHelper } from '../playwright/fixtures/addPanel';
+import { isCdfResponse } from '../playwright/fixtures/isCdfResponse';
 import semver from 'semver';
 
 const expectedTs = [
@@ -16,14 +17,6 @@ const expectedTs = [
   '59.9139-10.7522-current.visibility',
   '59.9139-10.7522-current.uvi'
 ].sort();
-
-const isCdfResponse = (path: string) => {
-  return (response: Response) => {
-    const isTsData = response.request().url().endsWith(path);
-    const is200 = response.status() === 200;
-    return isTsData && is200;
-  }
-};
 
 /**
  * Shared setup for CogniteTimeSeries tests: sets viewport, navigates to a new
