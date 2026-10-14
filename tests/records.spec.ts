@@ -184,7 +184,9 @@ test.describe('Records query editor', () => {
     await editorRow.getByTestId('records-open-request-preview').click();
     const preview = page.getByTestId('records-request-preview');
     await expect(preview).toContainText(FILTER_PATH);
-    await page.getByRole('button', { name: 'Close' }).first().click();
+    // Scoped to the modal and exact: before Grafana 12 the side menu's "Close menu"
+    // toggle also matches a page-wide 'Close' and sits under the modal backdrop.
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).last().click();
     await expect(preview).toHaveCount(0);
   });
 
