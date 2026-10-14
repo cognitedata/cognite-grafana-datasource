@@ -1,0 +1,240 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "refId": "A",
+          "tab": "Records",
+          "recordsQuery": {
+            "view": {
+              "space": "grafana-records-fixtures",
+              "externalId": "GrafanaE2eRecord",
+              "version": "v1",
+              "streamId": "powerbi-connector-ci-archive"
+            },
+            "mode": "list",
+            "filters": [],
+            "sort": [
+              {
+                "property": "occurredAt",
+                "direction": "asc",
+                "containerSpace": "grafana-records-fixtures",
+                "containerExternalId": "GrafanaE2eRecord",
+                "containerPropertyIdentifier": "occurredAt"
+              }
+            ],
+            "limit": 1000,
+            "columns": [],
+            "buckets": [],
+            "metrics": [
+              {
+                "name": "count",
+                "function": "count"
+              }
+            ],
+            "timeFilterMode": "dashboard"
+          }
+        }
+      ],
+      "title": "Records - list",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "refId": "A",
+          "tab": "Records",
+          "recordsQuery": {
+            "view": {
+              "space": "grafana-records-fixtures",
+              "externalId": "GrafanaE2eRecord",
+              "version": "v1",
+              "streamId": "powerbi-connector-ci-archive"
+            },
+            "mode": "aggregate",
+            "filters": [],
+            "sort": [],
+            "limit": 1000,
+            "columns": [],
+            "buckets": [
+              {
+                "kind": "uniqueValues",
+                "property": "site",
+                "size": 10
+              }
+            ],
+            "metrics": [
+              {
+                "name": "count",
+                "function": "count"
+              },
+              {
+                "name": "avgTemperature",
+                "function": "avg",
+                "property": "temperature"
+              }
+            ],
+            "timeFilterMode": "dashboard"
+          }
+        }
+      ],
+      "title": "Records - by site",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "refId": "A",
+          "tab": "Records",
+          "recordsQuery": {
+            "view": {
+              "space": "grafana-records-fixtures",
+              "externalId": "GrafanaE2eRecord",
+              "version": "v1",
+              "streamId": "powerbi-connector-ci-archive"
+            },
+            "mode": "aggregate",
+            "filters": [],
+            "sort": [],
+            "limit": 1000,
+            "columns": [],
+            "buckets": [
+              {
+                "kind": "timeHistogram",
+                "property": "occurredAt",
+                "interval": "1h"
+              },
+              {
+                "kind": "uniqueValues",
+                "property": "site",
+                "size": 10
+              }
+            ],
+            "metrics": [
+              {
+                "name": "count",
+                "function": "count"
+              }
+            ],
+            "timeFilterMode": "dashboard"
+          }
+        }
+      ],
+      "title": "Records - hourly by site",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2026-10-14T00:00:00.000Z",
+    "to": "2026-10-15T00:00:00.000Z"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Records e2e fixtures",
+  "uid": "records-e2e",
+  "version": 1
+}
