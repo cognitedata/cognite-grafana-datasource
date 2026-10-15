@@ -48,13 +48,26 @@ jobs:
             echo "has-backend=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Read the Go version from go.mod
+        id: go
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        shell: bash
+        # go.mod's toolchain line is the one place the Go version is set. setup-go
+        # exports GOTOOLCHAIN=local, so Go never switches to it by itself: it has to
+        # be requested here, exactly, or a cached older patch release builds instead.
+        run: |
+          version=$(sed -n 's/^toolchain go//p' go.mod)
+          if [ -z "$version" ]; then
+            echo "::error::go.mod has no toolchain line naming the Go version to build with"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Setup Go environment
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
-          # An exact version: setup-go sets GOTOOLCHAIN=local, so go.mod's toolchain
-          # line is ignored and a bare '1.26' builds with whatever the runner caches.
-          go-version: '1.27.2'
+          go-version: ${{ steps.go.outputs.version }}
 
       - name: Test backend
         env:
@@ -74,7 +87,14 @@ jobs:
 
       - name: Scan backend for Go vulnerabilities
         if: steps.check-for-backend.outputs.has-backend == 'true'
+        env:
+          GO_VERSION: ${{ steps.go.outputs.version }}
         run: |
+          built=$(go version dist/gpx_cognite_datasource_linux_amd64 | awk '{print $2}')
+          if [ "$built" != "go${GO_VERSION}" ]; then
+            echo "::error::The backend was built with $built, not go${GO_VERSION} from go.mod"
+            exit 1
+          fi
           go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./pkg/...
           go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -mode binary dist/gpx_cognite_datasource_linux_amd64
 

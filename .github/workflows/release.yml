@@ -18,25 +18,60 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Read the Go version from go.mod
+        id: go
+        shell: bash
+        # go.mod's toolchain line is the one place the Go version is set. setup-go
+        # exports GOTOOLCHAIN=local, so Go never switches to it by itself: it has to
+        # be requested here, exactly, or a cached older patch release builds instead.
+        run: |
+          version=$(sed -n 's/^toolchain go//p' go.mod)
+          if [ -z "$version" ]; then
+            echo "::error::go.mod has no toolchain line naming the Go version to build with"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Package plugin
         id: package-plugin
         uses: grafana/plugin-actions/package-plugin@8377a91095147d68ea3a51681aa1773ed7f0025c # package-plugin/v1.3.3
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          # An exact version: setup-go sets GOTOOLCHAIN=local, so go.mod's toolchain
-          # line is ignored and a bare '1.26' builds with whatever the runner caches.
-          go-version: '1.27.2'
+          go-version: ${{ steps.go.outputs.version }}
           node-version: '20'
 
-      - name: Scan the packaged backend for Go vulnerabilities
+      - name: Check the packaged backend's Go version and vulnerabilities
         shell: bash
         env:
           PLUGIN_ARCHIVE: ${{ steps.package-plugin.outputs.archive }}
+          PLUGIN_VERSION: ${{ steps.package-plugin.outputs.plugin-version }}
+          GO_VERSION: ${{ steps.go.outputs.version }}
         run: |
           unzip -q -o "$PLUGIN_ARCHIVE" -d "$RUNNER_TEMP/plugin"
+          shopt -s nullglob
+          binaries=("$RUNNER_TEMP"/plugin/*/gpx_*)
+          if [ ${#binaries[@]} -eq 0 ]; then
+            echo "::error::The archive holds no backend binaries"
+            exit 1
+          fi
+          # Every binary must be built with the Go version go.mod names.
+          for bin in "${binaries[@]}"; do
+            built=$(go version "$bin" | awk '{print $2}')
+            echo "$(basename "$bin"): $built"
+            if [ "$built" != "go${GO_VERSION}" ]; then
+              echo "::error::$(basename "$bin") was built with $built, not go${GO_VERSION} from go.mod"
+              exit 1
+            fi
+          done
           for bin in "$RUNNER_TEMP"/plugin/*/gpx_*_linux_amd64; do
             go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -mode binary "$bin"
           done
+          # The release's changelog section must name that Go version too.
+          section=$(awk -v heading="## ${PLUGIN_VERSION} " 'index($0, heading) == 1 { found = 1; next } /^## / { found = 0 } found' CHANGELOG.md)
+          if ! grep -qF "Go ${GO_VERSION}" <<< "$section"; then
+            echo "::error::The ${PLUGIN_VERSION} section of CHANGELOG.md does not name Go ${GO_VERSION}, the version the backend is built with"
+            exit 1
+          fi
 
       - name: Check package version
         shell: bash
