@@ -23,6 +23,7 @@ import {
   stringValueHandler,
 } from "../configEditorUtils";
 import { FeatureToggleRow } from "./FeatureToggleRow";
+import { DEPRECATED_CHIP_TEXT, DeprecationNotice } from "./common/DeprecationNotice";
 import "../css/common.css";
 
 type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
@@ -63,6 +64,7 @@ const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
   "enableTimeseriesCustomQuery",
   "enableEvents",
   "enableEventsAdvancedFiltering",
+  "enableRelationships",
 ];
 
 const SECTION_STYLE = { marginTop: '8px', marginBottom: '8px' };
@@ -380,9 +382,10 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <SectionDivider />
 
             <h6 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Asset-centric <Badge text="legacy" color="orange" />
+              Asset-centric <Badge text={DEPRECATED_CHIP_TEXT} color="orange" />
             </h6>
             <div style={SECTION_STYLE}>
+              <DeprecationNotice />
               <FeatureToggleRow
                 id="enable-legacy-data-model-features"
                 feature="enableLegacyDataModelFeatures"
@@ -432,21 +435,23 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     value={enableEventsAdvancedFiltering}
                     onChange={onJsonBoolValueChange("enableEventsAdvancedFiltering")}
                   />
+                  <FeatureToggleRow
+                    id="enable-relationships"
+                    feature="enableRelationships"
+                    label="Relationships"
+                    value={enableRelationships}
+                    onChange={onJsonBoolValueChange("enableRelationships")}
+                  />
                 </>
               )}
             </div>
 
             <SectionDivider />
 
-            <h6 style={{ marginBottom: 4 }}>Deprecated</h6>
+            <h6 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Other <Badge text={DEPRECATED_CHIP_TEXT} color="orange" />
+            </h6>
             <div style={SECTION_STYLE}>
-              <FeatureToggleRow
-                id="enable-relationships"
-                feature="enableRelationships"
-                label="Relationships"
-                value={enableRelationships}
-                onChange={onJsonBoolValueChange("enableRelationships")}
-              />
               <FeatureToggleRow
                 id="enable-extraction-pipelines"
                 feature="enableExtractionPipelines"

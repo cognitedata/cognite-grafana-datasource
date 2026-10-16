@@ -39,6 +39,9 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     await editorRow.getByText('Time series search').click();
     await expect(editorRow.getByText('Time series search')).toHaveAttribute('aria-selected', 'true');
+    // Every asset-centric tab carries the chip, and the open one the warning.
+    await expect(editorRow.getByText('Deprecated', { exact: true }).first()).toBeVisible();
+    await expect(editorRow.getByText('Asset-centric features are deprecated')).toBeVisible();
 
     await expect(editorRow.getByText('Time Series', { exact: true })).not.toBeVisible();
     await expect(editorRow.getByText('GraphQL', { exact: true })).not.toBeVisible();
@@ -184,16 +187,29 @@ test.describe('Feature Flags - Config Editor', () => {
     await expect(eventsToggle).toBeChecked();
   });
 
-  test('Should show deprecated features without master toggle', async () => {
+  test('Should flag the asset-centric group as deprecated', async () => {
+    await expect(page.getByText('Asset-centric features are deprecated')).toBeVisible();
+    await expect(page.getByText('legacy', { exact: true })).toHaveCount(0);
+  });
+
+  test('Should keep Relationships under the asset-centric master', async () => {
+    await toggleCheckbox(page, '#enable-legacy-data-model-features', true);
     await expect(page.locator('#enable-relationships')).toBeVisible();
+
+    await toggleCheckbox(page, '#enable-relationships', true);
+    await expect(page.locator('#enable-relationships')).toBeChecked();
+
+    // Turning on CDM turns the asset-centric group off, Relationships included.
+    await toggleCheckbox(page, '#enable-core-data-model-features', true);
+    await expect(page.locator('#enable-legacy-data-model-features')).not.toBeChecked();
+    await expect(page.locator('#enable-relationships')).toHaveCount(0);
+  });
+
+  test('Should show the other deprecated features without master toggle', async () => {
     await expect(page.locator('#enable-templates')).toBeVisible();
     await expect(page.locator('#enable-extraction-pipelines')).toBeVisible();
 
-    const relationshipsToggle = page.locator('#enable-relationships');
     const templatesToggle = page.locator('#enable-templates');
-
-    await toggleCheckbox(page, '#enable-relationships', false);
-    await expect(relationshipsToggle).not.toBeChecked();
 
     await toggleCheckbox(page, '#enable-templates', true);
     await expect(templatesToggle).toBeChecked();
@@ -201,7 +217,6 @@ test.describe('Feature Flags - Config Editor', () => {
     await toggleCheckbox(page, '#enable-legacy-data-model-features', false);
     await toggleCheckbox(page, '#enable-core-data-model-features', false);
 
-    await expect(relationshipsToggle).not.toBeChecked();
     await expect(templatesToggle).toBeChecked();
   });
 

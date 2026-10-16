@@ -11,6 +11,7 @@ import { parse } from '../parser/events-assets';
 import { VARIABLE_REF_ID } from '../constants';
 import { INSTANCE_ID_FIELD } from '../cdf/instanceRef';
 import { AssetsVariableTab } from './variables/AssetsVariableTab';
+import { DeprecatedChip } from './common/DeprecationNotice';
 import { GraphqlVariableTab } from './variables/GraphqlVariableTab';
 import {
   VariableQueryProblem,
@@ -266,6 +267,8 @@ export const CogniteVariableQueryEditor = ({
             label="Assets"
             active={queryType === 'assets'}
             onChangeTab={() => handleTabChange('assets')}
+            style={{ display: 'flex' }}
+            suffix={DeprecatedChip}
           />
           <Tab
             label="GraphQL"
