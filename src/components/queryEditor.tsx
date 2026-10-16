@@ -28,6 +28,7 @@ import {
 } from '../types';
 import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
+import { DEPRECATED_CHIP_TEXT, DeprecatedChip, DeprecationNotice } from './common/DeprecationNotice';
 import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
@@ -126,8 +127,12 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
 
   return (
     <InlineFieldRow>
-      <InlineFormLabel htmlFor={`include-relationships-${query.refId}`} tooltip="Fetch time series related to the asset" width={12}>
-        Include relationships
+      <InlineFormLabel
+        htmlFor={`include-relationships-${query.refId}`}
+        tooltip="Fetch time series related to the asset. Relationships are deprecated along with the other asset-centric APIs."
+        width={18}
+      >
+        Include relationships (deprecated)
       </InlineFormLabel>
       <InlineSwitch
         label='Include relationships'
@@ -284,9 +289,27 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
  * only place a tab can carry one.
  */
 export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
-  [Tabs.Templates]: 'Preview',
-  [Tabs.ExtractionPipelines]: 'Preview',
+  [Tabs.Timeseries]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Asset]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Custom]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Event]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Relationships]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Templates]: DEPRECATED_CHIP_TEXT,
+  [Tabs.ExtractionPipelines]: DEPRECATED_CHIP_TEXT,
   [Tabs.Records]: 'Alpha',
+};
+
+/**
+ * What to use instead, for each tab running on the deprecated asset-centric APIs.
+ * Templates and Extraction Pipelines are deprecated on their own terms, so they carry
+ * the chip without the banner.
+ */
+export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
+  [Tabs.Timeseries]: 'Use the Time Series tab instead.',
+  [Tabs.Asset]: 'Use the GraphQL tab to plot the time series of an asset instead.',
+  [Tabs.Custom]: 'Use the Time Series or GraphQL tab instead.',
+  [Tabs.Event]: 'Use the Records or Activities tab instead.',
+  [Tabs.Relationships]: 'Use the GraphQL tab instead.',
 };
 
 const tabSuffix = (
@@ -302,6 +325,9 @@ const tabSuffix = (
     );
   }
   const text = TAB_SUFFIX_TEXT[tab];
+  if (text === DEPRECATED_CHIP_TEXT) {
+    return DeprecatedChip;
+  }
   return text ? () => <p className="preview-label">{text}</p> : undefined;
 };
 
@@ -366,6 +392,9 @@ export function QueryEditor(props: EditorProps) {
         })}
       </TabsBar>
       <TabContent>
+        {ASSET_CENTRIC_REPLACEMENTS[activeTab] && (
+          <DeprecationNotice replacement={ASSET_CENTRIC_REPLACEMENTS[activeTab]} />
+        )}
         {activeTab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
         {activeTab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
         {activeTab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}

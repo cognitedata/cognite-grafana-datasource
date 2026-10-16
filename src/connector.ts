@@ -219,10 +219,12 @@ export class Connector {
       this.flag("enableEventsAdvancedFiltering");
   }
 
-  // Deprecated features
   isRelationshipsEnabled() {
-    return this.flag("enableRelationships");
+    return this.flag("enableLegacyDataModelFeatures") &&
+      this.flag("enableRelationships");
   }
+
+  // Deprecated features
 
   isTemplatesEnabled() {
     return this.flag("enableTemplates");

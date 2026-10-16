@@ -2,6 +2,7 @@ import React from 'react';
 import { InlineFormLabel, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { variableValueOptions } from '../../constants';
+import { DeprecationNotice } from '../common/DeprecationNotice';
 
 const assetsHelp = (
   <pre>
@@ -72,6 +73,7 @@ export const AssetsVariableTab = ({
   onBlur,
 }: AssetsVariableTabProps) => (
   <div>
+    <DeprecationNotice replacement="Use the GraphQL tab to build variables from a data model instead." />
     <div className="gf-form gf-form--grow">
       <span className="gf-form-label query-keyword fix-query-keyword width-10">Query</span>
       <input
