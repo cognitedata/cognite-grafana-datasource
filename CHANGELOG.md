@@ -3,6 +3,14 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## Unreleased
+
+### Deprecations
+
+- The asset-centric features are deprecated, following CDF's deprecation of the asset-centric APIs, which retire on December 31, 2027. The **Time series search**, **Time series from asset**, **Time series custom query**, **Events** and **Relationships** tabs, the **Assets** variable tab and event annotations now carry a **Deprecated** chip and a warning that names their Core Data Model replacement. The asset-centric group in the data source settings is labelled **Deprecated** instead of **legacy**. Nothing stops working yet: the toggles, saved queries and dashboards behave as before. See [Deprecated and retired features](https://docs.cognite.com/cdf/deprecated).
+- **Relationships** moves into the asset-centric group in the data source settings and now follows its master toggle, like the other asset-centric tabs: turning on the Core Data Model features turns it off. Saved Relationships queries keep their tab and keep running.
+- The **Templates** and **Extraction Pipelines** tabs are labelled **Deprecated** instead of **Preview**. In the data source settings they sit under **Other**, marked **Deprecated**.
+
 ## 4.6.0 - October 14th, 2026
 
 ### Breaking changes

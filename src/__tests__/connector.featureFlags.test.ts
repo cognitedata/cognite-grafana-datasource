@@ -26,12 +26,12 @@ const LEGACY_FEATURES: Array<[FeatureKey, Accessor]> = [
   ["enableTimeseriesCustomQuery", "isTimeseriesCustomQueryEnabled"],
   ["enableEvents", "isEventsEnabled"],
   ["enableEventsAdvancedFiltering", "isEventsAdvancedFilteringEnabled"],
+  ["enableRelationships", "isRelationshipsEnabled"],
 ];
 
 const DEPRECATED_FEATURES: Array<[FeatureKey, Accessor]> = [
   ["enableTemplates", "isTemplatesEnabled"],
   ["enableExtractionPipelines", "isExtractionPipelinesEnabled"],
-  ["enableRelationships", "isRelationshipsEnabled"],
 ];
 
 describe("Connector feature flags", () => {
@@ -115,7 +115,7 @@ describe("Connector feature flags", () => {
       expect(connector.isFlexibleDataModellingEnabled()).toBe(true);
       expect(connector.isTimeseriesSearchEnabled()).toBe(false);
       expect(connector.isEventsEnabled()).toBe(false);
-      expect(connector.isRelationshipsEnabled()).toBe(true);
+      expect(connector.isRelationshipsEnabled()).toBe(false);
     });
   });
 });
