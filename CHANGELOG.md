@@ -13,6 +13,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
+- The backend is now built with Go 1.27.3, which fixes a vulnerability in the Go standard library (`crypto/x509`, GO-2026-6809) that `govulncheck` reports.
 - **Time Series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
 - **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. Errors and warnings from the panel's series are now shown on the row, each once.
 
