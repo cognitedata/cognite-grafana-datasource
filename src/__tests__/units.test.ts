@@ -1,6 +1,7 @@
 import { CogniteUnit } from '../types/dms';
 import {
   storageUnitLabel,
+  targetUnitApplies,
   unitDisplayName,
   unitSymbol,
   withUnitSuffix,
@@ -53,5 +54,30 @@ describe('unit suffixes', () => {
   it('leaves the name alone when there is no unit', () => {
     expect(unitSymbol(undefined, index)).toBeUndefined();
     expect(withUnitSuffix('count', undefined, index)).toBe('count');
+  });
+});
+
+describe('targetUnitApplies', () => {
+  const index = new Map(
+    [
+      { externalId: 'temperature:deg_c', quantity: 'Temperature' },
+      { externalId: 'temperature:deg_f', quantity: 'Temperature' },
+      { externalId: 'pressure:bar', quantity: 'Pressure' },
+    ].map((unit) => [unit.externalId, unit as CogniteUnit])
+  );
+
+  it('keeps a conversion for a series that measures the same quantity', () => {
+    expect(targetUnitApplies('temperature:deg_f', 'temperature:deg_c', index)).toBe(true);
+  });
+
+  it('drops it for another quantity or a series without a unit', () => {
+    expect(targetUnitApplies('temperature:deg_f', 'pressure:bar', index)).toBe(false);
+    expect(targetUnitApplies('temperature:deg_f', undefined, index)).toBe(false);
+    expect(targetUnitApplies(undefined, 'temperature:deg_c', index)).toBe(false);
+  });
+
+  it('keeps it when the catalog cannot place a unit, before it has loaded for one', () => {
+    expect(targetUnitApplies('temperature:deg_f', 'unknown:unit', index)).toBe(true);
+    expect(targetUnitApplies('temperature:deg_f', 'temperature:deg_c', new Map())).toBe(true);
   });
 });
