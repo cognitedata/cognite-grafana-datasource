@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { emitEvent, eventBusService, handleWarning } from '../appEventHandler';
 import { failedResponseEvent, responseWarningEvent } from '../constants';
-import { useQueryMessages } from '../components/useQueryMessages';
+import { addMessage, useQueryMessages } from '../components/useQueryMessages';
 
 // EventBusSrv keeps its legacy `on`/`off` listeners on a private emitter.
 const listenerCount = (eventName: string): number =>
@@ -58,22 +58,34 @@ describe('useQueryMessages', () => {
     unmount();
   });
 
-  it('shows a GraphQL series message on the row it came from, and adds up warnings', () => {
+  it('shows GraphQL series messages on the row they came from, adding up errors and warnings', () => {
     const { result, unmount } = renderHook(() => useQueryMessages('A'));
 
     act(() => {
       emitEvent(failedResponseEvent, { refId: 'A_fdm_2', error: 'series 2 failed' });
+      emitEvent(failedResponseEvent, { refId: 'A_fdm_3', error: 'series 3 failed' });
       handleWarning('series 0 is empty', 'A_fdm_0');
       handleWarning('series 1 is empty', 'A_fdm_1');
       handleWarning('series 1 is empty', 'A_fdm_1');
       handleWarning('not this row', 'AB_fdm_0');
     });
-    expect(result.current.errorMessage).toBe('series 2 failed');
+    expect(result.current.errorMessage).toBe('series 2 failed\n\nseries 3 failed');
     expect(result.current.warningMessage).toBe('series 0 is empty\n\nseries 1 is empty');
 
-    // The empty warning sent before each run clears what had added up.
-    act(() => handleWarning('', 'A'));
-    expect(result.current.warningMessage).toBe('');
+    // The empty messages sent before each run clear what had added up.
+    act(() => {
+      emitEvent(failedResponseEvent, { refId: 'A', error: '' });
+      handleWarning('', 'A');
+    });
+    expect(result.current).toMatchObject({ errorMessage: '', warningMessage: '' });
     unmount();
+  });
+
+  it('adds a message once, matching whole messages only', () => {
+    expect(addMessage('', 'a')).toBe('a');
+    expect(addMessage('a', '')).toBe('');
+    expect(addMessage('Limit reached', 'Limit reached')).toBe('Limit reached');
+    // Text contained in an earlier message is still a message of its own.
+    expect(addMessage('Series A failed: timeout', 'timeout')).toBe('Series A failed: timeout\n\ntimeout');
   });
 });

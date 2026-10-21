@@ -14,7 +14,7 @@ Data Source for Grafana**.
 ### Bug fixes
 
 - **Time Series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
-- **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. It is now shown on the row.
+- **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. Errors and warnings from the panel's series are now shown on the row, each once.
 
 ## 4.6.0 - October 14th, 2026
 
