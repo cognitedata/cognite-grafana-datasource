@@ -11,6 +11,10 @@ Data Source for Grafana**.
 - **Relationships** moves into the asset-centric group in the data source settings and now follows its master toggle, like the other asset-centric tabs: turning on the Core Data Model features turns it off. Saved Relationships queries keep their tab and keep running.
 - The **Templates** and **Extraction Pipelines** tabs are labelled **Deprecated** instead of **Preview**. In the data source settings they sit under **Other**, marked **Deprecated**.
 
+### Bug fixes
+
+- The backend is now built with Go 1.27.3, which fixes a vulnerability in the Go standard library (`crypto/x509`, GO-2026-6809) that `govulncheck` reports.
+
 ## 4.6.0 - October 14th, 2026
 
 ### Breaking changes
