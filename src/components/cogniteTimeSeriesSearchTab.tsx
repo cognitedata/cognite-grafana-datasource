@@ -9,9 +9,12 @@ import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
 import { CommonEditors, LabelEditor } from './commonEditors';
 import { Connector } from '../connector';
+import { GAP_FILL_TOOLTIP, GapFillControls } from './common/GapFillEditor';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
   connector: Connector;
+  /** The panel's interval, for showing what an auto granularity resolves to. */
+  intervalMs?: number;
 }
 
 const TYPE_BADGE_COLORS: Record<string, BadgeColor> = {
@@ -47,6 +50,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   query,
   onQueryChange,
   connector,
+  intervalMs,
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [units, setUnits] = useState<CogniteUnit[]>([]);
@@ -383,6 +387,17 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
                 {...{ query, onQueryChange }}
                 hideAggregation={timeSeriesType === 'string'}
               />
+            )}
+            {!query.latestValue && query.aggregation && query.aggregation !== 'none' && (
+              <InlineFieldRow>
+                <InlineField label="Gap filling" labelWidth={14} tooltip={GAP_FILL_TOOLTIP}>
+                  <GapFillControls
+                    query={query}
+                    intervalMs={intervalMs}
+                    onChange={(gapFill) => onQueryChange({ gapFill })}
+                  />
+                </InlineField>
+              </InlineFieldRow>
             )}
           </>
         )}

@@ -1,3 +1,4 @@
+import { TimeSeries } from '@grafana/data';
 import { Err, Ok } from '../types';
 import {
   datapoints2Tuples,
@@ -85,6 +86,40 @@ describe('CDF client', () => {
       const [reduced] = reduceTimeseries(metaResponses, [1549337270000, 1549337275000]);
       expect(reduced.datapoints).toEqual([[0, 1549336675000]]);
       expect(reduced.target).toEqual(`${id}`);
+    });
+  });
+
+  describe('reduce timeseries: the bucket at the range start', () => {
+    // CDF aligns a 1h granularity to the hour: a range from 10:30 gets a 10:00 bucket first.
+    const [h10, h11, h12] = [36_000_000, 39_600_000, 43_200_000];
+    const range: [number, number] = [h10 + 1_800_000, h12];
+    const response = (aggregate: string, datapoints: any[]): any => ({
+      result: {
+        data: { items: [{ id: 1, datapoints }] },
+        config: { data: { aggregates: [aggregate], granularity: '1h' } },
+      },
+      metadata: { labels: ['phase'], type: 'data', target: { aggregation: aggregate } },
+    });
+
+    it('keeps the bucket at the range start, since its interval overlaps the range', () => {
+      const [series] = reduceTimeseries(
+        [
+          response('count', [
+            { timestamp: h10, count: 1 },
+            { timestamp: h11, count: 2 },
+          ]),
+        ],
+        range
+      ) as TimeSeries[];
+      expect(series.datapoints).toEqual([[1, h10], [2, h11]]);
+    });
+
+    it('drops a bucket that ends before the range', () => {
+      const [series] = reduceTimeseries(
+        [response('count', [{ timestamp: h10 - 3_600_000, count: 1 }, { timestamp: h11, count: 2 }])],
+        range
+      ) as TimeSeries[];
+      expect(series.datapoints).toEqual([[2, h11]]);
     });
   });
 

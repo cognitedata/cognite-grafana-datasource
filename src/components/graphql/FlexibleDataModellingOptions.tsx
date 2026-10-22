@@ -3,6 +3,7 @@ import { EditorField, EditorFieldGroup, EditorRow } from '@grafana/plugin-ui';
 import { Input, Select } from '@grafana/ui';
 import { CogniteQuery } from '../../types';
 import { GRANULARITY_TOOLTIP, aggregateOptions } from '../commonEditors';
+import { GAP_FILL_TOOLTIP, GapFillControls } from '../common/GapFillEditor';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -11,6 +12,8 @@ interface FlexibleDataModellingOptionsProps {
   labelFields: string[];
   onQueryChange: (patch: Partial<CogniteQuery>) => void;
   onLabelChange: (label: string) => void;
+  /** The panel's interval, for showing what an auto granularity resolves to. */
+  intervalMs?: number;
 }
 
 const LABEL_TOOLTIP =
@@ -35,6 +38,7 @@ export const FlexibleDataModellingOptions = ({
   labelFields,
   onQueryChange,
   onLabelChange,
+  intervalMs,
 }: FlexibleDataModellingOptionsProps) => {
   const aggregated = !!query.aggregation && query.aggregation !== 'none';
 
@@ -80,6 +84,15 @@ export const FlexibleDataModellingOptions = ({
                 draftGranularity !== (query.granularity ?? '') &&
                 onQueryChange({ granularity: draftGranularity })
               }
+            />
+          </EditorField>
+        )}
+        {aggregated && (
+          <EditorField label="Gap filling" optional tooltip={GAP_FILL_TOOLTIP}>
+            <GapFillControls
+              query={query}
+              intervalMs={intervalMs}
+              onChange={(gapFill) => onQueryChange({ gapFill })}
             />
           </EditorField>
         )}

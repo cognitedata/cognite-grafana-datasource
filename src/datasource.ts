@@ -345,6 +345,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       flexibleDataModellingQuery,
       templateQuery,
       cogniteTimeSeries,
+      gapFill,
     } = target;
 
     const [
@@ -357,6 +358,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       flexibleDataModellinggraphQlQueryTemplated,
       cogniteTimeSeriesTargetUnitTemplated,
       cogniteTimeSeriesTargetUnitSystemTemplated,
+      gapFillLimitTemplated,
     ] = this.replaceVariablesArr(
       [
         expr,
@@ -375,6 +377,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           ),
         cogniteTimeSeries?.targetUnit,
         cogniteTimeSeries?.targetUnitSystem,
+        gapFill?.limit,
       ],
       scopedVars,
     );
@@ -422,6 +425,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         targetUnitSystem: cogniteTimeSeriesTargetUnitSystemTemplated,
       },
     };
+    const templatedGapFill = gapFill?.limit
+      ? { gapFill: { ...gapFill, limit: gapFillLimitTemplated } }
+      : undefined;
     // Every panel query carries a default recordsQuery, so only a Records target's
     // is interpolated.
     const templatedRecordsQuery =
@@ -442,6 +448,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       ...templatedflexibleDataModellingQuery,
       ...templatedCogniteTimeSeries,
       ...templatedRecordsQuery,
+      ...templatedGapFill,
       query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,

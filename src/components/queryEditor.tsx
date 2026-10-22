@@ -409,10 +409,16 @@ export function QueryEditor(props: EditorProps) {
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {activeTab === Tabs.FlexibleDataModelling && (
-          <FlexibleDataModellingTab {...{ onQueryChange, query, datasource }} />
+          <FlexibleDataModellingTab
+            {...{ onQueryChange, query, datasource }}
+            intervalMs={props.data?.request?.intervalMs}
+          />
         )}
         {activeTab === Tabs.CogniteTimeSeriesSearch && (
-          <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
+          <CogniteTimeSeriesSearchTab
+            {...{ onQueryChange, query, connector: datasource.connector }}
+            intervalMs={props.data?.request?.intervalMs}
+          />
         )}
         {activeTab === Tabs.CogniteActivity && (
           <CogniteActivityTab {...{ onQueryChange, query, connector: datasource.connector }} />

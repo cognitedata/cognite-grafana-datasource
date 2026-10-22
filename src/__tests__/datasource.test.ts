@@ -836,3 +836,62 @@ describe('custom query granularity less then a second', () => {
     ).toMatch('granularity="1s"}');
   });
 });
+
+describe('Given a Time Series (data modeling) query with gap filling', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const target = (gapFill: CogniteQuery['gapFill'], granularity = ''): QueryTargetLike => ({
+    refId: 'G',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'average',
+    granularity,
+    gapFill,
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId: { space: 'sp', externalId: 'tank_level' },
+    },
+  });
+  const respond = () =>
+    fetcher.fetch.mockResolvedValue(
+      getItemsResponseObject([
+        { instanceId: { space: 'sp', externalId: 'tank_level' }, datapoints: [] },
+      ])
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('sends fill with each item, scaled from the panel interval', async () => {
+    respond();
+    await lastValueFrom(
+      ds.query({
+        ...options,
+        intervalMs: ms('30s'),
+        targets: [target({ mode: 'granularity', multiple: 4 })],
+      })
+    );
+    const request = fetcher.fetch.mock.calls[0][0];
+    expect(request.url).toMatch(/timeseries\/data\/list$/);
+    expect(request.data.granularity).toBe('30s');
+    expect(request.data.items).toEqual([
+      { instanceId: { space: 'sp', externalId: 'tank_level' }, fill: { limit: '2m' } },
+    ]);
+    expect(messageEmits()).toHaveLength(0);
+  });
+
+  it('warns on the query row when a fixed limit had to be raised', async () => {
+    respond();
+    await lastValueFrom(
+      ds.query({ ...options, targets: [target({ mode: 'duration', limit: '30m' }, '1h')] })
+    );
+    expect(fetcher.fetch.mock.calls[0][0].data.items[0].fill).toEqual({ limit: '1h' });
+    expect(messageEmits()).toHaveLength(1);
+    expect(messageEmits()[0][1]).toEqual({
+      refId: 'G',
+      warning: expect.stringMatching(/Fill limit 30m is shorter than the granularity \(1h\)/),
+    });
+  });
+});

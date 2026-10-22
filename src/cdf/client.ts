@@ -56,6 +56,7 @@ import { getLabelsForExpression } from '../parser/ts';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
+import { FillResolution, granularityToMs, resolveFillLimit } from './gapFill';
 
 const { Asset, Custom, Timeseries } = Tab;
 const UNITS_SPACE = 'cdf_cdm_units';
@@ -85,7 +86,7 @@ export function formQueryForItems(
       if (isAggregated) {
         aggregations = {
           aggregates: [aggregation],
-          granularity: granularity || toGranularityWithLowerBound(intervalMs),
+          granularity: resolvedGranularity(granularity, intervalMs),
           timeZone,
         };
       }
@@ -96,16 +97,45 @@ export function formQueryForItems(
       const itemsWithUnit = targetUnit
         ? items.map((item) => item.instanceId ? { ...item, targetUnit } : item)
         : items;
+
+      const { limit: fillLimit } = resolveTargetFill(target, type, intervalMs);
+      const itemsWithFill = fillLimit
+        ? itemsWithUnit.map((item) => ({ ...item, fill: { limit: fillLimit } }))
+        : itemsWithUnit;
       
       return {
         ...aggregations,
         end,
         start,
-        items: itemsWithUnit,
+        items: itemsWithFill,
         limit
       };
     }
   }
+}
+
+/** The granularity an aggregate query is sent with: the query's own, or one derived from the panel interval. */
+function resolvedGranularity(granularity: string | undefined, intervalMs: number): string {
+  return granularity || toGranularityWithLowerBound(intervalMs);
+}
+
+/** Tabs whose aggregate queries can gap fill. */
+const GAP_FILL_TABS = new Set<Tab>([Tab.CogniteTimeSeriesSearch, Tab.FlexibleDataModelling]);
+
+/**
+ * The gap fill for one target's datapoints request: a limit to send, a warning to
+ * show, or neither. Only aggregate `data` requests of the data modeling tabs fill.
+ */
+export function resolveTargetFill(
+  target: QueryTarget,
+  type: DataQueryRequestType,
+  intervalMs: number
+): FillResolution {
+  const { aggregation, granularity, gapFill, tab } = target;
+  if (type !== 'data' || !GAP_FILL_TABS.has(tab) || !aggregation || aggregation === 'none') {
+    return {};
+  }
+  return resolveFillLimit(gapFill, resolvedGranularity(granularity, intervalMs), aggregation);
 }
 
 function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates = true) {
@@ -288,8 +318,17 @@ export function stringifyError(error: any) {
   return errorMessage ? `[${errorCode}ERROR] ${errorMessage}${missingStr}` : `Unknown error`;
 }
 
-function filterDpsOutOfRange(datapoints: Timestamp[], start: number, end: number) {
-  return datapoints.filter(({ timestamp }) => timestamp >= start && timestamp <= end);
+/**
+ * The data points inside a range. CDF aligns aggregate buckets to the granularity
+ * unit, so the first bucket can start before the range (10:00 for a 1h granularity
+ * and a range from 10:43); a bucket is kept when the interval it covers overlaps the
+ * range, otherwise the series would start blank until the next bucket.
+ */
+function filterDpsOutOfRange(datapoints: Timestamp[], start: number, end: number, granularity?: string) {
+  const width = (granularity && granularityToMs(granularity)) || 0;
+  return datapoints.filter(
+    ({ timestamp }) => (timestamp >= start || timestamp + width > start) && timestamp <= end
+  );
 }
 
 function generateTargetTsLabel(
@@ -311,14 +350,14 @@ export function reduceTimeseries(
 
   metaResponses.forEach(({ result, metadata }) => {
     const { labels, type } = metadata;
-    const { aggregates } = result.config.data;
+    const { aggregates, granularity } = result.config.data;
     const { items } = result.data;
 
     const series = items.map(({ datapoints, externalId, id }, i) => {
       const label = labels && labels[i];
       const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
-        type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end);
+        type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end, granularity);
       const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
       return {
         target: resTarget,
