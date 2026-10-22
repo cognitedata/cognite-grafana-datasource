@@ -19,7 +19,8 @@ import {
   Tab,
 } from '../types';
 import { Connector } from '../connector';
-import { getRange, getRequestId, toGranularityWithLowerBound } from '../utils';
+import { getRange, getRequestId } from '../utils';
+import { resolveDatapointsGranularity } from '../cdf/granularity';
 import {
   concurrent,
   datapointsPath,
@@ -117,8 +118,10 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Custom: {
-      const defaultInterval = toGranularityWithLowerBound(intervalMs);
-      items = await formQueriesForExpression(expr, target, connector, defaultInterval);
+      // An auto step (`auto:fewer`, say) is resolved here, so the expression
+      // carries the granularity the API understands.
+      const granularity = resolveDatapointsGranularity(target.granularity, intervalMs);
+      items = await formQueriesForExpression(expr, { ...target, granularity }, connector, granularity);
       break;
     }
     case Tab.FlexibleDataModelling: {

@@ -209,3 +209,43 @@ describe('resolveTargetFill', () => {
     expect(resolveTargetFill(target, 'data', 1000)).toEqual({});
   });
 });
+
+describe('formQueryForItems: auto granularity steps', () => {
+  const queryOptions = {
+    range: { from: dateTime(0), to: dateTime(3000) },
+    intervalMs: 10 * 60_000,
+    timeZone: 'UTC',
+  } as any;
+  const granularityFor = (granularity: string) =>
+    formQueryForItems(
+      {
+        items: [{ externalId: 'ext' }],
+        type: 'data',
+        target: { ...defaultCogniteQuery, granularity },
+      },
+      queryOptions
+    ).granularity;
+
+  it('resolves the coarser step from the panel interval', () => {
+    expect(granularityFor('')).toBe('10m');
+    expect(granularityFor('auto:fewer')).toBe('1h');
+  });
+
+  it('scales a fill multiple from the resolved step', () => {
+    const request = formQueryForItems(
+      {
+        items: [{ instanceId: { space: 'sp', externalId: 'ts' } }],
+        type: 'data',
+        target: {
+          ...defaultCogniteQuery,
+          tab: Tab.CogniteTimeSeriesSearch,
+          granularity: 'auto:fewer',
+          gapFill: { mode: 'granularity', multiple: 2 },
+        } as CogniteQuery,
+      },
+      queryOptions
+    );
+    expect(request.granularity).toBe('1h');
+    expect(request.items[0].fill).toEqual({ limit: '2h' });
+  });
+});

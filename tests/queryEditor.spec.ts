@@ -213,7 +213,11 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
     await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Interpolation' }).first().click();
 
     await editorRow.getByRole('textbox', { name: 'Label' }).fill(`{{externalId}}-{{unit}}`);
-    await editorRow.getByRole('textbox', { name: 'Granularity' }).fill(`1d`);
+    // Granularity: Fixed, then the value, applied when the field loses focus.
+    await editorRow.getByRole('radio', { name: 'Fixed' }).click();
+    const granularity = editorRow.locator(`input[id="granularity-${panels[index]}"]`);
+    await granularity.fill('1d');
+    await granularity.blur();
   }
 
   await waitForQueriesToFinish(page);
@@ -348,8 +352,8 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
   const aggregationValue = aggregationField.getByText('Average');
   await expect(aggregationValue).toBeVisible();
 
-  const granularityInput = editorRow.locator('input[id="granularity-A"]');
-  await expect(granularityInput).toBeVisible();
+  // Auto by default, with no fixed value to type.
+  await expect(editorRow.getByRole('radio', { name: 'Auto', exact: true })).toBeChecked();
 
   const labelInput = editorRow.locator('input[id="label-A"]');
   await expect(labelInput).toBeVisible();
@@ -377,7 +381,7 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await waitForQueriesToFinish(page);
 });
 
-test('"CogniteTimeSeries" gap filling reaches the request', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+test('"CogniteTimeSeries" coarser auto granularity and gap filling reach the request', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
     readProvisionedDashboard,
@@ -389,6 +393,14 @@ test('"CogniteTimeSeries" gap filling reaches the request', async ({ selectors, 
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
   await waitForQueriesToFinish(page);
+
+  // React-select options near the viewport edge don't click reliably: type and Enter.
+  const autoStep = editorRow.locator('input[id="granularity-auto-A"]');
+  await autoStep.click();
+  await autoStep.fill('Fewer');
+  await autoStep.press('Enter');
+  await expect(editorRow.getByText('Fewer points', { exact: true })).toBeVisible();
+  await expect(editorRow.getByTestId('granularity-badge-A')).toBeVisible();
 
   const filled = page.waitForRequest((request) => {
     if (!request.url().endsWith('/timeseries/data/list')) {

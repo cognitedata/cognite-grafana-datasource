@@ -14,6 +14,7 @@ Data Source for Grafana**.
 ### Features
 
 - **Gap filling** on the **Time Series** and **GraphQL** tabs: aggregates can now cover intervals that have no data points. CDF interpolates across gaps in the raw data up to a limit and carries the last value forward for that limit after the last data point; longer gaps stay empty. The limit is either **Fixed** (for example `4h`) or a multiple of the granularity (**× granularity**), so it follows an auto granularity as the time range changes. A badge shows the limit sent, and a fixed limit shorter than the granularity is raised to it, with a warning, instead of failing the query.
+- **Granularity** is chosen the way gap filling's limit is, on the **Time Series** and **GraphQL** tabs and the time series search, from asset and custom query tabs: **Auto** or **Fixed**. Auto follows the time range, in **Standard** (as before) or with **Fewer points**: intervals about four times wider, so a quarter as many points are fetched and drawn and a dashboard with many time series loads faster. Fixed takes a value such as `12h`, pre-filled with the granularity in effect, and flags one CDF would reject. A badge shows what Auto resolves to. The Records interval picker offers Auto · fewer points too. Saved queries are unchanged.
 
 ### Bug fixes
 

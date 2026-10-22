@@ -254,7 +254,7 @@ test.describe('Records query editor', () => {
       (response: Response) =>
         isCdfResponse(AGGREGATE_PATH)(response) && (response.request().postData() ?? '').includes('"1h"')
     );
-    await openSelect(editorRow, 'auto');
+    await openSelect(editorRow, 'Auto');
     await panelEditPage.getByGrafanaSelector(option).filter({ hasText: /^1h$/ }).first().click();
 
     const buckets = findTimeBuckets(await (await histogram).json());

@@ -50,13 +50,14 @@ import {
   QueriesDataItem,
   DataQueryRequestType,
 } from '../types';
-import { toGranularityWithLowerBound, getRange } from '../utils';
+import { getRange } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
 import { FillResolution, granularityToMs, resolveFillLimit } from './gapFill';
+import { resolveDatapointsGranularity } from './granularity';
 
 const { Asset, Custom, Timeseries } = Tab;
 const UNITS_SPACE = 'cdf_cdm_units';
@@ -86,7 +87,7 @@ export function formQueryForItems(
       if (isAggregated) {
         aggregations = {
           aggregates: [aggregation],
-          granularity: resolvedGranularity(granularity, intervalMs),
+          granularity: resolveDatapointsGranularity(granularity, intervalMs),
           timeZone,
         };
       }
@@ -114,11 +115,6 @@ export function formQueryForItems(
   }
 }
 
-/** The granularity an aggregate query is sent with: the query's own, or one derived from the panel interval. */
-function resolvedGranularity(granularity: string | undefined, intervalMs: number): string {
-  return granularity || toGranularityWithLowerBound(intervalMs);
-}
-
 /** Tabs whose aggregate queries can gap fill. */
 const GAP_FILL_TABS = new Set<Tab>([Tab.CogniteTimeSeriesSearch, Tab.FlexibleDataModelling]);
 
@@ -135,7 +131,7 @@ export function resolveTargetFill(
   if (type !== 'data' || !GAP_FILL_TABS.has(tab) || !aggregation || aggregation === 'none') {
     return {};
   }
-  return resolveFillLimit(gapFill, resolvedGranularity(granularity, intervalMs), aggregation);
+  return resolveFillLimit(gapFill, resolveDatapointsGranularity(granularity, intervalMs), aggregation);
 }
 
 function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates = true) {

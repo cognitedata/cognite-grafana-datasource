@@ -714,6 +714,25 @@ describe('records request builders', () => {
       });
     });
 
+    it('sizes the coarser auto step proportionally wider than plain auto', () => {
+      const intervalFor = (interval: string) =>
+        (
+          buildRecordsAggregateRequest(
+            baseQuery({
+              mode: 'aggregate',
+              buckets: [{ kind: 'timeHistogram', property: 'raisedAt', interval }],
+              metrics: [{ name: 'n', function: 'count' }],
+            }),
+            RANGE,
+            { maxDataPoints: 100 }
+          ).request.aggregates as any
+        ).bucket_0.timeHistogram.fixedInterval;
+      const span = RANGE[1] - RANGE[0];
+      expect(intervalFor('auto')).toBe(computeAutoInterval(span, 100));
+      expect(intervalFor('auto:fewer')).toBe(computeAutoInterval(span, 100, 4));
+      expect(intervalFor('auto:fewer')).not.toBe(intervalFor('auto'));
+    });
+
     it('keeps a time bucket with an invalid interval in the tree, at the auto interval', () => {
       // The response walker finds levels by index: a dropped level would misalign it
       // and lose every level below.
