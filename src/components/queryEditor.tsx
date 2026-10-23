@@ -37,7 +37,7 @@ import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CogniteActivityTab } from './cogniteActivityTab';
 import { RecordsTab } from './recordsTab';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { CommonEditors, LabelRow } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { useQueryMessages } from './useQueryMessages';
 import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
@@ -191,44 +191,43 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource; interv
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.externalId, query.assetQuery.withRelationships]);
   return (
-    <InlineFieldRow>
-      <InlineField
-        label="Asset Tag"
-        labelWidth={14}
-        tooltip="Search asset by name/description"
-      >
-        <AsyncSelect
-          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
-          value={current}
-          defaultOptions
-          inputId={`asset-select-dropdown-${query.refId}`}
-          data-testid='asset-select-dropdown'
-          placeholder="Search asset by name/description"
-          className="width-20"
-          allowCustomValue
-          onChange={setCurrent}
-        />
-      </InlineField>
-      <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
-      <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
-      <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {query.latestValue ? (
-        <LabelEditor {...{ onQueryChange, query }} />
-      ) : (
-        <CommonEditors {...{ query, onQueryChange, intervalMs }} />
-      )}
-      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
-      {query.assetQuery.withRelationships && (
-        <RelationshipsTab
-          {...{
-            query,
-            datasource,
-            onQueryChange,
-            queryBinder: 'assetQuery',
-          }}
-        />
-      )}
-    </InlineFieldRow>
+    <>
+      <InlineFieldRow>
+        <InlineField
+          label="Asset Tag"
+          labelWidth={14}
+          tooltip="Search asset by name/description"
+        >
+          <AsyncSelect
+            loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
+            value={current}
+            defaultOptions
+            inputId={`asset-select-dropdown-${query.refId}`}
+            data-testid='asset-select-dropdown'
+            placeholder="Search asset by name/description"
+            className="width-20"
+            allowCustomValue
+            onChange={setCurrent}
+          />
+        </InlineField>
+        <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
+        <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
+        <LatestValueCheckbox {...{ query, onQueryChange }} />
+        {!query.latestValue && <CommonEditors {...{ query, onQueryChange, intervalMs }} hideLabel />}
+        <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+        {query.assetQuery.withRelationships && (
+          <RelationshipsTab
+            {...{
+              query,
+              datasource,
+              onQueryChange,
+              queryBinder: 'assetQuery',
+            }}
+          />
+        )}
+      </InlineFieldRow>
+      <LabelRow {...{ onQueryChange, query }} />
+    </>
   );
 }
 function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }) {
@@ -245,11 +244,8 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource; i
         }}
       />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {query.latestValue ? (
-        <LabelEditor {...{ onQueryChange, query }} />
-      ) : (
-        <CommonEditors {...{ query, onQueryChange, intervalMs }} />
-      )}
+      {!query.latestValue && <CommonEditors {...{ query, onQueryChange, intervalMs }} hideLabel />}
+      <LabelRow {...{ onQueryChange, query }} />
     </div>
   );
 }
@@ -279,7 +275,8 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { in
           <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
         </InlineField>
       </InlineFieldRow>
-      <CommonEditors {...{ onQueryChange, query, intervalMs }} />
+      <CommonEditors {...{ onQueryChange, query, intervalMs }} hideLabel />
+      <LabelRow {...{ onQueryChange, query }} />
       {showHelp && <CustomQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );

@@ -9,6 +9,7 @@ import {
 } from "@grafana/data";
 import { DataQuery } from "@grafana/schema";
 import { Datapoints, IdEither, Items, Limit } from "./cdf/types";
+import { TimeSeriesKind } from "./cdf/aggregates";
 import { ViewRef } from "./types/dms";
 import CogniteDatasource from "./datasource";
 
@@ -561,12 +562,15 @@ export type QueriesDataItem = {
   type: DataQueryRequestType;
   items: DataQueryRequestItem[];
   target: QueryTarget;
+  /** The series' type, when the query names one CogniteTimeSeries; numeric otherwise. */
+  kind?: TimeSeriesKind;
 };
 
 export type ResponseMetadata = {
   labels: string[];
   target: QueryTarget;
   type: DataQueryRequestType;
+  kind?: TimeSeriesKind;
   /** Shown on the query row once the request succeeds. */
   warnings?: string[];
 };

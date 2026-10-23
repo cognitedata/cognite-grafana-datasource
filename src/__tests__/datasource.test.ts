@@ -865,11 +865,15 @@ describe('Given a Time Series (data modeling) query with gap filling', () => {
     },
   });
   const respond = () =>
-    fetcher.fetch.mockResolvedValue(
-      getItemsResponseObject([
-        { instanceId: { space: 'sp', externalId: 'tank_level' }, datapoints: [] },
-      ])
+    fetcher.fetch.mockImplementation(async ({ url }) =>
+      url.endsWith('/models/instances/byids')
+        ? getItemsResponseObject([])
+        : getItemsResponseObject([
+          { instanceId: { space: 'sp', externalId: 'tank_level' }, datapoints: [] },
+        ])
     );
+  const datapointsRequest = () =>
+    fetcher.fetch.mock.calls.map(([request]) => request).find(({ url }) => url.endsWith('/timeseries/data/list'));
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -884,8 +888,7 @@ describe('Given a Time Series (data modeling) query with gap filling', () => {
         targets: [target({ mode: 'granularity', multiple: 4 })],
       })
     );
-    const request = fetcher.fetch.mock.calls[0][0];
-    expect(request.url).toMatch(/timeseries\/data\/list$/);
+    const request = datapointsRequest();
     expect(request.data.granularity).toBe('30s');
     expect(request.data.items).toEqual([
       { instanceId: { space: 'sp', externalId: 'tank_level' }, fill: { limit: '2m' } },
@@ -898,11 +901,71 @@ describe('Given a Time Series (data modeling) query with gap filling', () => {
     await lastValueFrom(
       ds.query({ ...options, targets: [target({ mode: 'duration', limit: '30m' }, '1h')] })
     );
-    expect(fetcher.fetch.mock.calls[0][0].data.items[0].fill).toEqual({ limit: '1h' });
+    expect(datapointsRequest().data.items[0].fill).toEqual({ limit: '1h' });
     expect(messageEmits()).toHaveLength(1);
     expect(messageEmits()[0][1]).toEqual({
       refId: 'G',
       warning: expect.stringMatching(/Fill limit 30m is shorter than the granularity \(1h\)/),
+    });
+  });
+});
+
+describe('Given a string Time Series (data modeling) query', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const instanceId = { space: 'grafana-ts-fixtures', externalId: 'batch_phase' };
+  const target = (patch: QueryTargetLike = {}): QueryTargetLike => ({
+    refId: 'S',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'none',
+    granularity: '',
+    label: '',
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId,
+    },
+    ...patch,
+  });
+  const t0 = +options.range.from;
+  const respond = (datapoints: any[]) =>
+    fetcher.fetch.mockImplementation(async ({ url, data }) =>
+      url.endsWith('/models/instances/byids')
+        ? getItemsResponseObject([
+          { ...instanceId, properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type: 'string' } } } },
+        ])
+        : { ...getItemsResponseObject([{ instanceId, isString: true, type: 'string', datapoints }]), config: { data } }
+    );
+  const run = async (patch: QueryTargetLike = {}) =>
+    (await lastValueFrom(ds.query({ ...options, panelId: `string-${patch.aggregation}`, targets: [target(patch)] }))).data;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns raw values as a text field', async () => {
+    respond([
+      { timestamp: t0, value: 'FILLING' },
+      { timestamp: t0 + 1000, value: '{"device":"edge-01"}' },
+    ]);
+    const [frame] = await run();
+    expect(frame.fields.map(({ name, type }) => [name, type])).toEqual([
+      ['Time', 'time'],
+      ['grafana-ts-fixtures:batch_phase', 'string'],
+    ]);
+    expect(frame.fields[1].values).toEqual(['FILLING', '{"device":"edge-01"}']);
+    expect(frame.fields[1].config.displayNameFromDS).toBe('grafana-ts-fixtures:batch_phase');
+  });
+
+  it('fails the query when the aggregation is one string series do not have', async () => {
+    respond([]);
+    const data = await run({ aggregation: 'average' });
+    expect(data).toEqual([]);
+    expect(fetcher.fetch.mock.calls.some(([{ url }]) => url.endsWith('/timeseries/data/list'))).toBe(false);
+    expect(messageEmits()[0][1]).toEqual({
+      refId: 'S',
+      error: expect.stringContaining('Average is not available for string time series'),
     });
   });
 });
