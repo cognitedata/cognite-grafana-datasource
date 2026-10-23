@@ -100,12 +100,15 @@ export const PropertyOptionLabel = ({ option }: { option: PropertyOption }) => {
  * formatOptionLabel for property Selects. `menuOnly` keeps MultiSelect chips
  * clean by rendering the badge only inside the dropdown menu.
  */
-export const formatPropertyOptionLabel = (menuOnly = false) => (
-  option: PropertyOption,
-  meta: { context: string }
-) => {
-  if (menuOnly && meta.context !== 'menu') {
-    return <>{option.label}</>;
+export const formatPropertyOptionLabel = (menuOnly = false) => {
+  function PropertyOptionLabelWithContext(
+    option: PropertyOption,
+    meta: { context: string }
+  ) {
+    if (menuOnly && meta.context !== 'menu') {
+      return <>{option.label}</>;
+    }
+    return <PropertyOptionLabel option={option} />;
   }
-  return <PropertyOptionLabel option={option} />;
+  return PropertyOptionLabelWithContext;
 };

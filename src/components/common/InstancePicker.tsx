@@ -219,7 +219,7 @@ export const InstancePicker = ({
     if (!badgeOf) {
       return undefined;
     }
-    return (option: InstanceOption) => {
+    function InstanceOptionLabel(option: InstanceOption) {
       const badge = badgeOf(option.props ?? {});
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -227,7 +227,8 @@ export const InstancePicker = ({
           {badge && <Badge text={badge.text} color={badge.color} />}
         </span>
       );
-    };
+    }
+    return InstanceOptionLabel;
   }, [badgeOf]);
 
   const options = toStoredOptions(value);

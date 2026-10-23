@@ -10,13 +10,18 @@ module.exports = [{
     ".eslintrc.*", 
     ".prettierrc.*",
     "test-results/",
-    "playwright-report/"
+    "playwright-report/",
+    "scripts/.venv/**",
   ],
 },
-grafanaConfig, 
+...grafanaConfig,
 {
   rules: {
     "react/prop-types": "off",
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/preserve-manual-memoization": "off",
+    "react-hooks/immutability": "off",
+    "react-hooks/refs": "off",
   },
 },
 {
