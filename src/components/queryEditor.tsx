@@ -316,28 +316,22 @@ const tabSuffix = (
   tab: Tabs,
   showingDisabledTab: boolean,
   theme: GrafanaTheme2
-): (() => JSX.Element) | undefined => {
+): React.ReactNode => {
   if (showingDisabledTab) {
-    function DisabledTabSuffix() {
-      return (
-        <p className="preview-label" style={{ color: theme.colors.error.text }}>
-          Disabled
-        </p>
-      );
-    }
-    return DisabledTabSuffix;
+    return (
+      <p className="preview-label" style={{ color: theme.colors.error.text }}>
+        Disabled
+      </p>
+    );
   }
   const text = TAB_SUFFIX_TEXT[tab];
   if (text === DEPRECATED_CHIP_TEXT) {
-    return DeprecatedChip;
+    return <DeprecatedChip />;
   }
   if (!text) {
     return undefined;
   }
-  function TabSuffixLabel() {
-    return <p className="preview-label">{text}</p>;
-  }
-  return TabSuffixLabel;
+  return <p className="preview-label">{text}</p>;
 };
 
 export function QueryEditor(props: EditorProps) {
