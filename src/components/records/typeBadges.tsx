@@ -101,7 +101,7 @@ export const PropertyOptionLabel = ({ option }: { option: PropertyOption }) => {
  * clean by rendering the badge only inside the dropdown menu.
  */
 export const formatPropertyOptionLabel = (menuOnly = false) => {
-  function PropertyOptionLabelWithContext(
+  function renderPropertyOptionLabel(
     option: PropertyOption,
     meta: { context: string }
   ) {
@@ -110,5 +110,5 @@ export const formatPropertyOptionLabel = (menuOnly = false) => {
     }
     return <PropertyOptionLabel option={option} />;
   }
-  return PropertyOptionLabelWithContext;
+  return renderPropertyOptionLabel;
 };

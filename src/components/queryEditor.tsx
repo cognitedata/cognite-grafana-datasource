@@ -1,4 +1,5 @@
 import defaults from 'lodash/defaults';
+import mapValues from 'lodash/mapValues';
 import React, { useState, useEffect } from 'react';
 import {
   Tab,
@@ -323,22 +324,19 @@ function DisabledTabSuffix() {
   );
 }
 
-function AlphaTabSuffix() {
-  return <p className="preview-label">Alpha</p>;
-}
+const SUFFIX_COMPONENTS: Partial<Record<Tabs, TabSuffixComponent>> = mapValues(
+  TAB_SUFFIX_TEXT,
+  (text) =>
+    text === DEPRECATED_CHIP_TEXT
+      ? DeprecatedChip
+      : () => <p className="preview-label">{text}</p>
+);
 
 const tabSuffix = (tab: Tabs, showingDisabledTab: boolean): TabSuffixComponent | undefined => {
   if (showingDisabledTab) {
     return DisabledTabSuffix;
   }
-  const text = TAB_SUFFIX_TEXT[tab];
-  if (text === DEPRECATED_CHIP_TEXT) {
-    return DeprecatedChip;
-  }
-  if (text === 'Alpha') {
-    return AlphaTabSuffix;
-  }
-  return undefined;
+  return SUFFIX_COMPONENTS[tab];
 };
 
 export function QueryEditor(props: EditorProps) {
