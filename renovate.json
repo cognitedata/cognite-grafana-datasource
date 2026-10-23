@@ -10,6 +10,16 @@
       "description": "0.17+ peers @grafana/* at ^13, which would raise the runtime floor to Grafana 13",
       "matchPackageNames": ["@grafana/plugin-ui"],
       "allowedVersions": "<0.17.0"
+    },
+    {
+      "description": "Grafana plugins ship against React 18 from @grafana/*; React 19 is not supported in this datasource",
+      "matchPackageNames": ["react", "react-dom", "@types/react"],
+      "allowedVersions": "<19.0.0"
+    },
+    {
+      "description": "@stylistic/eslint-plugin-ts v4 breaks our flat ESLint config; migrate to @stylistic/eslint-plugin when @grafana/eslint-config no longer peers on the -ts package",
+      "matchPackageNames": ["@stylistic/eslint-plugin-ts"],
+      "allowedVersions": "<4.0.0"
     }
   ]
 }
