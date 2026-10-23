@@ -24,7 +24,8 @@ import { BlurInput } from './BlurInput';
 interface BucketListProps {
   buckets: RecordsBucket[];
   viewDef: RecordViewDefinition | null;
-  autoInterval: string;
+  /** What an auto interval (Auto or a coarser step) resolves to for the current window. */
+  autoInterval: (interval?: string) => string;
   onChange: (buckets: RecordsBucket[]) => void;
 }
 
@@ -88,7 +89,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
               />
               {bucket.kind === 'timeHistogram' ? (
                 <Select
-                  width={12}
+                  width={22}
                   allowCustomValue
                   options={INTERVAL_OPTIONS}
                   value={bucket.interval}
@@ -116,7 +117,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
             {bucket.kind === 'timeHistogram' && isAutoInterval(bucket.interval) && (
               <Badge
                 color="blue"
-                text={`= ${autoInterval}`}
+                text={`= ${autoInterval(bucket.interval)}`}
                 tooltip="Recomputed whenever the dashboard time range changes."
               />
             )}

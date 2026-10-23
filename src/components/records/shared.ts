@@ -7,6 +7,7 @@ import {
 } from '../../types';
 import { RecordViewDefinition } from '../../types/records';
 import { TOP_LEVEL_PROPERTIES, TopLevelProperty, topLevelProperty } from '../../cdf/records';
+import { AUTO_STEP_OPTIONS } from '../../cdf/granularity';
 
 export const MODE_OPTIONS: Array<SelectableValue<RecordsQueryMode>> = [
   { label: 'List', value: 'list' },
@@ -33,7 +34,7 @@ export const METRIC_OPTIONS: Array<SelectableValue<RecordsMetricFunction>> = [
 
 // Only units the records API accepts: [1-9][0-9]*(ms|s|m|h|d).
 export const INTERVAL_OPTIONS: Array<SelectableValue<string>> = [
-  { label: 'auto', value: 'auto' },
+  ...AUTO_STEP_OPTIONS,
   ...['1s', '10s', '30s', '1m', '5m', '15m', '30m', '1h', '6h', '12h', '1d', '7d'].map(
     (value) => ({ label: value, value })
   ),

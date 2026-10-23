@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, RadioButtonGroup, Stack } from '@grafana/ui';
 import { CogniteQuery, GapFill } from '../../types';
 import { DEFAULT_FILL_MULTIPLE, resolveFillLimit } from '../../cdf/gapFill';
-import { toGranularityWithLowerBound } from '../../utils';
+import { isAutoInterval, resolveDatapointsGranularity } from '../../cdf/granularity';
 import { BlurInput } from '../records/BlurInput';
 
 export const GAP_FILL_TOOLTIP =
@@ -36,7 +36,12 @@ interface GapFillControlsProps {
 export const GapFillControls = ({ query, onChange, intervalMs }: GapFillControlsProps) => {
   const { refId, aggregation, granularity, gapFill } = query;
   const mode: Mode = gapFill?.mode ?? 'off';
-  const resolvedGranularity = granularity || (intervalMs ? toGranularityWithLowerBound(intervalMs) : undefined);
+  const resolvedGranularity =
+    granularity && !isAutoInterval(granularity)
+      ? granularity
+      : intervalMs
+        ? resolveDatapointsGranularity(granularity, intervalMs)
+        : undefined;
   // A limit held in a dashboard variable is only known once the query interpolates it.
   const variableLimit = gapFill?.mode === 'duration' && !!gapFill.limit?.includes('$');
   const resolution = resolvedGranularity && !variableLimit

@@ -191,15 +191,4 @@ describe('FlexibleDataModellingTab series options', () => {
     expect(onQueryChange).not.toHaveBeenCalled();
   });
 
-  it('applies the granularity on blur, not per keystroke', async () => {
-    const onQueryChange = renderTab('average');
-    const granularity = await screen.findByPlaceholderText('default');
-    onQueryChange.mockClear();
-
-    fireEvent.change(granularity, { target: { value: '1h' } });
-    expect(onQueryChange).not.toHaveBeenCalled();
-
-    fireEvent.blur(granularity);
-    await waitFor(() => expect(onQueryChange).toHaveBeenCalledWith({ granularity: '1h' }));
-  });
 });

@@ -835,6 +835,17 @@ describe('custom query granularity less then a second', () => {
       (fetcher.fetch as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');
   });
+
+  it('resolves a coarser auto step inside the expression', async () => {
+    fetcher.fetch = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
+    await ds.timeseriesDatasource.fetchTimeseriesForTargets(
+      [{ ...targetA, granularity: 'auto:fewer' }],
+      { ...options, intervalMs: ms('10m') }
+    );
+    // The time series lookup may be served from the cache, so read the last call.
+    const calls = (fetcher.fetch as Mock).mock.calls;
+    expect(calls[calls.length - 1][0].data.items[0].expression).toMatch('granularity="1h"}');
+  });
 });
 
 describe('Given a Time Series (data modeling) query with gap filling', () => {

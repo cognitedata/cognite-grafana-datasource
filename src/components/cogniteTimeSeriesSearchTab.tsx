@@ -384,7 +384,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             <LatestValueCheckbox {...{ query, onQueryChange }} />
             {!query.latestValue && (
               <CommonEditors
-                {...{ query, onQueryChange }}
+                {...{ query, onQueryChange, intervalMs }}
                 hideAggregation={timeSeriesType === 'string'}
               />
             )}
