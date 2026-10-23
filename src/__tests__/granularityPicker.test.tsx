@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { GranularityPicker } from '../components/common/GranularityPicker';
+import { GranularityPicker, granularityInputId } from '../components/common/GranularityPicker';
 
 const renderPicker = (value?: string, intervalMs = 10 * 60_000) => {
   const onChange = jest.fn();
@@ -75,5 +75,11 @@ describe('GranularityPicker', () => {
   it('does not flag a variable', () => {
     renderPicker('$interval');
     expect(screen.queryByTestId('granularity-badge-A')).toBeNull();
+  });
+
+  it('names the control a label points at: the auto step, or the fixed value', () => {
+    expect(granularityInputId('A', '')).toBe('granularity-auto-A');
+    expect(granularityInputId('A', 'auto:fewer')).toBe('granularity-auto-A');
+    expect(granularityInputId('A', '12h')).toBe('granularity-A');
   });
 });

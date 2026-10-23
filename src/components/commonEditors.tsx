@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react';
 import { InlineField, InlineSegmentGroup, InlineFieldRow, Input, Select } from '@grafana/ui';
 import { SelectedProps } from '../types';
-import { GranularityPicker } from './common/GranularityPicker';
+import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
 
 /** Shared with the GraphQL tab's own options row. */
 export const GRANULARITY_TOOLTIP =
@@ -33,8 +33,8 @@ const GranularityEditor = ({ query, onQueryChange, intervalMs }: SelectedProps &
           label="Granularity"
           labelWidth={14}
           tooltip={GRANULARITY_TOOLTIP}
-          // The picker is wrapped with its badge, so the label is pointed at its input.
-          htmlFor={`granularity-${query.refId}`}
+          // The picker is wrapped with its badge, so the label is pointed at the control shown.
+          htmlFor={granularityInputId(query.refId, query.granularity)}
         >
           <GranularityPicker
             refId={query.refId}

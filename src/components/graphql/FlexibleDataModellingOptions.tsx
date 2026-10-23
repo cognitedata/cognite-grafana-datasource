@@ -4,7 +4,7 @@ import { Input, Select } from '@grafana/ui';
 import { CogniteQuery } from '../../types';
 import { GRANULARITY_TOOLTIP, aggregateOptions } from '../commonEditors';
 import { GAP_FILL_TOOLTIP, GapFillControls } from '../common/GapFillEditor';
-import { GranularityPicker } from '../common/GranularityPicker';
+import { GranularityPicker, granularityInputId } from '../common/GranularityPicker';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -68,7 +68,7 @@ export const FlexibleDataModellingOptions = ({
             label="Granularity"
             optional
             tooltip={GRANULARITY_TOOLTIP}
-            htmlFor={`granularity-${query.refId}`}
+            htmlFor={granularityInputId(query.refId, query.granularity)}
           >
             <GranularityPicker
               refId={query.refId}

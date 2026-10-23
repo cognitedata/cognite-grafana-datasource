@@ -38,6 +38,10 @@ interface GranularityPickerProps {
  * typed in. Plain Auto is saved as an empty granularity, so queries saved before the
  * steps existed read back unchanged.
  */
+/** The id of the control a granularity label points at: the auto step, or the fixed value. */
+export const granularityInputId = (refId: string, value?: string) =>
+  autoStepFactor(value) === undefined ? `granularity-${refId}` : `granularity-auto-${refId}`;
+
 export const GranularityPicker = ({ refId, value, onChange, intervalMs }: GranularityPickerProps) => {
   const factor = autoStepFactor(value);
   const mode: Mode = factor === undefined ? 'fixed' : 'auto';
@@ -59,7 +63,7 @@ export const GranularityPicker = ({ refId, value, onChange, intervalMs }: Granul
       <RadioButtonGroup options={MODE_OPTIONS} value={mode} onChange={changeMode} aria-label="Granularity" />
       {mode === 'auto' && (
         <Select
-          inputId={`granularity-auto-${refId}`}
+          inputId={granularityInputId(refId, value)}
           aria-label="Auto granularity"
           // The option list is as wide as the field: wide enough for the descriptions
           // to read on one or two lines.
@@ -72,7 +76,7 @@ export const GranularityPicker = ({ refId, value, onChange, intervalMs }: Granul
       )}
       {mode === 'fixed' && (
         <BlurInput
-          id={`granularity-${refId}`}
+          id={granularityInputId(refId, value)}
           aria-label="Fixed granularity"
           width={10}
           placeholder={FALLBACK_GRANULARITY}

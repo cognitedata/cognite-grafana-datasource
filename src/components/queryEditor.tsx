@@ -143,8 +143,8 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
     </InlineFieldRow>
   );
 };
-function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
-  const { query, datasource, onQueryChange } = props;
+function AssetTab(props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }) {
+  const { query, datasource, onQueryChange, intervalMs } = props;
 
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
@@ -215,7 +215,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
-        <CommonEditors {...{ query, onQueryChange }} />
+        <CommonEditors {...{ query, onQueryChange, intervalMs }} />
       )}
       <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
       {query.assetQuery.withRelationships && (
@@ -231,8 +231,8 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     </InlineFieldRow>
   );
 }
-function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
-  const { query, datasource, onQueryChange } = props;
+function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }) {
+  const { query, datasource, onQueryChange, intervalMs } = props;
   return (
     <div>
       <ResourceSelect
@@ -248,13 +248,13 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
       {query.latestValue ? (
         <LabelEditor {...{ onQueryChange, query }} />
       ) : (
-        <CommonEditors {...{ query, onQueryChange }} />
+        <CommonEditors {...{ query, onQueryChange, intervalMs }} />
       )}
     </div>
   );
 }
-function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange } = props;
+function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { intervalMs?: number }) {
+  const { query, onQueryChange, intervalMs } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.expr);
 
@@ -279,7 +279,7 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
         </InlineField>
       </InlineFieldRow>
-      <CommonEditors {...{ onQueryChange, query }} />
+      <CommonEditors {...{ onQueryChange, query, intervalMs }} />
       {showHelp && <CustomQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
@@ -395,9 +395,15 @@ export function QueryEditor(props: EditorProps) {
         {ASSET_CENTRIC_REPLACEMENTS[activeTab] && (
           <DeprecationNotice replacement={ASSET_CENTRIC_REPLACEMENTS[activeTab]} />
         )}
-        {activeTab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
-        {activeTab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
-        {activeTab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
+        {activeTab === Tabs.Asset && (
+          <AssetTab {...{ onQueryChange, query, datasource }} intervalMs={props.data?.request?.intervalMs} />
+        )}
+        {activeTab === Tabs.Timeseries && (
+          <TimeseriesTab {...{ onQueryChange, query, datasource }} intervalMs={props.data?.request?.intervalMs} />
+        )}
+        {activeTab === Tabs.Custom && (
+          <CustomTab {...{ onQueryChange, query, onRunQuery }} intervalMs={props.data?.request?.intervalMs} />
+        )}
         {activeTab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {activeTab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />

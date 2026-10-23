@@ -110,7 +110,7 @@ export function resolveDatapointsGranularity(
 ): string {
   const factor = autoStepFactor(granularity);
   if (factor === undefined) {
-    return granularity!.trim();
+    return (granularity ?? '').trim();
   }
   if (factor === 1) {
     return toGranularityWithLowerBound(intervalMs);
