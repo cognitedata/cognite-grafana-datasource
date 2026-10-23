@@ -13,7 +13,7 @@ import {
   InlineSwitch,
   useTheme2,
 } from '@grafana/ui';
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -312,30 +312,36 @@ export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
   [Tabs.Relationships]: 'Use the GraphQL tab instead.',
 };
 
-const tabSuffix = (
-  tab: Tabs,
-  showingDisabledTab: boolean,
-  theme: GrafanaTheme2
-): React.ReactNode => {
+type TabSuffixComponent = React.ComponentType<{ className?: string }>;
+
+function DisabledTabSuffix() {
+  const theme = useTheme2();
+  return (
+    <p className="preview-label" style={{ color: theme.colors.error.text }}>
+      Disabled
+    </p>
+  );
+}
+
+function AlphaTabSuffix() {
+  return <p className="preview-label">Alpha</p>;
+}
+
+const tabSuffix = (tab: Tabs, showingDisabledTab: boolean): TabSuffixComponent | undefined => {
   if (showingDisabledTab) {
-    return (
-      <p className="preview-label" style={{ color: theme.colors.error.text }}>
-        Disabled
-      </p>
-    );
+    return DisabledTabSuffix;
   }
   const text = TAB_SUFFIX_TEXT[tab];
   if (text === DEPRECATED_CHIP_TEXT) {
-    return <DeprecatedChip />;
+    return DeprecatedChip;
   }
-  if (!text) {
-    return undefined;
+  if (text === 'Alpha') {
+    return AlphaTabSuffix;
   }
-  return <p className="preview-label">{text}</p>;
+  return undefined;
 };
 
 export function QueryEditor(props: EditorProps) {
-  const theme = useTheme2();
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
@@ -389,7 +395,7 @@ export function QueryEditor(props: EditorProps) {
               active={activeTab === t}
               onChangeTab={onSelectTab(t)}
               style={{ display: 'flex' }}
-              suffix={tabSuffix(t, showingDisabledTab, theme)}
+              suffix={tabSuffix(t, showingDisabledTab)}
             />
           );
         })}
