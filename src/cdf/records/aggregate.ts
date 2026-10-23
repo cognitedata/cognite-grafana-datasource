@@ -1,5 +1,4 @@
 /** Builds /records/aggregate requests: buckets, metrics, intervals and the result shape they produce. */
-import { DAY, HOUR, MINUTE, SECOND } from '../timeExpression';
 import { RecordsBucket, RecordsMetric, RecordsQuery, Tuple } from '../../types';
 import {
   RecordsAggregateDefinition,
@@ -9,6 +8,12 @@ import {
 } from '../../types/records';
 import { RecordsBuildOptions, buildFilter, buildTargetUnits, resolveTimeWindow } from './request';
 import { viewPropertyRef } from './schema';
+import {
+  autoStepFactor,
+  autoBucketInterval,
+  formatFixedInterval,
+  isAutoInterval,
+} from '../granularity';
 
 /** Aggregate identifiers the API reserves or rejects. */
 const RESERVED_METRIC_NAMES = ['_count', '_bucket_count'];
@@ -62,59 +67,18 @@ export function clampBucketSize(size: number): number {
 }
 
 /**
- * Candidate auto intervals, ascending. Every entry is expressible in the API's
- * fixedInterval grammar and reads as a "round" number on a time axis.
- */
-const AUTO_INTERVAL_LADDER_MS = [
-  10, 20, 50, 100, 200, 500,
-  SECOND, 2 * SECOND, 5 * SECOND, 10 * SECOND, 15 * SECOND, 30 * SECOND,
-  MINUTE, 2 * MINUTE, 5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE,
-  HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR,
-  DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 90 * DAY, 180 * DAY, 365 * DAY,
-];
-
-/** Renders a duration using the largest unit that divides it evenly. */
-export function formatFixedInterval(ms: number): string {
-  const amount = Math.max(1, Math.round(ms));
-  for (const [unitMs, suffix] of [
-    [DAY, 'd'],
-    [HOUR, 'h'],
-    [MINUTE, 'm'],
-    [SECOND, 's'],
-  ] as Array<[number, string]>) {
-    if (amount % unitMs === 0) {
-      return `${amount / unitMs}${suffix}`;
-    }
-  }
-  return `${amount}ms`;
-}
-
-/**
- * Picks a bucket size for "auto": the smallest ladder step that both hits the
- * panel's resolution target and stays under the API's bucket ceiling. Because it
- * derives from the time range, it re-resolves whenever the range changes.
+ * Picks a bucket size for an auto interval (see `autoBucketInterval` in
+ * granularity.ts), kept under the API's bucket ceiling.
  */
 export function computeAutoInterval(
   spanMs: number,
-  maxDataPoints?: number
+  maxDataPoints?: number,
+  factor = 1
 ): string {
-  const span = Math.max(spanMs || 0, 1);
-  const points = Math.max(maxDataPoints || 0, 1);
-  const target = span / points;
-  const ceiling = span / MAX_HISTOGRAM_BUCKETS;
-
-  const chosen =
-    AUTO_INTERVAL_LADDER_MS.find((step) => step >= target && step > ceiling) ??
-    AUTO_INTERVAL_LADDER_MS[AUTO_INTERVAL_LADDER_MS.length - 1];
-
-  return formatFixedInterval(chosen);
+  return autoBucketInterval(spanMs, maxDataPoints, MAX_HISTOGRAM_BUCKETS, factor);
 }
 
-/** True when the interval field is asking us to derive the value. */
-export const isAutoInterval = (interval?: string) => {
-  const value = (interval ?? '').trim().toLowerCase();
-  return value === '' || value === 'auto' || value === '$__interval';
-};
+export { formatFixedInterval, isAutoInterval };
 
 /**
  * Grafana's `$__interval` resolves to values the records API does not all accept
@@ -252,7 +216,8 @@ export function buildRecordsAggregateRequest(
           : 0;
       // "auto" is resolved here rather than by Grafana, because $__interval can
       // land on units the API rejects and on bucket counts it refuses to serve.
-      const autoInterval = () => computeAutoInterval(spanMs, options.maxDataPoints);
+      const autoInterval = () =>
+        computeAutoInterval(spanMs, options.maxDataPoints, autoStepFactor(bucket.interval) ?? 1);
       const resolved = isAutoInterval(bucket.interval)
         ? { interval: autoInterval() }
         : normalizeInterval(bucket.interval);

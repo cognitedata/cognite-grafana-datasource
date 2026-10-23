@@ -1,10 +1,14 @@
 import React, { ChangeEvent } from 'react';
 import { InlineField, InlineSegmentGroup, InlineFieldRow, Input, Select } from '@grafana/ui';
 import { SelectedProps } from '../types';
+import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
 
 /** Shared with the GraphQL tab's own options row. */
 export const GRANULARITY_TOOLTIP =
-  `The granularity of the aggregate values. Use: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`;
+  'The width of each aggregate interval. Auto follows the time range: Standard gives about one interval ' +
+  'per pixel of the panel, Fewer points intervals about 4 times wider, so a quarter as many points are fetched ' +
+  'and drawn and a dashboard with many time series loads faster. Fixed takes a value: ' +
+  `'second' (or 's'), 'minute' (or 'm'), 'hour' (or 'h'), 'day' (or 'd'), 'month' (or 'mo'). Example: 12h.`;
 
 export const aggregateOptions = [
   { value: 'none', label: 'None' },
@@ -20,8 +24,7 @@ export const aggregateOptions = [
   { value: 'totalVariation', label: 'Total Variation' },
 ];
 
-const GranularityEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+const GranularityEditor = ({ query, onQueryChange, intervalMs }: SelectedProps & { intervalMs?: number }) => {
   return (
     query.aggregation &&
     query.aggregation !== 'none' && (
@@ -30,13 +33,14 @@ const GranularityEditor = (props: SelectedProps) => {
           label="Granularity"
           labelWidth={14}
           tooltip={GRANULARITY_TOOLTIP}
+          // The picker is wrapped with its badge, so the label is pointed at the control shown.
+          htmlFor={granularityInputId(query.refId, query.granularity)}
         >
-          <Input
+          <GranularityPicker
+            refId={query.refId}
             value={query.granularity}
-            id={`granularity-${query.refId}`}
-            width={12}
-            placeholder="default"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ granularity: e.target.value })}
+            intervalMs={intervalMs}
+            onChange={(granularity) => onQueryChange({ granularity })}
           />
         </InlineField>
       </InlineSegmentGroup>
@@ -89,11 +93,16 @@ export const LabelEditor = (props: SelectedProps) => {
 };
 
 export const CommonEditors = (
-  { onQueryChange, query, hideAggregation }: SelectedProps & { hideAggregation?: boolean }
+  {
+    onQueryChange,
+    query,
+    hideAggregation,
+    intervalMs,
+  }: SelectedProps & { hideAggregation?: boolean; intervalMs?: number }
 ) => (
   <InlineFieldRow>
     {!hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
-    <GranularityEditor {...{ onQueryChange, query }} />
+    <GranularityEditor {...{ onQueryChange, query, intervalMs }} />
     <LabelEditor {...{ onQueryChange, query }} />
   </InlineFieldRow>
 );

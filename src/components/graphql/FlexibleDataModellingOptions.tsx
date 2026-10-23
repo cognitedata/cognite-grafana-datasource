@@ -4,6 +4,7 @@ import { Input, Select } from '@grafana/ui';
 import { CogniteQuery } from '../../types';
 import { GRANULARITY_TOOLTIP, aggregateOptions } from '../commonEditors';
 import { GAP_FILL_TOOLTIP, GapFillControls } from '../common/GapFillEditor';
+import { GranularityPicker, granularityInputId } from '../common/GranularityPicker';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -46,10 +47,8 @@ export const FlexibleDataModellingOptions = ({
   // re-run the whole query -- a GraphQL request plus a datapoints fetch per series --
   // for every character of a label template.
   const [draftLabel, setDraftLabel] = useState(label ?? '');
-  const [draftGranularity, setDraftGranularity] = useState(query.granularity ?? '');
 
   useEffect(() => setDraftLabel(label ?? ''), [label]);
-  useEffect(() => setDraftGranularity(query.granularity ?? ''), [query.granularity]);
 
   return (
     <EditorRow>
@@ -69,21 +68,13 @@ export const FlexibleDataModellingOptions = ({
             label="Granularity"
             optional
             tooltip={GRANULARITY_TOOLTIP}
+            htmlFor={granularityInputId(query.refId, query.granularity)}
           >
-            {/* Values are short, but the field still has to carry its own label:
-                "Granularity - optional" is wider than the input it sits above. */}
-            <Input
-              id={`granularity-${query.refId}`}
-              width={21}
-              value={draftGranularity}
-              placeholder="default"
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setDraftGranularity(e.target.value)
-              }
-              onBlur={() =>
-                draftGranularity !== (query.granularity ?? '') &&
-                onQueryChange({ granularity: draftGranularity })
-              }
+            <GranularityPicker
+              refId={query.refId}
+              value={query.granularity}
+              intervalMs={intervalMs}
+              onChange={(granularity) => onQueryChange({ granularity })}
             />
           </EditorField>
         )}
