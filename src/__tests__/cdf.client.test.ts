@@ -60,7 +60,7 @@ describe('CDF client', () => {
           metadata: getMeta(id, 'average', ['']),
         },
       ];
-      const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]);
+      const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]) as TimeSeries[];
       expect(reduced.datapoints).toEqual([
         [0, 1549336675000],
         [1, 1549337275000],
@@ -83,7 +83,7 @@ describe('CDF client', () => {
           metadata: getMeta(id, 'average', [''], 'latest'),
         },
       ];
-      const [reduced] = reduceTimeseries(metaResponses, [1549337270000, 1549337275000]);
+      const [reduced] = reduceTimeseries(metaResponses, [1549337270000, 1549337275000]) as TimeSeries[];
       expect(reduced.datapoints).toEqual([[0, 1549336675000]]);
       expect(reduced.target).toEqual(`${id}`);
     });

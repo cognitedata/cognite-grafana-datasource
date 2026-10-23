@@ -421,6 +421,31 @@ test('"CogniteTimeSeries" coarser auto granularity and gap filling reach the req
   await expect(editorRow.getByTestId('gap-fill-badge-A')).toHaveText(`= ${body.items[0].fill.limit}`);
 });
 
+test('"CogniteTimeSeries" a string series shows its type and is read raw', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // grafana-ts-fixtures:batch_phase, a string series of batch phases.
+  const read = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.items?.[0]?.instanceId?.externalId === 'batch_phase'
+  );
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'batch_phase');
+  const response = await read;
+
+  // Picking it swaps the default Average, which string series do not have, for raw values.
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON().aggregates).toBeUndefined();
+  await expect(editorRow.getByTestId('cognite-timeseries-type-A')).toHaveText('string');
+});
+
 test('"CogniteTimeSeries" unit conversion is available for timeseries with units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
