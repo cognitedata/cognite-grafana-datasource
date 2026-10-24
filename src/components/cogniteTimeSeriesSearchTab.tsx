@@ -11,7 +11,7 @@ import {
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CogniteActivityQuery, defaultCogniteActivityQuery, SelectedProps } from '../types';
-import { getCogniteUnitIndex, getStateSet, getTimeSeriesProperties, stringifyError } from '../cdf/client';
+import { getCogniteUnitIndex, getStateSet, getTimeSeriesProperties } from '../cdf/client';
 import { StateSetEntry } from '../cdf/typedFrames';
 import { StateSetPreview } from './common/StateSetPreview';
 import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/units';
@@ -23,6 +23,7 @@ import { Connector } from '../connector';
 import { defaultAggregationFor, isAggregateAllowed, isTimeSeriesKind } from '../cdf/aggregates';
 import { DatapointsFields } from './common/DatapointsFields';
 import { cdmLabelTooltip, LabelField } from './common/LabelField';
+import { errorMessageOf } from '../queryMessages';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
   connector: Connector;
@@ -155,7 +156,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
         const unitIndex = await getCogniteUnitIndex(connector);
         setUnits([...unitIndex.values()]);
       } catch (err) {
-        setUnitsError(`Couldn't load the units: ${stringifyError(err)}`);
+        setUnitsError(`Couldn't load the units: ${errorMessageOf(err)}`);
       } finally {
         setLoadingUnits(false);
       }
@@ -178,7 +179,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           setStateSetRef(stateSet);
         } catch (err) {
           setPropertiesError(
-            `Couldn't read the type and unit of the time series: ${stringifyError(err)}`
+            `Couldn't read the type and unit of the time series: ${errorMessageOf(err)}`
           );
           setTimeSeriesUnit(undefined);
           setTimeSeriesType(undefined);
@@ -208,7 +209,11 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       return;
     }
     let current = true;
-    getStateSet(connector, stateSetRef).then((loaded) => current && setLoadedStates({ key: stateSetKey, states: loaded }));
+    getStateSet(connector, stateSetRef)
+      .then((loaded) => current && setLoadedStates({ key: stateSetKey, states: loaded }))
+      .catch(
+        (err) => current && setPropertiesError(`Couldn't read the state set: ${errorMessageOf(err)}`)
+      );
     return () => {
       current = false;
     };

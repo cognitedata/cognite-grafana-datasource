@@ -35,6 +35,8 @@ import {
   getTimeSeriesProperties,
   getStateSet,
   chunkSyntheticItems,
+  getCalculationWarnings,
+  getLimitsWarnings,
 } from '../cdf/client';
 import { StateSetEntry } from '../cdf/typedFrames';
 import {
@@ -44,18 +46,29 @@ import {
   TimeSeriesKind,
   unavailableAggregateMessage,
 } from '../cdf/aggregates';
-import { emitEvent, handleError, showWarnings } from '../appEventHandler';
+import { errorMessageOf, QueryMessages } from '../queryMessages';
 import { TimeSeriesResponseItem } from '../cdf/types';
-import { responseWarningEvent, TIMESERIES_LIMIT_WARNING } from '../constants';
+import { TIMESERIES_LIMIT_WARNING } from '../constants';
 import { formQueriesForExpression } from '../parser/ts';
 import { formQueriesForSyntheticQuery } from '../parser/dms';
 import { normalizeCdmSyntheticQuery } from '../cdf/syntheticTimeSeries';
 
-function handleFailedTargets(failed: FailResponse[]) {
+function handleFailedTargets(failed: FailResponse[], messages: QueryMessages) {
   failed
     .filter(isError)
-    .filter(({ error }) => !error.cancelled) // if response was cancelled, no need to show error message
-    .forEach(({ error, metadata }) => handleError(error, metadata.target.refId));
+    .forEach(({ error, metadata }) => messages.error(error, metadata.target.refId));
+}
+
+/** What each response's caller should know: warnings raised while building it, and CDF's limits. */
+function noteResponseWarnings(responses: SuccessResponse[], messages: QueryMessages) {
+  responses.forEach(({ result, metadata }) => {
+    const { items } = result.data;
+    const { limit } = result.config.data;
+    const { refId } = metadata.target;
+    [...(metadata.warnings ?? []), getLimitsWarnings(items, limit), getCalculationWarnings(items)].forEach(
+      (warning) => messages.warning(warning, refId)
+    );
+  });
 }
 function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
   switch (tab) {
@@ -69,10 +82,10 @@ function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
   }
 }
 async function findTsByAssetAndRelationships(
-  { refId, assetQuery }: QueryTarget,
+  { assetQuery }: QueryTarget,
   connector: Connector,
   timeFrame
-): Promise<TimeSeriesResponseItem[]> {
+): Promise<{ timeseries: TimeSeriesResponseItem[]; warnings: string[] }> {
   const assetId = assetQuery.target;
   const filter = assetQuery.includeSubtrees
     ? {
@@ -99,15 +112,19 @@ async function findTsByAssetAndRelationships(
     );
     timeseriesFromRelationships = _.map(relationshipsList, 'target');
   }
+  const warnings: string[] = [];
   if (timeseriesFromAssets.length >= limit) {
-    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+    warnings.push(TIMESERIES_LIMIT_WARNING);
     timeseriesFromAssets.splice(-1);
   }
   if (timeseriesFromRelationships.length >= limit) {
-    emitEvent(responseWarningEvent, { refId, warning: TIMESERIES_LIMIT_WARNING });
+    warnings.push(TIMESERIES_LIMIT_WARNING);
     timeseriesFromRelationships.splice(-1);
   }
-  return _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id');
+  return {
+    timeseries: _.uniqBy([...timeseriesFromAssets, ...timeseriesFromRelationships], 'id'),
+    warnings,
+  };
 }
 
 export async function getDataQueryRequestItems(
@@ -132,8 +149,9 @@ export async function getDataQueryRequestItems(
       break;
     }
     case Tab.Asset: {
-      const timeseries = await findTsByAssetAndRelationships(target, connector, timeFrame);
-      items = timeseries.map(({ id }) => ({ id }));
+      const found = await findTsByAssetAndRelationships(target, connector, timeFrame);
+      items = found.timeseries.map(({ id }) => ({ id }));
+      warnings = found.warnings.length ? found.warnings : undefined;
       break;
     }
     case Tab.Custom: {
@@ -171,9 +189,15 @@ export async function getDataQueryRequestItems(
             throw new Error(unavailableAggregateMessage(hint, target.aggregation));
           }
           kind = hint;
-          stateSet = stateSetRef ? await getStateSet(connector, stateSetRef) : undefined;
+          if (stateSetRef) {
+            const loaded = await loadStateSet(connector, stateSetRef);
+            stateSet = loaded.stateSet;
+            warnings = loaded.warning ? [loaded.warning] : warnings;
+          }
         } else {
-          ({ kind, stateSet } = await resolveTimeSeriesKind(connector, instanceIdItems[0].instanceId, target, type));
+          const resolved = await resolveTimeSeriesKind(connector, instanceIdItems[0].instanceId, target, type);
+          ({ kind, stateSet } = resolved);
+          warnings = resolved.warning ? [resolved.warning] : warnings;
         }
       }
       break;
@@ -185,7 +209,9 @@ export async function getDataQueryRequestItems(
         externalId: cogniteTimeSeries.instanceId.externalId,
       };
       items = [{ instanceId }];
-      ({ kind, stateSet } = await resolveTimeSeriesKind(connector, instanceId, target, type));
+      const resolved = await resolveTimeSeriesKind(connector, instanceId, target, type);
+      ({ kind, stateSet } = resolved);
+      warnings = resolved.warning ? [resolved.warning] : warnings;
       break;
     }
   }
@@ -203,23 +229,37 @@ async function resolveTimeSeriesKind(
   instanceId: { space: string; externalId: string },
   { aggregation }: QueryTarget,
   type: DataQueryRequestType
-): Promise<{ kind: TimeSeriesKind; stateSet?: StateSetEntry[] }> {
+): Promise<{ kind: TimeSeriesKind; stateSet?: StateSetEntry[]; warning?: string }> {
   // A failed lookup fails the query: guessing numeric would send a request CDF
   // refuses for string and state series, with a less useful error.
-  const properties = await getTimeSeriesProperties(connector, instanceId, { rethrow: true });
+  const properties = await getTimeSeriesProperties(connector, instanceId);
   const kind = isTimeSeriesKind(properties.type) ? properties.type : 'numeric';
   if (type === 'data' && !isAggregateAllowed(kind, aggregation)) {
     throw new Error(unavailableAggregateMessage(kind, aggregation));
   }
-  const stateSet =
-    kind === 'state' && properties.stateSet ? await getStateSet(connector, properties.stateSet) : undefined;
-  return { kind, stateSet };
+  if (kind !== 'state' || !properties.stateSet) {
+    return { kind };
+  }
+  return { kind, ...(await loadStateSet(connector, properties.stateSet)) };
+}
+
+/** A state set, or the warning that it could not be read: the series still plots without it. */
+async function loadStateSet(
+  connector: Connector,
+  ref: { space: string; externalId: string }
+): Promise<{ stateSet?: StateSetEntry[]; warning?: string }> {
+  try {
+    return { stateSet: await getStateSet(connector, ref) };
+  } catch (error) {
+    return { warning: `Couldn't read the state set: ${errorMessageOf(error)}` };
+  }
 }
 export class TimeseriesDatasource {
   constructor(private connector: Connector) {}
   async fetchTimeseriesForTargets(
     queryTargets: QueryTarget[],
-    options: QueryOptions
+    options: QueryOptions,
+    messages: QueryMessages
   ): Promise<Responses<SuccessResponse, FailResponse>> {
     const itemsForTargetsPromises = queryTargets.map(async (target) => {
       try {
@@ -234,7 +274,7 @@ export class TimeseriesDatasource {
           timeFrame
         );
       } catch (e) {
-        handleError(e, target.refId);
+        messages.error(e, target.refId);
       }
       return null;
     });
@@ -251,7 +291,8 @@ export class TimeseriesDatasource {
               ? target.flexibleDataModellingQuery.labels
               : await getLabelsForTarget(target, items, this.connector, scopes);
           } catch (err) {
-            handleError(err, target.refId);
+            // The data still comes back, under default labels.
+            messages.warning(`Couldn't build the labels: ${errorMessageOf(err)}`, target.refId);
           }
           const { warning } = resolveTargetFill(target, type, options.intervalMs);
           const warnings = [...(itemWarnings ?? []), ...(warning ? [warning] : [])];
@@ -289,12 +330,16 @@ export class TimeseriesDatasource {
     const requests = queries.map((query, i) => [query, metadata[i]]); // I.e queries.zip(metadata)
     return concurrent(requests, queryProxy);
   }
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  /** Errors and warnings go to `messages`; the caller puts them in the response. */
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
-    const { failed, succeded } = await this.fetchTimeseriesForTargets(options.targets, options);
+    const { failed, succeded } = await this.fetchTimeseriesForTargets(options.targets, options, messages);
 
-    handleFailedTargets(failed);
-    showWarnings(succeded);
+    handleFailedTargets(failed, messages);
+    noteResponseWarnings(succeded, messages);
     return {
       data: reduceTimeseries(succeded, timeRange),
     };

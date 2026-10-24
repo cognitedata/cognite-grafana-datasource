@@ -57,12 +57,8 @@ describe('fetchContainerViews', () => {
     await expect(fetchContainerViews(connector, 'CogniteAsset')).rejects.toThrow('API Error');
   });
 
-  it('is swallowed by the named wrappers, which answer with no views', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it('is passed on by the named wrappers, so their pickers can report it too', async () => {
     fetcher.fetch.mockRejectedValue(new Error('API Error'));
-
-    await expect(fetchCogniteAssetViews(connector)).resolves.toEqual([]);
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    await expect(fetchCogniteAssetViews(connector)).rejects.toThrow('API Error');
   });
 });

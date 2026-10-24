@@ -6,7 +6,6 @@ import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
 import { CogniteQuery, QueryOptions, QueryTarget, Tuple } from './types';
 import { FilterTypes, ParsedFilter } from './parser/types';
-import { handleError } from './appEventHandler';
 import { NUMERIC_TYPE_KEY } from './cdf/graphqlTimeSeries';
 import { GRAPHQL_ROW_FIELDS } from './cdf/graphqlRows';
 
@@ -52,25 +51,18 @@ export function getRange(range: TimeRange): Tuple<number> {
   const timeTo = range.to.valueOf();
   return [timeFrom, timeTo];
 }
-export const isValidQuery = (query, refId) => {
-  try {
-    return gql`
-      ${query}
-    `;
-  } catch (e) {
-    handleError(e, refId);
-    return false;
-  }
-};
 const getFirstSelectionArr = (arr: ExecutableDefinitionNode) => arr?.selectionSet?.selections;
-export const getFirstSelection = (graphQuery, refId) => {
+/**
+ * The query's top-level selection, or none for text that does not parse. The editor
+ * reports a parse error itself, and a query that does not parse never runs.
+ */
+export const getFirstSelection = (graphQuery: string) => {
   try {
     const { definitions } = gql`
       ${graphQuery}
     `;
     return getFirstSelectionArr(definitions[0] as ExecutableDefinitionNode);
-  } catch (e) {
-    handleError(e, refId);
+  } catch {
     return [];
   }
 };

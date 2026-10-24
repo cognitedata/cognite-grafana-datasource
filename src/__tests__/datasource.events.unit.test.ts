@@ -1,6 +1,7 @@
 import { Connector } from '../connector';
 import { defaultQuery, CogniteQuery, Tab } from '../types';
 import { EventsDatasource } from 'datasources';
+import { QueryMessages } from '../queryMessages';
 
 const defaultCogniteQuery = defaultQuery as CogniteQuery;
 
@@ -49,7 +50,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)
@@ -90,7 +92,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)
@@ -139,7 +142,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)
@@ -184,7 +188,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)
@@ -225,7 +230,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)
@@ -269,7 +275,8 @@ describe('events datasource test', () => {
     }
     const res = await eventsDatasource.fetchEventTargets(
       [query],
-      [startTime, endTime]
+      [startTime, endTime],
+      new QueryMessages()
     );
 
     expect(fetchItemsMock).toHaveBeenCalledTimes(1)

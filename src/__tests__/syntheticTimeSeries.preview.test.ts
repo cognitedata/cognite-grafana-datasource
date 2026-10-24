@@ -96,9 +96,14 @@ describe('buildExpressionPreview', () => {
   }));
 
   const context = { range: [1000, 2000] as [number, number], timezone: 'utc' };
+  // The view read behind the list properties: CDF has no such view here.
+  const viewRead = () => jest.fn().mockResolvedValue({ data: { items: [] } });
 
   it('shows the synthetic request body as sent, with the range, limit and time zone', async () => {
-    const connector = { fetchAndPaginate: jest.fn().mockResolvedValue(instances) } as any;
+    const connector = {
+      fetchData: viewRead(),
+      fetchAndPaginate: jest.fn().mockResolvedValue(instances),
+    } as any;
     const parts = await buildExpressionPreview(
       query,
       { datapoints: 'raw', granularity: '1h' },
@@ -122,7 +127,10 @@ describe('buildExpressionPreview', () => {
 
   it('splits the items into requests of ten, as the datasource sends them', async () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ ...instances[0], externalId: `b${i}` }));
-    const connector = { fetchAndPaginate: jest.fn().mockResolvedValue(many) } as any;
+    const connector = {
+      fetchData: viewRead(),
+      fetchAndPaginate: jest.fn().mockResolvedValue(many),
+    } as any;
     const parts = await buildExpressionPreview(
       query,
       { datapoints: 'raw', granularity: '1h' },
@@ -138,7 +146,10 @@ describe('buildExpressionPreview', () => {
   });
 
   it('reports resolution errors', async () => {
-    const connector = { fetchAndPaginate: jest.fn().mockResolvedValue([]) } as any;
+    const connector = {
+      fetchData: viewRead(),
+      fetchAndPaginate: jest.fn().mockResolvedValue([]),
+    } as any;
     const parts = await buildExpressionPreview(
       query,
       { datapoints: 'raw', granularity: '1h' },

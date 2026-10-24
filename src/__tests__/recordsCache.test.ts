@@ -1,8 +1,7 @@
 import { RecordsDatasource } from '../datasources/RecordsDatasource';
+import { QueryMessages } from '../queryMessages';
 import { Connector } from '../connector';
 import { defaultRecordsQuery, RecordsQuery, Tab } from '../types';
-
-jest.mock('../appEventHandler', () => ({ handleWarning: jest.fn(), handleError: jest.fn() }));
 
 const view = {
   space: 'opcua_alarms',
@@ -36,7 +35,7 @@ describe('records request caching', () => {
       targets: [{ refId: 'A', tab: Tab.Records, recordsQuery } as any],
       range: RANGE,
       maxDataPoints: 100,
-    } as any);
+    } as any, new QueryMessages());
 
   it('issues a fresh request when the metric function changes', async () => {
     const fetch = jest.fn().mockResolvedValue({ data: { items: [], aggregates: {} } });

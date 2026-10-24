@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { CogniteQuery, Tab } from '../types';
-import { getMockedDataSource, messageEmits } from '../test_utils';
+import { getMockedDataSource } from '../test_utils';
 import { ExtractionPipelinesResponse } from '../cdf/types';
 import { lastValueFrom } from 'rxjs';
 
@@ -37,7 +37,7 @@ const extpipeErrorMessage = {
 };
 const noSelectedRunsError = {
   refId: 'A',
-  error: '[ERROR] Please select value for extraction pipelines runs',
+  message: 'Please select value for extraction pipelines runs',
 };
 const columns = ['name', 'externalId', 'runId', 'status'];
 const baseTarget: QueryTargetLike = {
@@ -127,11 +127,8 @@ describe('extraction pipelines', () => {
           ];
           results = await lastValueFrom(ds.query(options));
         });
-        it('emits error', () => {
-          expect(messageEmits()).toHaveLength(1);
-        });
-        it('error message', () => {
-          expect(messageEmits()[0][1]).toEqual(noSelectedRunsError);
+        it('returns the error', () => {
+          expect(results.errors).toEqual([noSelectedRunsError]);
         });
         it('empty tabledata', () => {
           expect(results.data[0].rows).toEqual([]);
@@ -163,7 +160,7 @@ describe('extraction pipelines', () => {
           runsList = extpipesWithRunsValues(extpipesRes);
         });
         it('dont emits error', () => {
-          expect(messageEmits()).toHaveLength(0);
+          expect(results.errors).toBeUndefined();
         });
         it('columns', () => {
           expect(results.data[0].columns).toEqual(columns.map((text) => ({ text })));
@@ -199,7 +196,7 @@ describe('extraction pipelines', () => {
           runsList = extpipesWithRunsValues(extpipesByIdRes);
         });
         it('dont emits error', () => {
-          expect(messageEmits()).toHaveLength(0);
+          expect(results.errors).toBeUndefined();
         });
         it('table data', () => {
           expect(results.data[0].rows).toEqual(runsList);
@@ -241,7 +238,7 @@ describe('extraction pipelines', () => {
             results = await lastValueFrom(ds.query(options));
         });
         it('dont emits error', () => {
-          expect(messageEmits()).toHaveLength(0);
+          expect(results.errors).toBeUndefined();
         });
         it(`has results data length of ${extpipesRunsListRes.length}`, () => {
           expect(results.data.length).toEqual(3);

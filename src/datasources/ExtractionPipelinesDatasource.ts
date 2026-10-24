@@ -2,7 +2,6 @@ import { DataQueryRequest, DataQueryResponse, SelectableValue } from '@grafana/d
 import _ from 'lodash';
 import { CogniteQuery, ExtractionPipelinesQuery, HttpMethod } from '../types';
 import { Connector } from '../connector';
-import { handleError } from '../appEventHandler';
 import { convertItemsToTable } from '../cdf/client';
 import {
   ExtractionPipelineRunsParams,
@@ -12,6 +11,7 @@ import {
   FilterRequest,
   Resource,
 } from '../cdf/types';
+import { QueryMessages } from '../queryMessages';
 
 type RunsResponse = {
   filter: ExtractionPipelineRunsParams;
@@ -58,7 +58,7 @@ const exctractValuesToTable = (list, query, name) => {
 };
 export class ExtractionPipelinesDatasource {
   constructor(private connector: Connector) {}
-  private async getDataset(id, refId): Promise<Dataset[]> {
+  private async getDataset(id, refId: string, messages: QueryMessages): Promise<Dataset[]> {
     try {
       const dataset = await this.connector.fetchItems<Dataset>({
         path: '/datasets/byids',
@@ -69,13 +69,14 @@ export class ExtractionPipelinesDatasource {
       });
       return dataset;
     } catch (error) {
-      handleError(error, refId);
+      messages.error(error, refId);
       return [{ name: `${id}` }];
     }
   }
   private fetchExtractionPipelinesRuns = async (
     filter: ExtractionPipelineRunsParams,
     refId: string,
+    messages: QueryMessages,
     limit = 100
   ): Promise<RunsResponse> => {
     try {
@@ -89,7 +90,7 @@ export class ExtractionPipelinesDatasource {
       });
       return { filter, response };
     } catch (error) {
-      handleError(error, refId);
+      messages.error(error, refId);
       return {
         filter,
         response: [],
@@ -99,7 +100,8 @@ export class ExtractionPipelinesDatasource {
   private fetchExtractionPipelines = async (
     items: FilterRequest<SelectableValue>,
     refId: string,
-    columns: string[]
+    columns: string[],
+    messages: QueryMessages
   ): Promise<ExtractionPipelinesWithRun[]> => {
     try {
       const pipelines = await this.connector.fetchItems<ExtractionPipelinesResponse>({
@@ -109,16 +111,17 @@ export class ExtractionPipelinesDatasource {
           items,
         },
       });
-      return this.withLastRun(pipelines, refId, columns);
+      return this.withLastRun(pipelines, refId, columns, messages);
     } catch (error) {
-      handleError(error, refId);
+      messages.error(error, refId);
       return [];
     }
   };
   private withLastRun = async (
     items: ExtractionPipelinesResponse[],
     refId: string,
-    columns: string[]
+    columns: string[],
+    messages: QueryMessages
   ): Promise<ExtractionPipelinesWithRun[]> => {
     return Promise.all(
       items.map(
@@ -134,6 +137,7 @@ export class ExtractionPipelinesDatasource {
                 externalId,
               },
               refId,
+              messages,
               1
             );
             data = {
@@ -144,42 +148,43 @@ export class ExtractionPipelinesDatasource {
               runId: response[0]?.id,
             };
             if (columns.includes('data set')) {
-              const dataset = await this.getDataset(dataSetId, refId);
+              const dataset = await this.getDataset(dataSetId, refId, messages);
               _.assignIn(data, { 'data set': dataset[0].name });
             }
             return data;
           } catch (error) {
-            handleError(error, refId);
+            messages.error(error, refId);
             return undefined;
           }
         }
       )
     );
   };
-  postQuery(query: ExtractionPipelinesQuery, refId: string) {
+  postQuery(query: ExtractionPipelinesQuery, refId: string, messages: QueryMessages) {
     const { selections, getRuns, limit, columns } = query;
     if (!getRuns) {
       return this.fetchExtractionPipelines(
         selections.map(({ id }) => ({ id })),
         refId,
-        columns
+        columns,
+        messages
       );
     }
     return Promise.all(
       selections.map(({ value }) =>
-        this.fetchExtractionPipelinesRuns({ externalId: value }, refId, limit)
+        this.fetchExtractionPipelinesRuns({ externalId: value }, refId, messages, limit)
       )
     );
   }
-  async runQuery(query: ExtractionPipelinesQuery & { refId: string }) {
+  async runQuery(query: ExtractionPipelinesQuery & { refId: string }, messages: QueryMessages) {
     const { selections, getRuns, refId, columns } = query;
     try {
       if (getRuns && !selections?.length) {
-        handleError(new Error('Please select value for extraction pipelines runs'), refId);
+        messages.error(new Error('Please select value for extraction pipelines runs'), refId);
         return [];
       }
       if (selections?.length) {
-        return this.postQuery(query, refId);
+        return this.postQuery(query, refId, messages);
       }
       const items = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: `/extpipes/list`,
@@ -188,23 +193,26 @@ export class ExtractionPipelinesDatasource {
           filter: {},
         },
       });
-      return this.withLastRun(items, refId, columns);
+      return this.withLastRun(items, refId, columns, messages);
     } catch (error) {
-      handleError(error, refId);
+      messages.error(error, refId);
       return [];
     }
   }
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const data = await Promise.all(
       options.targets.map(async (target) => {
         try {
           const response = await this.runQuery({
             refId: target.refId,
             ...target.extractionPipelinesQuery,
-          });
+          }, messages);
           return exctractValuesToTable(response, target.extractionPipelinesQuery, undefined);
         } catch (error) {
-          handleError(error, target.refId);
+          messages.error(error, target.refId);
           return [];
         }
       })
@@ -213,7 +221,8 @@ export class ExtractionPipelinesDatasource {
       data: _.flatten(data),
     };
   }
-  async getExtractionPipelinesDropdowns(refId: string): Promise<ExtractionPipelinesResponse[]> {
+  // Still swallowed: the editor that loads these options has no error handling.
+  async getExtractionPipelinesDropdowns(_refId: string): Promise<ExtractionPipelinesResponse[]> {
     try {
       const response = await this.connector.fetchItems<ExtractionPipelinesResponse>({
         path: '/extpipes',
@@ -221,8 +230,7 @@ export class ExtractionPipelinesDatasource {
         data: undefined,
       });
       return response;
-    } catch (error) {
-      handleError(error, refId);
+    } catch {
       return [];
     }
   }

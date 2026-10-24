@@ -1,4 +1,5 @@
 import ms from 'ms';
+import { QueryMessages } from '../queryMessages';
 import { cloneDeep } from 'lodash';
 import { TimeSeries } from '@grafana/data';
 import { filterEmptyQueryTargets } from '../datasource';
@@ -8,21 +9,14 @@ import {
   getDataSourceWithMocks,
   getItemsResponseObject,
   getMockedDataSource,
-  messageEmits,
 } from '../test_utils';
-import { failedResponseEvent, responseWarningEvent } from '../constants';
-import { eventBusService } from '../appEventHandler';
 import { lastValueFrom } from 'rxjs';
 
-
-jest.mock('@grafana/data');
 type Mock = jest.Mock;
 
 type QueryTargetLike = Partial<CogniteQuery>;
 
 const { Asset, Custom, Timeseries } = Tab;
-
-const appEvents = eventBusService;
 
 const tsError = {
   status: 400,
@@ -81,8 +75,7 @@ describe('Datasource Query', () => {
         .mockImplementation((x) => Promise.resolve(getDataqueryResponse(x.data)));
       results = await ds.timeseriesDatasource.fetchTimeseriesForTargets(
         [oldTarget] as any,
-        options
-      );
+        options, new QueryMessages());
 
       expect(fetcher.fetch).toHaveBeenCalledTimes(1);
       expect((fetcher.fetch as Mock).mock.calls[0][0].data).toEqual({
@@ -198,19 +191,14 @@ describe('Datasource Query', () => {
       result = await lastValueFrom(ds.query(options));
     });
 
-    it('should return an empty array', () => {
-      expect(result).toEqual({ data: [] });
+    it('should return no data', () => {
+      expect(result.data).toEqual([]);
     });
-    it('should display errors for malformed queries', () => {
-      expect(messageEmits()).toHaveLength(2);
-      expect(messageEmits()[0][1]).toEqual({
-        refId: 'A',
-        error: '[400 ERROR] error message',
-      });
-      expect(messageEmits()[1][1]).toEqual({
-        refId: 'B',
-        error: 'Unknown error',
-      });
+    it('should return errors for malformed queries', () => {
+      expect(result.errors).toEqual([
+        { refId: 'A', message: 'error message', status: 400 },
+        { refId: 'B', message: 'Unknown error' },
+      ]);
     });
   });
 
@@ -297,18 +285,14 @@ describe('Datasource Query', () => {
     });
 
     it('should return correct datapoints and labels', () => {
-      expect(result).toMatchSnapshot();
+      expect({ data: result.data }).toMatchSnapshot();
     });
 
-    it('should display errors for malformed queries', () => {
-      expect(appEvents.emit as Mock).toHaveBeenCalledWith(failedResponseEvent, {
-        refId: 'E',
-        error: '[400 ERROR] error message',
-      });
-      expect(appEvents.emit).toHaveBeenCalledWith(failedResponseEvent, {
-        refId: 'F',
-        error: 'Unknown error',
-      });
+    it('should return errors for malformed queries', () => {
+      expect(result.errors).toEqual([
+        { refId: 'E', message: 'error message', status: 400 },
+        { refId: 'F', message: 'Unknown error' },
+      ]);
     });
   });
 
@@ -447,12 +431,12 @@ describe('Datasource Query', () => {
     });
 
     it('should return correct datapoints and labels', () => {
-      expect(result).toMatchSnapshot();
+      expect({ data: result.data }).toMatchSnapshot();
     });
 
     it('should display errors for malformed queries', () => {
-      expect(messageEmits()).toHaveLength(1);
-      expect(messageEmits()[0][1].refId).toEqual('J');
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].refId).toEqual('J');
     });
   });
 
@@ -544,19 +528,16 @@ describe('Datasource Query', () => {
     test('400 error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce(tsError);
       const result = await lastValueFrom(ds.query(query));
-      expect(result).toEqual(emptyResult);
-      expect(messageEmits()).toHaveLength(1);
-      const emitted = messageEmits()[0][1];
-      expect(emitted.error).toEqual('[400 ERROR] error message');
+      expect(result).toEqual({
+        ...emptyResult,
+        errors: [{ refId: 'A', message: 'error message', status: 400 }],
+      });
     });
 
     test('unknown error', async () => {
       fetcher.fetch = jest.fn().mockRejectedValueOnce({});
       const result = await lastValueFrom(ds.query(query));
-      expect(result).toEqual(emptyResult);
-      expect(messageEmits()).toHaveLength(1);
-      const emitted = messageEmits()[0][1];
-      expect(emitted.error).toEqual('Unknown error');
+      expect(result).toEqual({ ...emptyResult, errors: [{ refId: 'A', message: 'Unknown error' }] });
     });
 
     test('empty ts filter result', async () => {
@@ -564,12 +545,15 @@ describe('Datasource Query', () => {
         .fn()
         .mockImplementationOnce(() => Promise.resolve(getItemsResponseObject([])));
       const result = await lastValueFrom(ds.query(query));
-      expect(result).toEqual(emptyResult);
-      expect(messageEmits()).toHaveLength(1);
-      const emitted = messageEmits()[0][1];
-      expect(emitted.error).toEqual(
-        '[ERROR] No timeseries found for filter {"name":""} in expression ts{name=""}'
-      );
+      expect(result).toEqual({
+        ...emptyResult,
+        errors: [
+          {
+            refId: 'A',
+            message: 'No timeseries found for filter {"name":""} in expression ts{name=""}',
+          },
+        ],
+      });
     });
   });
 
@@ -740,14 +724,16 @@ describe('Datasource Query', () => {
     });
   });
 
-  it('clears every row\'s messages before the run, so they describe this run only', async () => {
-    const ds = getMockedDataSource({ fetch: jest.fn() });
-    (appEvents.emit as Mock).mockClear();
-    await lastValueFrom(ds.query({ ...options, targets: [{ refId: 'A' }, { refId: 'B' }] }));
-    ['A', 'B'].forEach((refId) => {
-      expect(appEvents.emit).toHaveBeenCalledWith(failedResponseEvent, { refId, error: '' });
-      expect(appEvents.emit).toHaveBeenCalledWith(responseWarningEvent, { refId, warning: '' });
-    });
+  it('keeps each run\'s messages to that run, so a later run does not repeat an earlier failure', async () => {
+    const fetcher = { fetch: jest.fn().mockRejectedValueOnce(tsError) };
+    const ds = getMockedDataSource(fetcher);
+    const query = { ...options, targets: [{ refId: 'A', tab: Timeseries, target: 1, aggregation: 'none' }] };
+    const failed = await lastValueFrom(ds.query(query));
+    expect(failed.errors).toEqual([{ refId: 'A', message: 'error message', status: 400 }]);
+    fetcher.fetch.mockImplementation(async ({ data }) => getDataqueryResponse(data, externalIdPrefix, 0));
+    const next = await lastValueFrom(ds.query(query));
+    expect(next.data).toHaveLength(1);
+    expect(next.errors).toBeUndefined();
   });
 
   it('leaves an auto bucket interval for the records builder to size', () => {
@@ -837,6 +823,7 @@ describe('Given custom query with pure text label', () => {
 
   it('should return pure text label', async () => {
     const targetA: QueryTargetLike = {
+      refId: 'A',
       tab: Custom,
       expr: 'ts{id=1}',
       label: 'Pure text',
@@ -847,6 +834,36 @@ describe('Given custom query with pure text label', () => {
     });
     const result = await lastValueFrom(resultObs);
     expect((result.data[0] as TimeSeries).target).toEqual('Pure text');
+  });
+});
+
+describe('Given a custom query whose labels cannot be built', () => {
+  it('still returns the data, and warns on the query row', async () => {
+    const fetcher = {
+      fetch: jest.fn().mockImplementation(async (x) => {
+        if (x.url.includes('/byids')) {
+          throw tsError;
+        }
+        return getDataqueryResponse(x.data, externalIdPrefix, 0);
+      }),
+    };
+    const ds = getMockedDataSource(fetcher);
+    const result = await lastValueFrom(
+      ds.query({
+        ...options,
+        targets: [
+          { refId: 'L', tab: Custom, aggregation: 'none', expr: 'ts{id=1}', label: '{{description}}' },
+        ],
+      })
+    );
+    expect(result.errors).toBeUndefined();
+    // The series, under its default label, and the empty frame its warning rides on.
+    const [series, carrier] = result.data;
+    expect(series.datapoints).toEqual([]);
+    expect(carrier).toMatchObject({ refId: 'L', fields: [] });
+    expect(carrier.meta.notices).toEqual([
+      { severity: 'warning', text: expect.stringMatching(/^Couldn't build the labels: .*error message/) },
+    ]);
   });
 });
 
@@ -867,7 +884,7 @@ describe('custom query granularity less then a second', () => {
     await ds.timeseriesDatasource.fetchTimeseriesForTargets([targetA], {
       ...options,
       intervalMs: 99,
-    });
+    }, new QueryMessages());
     expect(
       (fetcher.fetch as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');
@@ -877,8 +894,7 @@ describe('custom query granularity less then a second', () => {
     fetcher.fetch = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
     await ds.timeseriesDatasource.fetchTimeseriesForTargets(
       [{ ...targetA, granularity: 'auto:fewer' }],
-      { ...options, intervalMs: ms('10m') }
-    );
+      { ...options, intervalMs: ms('10m') }, new QueryMessages());
     // The time series lookup may be served from the cache, so read the last call.
     const calls = (fetcher.fetch as Mock).mock.calls;
     expect(calls[calls.length - 1][0].data.items[0].expression).toMatch('granularity="1h"}');
@@ -918,7 +934,7 @@ describe('Given a Time series (data modeling) query with gap filling', () => {
 
   it('sends fill with each item, scaled from the panel interval', async () => {
     respond();
-    await lastValueFrom(
+    const result = await lastValueFrom(
       ds.query({
         ...options,
         intervalMs: ms('30s'),
@@ -930,20 +946,24 @@ describe('Given a Time series (data modeling) query with gap filling', () => {
     expect(request.data.items).toEqual([
       { instanceId: { space: 'sp', externalId: 'tank_level' }, fill: { limit: '2m' } },
     ]);
-    expect(messageEmits()).toHaveLength(0);
+    expect(result.errors).toBeUndefined();
+    expect(result.data.flatMap((frame) => frame.meta?.notices ?? [])).toEqual([]);
   });
 
   it('warns on the query row when a fixed limit had to be raised', async () => {
     respond();
-    await lastValueFrom(
+    const result = await lastValueFrom(
       ds.query({ ...options, targets: [target({ mode: 'duration', limit: '30m' }, '1h')] })
     );
     expect(datapointsRequest().data.items[0].fill).toEqual({ limit: '1h' });
-    expect(messageEmits()).toHaveLength(1);
-    expect(messageEmits()[0][1]).toEqual({
-      refId: 'G',
-      warning: expect.stringMatching(/Fill limit 30m is shorter than the granularity \(1h\)/),
-    });
+    expect(result.errors).toBeUndefined();
+    const notices = result.data.filter((frame) => frame.refId === 'G').flatMap((frame) => frame.meta?.notices ?? []);
+    expect(notices).toEqual([
+      {
+        severity: 'warning',
+        text: expect.stringMatching(/Fill limit 30m is shorter than the granularity \(1h\)/),
+      },
+    ]);
   });
 });
 
@@ -1010,13 +1030,14 @@ describe('Given a string Time series (data modeling) query', () => {
 
   it('fails the query when the aggregation is one string series do not have', async () => {
     respond([]);
-    const data = await run({ aggregation: 'average' });
+    const { data, errors } = await lastValueFrom(
+      ds.query({ ...options, panelId: 'string-average', targets: [target({ aggregation: 'average' })] })
+    );
     expect(data).toEqual([]);
     expect(fetcher.fetch.mock.calls.some(([{ url }]) => url.endsWith('/timeseries/data/list'))).toBe(false);
-    expect(messageEmits()[0][1]).toEqual({
-      refId: 'S',
-      error: expect.stringContaining('Average is not available for string time series'),
-    });
+    expect(errors).toEqual([
+      { refId: 'S', message: expect.stringContaining('Average is not available for string time series') },
+    ]);
   });
 });
 
@@ -1081,6 +1102,34 @@ describe('Given a state Time series (data modeling) query', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('plots the series without its state names, and warns, when the state set cannot be read', async () => {
+    // A datasource of its own, so the state set is not already cached.
+    const failing = { fetch: jest.fn() };
+    const stateDs = getMockedDataSource(failing);
+    respond([{ timestamp: t0, numericValue: 1, stringValue: 'AVAILABLE' }]);
+    failing.fetch.mockImplementation(async (request) =>
+      request.url.endsWith('/models/instances/byids') &&
+      request.data.sources[0].source.externalId === 'CogniteStateSet'
+        ? Promise.reject(tsError)
+        : fetcher.fetch(request)
+    );
+    const result = await lastValueFrom(stateDs.query({ ...options, targets: [target()] }));
+    expect(result.errors).toBeUndefined();
+    // The series, without value mappings, and the empty frame its warning rides on.
+    const [series, carrier] = result.data;
+    expect(series.fields[1].values).toEqual(['AVAILABLE']);
+    expect(series.fields[1].config.mappings).toBeUndefined();
+    expect(carrier).toMatchObject({ refId: 'T', fields: [] });
+    expect(carrier.meta.notices).toEqual([
+      {
+        severity: 'warning',
+        text: expect.stringMatching(
+          /^Couldn't read the state set: .*error message/
+        ),
+      },
+    ]);
   });
 
   it('labels raw states from the state set', async () => {
