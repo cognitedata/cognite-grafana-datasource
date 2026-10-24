@@ -378,7 +378,7 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139');
 
   const searchInput = editorRow.locator('input[id="cognite-timeseries-search-A"]');
-  await expect(searchInput).not.toHaveText('Search timeseries by name/description');
+  await expect(searchInput).not.toHaveText('Search time series by name or description');
 
   const labelInput = editorRow.locator('input[id="label-A"]');
   await labelInput.clear();

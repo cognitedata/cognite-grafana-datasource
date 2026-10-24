@@ -16,17 +16,21 @@ interface OneLineCodeEditorProps {
   width?: number | 'fill';
   placeholder?: string;
   invalid?: boolean;
+  /** Wrap long text onto more lines and grow with it, instead of scrolling sideways. */
+  wrap?: boolean;
   testId?: string;
   onCommit: (value: string) => void;
   onEditorDidMount?: (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: Monaco) => void;
 }
 
 const EDITOR_HEIGHT = 20;
+/** Long text wraps onto more lines, up to this many; past it the editor scrolls. */
+const MAX_LINES = 6;
 
 const getStyles = (theme: GrafanaTheme2) => ({
   box: css({
     position: 'relative',
-    height: theme.spacing(4),
+    minHeight: theme.spacing(4),
     padding: theme.spacing(0.75, 1),
     border: `1px solid ${theme.components.input.borderColor}`,
     borderRadius: theme.shape.radius.default,
@@ -52,6 +56,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
     pointerEvents: 'none',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
+    textOverflow: 'ellipsis',
     right: theme.spacing(1),
   }),
 });
@@ -79,18 +84,28 @@ const MONACO_OPTIONS = {
   padding: { top: 0, bottom: 0 },
 } as const;
 
+/** Wraps instead of scrolling sideways, and grows a line at a time (see handleMount). */
+const WRAPPING_OPTIONS = {
+  ...MONACO_OPTIONS,
+  wordWrap: 'on',
+  scrollbar: { ...MONACO_OPTIONS.scrollbar, vertical: 'auto' },
+} as const;
+
 /**
  * A Monaco editor dressed as a single-line input: Enter commits instead of
  * inserting a newline (unless a completion is being picked), pasted newlines
- * collapse to spaces, and the text commits on blur like a BlurInput.
+ * collapse to spaces, and the text commits on blur like a BlurInput. With `wrap`,
+ * text too long for the width wraps and the editor grows with it, as Grafana's
+ * Prometheus and Loki query fields do; without it the text scrolls, like an input.
  */
 export const OneLineCodeEditor = forwardRef<OneLineCodeEditorHandle, OneLineCodeEditorProps>(
   (
-    { value, language, width = 40, placeholder, invalid, testId, onCommit, onEditorDidMount },
+    { value, language, width = 40, placeholder, invalid, wrap, testId, onCommit, onEditorDidMount },
     ref
   ) => {
     const styles = useStyles2(getStyles);
     const [empty, setEmpty] = useState(!value);
+    const [height, setHeight] = useState(EDITOR_HEIGHT);
     const editorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
     // Read at commit time, so the Monaco command registered on mount sees the latest callback.
     const commitRef = useRef(onCommit);
@@ -114,6 +129,13 @@ export const OneLineCodeEditor = forwardRef<OneLineCodeEditorHandle, OneLineCode
           commit,
           '!suggestWidgetVisible'
         );
+        // Cmd/Ctrl+F would open Monaco's find bar inside a one-line field.
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {});
+        if (wrap) {
+          editor.onDidContentSizeChange(({ contentHeight }) =>
+            setHeight(Math.min(MAX_LINES * EDITOR_HEIGHT, Math.max(EDITOR_HEIGHT, contentHeight)))
+          );
+        }
         const model = editor.getModel();
         model?.onDidChangeContent(() => {
           if (model.getLineCount() > 1) {
@@ -136,10 +158,10 @@ export const OneLineCodeEditor = forwardRef<OneLineCodeEditorHandle, OneLineCode
         <CodeEditor
           value={value}
           language={language}
-          height={EDITOR_HEIGHT}
+          height={height}
           showMiniMap={false}
           showLineNumbers={false}
-          monacoOptions={MONACO_OPTIONS as any}
+          monacoOptions={(wrap ? WRAPPING_OPTIONS : MONACO_OPTIONS) as any}
           onChange={(text) => setEmpty(!text)}
           onBlur={(text) => commitRef.current(text)}
           onSave={(text) => commitRef.current(text)}

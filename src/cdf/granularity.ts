@@ -21,7 +21,7 @@ const AUTO_STEPS = [
     value: 'auto:fewer',
     label: 'Auto · fewer points',
     factor: 4,
-    description: 'About a quarter as many points as Auto: faster with many series',
+    description: 'About a quarter as many points as Auto: faster with many time series',
   },
 ] as const;
 

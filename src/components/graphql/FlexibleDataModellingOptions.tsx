@@ -5,7 +5,7 @@ import { CogniteQuery, GraphqlQueryType } from '../../types';
 import { defaultAggregationFor, isAggregateAllowed, TimeSeriesKind } from '../../cdf/aggregates';
 import { STATE_LABEL_TOOLTIP_SUFFIX } from '../commonEditors';
 import { DatapointsFields } from '../common/DatapointsFields';
-import { LabelField } from '../common/LabelField';
+import { cdmLabelTooltip, LabelField } from '../common/LabelField';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -18,14 +18,15 @@ interface FlexibleDataModellingOptionsProps {
   intervalMs?: number;
 }
 
-const LABEL_TOOLTIP =
-  'Series label, interpolating fields of the response with {{field}}, for example {{name}} or {{externalId}}. Left empty, each series is labelled with its name.';
-
 /** The Label tooltip, naming the fields the current query actually selects. */
 export const labelTooltip = (labelFields: string[], seriesType?: TimeSeriesKind): string =>
-  (labelFields.length
-    ? `${LABEL_TOOLTIP} Fields in this query: ${labelFields.map((field) => `{{${field}}}`).join(', ')}.`
-    : LABEL_TOOLTIP) + (seriesType === 'state' ? ` ${STATE_LABEL_TOOLTIP_SUFFIX}` : '');
+  cdmLabelTooltip(
+    '{{name}} or {{externalId}}',
+    labelFields.length
+      ? `Fields in this query: ${labelFields.map((field) => `{{${field}}}`).join(', ')}.`
+      : '',
+    seriesType === 'state' ? STATE_LABEL_TOOLTIP_SUFFIX : ''
+  );
 
 const QUERY_TYPE_OPTIONS: Array<{ label: string; value: GraphqlQueryType; description: string }> = [
   { label: 'Numeric', value: 'numeric', description: 'Data points of the numeric time series the query returns' },

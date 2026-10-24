@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getDefaultTimeRange, TimeRange } from '@grafana/data';
+import { getDefaultTimeRange, ScopedVars, TimeRange } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
-import { Button, RadioButtonGroup, Stack, type Monaco, type monacoTypes } from '@grafana/ui';
+import { Button, Stack, type Monaco, type monacoTypes } from '@grafana/ui';
 import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
@@ -16,8 +16,8 @@ import { interpolateCdmSyntheticQuery, normalizeCdmSyntheticQuery } from '../cdf
 import { interpolateFilterVariables, filterPropertiesOf } from '../cdf/filterVariables';
 import { parseExpression, renameVariableInExpression, variableNamesIn } from '../parser/dms';
 import { encodeViewRef, ViewPicker } from './common/ViewPicker';
-import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
-import { LabelField } from './common/LabelField';
+import { DatapointsFields } from './common/DatapointsFields';
+import { cdmLabelTooltip, LabelField } from './common/LabelField';
 import { GraphqlExamplesModal } from './graphql/GraphqlExamplesModal';
 import { instancePropertyOptions, viewPropertyOptions } from './records/shared';
 import { ensureSyntheticLanguages } from './syntheticTimeSeries/monacoLanguage';
@@ -47,19 +47,12 @@ const DATAPOINTS_TOOLTIP =
   "Aggregate: one value per interval, using each variable's aggregate. Raw: the data points as stored.";
 const GRANULARITY_TOOLTIP =
   'The width of each interval. Auto follows the time range. Fixed takes s, m, h or d, for example 12h.';
-const LABEL_TOOLTIP =
-  "Label for each time series. Use {{A.name}} for a property of variable A's time series.";
+/** Tokens name the variable first: {{A.name}} is a property of variable A's time series. */
+const LABEL_TOOLTIP = cdmLabelTooltip("{{A.name}} for the name of variable A's time series");
 
 type Datapoints = 'aggregate' | 'raw';
 
-const DATAPOINTS_OPTIONS: Array<{ label: string; value: Datapoints; description: string }> = [
-  {
-    label: 'Aggregate',
-    value: 'aggregate',
-    description: 'One value per interval',
-  },
-  { label: 'Raw', value: 'raw', description: 'The data points as stored' },
-];
+const SYNTHETIC_DATAPOINTS_MODES: Datapoints[] = ['aggregate', 'raw'];
 
 interface PreviewState {
   title: string;
@@ -72,12 +65,14 @@ interface SyntheticTimeSeriesTabProps extends SelectedProps {
   /** The panel's time range and the time zone of its last request, for the request preview. */
   range?: TimeRange;
   timezone?: string;
+  /** The last request's scoped variables, so $__interval and the like resolve as the query has them. */
+  scopedVars?: ScopedVars;
 }
 
 /**
  * Named variables pick time series instances (one, or every match of a filter
  * on the view's properties); a synthetic expression over them is computed by
- * CDF. The rows follow the Time Series tab: the source, the variables, the
+ * CDF. The rows follow the Time series tab: the source, the variables, the
  * expression, then how the data points come back and how series are labelled.
  */
 export const SyntheticTimeSeriesTab = ({
@@ -87,6 +82,7 @@ export const SyntheticTimeSeriesTab = ({
   intervalMs,
   range,
   timezone,
+  scopedVars,
 }: SyntheticTimeSeriesTabProps) => {
   const { refId } = query;
   const cdmSyntheticQuery = normalizeCdmSyntheticQuery(query.cdmSyntheticQuery);
@@ -231,12 +227,15 @@ export const SyntheticTimeSeriesTab = ({
   // The same two-step interpolation the query runs with, so the previews show what is sent.
   const interpolateFilter = (filter: string) => {
     const templateSrv = getTemplateSrv();
-    return templateSrv.replace(interpolateFilterVariables(filter, templateSrv));
+    return templateSrv.replace(
+      interpolateFilterVariables(filter, templateSrv, scopedVars),
+      scopedVars
+    );
   };
   const interpolated = (): CdmSyntheticQuery =>
     interpolateCdmSyntheticQuery(
       { ...cdmSyntheticQuery, expression: currentExpression() },
-      (value) => getTemplateSrv().replace(value),
+      (value) => getTemplateSrv().replace(value, scopedVars),
       interpolateFilter
     );
 
@@ -341,6 +340,7 @@ export const SyntheticTimeSeriesTab = ({
                     names.length > 1 ? `${names[0]} - ${names[1]}` : `${names[0] ?? 'A'} * 2`
                   }
                   invalid={!!expression && !expressionParses}
+                  wrap
                   testId="expression-editor"
                   onCommit={commitExpression}
                   onEditorDidMount={onExpressionEditorMount}
@@ -365,31 +365,19 @@ export const SyntheticTimeSeriesTab = ({
           </EditorField>
         </EditorRow>
         <EditorRow>
+          {/* The synthetic API has no latest value and no gap filling, and each variable has its own aggregate. */}
+          <DatapointsFields
+            query={query}
+            intervalMs={intervalMs}
+            onQueryChange={onQueryChange}
+            modes={SYNTHETIC_DATAPOINTS_MODES}
+            withAggregation={false}
+            withGapFill={false}
+            modeTooltip={DATAPOINTS_TOOLTIP}
+            granularityTooltip={GRANULARITY_TOOLTIP}
+          />
+          {/* Beside the data points when there is room; the row wraps it below otherwise. */}
           <EditorFieldGroup>
-            <EditorField label="Data points" tooltip={DATAPOINTS_TOOLTIP}>
-              <RadioButtonGroup
-                options={DATAPOINTS_OPTIONS}
-                value={datapoints}
-                onChange={(next) =>
-                  onQueryChange({ aggregation: next === 'raw' ? 'none' : 'average' })
-                }
-                aria-label="Data points"
-              />
-            </EditorField>
-            {datapoints === 'aggregate' && (
-              <EditorField
-                label="Granularity"
-                tooltip={GRANULARITY_TOOLTIP}
-                htmlFor={granularityInputId(refId, query.granularity)}
-              >
-                <GranularityPicker
-                  refId={refId}
-                  value={query.granularity}
-                  onChange={(granularity) => onQueryChange({ granularity })}
-                  intervalMs={intervalMs}
-                />
-              </EditorField>
-            )}
             <LabelField
               id={`label-${refId}`}
               value={query.label}

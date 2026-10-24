@@ -216,3 +216,21 @@ describe('RecordsTab request preview', () => {
     });
   });
 });
+
+describe('RecordsTab view loading', () => {
+  it('says why the record views could not be listed, under the Record view field', async () => {
+    const connector = {
+      fetchItems: jest.fn().mockRejectedValue({ status: 403, data: { error: { message: 'no access' } } }),
+      fetchData: jest.fn().mockResolvedValue({ data: {} }),
+    } as unknown as Connector;
+    render(
+      <RecordsTab
+        query={{ refId: 'A', tab: Tab.Records, recordsQuery: defaultRecordsQuery } as unknown as CogniteQuery}
+        onQueryChange={jest.fn()}
+        connector={connector}
+      />
+    );
+    expect(await screen.findByText(/Couldn't load the record views/)).toBeTruthy();
+    expect(document.getElementById('records-view-A')).not.toBeNull();
+  });
+});

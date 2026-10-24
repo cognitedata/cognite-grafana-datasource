@@ -436,7 +436,7 @@ export class FlexibleDataModellingDatasource {
         return [];
       }
       handleError(
-        new Error('An error occurred while attempting to get a response from FDM!'),
+        new Error("The response has no rows for the query's first field."),
         target.refId
       );
       return [];

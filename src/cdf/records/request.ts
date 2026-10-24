@@ -388,7 +388,7 @@ export function buildRecordsFilterRequest(
 ): RecordsFilterRequest {
   const { view } = query;
   if (!view) {
-    throw new Error('A record view must be selected before building a request.');
+    throw new Error('Select a record view first.');
   }
   // The API rejects reserved identifiers in `sources[].properties` with a 400, and
   // returns space/externalId/createdTime/lastUpdatedTime on every record regardless,

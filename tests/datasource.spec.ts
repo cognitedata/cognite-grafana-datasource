@@ -1,9 +1,14 @@
 import { expect } from '@grafana/plugin-e2e';
 import { test } from '../playwright/fixtures/patchNavigationStrategy';
+import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
+
+// The panels query CDF live, which can take a while on a cold start.
+const LEGEND_TIMEOUT = 15_000;
 
 test('Panel with multiple time series queries rendered OK', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
   const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
   await gotoDashboardPage(dashboard);
+  await waitForQueriesToFinish(page);
 
   var expectedTs = [
     '59.9139-10.7522-current.clouds percent',
@@ -18,7 +23,7 @@ test('Panel with multiple time series queries rendered OK', async ({ gotoDashboa
   // In Grafana 13 the legend item buttons changed their accessible name to
   // "All series selected" — use text content matching instead of role+name.
   for (const expectedTsName of expectedTs) {
-    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: LEGEND_TIMEOUT });
   }
 });
 
@@ -40,13 +45,15 @@ test('Panel with multiple CogniteTimeSeries queries rendered OK', async ({ gotoD
     'CDMTS temp',
   ];
 
+  await waitForQueriesToFinish(page);
+
   // Scroll down to ensure CDMTS panel is visible
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
   // In Grafana 13 the legend item buttons changed their accessible name to
   // "All series selected" — use text content matching instead of role+name.
   for (const expectedTsName of expectedTs) {
-    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button', { hasText: expectedTsName })).toBeVisible({ timeout: LEGEND_TIMEOUT });
   }
 });
 

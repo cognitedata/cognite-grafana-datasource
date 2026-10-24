@@ -17,7 +17,7 @@ import CogniteDatasource from "./datasource";
 export enum Tab {
   Timeseries = "Timeseries",
   CogniteTimeSeriesSearch = "CogniteTimeSeries",
-  // Declaration order is tab-bar order: expressions sit next to the Time Series tab they build on.
+  // Declaration order is tab-bar order: expressions sit next to the Time series tab they build on.
   SyntheticTimeSeries = "SyntheticTimeSeries",
   CogniteActivity = "CogniteActivity",
   Records = "Records",

@@ -24,6 +24,7 @@ import {
   countVariableMatches,
   incompleteLocalFilterMessage,
   MAX_SYNTHETIC_FANOUT,
+  validateFilter,
 } from '../../parser/dms';
 import { targetUnitApplies } from '../../cdf/units';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from '../common/InstancePicker';
@@ -544,7 +545,7 @@ export const VariableRow = ({
         view={view}
         value={instanceValue}
         onChange={pickInstance}
-        placeholder="Search timeseries by name/description"
+        placeholder="Search time series by name or description"
         inputId={`variable-instance-${refId}-${index}`}
         badgeOf={(props) =>
           props.type ? { text: props.type, color: getTypeBadgeColor(props.type) } : undefined
@@ -557,6 +558,7 @@ export const VariableRow = ({
           language={SYNTHETIC_FILTER_LANG_ID}
           width="fill"
           placeholder={FILTER_PLACEHOLDER}
+          invalid={validateFilter(row.filter ?? '') !== null}
           testId={`variable-filter-editor-${refId}-${index}`}
           onCommit={(filter) => filter !== (row.filter ?? '') && patch({ filter })}
           onEditorDidMount={onFilterEditorMount}

@@ -603,6 +603,20 @@ describe('Datasource Query', () => {
       expect(filterEmptyQueryTargets([])).toEqual([]);
     });
 
+    it('lets Grafana skip an incomplete query before it runs', () => {
+      const ds = getMockedDataSource({ fetch: jest.fn() } as any);
+      const timeSeries = (instanceId?: { space: string; externalId: string }) =>
+        ({
+          ...defaultQuery,
+          refId: 'A',
+          tab: Tab.CogniteTimeSeriesSearch,
+          cogniteTimeSeries: { ...defaultQuery.cogniteTimeSeries, instanceId },
+        }) as CogniteQuery;
+      expect(ds.filterQuery(timeSeries())).toBe(false);
+      expect(ds.filterQuery(timeSeries({ space: 'sp', externalId: 'ts' }))).toBe(true);
+      expect(ds.filterQuery({ ...timeSeries({ space: 'sp', externalId: 'ts' }), hide: true })).toBe(false);
+    });
+
     it('should filter if target is empty', () => {
       expect(filterEmptyQueryTargets([null])).toEqual([]);
     });

@@ -11,6 +11,15 @@ interface LabelFieldProps {
 }
 
 /**
+ * The Label tooltip every CDM tab shares: how to insert a property, with an example
+ * of that tab's own token syntax, then anything the tab adds.
+ */
+export const cdmLabelTooltip = (example: string, ...extra: string[]): string =>
+  [`Label for each time series. Insert a property with {{…}}, for example ${example}.`, ...extra]
+    .filter(Boolean)
+    .join(' ');
+
+/**
  * The series label, last on a CDM tab: it names whatever the rows above produce.
  * Committed on blur, since every change to the query re-runs it.
  */

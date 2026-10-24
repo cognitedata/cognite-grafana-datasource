@@ -37,6 +37,11 @@ jest.mock('@grafana/ui', () => {
             getModel: () => model,
             addCommand: () => null,
             onDidChangeModelContent: () => ({ dispose() {} }),
+            onDidContentSizeChange: () => ({ dispose() {} }),
+            getContentHeight: () => 20,
+            getLayoutInfo: () => ({ width: 400 }),
+            layout: () => null,
+            updateOptions: () => null,
           },
           mockMonaco
         );
@@ -475,6 +480,40 @@ describe('SyntheticTimeSeriesTab editor checks', () => {
         'The view has no property "pressure"',
       ])
     );
+  });
+});
+
+describe('SyntheticTimeSeriesTab with the panel scoped variables', () => {
+  it('resolves $__interval and the like as the query does', async () => {
+    const fetcher = {
+      fetch: jest.fn().mockImplementation(async ({ url }) => ({ status: 200, data: answer(url) })),
+    };
+    await act(async () => {
+      render(
+        <SyntheticTimeSeriesTab
+          query={
+            {
+              ...defaultQuery,
+              refId: 'A',
+              aggregation: 'average',
+              granularity: '',
+              label: '',
+              cdmSyntheticQuery: expressionQuery({
+                variables: [{ name: 'A', mode: 'filter', filter: 'name=$__interval' }],
+              }),
+            } as CogniteQuery
+          }
+          onQueryChange={jest.fn()}
+          connector={getMockedDataSource(fetcher).connector}
+          intervalMs={60_000}
+          range={{ from: dateTime(1000), to: dateTime(2000), raw: { from: 'now-1h', to: 'now' } }}
+          timezone="utc"
+          scopedVars={{ __interval: { text: '1h', value: '1h' } }}
+        />
+      );
+    });
+    fireEvent.click(screen.getByTestId('variable-preview-A-0'));
+    await waitFor(() => expect(screen.getByDisplayValue(/"value": "1h"/)).toBeInTheDocument());
   });
 });
 

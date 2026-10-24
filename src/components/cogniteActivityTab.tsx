@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
-import { RadioButtonGroup, Select } from '@grafana/ui';
+import { FieldValidationMessage, RadioButtonGroup, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import {
   SelectedProps,
@@ -62,6 +62,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   const [instanceViewCandidates, setInstanceViewCandidates] = useState<InvolvedView[]>([]);
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
+  const [spacesError, setSpacesError] = useState<string | null>(null);
   const [activityView, setActivityView] = useState<DMSViewWithProperties | null>(null);
   // The view's properties, then the instance ones, then any a query was saved with.
   // Edges and reverse relations carry no stored type and never come back as values.
@@ -102,13 +103,14 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   const loadSpaces = useCallback(async () => {
     try {
       setLoadingSpaces(true);
+      setSpacesError(null);
       const spaces = await fetchDMSSpaces(connector);
       setSpaceOptions([
         { label: 'All spaces', value: '' },
         ...spaces.map((s) => ({ label: s.space, value: s.space })),
       ]);
     } catch (err) {
-      console.warn('Failed to load DMS spaces:', stringifyError(err));
+      setSpacesError(`Couldn't load the spaces: ${stringifyError(err)}`);
     } finally {
       setLoadingSpaces(false);
     }
@@ -128,8 +130,8 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     name: a.name,
   }));
 
-  const patchTabQuery = (partial: Partial<CogniteActivityTabQuery>) =>
-    onQueryChange({ cogniteActivityTabQuery: { ...cogniteActivityTabQuery, ...partial } });
+  const patchTabQuery = (partial: Partial<CogniteActivityTabQuery>, run = true) =>
+    onQueryChange({ cogniteActivityTabQuery: { ...cogniteActivityTabQuery, ...partial } }, run);
 
   const handleActivityViewsLoaded = (views: InvolvedView[]) => {
     if (views.length !== 1) {
@@ -140,7 +142,8 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
       // Already saved: writing again would dirty the dashboard just by opening it
       return;
     }
-    patchTabQuery({ space: v.space, externalId: v.externalId, version: v.version });
+    // Picked for the user, not by them: nothing to run until they choose instances.
+    patchTabQuery({ space: v.space, externalId: v.externalId, version: v.version }, false);
     loadViewProperties(v);
   };
 
@@ -240,16 +243,20 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
             tooltip="Narrows the instance search to one space."
             htmlFor={`activity-instance-space-${query.refId}`}
           >
-            <Select
-              inputId={`activity-instance-space-${query.refId}`}
-              options={spaceOptions}
-              value={instanceSpace || ''}
-              onChange={({ value }) => patchTabQuery({ instanceSpace: value ?? '', assetInstances: [] })}
-              isLoading={loadingSpaces}
-              placeholder="All spaces"
-              isClearable={false}
-              width={24}
-            />
+            <div>
+              <Select
+                inputId={`activity-instance-space-${query.refId}`}
+                options={spaceOptions}
+                value={instanceSpace || ''}
+                onChange={({ value }) => patchTabQuery({ instanceSpace: value ?? '', assetInstances: [] })}
+                isLoading={loadingSpaces}
+                placeholder="All spaces"
+                isClearable={false}
+                invalid={!!spacesError}
+                width={24}
+              />
+              {spacesError && <FieldValidationMessage>{spacesError}</FieldValidationMessage>}
+            </div>
           </EditorField>
         </EditorFieldGroup>
         <EditorFieldGroup>
@@ -270,7 +277,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
               filter={instanceSpace ? { inSpace: instanceSpace } : undefined}
               value={selectedInstanceValues}
               onChange={handleInstancesChange}
-              placeholder={`Search ${resourceType} by name...`}
+              placeholder={`Search ${resourceType} by name…`}
               width={44}
               noOptionsMessage="No instances found"
               inputId={`cognite-activity-instances-${query.refId}`}

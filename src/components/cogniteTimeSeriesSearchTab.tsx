@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
-import { Select, Alert, Badge, BadgeColor, InlineSwitch, RadioButtonGroup, Stack } from '@grafana/ui';
+import {
+  Badge,
+  BadgeColor,
+  FieldValidationMessage,
+  InlineSwitch,
+  RadioButtonGroup,
+  Select,
+  Stack,
+} from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CogniteActivityQuery, defaultCogniteActivityQuery, SelectedProps } from '../types';
 import { getCogniteUnitIndex, getStateSet, getTimeSeriesProperties, stringifyError } from '../cdf/client';
@@ -10,11 +18,11 @@ import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/uni
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
-import { LABEL_TOOLTIP, STATE_LABEL_TOOLTIP } from './commonEditors';
+import { STATE_LABEL_TOOLTIP_SUFFIX } from './commonEditors';
 import { Connector } from '../connector';
 import { defaultAggregationFor, isAggregateAllowed, isTimeSeriesKind } from '../cdf/aggregates';
 import { DatapointsFields } from './common/DatapointsFields';
-import { LabelField } from './common/LabelField';
+import { cdmLabelTooltip, LabelField } from './common/LabelField';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
   connector: Connector;
@@ -117,7 +125,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   connector,
   intervalMs,
 }) => {
-  const [error, setError] = useState<string | null>(null);
+  const [unitsError, setUnitsError] = useState<string | null>(null);
+  const [propertiesError, setPropertiesError] = useState<string | null>(null);
   const [units, setUnits] = useState<CogniteUnit[]>([]);
   const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
   const [timeSeriesType, setTimeSeriesType] = useState<string | undefined>(undefined);
@@ -140,12 +149,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     const loadUnits = async () => {
       try {
         setLoadingUnits(true);
+        setUnitsError(null);
         // Shares the cached catalog with label interpolation, so the units are fetched
         // and indexed once per connector.
         const unitIndex = await getCogniteUnitIndex(connector);
         setUnits([...unitIndex.values()]);
       } catch (err) {
-        console.warn('Failed to load units:', stringifyError(err));
+        setUnitsError(`Couldn't load the units: ${stringifyError(err)}`);
       } finally {
         setLoadingUnits(false);
       }
@@ -160,13 +170,16 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       if (instanceId?.space && instanceId?.externalId) {
         setLoadingUnits(true);
         setLoadingType(true);
+        setPropertiesError(null);
         try {
           const { unit, type, stateSet } = await getTimeSeriesProperties(connector, instanceId);
           setTimeSeriesUnit(unit);
           setTimeSeriesType(type);
           setStateSetRef(stateSet);
         } catch (err) {
-          console.warn('Failed to fetch timeseries properties:', stringifyError(err));
+          setPropertiesError(
+            `Couldn't read the type and unit of the time series: ${stringifyError(err)}`
+          );
           setTimeSeriesUnit(undefined);
           setTimeSeriesType(undefined);
           setStateSetRef(undefined);
@@ -322,7 +335,6 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
                 placeholder="Select a CogniteTimeSeries view"
                 isClearable
                 width={44}
-                onError={setError}
               />
             </EditorField>
             <EditorField
@@ -330,39 +342,41 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               tooltip="Search by name or description. The type of the picked time series decides which aggregations are offered."
               htmlFor={`cognite-timeseries-search-${query.refId}`}
             >
-              <Stack gap={1} alignItems="center">
-                <InstancePicker
-                  connector={connector}
-                  view={{
-                    space: cogniteTimeSeries.space,
-                    externalId: cogniteTimeSeries.externalId,
-                    version: cogniteTimeSeries.version,
-                  }}
-                  value={getCurrentTimeseriesValue()}
-                  onChange={handleTimeseriesSelection}
-                  placeholder="Search timeseries by name/description"
-                  width={44}
-                  noOptionsMessage="No timeseries found"
-                  inputId={`cognite-timeseries-search-${query.refId}`}
-                  badgeOf={(props) =>
-                    props.type
-                      ? { text: props.type, color: getTypeBadgeColor(props.type) }
-                      : undefined
-                  }
-                  onError={setError}
-                />
-                {picked && kind && (
-                  <Badge
-                    text={kind}
-                    color={getTypeBadgeColor(kind)}
-                    tooltip="The type of the selected time series. It decides which aggregations are offered."
-                    data-testid={`cognite-timeseries-type-${query.refId}`}
+              <div>
+                <Stack gap={1} alignItems="center">
+                  <InstancePicker
+                    connector={connector}
+                    view={{
+                      space: cogniteTimeSeries.space,
+                      externalId: cogniteTimeSeries.externalId,
+                      version: cogniteTimeSeries.version,
+                    }}
+                    value={getCurrentTimeseriesValue()}
+                    onChange={handleTimeseriesSelection}
+                    placeholder="Search time series by name or description"
+                    width={44}
+                    noOptionsMessage="No time series found"
+                    inputId={`cognite-timeseries-search-${query.refId}`}
+                    badgeOf={(props) =>
+                      props.type
+                        ? { text: props.type, color: getTypeBadgeColor(props.type) }
+                        : undefined
+                    }
                   />
-                )}
-                {picked && kind === 'state' && stateSetRef && states?.length ? (
-                  <StateSetPreview refId={query.refId} stateSet={stateSetRef} states={states} />
-                ) : null}
-              </Stack>
+                  {picked && kind && (
+                    <Badge
+                      text={kind}
+                      color={getTypeBadgeColor(kind)}
+                      tooltip="The type of the selected time series. It decides which aggregations are offered."
+                      data-testid={`cognite-timeseries-type-${query.refId}`}
+                    />
+                  )}
+                  {picked && kind === 'state' && stateSetRef && states?.length ? (
+                    <StateSetPreview refId={query.refId} stateSet={stateSetRef} states={states} />
+                  ) : null}
+                </Stack>
+                {propertiesError && <FieldValidationMessage>{propertiesError}</FieldValidationMessage>}
+              </div>
             </EditorField>
           </EditorFieldGroup>
         </EditorRow>
@@ -390,38 +404,37 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
                 optional
                 tooltip={`Convert the values to this unit. Storage unit: ${getUnitDisplayName(timeSeriesUnit)}.`}
               >
-                <Stack gap={1} alignItems="center">
-                  <Select
-                    inputId={`target-unit-${query.refId}`}
-                    options={getFilteredUnits()}
-                    value={cogniteTimeSeries.targetUnit || timeSeriesUnit}
-                    onChange={handleTargetUnitChange}
-                    placeholder="Select target unit"
-                    isClearable
-                    isLoading={loadingUnits}
-                    width={40}
-                  />
-                  <Badge text={storageUnitLabel(timeSeriesUnit, unitLookup)} color="darkgrey" />
-                </Stack>
+                <div>
+                  <Stack gap={1} alignItems="center">
+                    <Select
+                      inputId={`target-unit-${query.refId}`}
+                      options={getFilteredUnits()}
+                      value={cogniteTimeSeries.targetUnit || timeSeriesUnit}
+                      onChange={handleTargetUnitChange}
+                      placeholder="Select target unit"
+                      isClearable
+                      isLoading={loadingUnits}
+                      width={40}
+                    />
+                    <Badge text={storageUnitLabel(timeSeriesUnit, unitLookup)} color="darkgrey" />
+                  </Stack>
+                  {unitsError && <FieldValidationMessage>{unitsError}</FieldValidationMessage>}
+                </div>
               </EditorField>
             )}
             {/* Last: it names whatever the rows above produce. */}
             <LabelField
               id={`label-${query.refId}`}
               value={query.label}
-              placeholder="default"
-              tooltip={kind === 'state' ? STATE_LABEL_TOOLTIP : LABEL_TOOLTIP}
+              tooltip={cdmLabelTooltip(
+                '{{name}} or {{unit.externalId}}',
+                kind === 'state' ? STATE_LABEL_TOOLTIP_SUFFIX : ''
+              )}
               onCommit={(label) => onQueryChange({ label })}
             />
           </EditorFieldGroup>
         </EditorRow>
       </EditorRows>
-
-      {error && (
-        <Alert title="Information" severity="info">
-          {error}
-        </Alert>
-      )}
     </div>
   );
 };

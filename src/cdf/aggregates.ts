@@ -14,13 +14,13 @@ const COUNT: AggregateOption = { value: 'count', label: 'Count', description: 'D
 const INTERPOLATION: AggregateOption = {
   value: 'interpolation',
   label: 'Interpolation',
-  description: 'The value at the start of each interval, linear or stepwise as the series is',
+  description: 'The value at the start of each interval, linear or stepwise, as the time series is',
 };
 // Numeric only: on string and state series it returns the same values as Interpolation.
 const STEP_INTERPOLATION: AggregateOption = {
   value: 'stepInterpolation',
   label: 'Step Interpolation',
-  description: 'The value at the start of each interval, as if the series were stepwise',
+  description: 'The value at the start of each interval, as if the time series were stepwise',
 };
 
 /** Counts and durations per status code: any type of series. */
@@ -49,7 +49,7 @@ export const NUMERIC_AGGREGATES: AggregateOption[] = [
   {
     value: 'continuousVariance',
     label: 'Continuous Variance',
-    description: 'Variance of the series, interpolated between data points',
+    description: 'Variance of the time series, interpolated between data points',
   },
   { value: 'discreteVariance', label: 'Discrete Variance', description: 'Variance of the data points themselves' },
   {

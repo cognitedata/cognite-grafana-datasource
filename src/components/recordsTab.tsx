@@ -25,7 +25,7 @@ import {
   defaultWindowBounds,
   windowBounds,
 } from '../cdf/records';
-import { getCogniteUnitIndex } from '../cdf/client';
+import { getCogniteUnitIndex, stringifyError } from '../cdf/client';
 import { CogniteUnit } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeViewRef } from './common/ViewPicker';
@@ -71,6 +71,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
 
   const [viewDefs, setViewDefs] = useState<RecordViewDefinition[]>([]);
   const [loadingViews, setLoadingViews] = useState(false);
+  const [viewsError, setViewsError] = useState<string | null>(null);
   const [stream, setStream] = useState<StreamDefinition | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
@@ -79,6 +80,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   useEffect(() => {
     let cancelled = false;
     setLoadingViews(true);
+    setViewsError(null);
     fetchRecordViews(connector)
       .then((views) => {
         if (!cancelled) {
@@ -86,9 +88,9 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
         }
       })
       .catch((error) => {
-        console.warn('Failed to load record views', error);
         if (!cancelled) {
           setViewDefs([]);
+          setViewsError(`Couldn't load the record views: ${stringifyError(error)}`);
         }
       })
       .finally(() => !cancelled && setLoadingViews(false));
@@ -305,11 +307,13 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
     <EditorRows>
       <EditorRow>
         <RecordsQueryHeader
+          refId={query.refId}
           mode={mode}
           view={view}
           viewOptions={viewOptions}
           selectedViewValue={selectedViewValue}
           loadingViews={loadingViews}
+          viewsError={viewsError}
           stream={stream}
           maxInterval={maxInterval}
           onModeChange={(value) => patchQuery({ mode: value })}
@@ -372,6 +376,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
             onChange={(sort) => patchQuery({ sort })}
           />
           <ListOptionsEditor
+            refId={query.refId}
             columns={recordsQuery.columns}
             columnOptions={columnOptions}
             limit={recordsQuery.limit}
