@@ -18,6 +18,9 @@ export function isTabDisabled(
   if (tab === Tabs.Records) {
     return !datasource.connector.isRecordsEnabled();
   }
+  if (tab === Tabs.CogniteTimeSeriesExpression) {
+    return !datasource.connector.isSyntheticTimeSeriesEnabled();
+  }
   if (tab === Tabs.FlexibleDataModelling) {
     return !datasource.connector.isFlexibleDataModellingEnabled();
   }

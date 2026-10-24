@@ -17,6 +17,8 @@ import CogniteDatasource from "./datasource";
 export enum Tab {
   Timeseries = "Timeseries",
   CogniteTimeSeriesSearch = "CogniteTimeSeries",
+  // Declaration order is tab-bar order: expressions sit next to the Time Series tab they build on.
+  CogniteTimeSeriesExpression = "CogniteTimeSeriesExpression",
   CogniteActivity = "CogniteActivity",
   Records = "Records",
   Asset = "Asset",
@@ -41,6 +43,7 @@ export const TabTitles = {
   [Tab.FlexibleDataModelling]: "GraphQL",
   [Tab.CogniteActivity]: "Activities",
   [Tab.Records]: "Records",
+  [Tab.CogniteTimeSeriesExpression]: "Synthetic time series",
 };
 /**
  * The core data model ships with every CDM-enabled project, so it is a starting
@@ -239,6 +242,40 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   limit: 1000,
 };
 
+export type CdmExpressionVariableMode = "instance" | "filter";
+
+/** One named input of a time series expression: a picked series, or every series a filter matches. */
+export interface CdmExpressionVariable {
+  /** The identifier used in the expression: letters, digits and _, not a function name. */
+  name: string;
+  mode: CdmExpressionVariableMode;
+  /** mode instance: the picked CogniteTimeSeries; `name` is kept for the default label. */
+  instance?: { space: string; externalId: string; name?: string };
+  /** mode filter: filter pairs on the view's properties, e.g. name^='PT_', type='numeric'. */
+  filter?: string;
+  /** Sent only when the query reads aggregates; defaults to average. */
+  aggregate?: string;
+  /** Instance rows only; mutually exclusive with targetUnitSystem. */
+  targetUnit?: string;
+  targetUnitSystem?: string;
+}
+
+export interface CdmSyntheticQuery {
+  /** persisted-schema version; anything else is replaced by the defaults in normalizeCdmSyntheticQuery */
+  version: 2;
+  view: ViewRef;
+  variables: CdmExpressionVariable[];
+  /** A synthetic expression over the variable names, e.g. `A * 2` or `avg(B) - A`. */
+  expression: string;
+}
+
+export const defaultCdmSyntheticQuery: CdmSyntheticQuery = {
+  version: 2,
+  view: { space: "cdf_cdm", externalId: "CogniteTimeSeries", version: "v1" },
+  variables: [{ name: "A", mode: "instance", aggregate: "average" }],
+  expression: "",
+};
+
 export const defaultCogniteTimeSeries: CogniteTimeSeries = {
   space: "cdf_cdm",
   version: "v1",
@@ -320,6 +357,7 @@ export const defaultQuery: Partial<CogniteQuery> = {
   cogniteActivityQuery: defaultCogniteActivityQuery,
   cogniteActivityTabQuery: defaultCogniteActivityTabQuery,
   recordsQuery: defaultRecordsQuery,
+  cdmSyntheticQuery: defaultCdmSyntheticQuery,
 };
 
 /**
@@ -343,6 +381,7 @@ export interface CogniteDataSourceOptions extends DataSourceJsonData {
   enableCogniteTimeSeries?: boolean;
   enableCogniteActivities?: boolean;
   enableRecords?: boolean;
+  enableSyntheticTimeSeries?: boolean;
   enableFlexibleDataModelling?: boolean;
   // Legacy data model features
   enableTimeseriesSearch?: boolean;
@@ -460,6 +499,7 @@ export interface CogniteQueryBase extends DataQuery {
   recordsQuery: RecordsQuery;
   cogniteActivityQuery: CogniteActivityQuery;
   cogniteActivityTabQuery: CogniteActivityTabQuery;
+  cdmSyntheticQuery: CdmSyntheticQuery;
 }
 
 export type TemplateQuery = {
@@ -588,6 +628,10 @@ export type DataQueryError = {
 
 export type DataQueryRequestType = "data" | "latest" | "synthetic";
 
+/** A flattened instance, or the list of them a combined variable stands for. */
+export type CdmExpressionFlatInstance = { space: string; externalId: string; [prop: string]: unknown };
+export type CdmExpressionScopeValue = CdmExpressionFlatInstance | CdmExpressionFlatInstance[];
+
 export type QueriesDataItem = {
   type: DataQueryRequestType;
   items: DataQueryRequestItem[];
@@ -596,6 +640,10 @@ export type QueriesDataItem = {
   kind?: TimeSeriesKind;
   /** A state series' states, to label its values. */
   stateSet?: StateSetEntry[];
+  /** Synthetic time series: per generated item, the instance(s) each variable resolved to, for labels. */
+  scopes?: Array<Record<string, CdmExpressionScopeValue>>;
+  /** Raised while building the items, e.g. a capped fan-out; shown with the response's. */
+  warnings?: string[];
 };
 
 export type ResponseMetadata = {

@@ -25,4 +25,11 @@ describe('resolveFeatureFlags', () => {
     expect(resolveFeatureFlags({}).enableRecords).toBe(false);
     expect(resolveFeatureFlags({ enableRecords: true }).enableRecords).toBe(true);
   });
+
+  it('leaves Synthetic time series, a beta, off unless a datasource turns it on', () => {
+    expect(resolveFeatureFlags({}).enableSyntheticTimeSeries).toBe(false);
+    expect(
+      resolveFeatureFlags({ enableSyntheticTimeSeries: true }).enableSyntheticTimeSeries
+    ).toBe(true);
+  });
 });

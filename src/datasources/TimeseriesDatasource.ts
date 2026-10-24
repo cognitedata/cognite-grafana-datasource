@@ -34,9 +34,11 @@ import {
   resolveTargetFill,
   getTimeSeriesProperties,
   getStateSet,
+  chunkSyntheticItems,
 } from '../cdf/client';
 import { StateSetEntry } from '../cdf/typedFrames';
 import {
+  datapointsModeOf,
   isAggregateAllowed,
   isTimeSeriesKind,
   TimeSeriesKind,
@@ -46,6 +48,8 @@ import { emitEvent, handleError, showWarnings } from '../appEventHandler';
 import { TimeSeriesResponseItem } from '../cdf/types';
 import { responseWarningEvent, TIMESERIES_LIMIT_WARNING } from '../constants';
 import { formQueriesForExpression } from '../parser/ts';
+import { formQueriesForCdmExpression } from '../parser/dms';
+import { normalizeCdmSyntheticQuery } from '../cdf/cdmExpression';
 
 function handleFailedTargets(failed: FailResponse[]) {
   failed
@@ -55,7 +59,8 @@ function handleFailedTargets(failed: FailResponse[]) {
 }
 function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
   switch (tab) {
-    case Tab.Custom: {
+    case Tab.Custom:
+    case Tab.CogniteTimeSeriesExpression: {
       return 'synthetic';
     }
     default: {
@@ -116,6 +121,8 @@ export async function getDataQueryRequestItems(
   let items: DataQueryRequestItem[];
   let kind: TimeSeriesKind | undefined;
   let stateSet: StateSetEntry[] | undefined;
+  let scopes: QueriesDataItem['scopes'];
+  let warnings: string[] | undefined;
 
   switch (tab) {
     default:
@@ -134,6 +141,17 @@ export async function getDataQueryRequestItems(
       // carries the granularity the API understands.
       const granularity = resolveDatapointsGranularity(target.granularity, intervalMs);
       items = await formQueriesForExpression(expr, { ...target, granularity }, connector, granularity);
+      break;
+    }
+    case Tab.CogniteTimeSeriesExpression: {
+      // Raw (aggregation 'none', as DatapointsFields encodes it) sends no aggregate or granularity.
+      const datapoints = datapointsModeOf(target) === 'raw' ? 'raw' : 'aggregate';
+      const granularity = resolveDatapointsGranularity(target.granularity, intervalMs);
+      ({ items, scopes, warnings } = await formQueriesForCdmExpression(
+        normalizeCdmSyntheticQuery(target.cdmSyntheticQuery),
+        { datapoints, granularity },
+        connector
+      ));
       break;
     }
     case Tab.FlexibleDataModelling: {
@@ -172,7 +190,7 @@ export async function getDataQueryRequestItems(
     }
   }
 
-  return { type, items, target, kind, stateSet };
+  return { type, items, target, kind, stateSet, scopes, ...(warnings?.length ? { warnings } : {}) };
 }
 
 /**
@@ -225,22 +243,31 @@ export class TimeseriesDatasource {
     );
     const queries = formQueriesForTargets(queryData, options);
     const metadata = await Promise.all(
-      queryData.map(async ({ target, items, type, kind, stateSet }): Promise<ResponseMetadata> => {
-        let labels = [];
-        try {
-          labels = target.flexibleDataModellingQuery?.labels?.length
-            ? target.flexibleDataModellingQuery.labels
-            : await getLabelsForTarget(target, items, this.connector);
-        } catch (err) {
-          handleError(err, target.refId);
+      queryData.map(
+        async ({ target, items, type, kind, stateSet, scopes, warnings: itemWarnings }): Promise<ResponseMetadata> => {
+          let labels = [];
+          try {
+            labels = target.flexibleDataModellingQuery?.labels?.length
+              ? target.flexibleDataModellingQuery.labels
+              : await getLabelsForTarget(target, items, this.connector, scopes);
+          } catch (err) {
+            handleError(err, target.refId);
+          }
+          const { warning } = resolveTargetFill(target, type, options.intervalMs);
+          const warnings = [...(itemWarnings ?? []), ...(warning ? [warning] : [])];
+          return { target, labels, type, kind, stateSet, ...(warnings.length ? { warnings } : {}) };
         }
-        const { warning } = resolveTargetFill(target, type, options.intervalMs);
-        return { target, labels, type, kind, stateSet, ...(warning ? { warnings: [warning] } : {}) };
-      })
+      )
     );
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {
       const { target, type } = metadata;
-      const chunkSize = type === 'synthetic' ? 10 : 100;
+      // The deprecated Custom query tab keeps its plain chunks.
+      const split =
+        target.tab === Tab.CogniteTimeSeriesExpression
+          ? chunkSyntheticItems
+          : type === 'synthetic'
+            ? 10
+            : 100;
       const request = {
         data,
         path: datapointsPath(type),
@@ -252,7 +279,7 @@ export class TimeseriesDatasource {
         const result = await this.connector.chunkAndFetch<
           CDFDataQueryRequest,
           DataQueryRequestResponse
-        >(request, chunkSize);
+        >(request, split);
         return new Ok({ result, metadata });
       } catch (error) {
         return new Err({ error, metadata });
