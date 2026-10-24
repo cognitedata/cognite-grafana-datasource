@@ -5,8 +5,14 @@ export const FilterTypes = {
   RegexEquals: '=~' as FilterType,
   NotEquals: '!=' as FilterType,
   Equals: '=' as FilterType,
+  // Emitted only by the DMS (CDM) grammar; the legacy ts/events-assets grammars never produce them.
+  GreaterOrEquals: '>=' as FilterType,
+  LessOrEquals: '<=' as FilterType,
+  Greater: '>' as FilterType,
+  Less: '<' as FilterType,
+  Prefix: '^=' as FilterType,
 };
-export type FilterType = '!~' | '=~' | '!=' | '=';
+export type FilterType = '!~' | '=~' | '!=' | '=' | '>=' | '<=' | '>' | '<' | '^=';
 
 export enum QueryParserTypes {
   assets = 'assets',

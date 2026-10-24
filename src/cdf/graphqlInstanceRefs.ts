@@ -12,8 +12,9 @@ const ALL_VALUE = '$__all';
  * is left for Grafana to render. Only the two reference parts are accepted after
  * the dot, so any other `$var.field` keeps Grafana's meaning.
  */
-const TOKEN =
+export const INSTANCE_REF_VARIABLE_TOKEN =
   /\$\{(\w+)(?:\.(space|externalId))?\}|\[\[(\w+)(?:\.(space|externalId))?\]\]|\$(\w+)(?:\.(space|externalId))?(?!\w)/g;
+const TOKEN = INSTANCE_REF_VARIABLE_TOKEN;
 
 /** The body of a GraphQL string literal, without its surrounding quotes. */
 const escapeGraphqlString = (value: string): string => JSON.stringify(value).slice(1, -1);
@@ -29,7 +30,7 @@ interface VariableLike {
   allValue?: string | null;
 }
 
-const isAll = (value: unknown): boolean =>
+export const isAll = (value: unknown): boolean =>
   value === ALL_VALUE || (Array.isArray(value) && value.length === 1 && value[0] === ALL_VALUE);
 
 /**
@@ -37,7 +38,7 @@ const isAll = (value: unknown): boolean =>
  * `current.value` is only the sentinel; the values themselves sit in `options`.
  * A custom `allValue` is Grafana's to render, so it counts as "not references".
  */
-const currentValues = (
+export const currentValues = (
   name: string,
   templateSrv: TemplateSrv,
   scopedVars?: ScopedVars
