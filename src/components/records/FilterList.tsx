@@ -1,7 +1,6 @@
 import React from 'react';
 import { EditorField, InputGroup, AccessoryButton } from '@grafana/plugin-ui';
 import {
-  Button,
   FieldValidationMessage,
   MultiSelect,
   Select,
@@ -20,6 +19,7 @@ import { InstancePicker, PickedInstance } from '../common/InstancePicker';
 import { enumValuesOf, OPERATOR_LABELS, propertyOptions, propertyTypeOf } from './shared';
 import { formatPropertyOptionLabel } from './typeBadges';
 import { BlurInput } from './BlurInput';
+import { RowList } from '../common/RowList';
 
 interface FilterListProps {
   filters: RecordsFilterRow[];
@@ -208,24 +208,27 @@ const FilterValueEditor = ({
 export const FilterList = ({ filters, viewDef, connector, onChange }: FilterListProps) => {
   const options = propertyOptions(viewDef);
 
-  const patchRow = (index: number, patch: Partial<RecordsFilterRow>) =>
-    onChange(filters.map((row, i) => (i === index ? { ...row, ...patch } : row)));
-
   return (
     <EditorField
       label="Filters"
       tooltip="Conditions matched against the records inside the time window, combined with AND. Values accept dashboard variables."
       optional
     >
-      <Stack direction="column" gap={0.5} alignItems="flex-start">
-        {filters.map((row, index) => {
+      <RowList
+        items={filters}
+        onChange={onChange}
+        newItem={(): RecordsFilterRow => ({ property: '', operator: 'equals' })}
+        addLabel="Add filter"
+        addTestId="records-add-filter"
+        renderItem={(row, onChangeRow, onRemove, index) => {
+          const patchRow = (patch: Partial<RecordsFilterRow>) => onChangeRow({ ...row, ...patch });
           const allowed = operatorsForType(
             row.propertyType,
             viewDef?.properties?.[row.property]?.type?.list,
             row.property
           );
           return (
-            <InputGroup key={index}>
+            <InputGroup>
               <Select
                 width={28}
                 options={options}
@@ -239,7 +242,7 @@ export const FilterList = ({ filters, viewDef, connector, onChange }: FilterList
                     viewDef?.properties?.[value!]?.type?.list,
                     value!
                   );
-                  patchRow(index, {
+                  patchRow({
                     property: value!,
                     propertyType: nextType,
                     // Keep the operator only if it still applies to the new type
@@ -268,7 +271,7 @@ export const FilterList = ({ filters, viewDef, connector, onChange }: FilterList
                     ? 'This condition is negated: records matching it are excluded.'
                     : 'Negate this condition, keeping only records that do not match it.'
                 }
-                onClick={() => patchRow(index, { negate: !row.negate || undefined })}
+                onClick={() => patchRow({ negate: !row.negate || undefined })}
               >
                 NOT
               </AccessoryButton>
@@ -279,34 +282,25 @@ export const FilterList = ({ filters, viewDef, connector, onChange }: FilterList
                   value,
                 }))}
                 value={row.operator}
-                onChange={({ value }) => patchRow(index, { operator: value! })}
+                onChange={({ value }) => patchRow({ operator: value! })}
               />
               <FilterValueEditor
                 row={row}
                 viewDef={viewDef}
                 connector={connector}
-                onChange={(patch) => patchRow(index, patch)}
+                onChange={patchRow}
               />
               <AccessoryButton
                 icon="times"
                 variant="secondary"
                 aria-label={`Remove filter ${index + 1}`}
                 data-testid={`records-remove-filter-${index}`}
-                onClick={() => onChange(filters.filter((_, i) => i !== index))}
+                onClick={onRemove}
               />
             </InputGroup>
           );
-        })}
-        <Button
-          variant="secondary"
-          size="sm"
-          icon="plus"
-          data-testid="records-add-filter"
-          onClick={() => onChange([...filters, { property: '', operator: 'equals' }])}
-        >
-          Add filter
-        </Button>
-      </Stack>
+        }}
+      />
     </EditorField>
   );
 };

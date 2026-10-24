@@ -1,6 +1,6 @@
 import React from 'react';
 import { EditorField, InputGroup, AccessoryButton } from '@grafana/plugin-ui';
-import { Badge, Button, InlineSwitch, RadioButtonGroup, Select, Stack } from '@grafana/ui';
+import { Badge, InlineSwitch, RadioButtonGroup, Select, Stack } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { RecordsTargetUnit } from '../../types';
 import { RecordViewDefinition, UnitSystem } from '../../types/records';
@@ -15,6 +15,7 @@ import {
   unitsModeOf,
 } from '../../cdf/units';
 import { formatPropertyOptionLabel } from './typeBadges';
+import { RowList } from '../common/RowList';
 
 interface UnitsEditorProps {
   viewDef: RecordViewDefinition | null;
@@ -105,11 +106,6 @@ export const UnitsEditor = ({
 
   const canAddRow = canAddUnitRow(convertible.length, targetUnits);
 
-  const patchRow = (index: number, patch: Partial<RecordsTargetUnit>) =>
-    onChange({
-      targetUnits: targetUnits.map((row, i) => (i === index ? { ...row, ...patch } : row)),
-    });
-
   return (
     <>
       <EditorField
@@ -143,9 +139,16 @@ export const UnitsEditor = ({
           label="Convert"
           tooltip="Only properties with a declared unit can be converted."
         >
-          <Stack direction="column" gap={0.5} alignItems="flex-start">
-            {targetUnits.map((row, index) => (
-              <Stack key={index} gap={1} alignItems="center">
+          <RowList
+            items={targetUnits}
+            onChange={(next) => onChange({ targetUnits: next })}
+            // Only while some convertible property has no row yet.
+            canAdd={canAddRow}
+            newItem={(): RecordsTargetUnit => ({ property: '', unitExternalId: '' })}
+            addLabel="Add conversion"
+            addTestId="records-add-unit"
+            renderItem={(row, onChangeRow, onRemove, index) => (
+              <Stack gap={1} alignItems="center">
                 <InputGroup>
                   <Select
                     width={40}
@@ -154,7 +157,7 @@ export const UnitsEditor = ({
                     placeholder="property"
                     formatOptionLabel={formatPropertyOptionLabel()}
                     onChange={({ value }) =>
-                      patchRow(index, { property: value!, unitExternalId: '' })
+                      onChangeRow({ ...row, property: value!, unitExternalId: '' })
                     }
                   />
                   <Select
@@ -163,16 +166,14 @@ export const UnitsEditor = ({
                     value={row.unitExternalId || null}
                     placeholder={row.property ? 'target unit' : 'pick a property first'}
                     disabled={!row.property}
-                    onChange={({ value }) => patchRow(index, { unitExternalId: value! })}
+                    onChange={({ value }) => onChangeRow({ ...row, unitExternalId: value! })}
                   />
                   <AccessoryButton
                     icon="times"
                     variant="secondary"
                     aria-label={`Remove unit conversion ${index + 1}`}
                     data-testid={`records-remove-unit-${index}`}
-                    onClick={() =>
-                      onChange({ targetUnits: targetUnits.filter((_, i) => i !== index) })
-                    }
+                    onClick={onRemove}
                   />
                 </InputGroup>
                 {row.property && (
@@ -186,23 +187,8 @@ export const UnitsEditor = ({
                   />
                 )}
               </Stack>
-            ))}
-            {canAddRow && (
-              <Button
-                variant="secondary"
-                size="sm"
-                icon="plus"
-                data-testid="records-add-unit"
-                onClick={() =>
-                  onChange({
-                    targetUnits: [...targetUnits, { property: '', unitExternalId: '' }],
-                  })
-                }
-              >
-                Add conversion
-              </Button>
             )}
-          </Stack>
+          />
         </EditorField>
       )}
       <EditorField
