@@ -56,6 +56,7 @@ const CORE_DEPENDENT_KEYS: FeatureKey[] = [
   "enableCogniteTimeSeries",
   "enableCogniteActivities",
   "enableRecords",
+  "enableSyntheticTimeSeries",
   "enableFlexibleDataModelling",
 ];
 const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
@@ -101,6 +102,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableCogniteTimeSeries,
     enableCogniteActivities,
     enableRecords,
+    enableSyntheticTimeSeries,
     enableTimeseriesSearch,
     enableTimeseriesFromAsset,
     enableTimeseriesCustomQuery,
@@ -142,8 +144,8 @@ export function ConfigEditor(props: ConfigEditorProps) {
       [masterKey]: isEnabled,
     };
     // Re-enabling a master restores its sub-flags to their defaults; both
-    // masters follow this one rule. Records, an alpha, defaults off, so the
-    // CDM master leaves it off.
+    // masters follow this one rule. Records and Synthetic time series, alphas,
+    // default off, so the CDM master leaves them off.
     dependentKeys.forEach((key) => {
       patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
     });
@@ -366,6 +368,14 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     label="Records"
                     value={enableRecords}
                     onChange={onJsonBoolValueChange("enableRecords")}
+                    badge={<Badge text="Alpha" color="purple" />}
+                  />
+                  <FeatureToggleRow
+                    id="enable-synthetic-time-series"
+                    feature="enableSyntheticTimeSeries"
+                    label="Synthetic time series"
+                    value={enableSyntheticTimeSeries}
+                    onChange={onJsonBoolValueChange("enableSyntheticTimeSeries")}
                     badge={<Badge text="Alpha" color="purple" />}
                   />
                   <FeatureToggleRow

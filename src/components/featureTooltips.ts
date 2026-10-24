@@ -22,7 +22,7 @@ export const FEATURE_TOOLTIPS: Record<FeatureKey, string> = {
   enableRecords:
     `Enable the Records tab to query high-volume records from streams through record views. Alpha: off by default, and its options may change before Beta.`,
   enableSyntheticTimeSeries:
-    `Enable the Synthetic time series tab to pick or filter Core Data Model time series and compute expressions over them in CDF. Beta: off by default.`,
+    `Enable the Synthetic time series tab to pick or filter Core Data Model time series and compute expressions over them in CDF. Alpha: off by default, and its options may change before Beta.`,
   enableFlexibleDataModelling:
     `Enable the GraphQL tab to query custom data models in CDF using GraphQL. Supports listing, searching, and aggregating data model instances.`,
 
@@ -31,7 +31,7 @@ export const FEATURE_TOOLTIPS: Record<FeatureKey, string> = {
   enableTimeseriesFromAsset:
     `Enable the Time series from asset tab to browse the asset hierarchy and select time series linked to specific assets. ${DEPRECATED} Use the GraphQL tab to plot the time series of an asset instead.`,
   enableTimeseriesCustomQuery:
-    `Enable the Custom query tab to retrieve time series by external ID, with support for synthetic time series expressions and custom aggregations. ${DEPRECATED} Use the CDM Time series or GraphQL tab instead.`,
+    `Enable the Custom query tab to retrieve time series by external ID, with support for synthetic time series expressions and custom aggregations. ${DEPRECATED} Use the CDM Synthetic time series tab instead.`,
   enableEvents:
     `Enable the Events tab to query CDF events. Events represent time-bounded occurrences (e.g. alarms, maintenance activities) linked to assets. ${DEPRECATED} Use the Records or Activities tab instead.`,
   enableEventsAdvancedFiltering:
