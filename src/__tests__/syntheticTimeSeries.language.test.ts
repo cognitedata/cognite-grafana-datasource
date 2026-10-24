@@ -12,8 +12,8 @@ import {
 import {
   computeExpressionMarkers,
   computeFilterMarkers,
-  wireDiagnostics,
 } from '../components/syntheticTimeSeries/diagnostics';
+import { wireDiagnostics } from '../components/common/monacoDiagnostics';
 import { RESERVED_VARIABLE_NAMES } from '../parser/dms/variables';
 
 it('offers exactly the function names a variable may not take', () => {
