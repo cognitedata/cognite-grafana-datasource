@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { AccessoryButton } from '@grafana/plugin-ui';
@@ -11,6 +11,8 @@ import {
   Stack,
   Tooltip,
   useStyles2,
+  type Monaco,
+  type monacoTypes,
 } from '@grafana/ui';
 import { SyntheticVariable, SyntheticVariableMode } from '../../types';
 import { CogniteUnit, ViewRef } from '../../types/dms';
@@ -29,7 +31,14 @@ import { BlurInput } from '../records/BlurInput';
 import { getTypeBadgeColor } from '../cogniteTimeSeriesSearchTab';
 import { OneLineCodeEditor } from './OneLineCodeEditor';
 import { UnitSelect } from './UnitSelect';
+import { ensureSyntheticLanguages } from './monacoLanguage';
 import { SYNTHETIC_FILTER_LANG_ID } from './languageIds';
+import {
+  SyntheticPropertyMeta,
+  clearSyntheticModelContext,
+  setSyntheticModelContext,
+} from './completions';
+import { computeFilterMarkers, wireDiagnostics } from './diagnostics';
 
 const MODE_OPTIONS: Array<{
   label: string;
@@ -300,6 +309,8 @@ interface VariableRowProps {
   otherNames: string[];
   view: ViewRef;
   connector: Connector;
+  /** The view's properties, for the filter editor's completions and warnings. */
+  properties: SyntheticPropertyMeta[];
   /** Set by the list from its measured width: a grid row when wide, a card when narrow. */
   wide: boolean;
   /** Raw hides the aggregate: none is sent for any time series. */
@@ -326,6 +337,7 @@ export const VariableRow = ({
   otherNames,
   view,
   connector,
+  properties,
   datapoints,
   wide,
   interpolateFilter,
@@ -386,6 +398,77 @@ export const VariableRow = ({
     : counted?.key === lookupKey
       ? counted.state
       : { status: 'loading' };
+
+  // Diagnostics and completions read the view schema through refs, so the Monaco
+  // wiring done on mount follows view changes without re-mounting the editor.
+  const propertiesRef = useRef(properties);
+  useEffect(() => {
+    propertiesRef.current = properties;
+  }, [properties]);
+  const filterEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const filterMonacoRef = useRef<Monaco | null>(null);
+  const disposeDiagnosticsRef = useRef<(() => void) | null>(null);
+  // Kept apart from the editor: a disposed editor no longer gives its model.
+  const filterModelUriRef = useRef<string | null>(null);
+
+  /** Undoes the wiring of the last filter editor mounted, which may already be gone. */
+  const releaseFilterEditor = () => {
+    disposeDiagnosticsRef.current?.();
+    disposeDiagnosticsRef.current = null;
+    if (filterModelUriRef.current) {
+      clearSyntheticModelContext(filterModelUriRef.current);
+      filterModelUriRef.current = null;
+    }
+  };
+
+  const syncFilterContext = () => {
+    const model = filterEditorRef.current?.getModel();
+    if (model) {
+      setSyntheticModelContext(model.uri.toString(), { properties: propertiesRef.current });
+    }
+  };
+  useEffect(syncFilterContext, [properties]);
+  useEffect(() => () => releaseFilterEditor(), []);
+
+  // Wired again when the view's properties arrive or change, so the warnings follow them.
+  const wireFilterDiagnostics = () => {
+    const editor = filterEditorRef.current;
+    const monaco = filterMonacoRef.current;
+    if (!editor || !monaco) {
+      return;
+    }
+    disposeDiagnosticsRef.current?.();
+    disposeDiagnosticsRef.current = wireDiagnostics(
+      editor,
+      monaco,
+      (text) =>
+        computeFilterMarkers(
+          text,
+          // No properties yet: the view is loading or can't be read, so nothing is unknown.
+          propertiesRef.current.length
+            ? new Set(propertiesRef.current.map(({ name }) => name))
+            : undefined
+        ),
+      `${SYNTHETIC_FILTER_LANG_ID}-${refId}-${index}`
+    );
+  };
+  useEffect(wireFilterDiagnostics, [properties, refId, index]);
+
+  const onFilterEditorMount = (
+    editor: monacoTypes.editor.IStandaloneCodeEditor,
+    monaco: Monaco
+  ) => {
+    releaseFilterEditor();
+    filterEditorRef.current = editor;
+    filterModelUriRef.current = editor.getModel()?.uri.toString() ?? null;
+    if (!monaco) {
+      return;
+    }
+    ensureSyntheticLanguages(monaco);
+    filterMonacoRef.current = monaco;
+    wireFilterDiagnostics();
+    syncFilterContext();
+  };
 
   const patch = (partial: Partial<SyntheticVariable>) => onChange({ ...row, ...partial });
 
@@ -476,6 +559,7 @@ export const VariableRow = ({
           placeholder={FILTER_PLACEHOLDER}
           testId={`variable-filter-editor-${refId}-${index}`}
           onCommit={(filter) => filter !== (row.filter ?? '') && patch({ filter })}
+          onEditorDidMount={onFilterEditorMount}
         />
         <AccessoryButton
           icon="brackets-curly"

@@ -6,6 +6,7 @@ import { UnitSystem } from '../../types/records';
 import { Connector } from '../../connector';
 import { nextVariableName, validateVariableName } from '../../parser/dms/variables';
 import { GraphqlExamplesModal } from '../graphql/GraphqlExamplesModal';
+import { SyntheticPropertyMeta } from './completions';
 import { SYNTHETIC_FILTER_EXAMPLES } from './examples';
 import {
   getVariableGridStyles,
@@ -27,6 +28,7 @@ interface VariablesListProps {
   variables: SyntheticVariable[];
   view: ViewRef;
   connector: Connector;
+  properties: SyntheticPropertyMeta[];
   datapoints: 'aggregate' | 'raw';
   unitIndex: Map<string, CogniteUnit>;
   unitSystems: UnitSystem[];

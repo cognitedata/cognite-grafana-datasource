@@ -11,6 +11,9 @@ jest.mock('@grafana/runtime');
 const setValue = jest.fn();
 // Counts real mounts per editor language, so a test can tell a remount from a re-render.
 const mockEditorMounts = jest.fn();
+// Set by a test to mount the editors with a Monaco stub, so the markers they set can be read.
+let mockMonaco: any = null;
+let mockModelCount = 0;
 
 // Monaco does not run under jsdom; a textarea keeps the commit-on-blur contract testable.
 jest.mock('@grafana/ui', () => {
@@ -21,15 +24,21 @@ jest.mock('@grafana/ui', () => {
       const { useEffect } = require('react');
       useEffect(() => {
         mockEditorMounts(language);
+        const model = mockMonaco && {
+          uri: { toString: () => `${language}:${(mockModelCount += 1)}` },
+          getValue: () => value,
+          getPositionAt: (offset: number) => ({ lineNumber: 1, column: offset + 1 }),
+          onDidChangeContent: () => ({ dispose() {} }),
+        };
         onEditorDidMount?.(
           {
             getValue: () => value,
             setValue,
-            getModel: () => null,
+            getModel: () => model,
             addCommand: () => null,
             onDidChangeModelContent: () => ({ dispose() {} }),
           },
-          null
+          mockMonaco
         );
         // Mount only, as Monaco calls it once per editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,7 +175,8 @@ beforeEach(() => {
 });
 
 const filterEditorMounts = () =>
-  mockEditorMounts.mock.calls.filter(([language]) => language === 'cognite-synthetic-filter').length;
+  mockEditorMounts.mock.calls.filter(([language]) => language === 'cognite-synthetic-filter')
+    .length;
 
 /** The tab with its query kept in state, as Grafana's query row keeps it. */
 const StatefulTab = ({
@@ -369,6 +379,102 @@ describe('SyntheticTimeSeriesTab', () => {
     fireEvent.click(screen.getByTestId('variable-preview-A-0'));
     await waitFor(() => expect(screen.getByText(/models\/instances\/list/)).toBeInTheDocument());
     expect(screen.getByText('Request preview: variable A')).toBeInTheDocument();
+  });
+});
+
+describe('SyntheticTimeSeriesTab editor checks', () => {
+  beforeEach(() => {
+    mockMonaco = {
+      languages: {
+        getLanguages: () => [],
+        register: jest.fn(),
+        setLanguageConfiguration: jest.fn(),
+        setMonarchTokensProvider: jest.fn(),
+        registerCompletionItemProvider: jest.fn(),
+      },
+      editor: { setModelMarkers: jest.fn() },
+      MarkerSeverity: { Error: 8, Warning: 4 },
+      KeyCode: { Enter: 3, KeyF: 36 },
+      KeyMod: { Shift: 1024, CtrlCmd: 2048 },
+    };
+  });
+  afterEach(() => {
+    mockMonaco = null;
+  });
+
+  /** The messages of every marker set for an editor, call by call. */
+  const markerCalls = (owner: string): string[][] =>
+    mockMonaco.editor.setModelMarkers.mock.calls
+      .filter(([, callOwner]: any[]) => callOwner === owner)
+      .map(([, , markers]: any[]) => markers.map(({ message }: any) => message));
+
+  const connector = () =>
+    getMockedDataSource({
+      fetch: jest.fn().mockImplementation(async ({ url }) => ({ status: 200, data: answer(url) })),
+    }).connector;
+  const tab = (tabConnector: ReturnType<typeof connector>, query: Partial<CdmSyntheticQuery>) => (
+    <SyntheticTimeSeriesTab
+      query={
+        {
+          ...defaultQuery,
+          refId: 'A',
+          aggregation: 'average',
+          granularity: '',
+          label: '',
+          cdmSyntheticQuery: expressionQuery(query),
+        } as CogniteQuery
+      }
+      onQueryChange={jest.fn()}
+      connector={tabConnector}
+      intervalMs={60_000}
+      range={{ from: dateTime(1000), to: dateTime(2000), raw: { from: 'now-1h', to: 'now' } }}
+      timezone="utc"
+    />
+  );
+
+  it('clears an unknown variable once a row defines it, without editing the expression', async () => {
+    const instance = { space: 's', externalId: 'x' };
+    const tabConnector = connector();
+    let rerender: (ui: React.ReactElement) => void = () => {};
+    await act(async () => {
+      ({ rerender } = render(
+        tab(tabConnector, {
+          expression: 'A - B',
+          variables: [{ name: 'A', mode: 'instance', instance }],
+        })
+      ));
+    });
+    expect(markerCalls('cognite-synthetic-expression').at(-1)).toEqual(['Unknown variable "B"']);
+    await act(async () =>
+      rerender(
+        tab(tabConnector, {
+          expression: 'A - B',
+          variables: [
+            { name: 'A', mode: 'instance', instance },
+            { name: 'B', mode: 'instance', instance },
+          ],
+        })
+      )
+    );
+    expect(markerCalls('cognite-synthetic-expression').at(-1)).toEqual([]);
+  });
+
+  it('warns about a filter property only once the view is read', async () => {
+    await act(async () => {
+      render(
+        tab(connector(), {
+          expression: 'A',
+          variables: [{ name: 'A', mode: 'filter', filter: 'pressure>2' }],
+        })
+      );
+    });
+    const calls = markerCalls('cognite-synthetic-filter-A-0');
+    expect(calls[0]).toEqual([]);
+    await waitFor(() =>
+      expect(markerCalls('cognite-synthetic-filter-A-0').at(-1)).toEqual([
+        'The view has no property "pressure"',
+      ])
+    );
   });
 });
 

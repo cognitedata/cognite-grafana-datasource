@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getDefaultTimeRange, TimeRange } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
-import { Button, RadioButtonGroup, Stack } from '@grafana/ui';
+import { Button, RadioButtonGroup, Stack, type Monaco, type monacoTypes } from '@grafana/ui';
 import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
@@ -19,7 +19,15 @@ import { encodeViewRef, ViewPicker } from './common/ViewPicker';
 import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
 import { LabelField } from './common/LabelField';
 import { GraphqlExamplesModal } from './graphql/GraphqlExamplesModal';
+import { instancePropertyOptions, viewPropertyOptions } from './records/shared';
+import { ensureSyntheticLanguages } from './syntheticTimeSeries/monacoLanguage';
 import { SYNTHETIC_EXPRESSION_LANG_ID } from './syntheticTimeSeries/languageIds';
+import {
+  SyntheticPropertyMeta,
+  clearSyntheticModelContext,
+  setSyntheticModelContext,
+} from './syntheticTimeSeries/completions';
+import { computeExpressionMarkers, wireDiagnostics } from './syntheticTimeSeries/diagnostics';
 import { OneLineCodeEditor, OneLineCodeEditorHandle } from './syntheticTimeSeries/OneLineCodeEditor';
 import { SyntheticRequestPreview } from './syntheticTimeSeries/RequestPreview';
 import {
@@ -99,6 +107,13 @@ export const SyntheticTimeSeriesTab = ({
   const previewGeneration = useRef(0);
 
   const editorRef = useRef<OneLineCodeEditorHandle>(null);
+  const monacoEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
+  const disposeDiagnosticsRef = useRef<(() => void) | null>(null);
+  const namesRef = useRef(names);
+  useEffect(() => {
+    namesRef.current = names;
+  }, [names]);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +133,72 @@ export const SyntheticTimeSeriesTab = ({
       cancelled = true;
     };
   }, [connector]);
+
+  // Empty until the view is read, so the filter editors don't warn about properties meanwhile.
+  const properties: SyntheticPropertyMeta[] = useMemo(() => {
+    const options = viewDef ? [...viewPropertyOptions(viewDef), ...instancePropertyOptions()] : [];
+    return options.map((option) => ({
+      name: option.value ?? '',
+      type: option.propertyType?.isList
+        ? `${option.propertyType.type}[]`
+        : option.propertyType?.type,
+      description: option.origin === 'instance' ? 'Instance property' : undefined,
+    }));
+  }, [viewDef]);
+  // Kept apart from the editor: a disposed editor no longer gives its model.
+  const expressionModelUriRef = useRef<string | null>(null);
+  const releaseExpressionEditor = () => {
+    disposeDiagnosticsRef.current?.();
+    disposeDiagnosticsRef.current = null;
+    if (expressionModelUriRef.current) {
+      clearSyntheticModelContext(expressionModelUriRef.current);
+      expressionModelUriRef.current = null;
+    }
+  };
+
+  const syncExpressionContext = useCallback(() => {
+    const model = monacoEditorRef.current?.getModel();
+    if (model) {
+      setSyntheticModelContext(model.uri.toString(), { variables: names });
+    }
+  }, [names]);
+  useEffect(syncExpressionContext, [syncExpressionContext]);
+  useEffect(() => () => releaseExpressionEditor(), []);
+
+  // Wired again when the variables change, so a variable added after the expression clears its error.
+  const wireExpressionDiagnostics = () => {
+    const editor = monacoEditorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) {
+      return;
+    }
+    disposeDiagnosticsRef.current?.();
+    disposeDiagnosticsRef.current = wireDiagnostics(
+      editor,
+      monaco,
+      (text) => computeExpressionMarkers(text, new Set(namesRef.current)),
+      SYNTHETIC_EXPRESSION_LANG_ID
+    );
+  };
+  // The names, not the array: it is rebuilt whenever any part of any row changes.
+  const namesKey = names.join(',');
+  useEffect(wireExpressionDiagnostics, [namesKey]);
+
+  const onExpressionEditorMount = (
+    editor: monacoTypes.editor.IStandaloneCodeEditor,
+    monaco: Monaco
+  ) => {
+    releaseExpressionEditor();
+    monacoEditorRef.current = editor;
+    expressionModelUriRef.current = editor.getModel()?.uri.toString() ?? null;
+    if (!monaco) {
+      return;
+    }
+    ensureSyntheticLanguages(monaco);
+    monacoRef.current = monaco;
+    wireExpressionDiagnostics();
+    syncExpressionContext();
+  };
 
   const patch = (partial: Partial<CdmSyntheticQuery>) =>
     onQueryChange({ cdmSyntheticQuery: { ...cdmSyntheticQuery, ...partial } });
@@ -238,6 +319,7 @@ export const SyntheticTimeSeriesTab = ({
             variables={variables}
             view={view}
             connector={connector}
+            properties={properties}
             datapoints={datapoints}
             unitIndex={unitIndex}
             unitSystems={unitSystems}
@@ -261,6 +343,7 @@ export const SyntheticTimeSeriesTab = ({
                   invalid={!!expression && !expressionParses}
                   testId="expression-editor"
                   onCommit={commitExpression}
+                  onEditorDidMount={onExpressionEditorMount}
                 />
               </div>
               <Button
