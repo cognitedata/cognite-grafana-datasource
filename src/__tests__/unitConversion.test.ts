@@ -184,6 +184,7 @@ describe('Unit Conversion', () => {
       expect(mockConnector.fetchItems).toHaveBeenCalledWith({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
+        cacheTime: CacheTime.ResourceByIds,
         data: {
           sources: [{
             source: {

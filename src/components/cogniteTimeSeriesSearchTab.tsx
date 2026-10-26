@@ -7,8 +7,14 @@ import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/uni
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { CommonEditors, LabelRow } from './commonEditors';
 import { Connector } from '../connector';
+import {
+  aggregateGroupsFor,
+  defaultAggregationFor,
+  isAggregateAllowed,
+  isTimeSeriesKind,
+} from '../cdf/aggregates';
 import { GAP_FILL_TOOLTIP, GapFillControls } from './common/GapFillEditor';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
@@ -111,12 +117,15 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     fetchProperties();
   }, [connector, instanceIdKey, cogniteTimeSeries.instanceId]);
 
-  // String timeseries don't support aggregations — pin aggregation to 'none'
+  const kind = isTimeSeriesKind(timeSeriesType) ? timeSeriesType : undefined;
+
+  // An aggregation the series' type refuses (Average on a string series, say) would
+  // fail the query, so it gives way to that type's default.
   useEffect(() => {
-    if (timeSeriesType === 'string' && query.aggregation !== 'none') {
-      onQueryChange({ aggregation: 'none' });
+    if (kind && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
+      onQueryChange({ aggregation: defaultAggregationFor(kind) });
     }
-  }, [timeSeriesType, query.aggregation, onQueryChange]);
+  }, [kind, query.aggregation, onQueryChange]);
 
   const handleViewChange = (view: InvolvedView | null) => {
     onQueryChange({
@@ -150,8 +159,10 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           externalId: selected.externalId,
         } : undefined,
       },
-      // String timeseries don't support aggregations — pin to 'none' on selection
-      ...(type === 'string' ? { aggregation: 'none' } : {}),
+      // A string series starts on its raw values, like it always did.
+      ...(isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
+        ? { aggregation: defaultAggregationFor(type) }
+        : {}),
     });
   };
 
@@ -286,6 +297,17 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               onError={setError}
             />
           </InlineField>
+          {/* The type decides which aggregations are offered below. */}
+          {cogniteTimeSeries.instanceId && kind && (
+            <InlineField transparent style={{ alignItems: 'center' }}>
+              <Badge
+                text={kind}
+                color={getTypeBadgeColor(kind)}
+                tooltip="The type of the selected time series. It decides which aggregations are offered."
+                data-testid={`cognite-timeseries-type-${query.refId}`}
+              />
+            </InlineField>
+          )}
         </InlineFieldRow>
 
         {cogniteTimeSeries.instanceId && isStateType && (
@@ -385,7 +407,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             {!query.latestValue && (
               <CommonEditors
                 {...{ query, onQueryChange, intervalMs }}
-                hideAggregation={timeSeriesType === 'string'}
+                aggregateOptions={aggregateGroupsFor(kind)}
+                hideLabel
               />
             )}
             {!query.latestValue && query.aggregation && query.aggregation !== 'none' && (
@@ -401,6 +424,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
             )}
           </>
         )}
+        {/* Last, as on the GraphQL tab: it names whatever the rows above produce. */}
+        <LabelRow {...{ onQueryChange, query }} />
 
         {error && (
           <Alert title="Information" severity="info">
@@ -408,9 +433,6 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           </Alert>
         )}
       </div>
-      {query.latestValue && !isStateType && (
-        <LabelEditor {...{ onQueryChange, query }} />
-      )}
     </div>
   );
 };

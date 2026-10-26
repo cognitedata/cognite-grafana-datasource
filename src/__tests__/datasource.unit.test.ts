@@ -249,3 +249,26 @@ describe('formQueryForItems: auto granularity steps', () => {
     expect(request.items[0].fill).toEqual({ limit: '2h' });
   });
 });
+
+describe('formQueryForItems: unit conversion by series type', () => {
+  const queryOptions = { range: { from: dateTime(0), to: dateTime(3000) }, intervalMs: 1000, timeZone: 'UTC' } as any;
+  const target = {
+    ...defaultCogniteQuery,
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'none',
+    cogniteTimeSeries: { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1', targetUnit: 'temperature:deg_f' },
+  } as CogniteQuery;
+  const item = { instanceId: { space: 'sp', externalId: 'ts' } };
+
+  it('converts numeric series', () => {
+    const request = formQueryForItems({ items: [item], type: 'data', target, kind: 'numeric' }, queryOptions);
+    expect(request.items[0].targetUnit).toBe('temperature:deg_f');
+  });
+
+  it('leaves a target unit saved on a string or state query out of the request', () => {
+    for (const kind of ['string', 'state'] as const) {
+      const request = formQueryForItems({ items: [item], type: 'data', target, kind }, queryOptions);
+      expect(request.items[0]).not.toHaveProperty('targetUnit');
+    }
+  });
+});

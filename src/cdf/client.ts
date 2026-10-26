@@ -58,12 +58,14 @@ import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
 import { FillResolution, granularityToMs, resolveFillLimit } from './gapFill';
 import { resolveDatapointsGranularity } from './granularity';
+import { isDurationAggregate, returnsSeriesValues } from './aggregates';
+import { stringSeriesFrame } from './typedFrames';
 
 const { Asset, Custom, Timeseries } = Tab;
 const UNITS_SPACE = 'cdf_cdm_units';
 
 export function formQueryForItems(
-  { items, type, target }: QueriesDataItem,
+  { items, type, target, kind }: QueriesDataItem,
   { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
 ): CDFDataQueryRequest {
   const { aggregation, granularity, cogniteTimeSeries } = target;
@@ -93,8 +95,9 @@ export function formQueryForItems(
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
       
-      // Add targetUnit to items if specified for CogniteTimeSeries queries
-      const targetUnit = cogniteTimeSeries?.targetUnit;
+      // Add targetUnit to items if specified for CogniteTimeSeries queries. Only
+      // numeric series convert: CDF refuses a target unit on any other type.
+      const targetUnit = !kind || kind === 'numeric' ? cogniteTimeSeries?.targetUnit : undefined;
       const itemsWithUnit = targetUnit
         ? items.map((item) => item.instanceId ? { ...item, targetUnit } : item)
         : items;
@@ -341,23 +344,33 @@ function generateTargetTsLabel(
 export function reduceTimeseries(
   metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
-): TimeSeries[] {
-  const responseTimeseries: TimeSeries[] = [];
+): Array<TimeSeries | DataFrame> {
+  const responseTimeseries: Array<TimeSeries | DataFrame> = [];
 
   metaResponses.forEach(({ result, metadata }) => {
-    const { labels, type } = metadata;
+    const { labels, type, kind } = metadata;
     const { aggregates, granularity } = result.config.data;
+    const aggregate = aggregates?.[0];
     const { items } = result.data;
 
-    const series = items.map(({ datapoints, externalId, id }, i) => {
+    const series = items.map(({ datapoints, externalId, id }, i): TimeSeries | DataFrame => {
       const label = labels && labels[i];
       const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
         type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end, granularity);
+      // A string series' own values (raw, latest, interpolated) are text.
+      if (kind === 'string' && returnsSeriesValues(aggregate)) {
+        const key = aggregate && aggregate !== 'none' ? aggregate : 'value';
+        return stringSeriesFrame(
+          resTarget,
+          dpsInRange.map((dp) => ({ timestamp: dp.timestamp, value: dp[key] ?? null }))
+        );
+      }
       const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
       return {
         target: resTarget,
         datapoints: rawDatapoints,
+        ...(isDurationAggregate(aggregate) ? { unit: 'ms' } : {}),
       };
     });
 
@@ -767,13 +780,16 @@ export interface TimeSeriesProperties {
 
 export async function getTimeSeriesProperties(
   connector: Connector,
-  instanceId: { space: string; externalId: string }
+  instanceId: { space: string; externalId: string },
+  { rethrow = false }: { rethrow?: boolean } = {}
 ): Promise<TimeSeriesProperties> {
   try {
     const instances = await retryOnRateLimit(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
+        // A series' type, unit and state set rarely change.
+        cacheTime: CacheTime.ResourceByIds,
         data: {
           sources: [{
             source: {
@@ -810,6 +826,9 @@ export async function getTimeSeriesProperties(
       return { unit, type };
     }
   } catch (err) {
+    if (rethrow) {
+      throw err;
+    }
     console.warn('Failed to fetch timeseries properties:', err);
   }
   return {};
