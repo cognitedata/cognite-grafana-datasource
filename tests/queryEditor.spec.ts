@@ -47,8 +47,8 @@ async function setupCogniteTimeSeriesPanel({
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
-  // Wait for Time Series tab to appear after datasource selection
-  const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+  // Wait for Time series tab to appear after datasource selection
+  const timeSeriesTab = editorRow.getByText('Time series', { exact: true }).first();
   await expect(timeSeriesTab).toBeVisible();
   await timeSeriesTab.click();
 
@@ -462,7 +462,7 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
   const unitLabel = editorRow.getByText(/Unit:/i);
   await expect(unitLabel).toBeVisible({ timeout: 10000 });
 
-  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  const targetUnitField = editorRow.locator('label:has-text("Target unit")');
   await expect(targetUnitField).toBeVisible();
 
   const targetUnitInput = targetUnitField.locator('..').locator('input').first();
@@ -498,7 +498,7 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
   await expect(dropdownOption).not.toBeVisible();
 
   // Target Unit and Unit label should NOT appear for timeseries without units
-  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  const targetUnitField = editorRow.locator('label:has-text("Target unit")');
   await expect(targetUnitField).not.toBeVisible();
 
   const unitLabel = editorRow.getByText(/Unit:/i);
@@ -526,8 +526,8 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const queryLetter = String.fromCharCode(65 + index);
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
-    // Wait for Time Series tab and click it
-    const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+    // Wait for Time series tab and click it
+    const timeSeriesTab = editorRow.getByText('Time series', { exact: true }).first();
     await expect(timeSeriesTab).toBeVisible();
     await timeSeriesTab.click();
 
@@ -545,6 +545,8 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const labelInput = editorRow.locator(`input[id="label-${queryLetter}"]`);
     await labelInput.clear();
     await labelInput.fill(`TST ${expectedLabels[index]}`);
+    // The label is applied when the field loses focus.
+    await labelInput.blur();
   }
 
   await waitForQueriesToFinish(page);
@@ -582,13 +584,13 @@ test('"CogniteTimeSeries" activities toggle appears when timeseries selected', a
   });
 
   // Activities toggle should NOT be visible yet (no timeseries selected)
-  const activitiesToggleBefore = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggleBefore = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggleBefore).not.toBeVisible();
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Now the Activities toggle should appear
-  const activitiesToggleAfter = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggleAfter = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggleAfter).toBeVisible({ timeout: 5000 });
 });
 
@@ -605,16 +607,16 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await expect(activitiesToggle).toBeChecked();
 
   // Wait for activity configuration UI to render
-  const activityViewLabel = editorRow.getByText('View').nth(1);
+  const activityViewLabel = editorRow.getByText('Activity view', { exact: true });
   await expect(activityViewLabel).toBeVisible({ timeout: 5000 });
 
-  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  const scheduledToggle = editorRow.getByRole('radio', { name: 'Scheduled' });
   await expect(scheduledToggle).toBeVisible();
 });
 
@@ -631,19 +633,14 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
-  // Wait for the second View field (activity view) to appear
-  const activityViewFields = editorRow.locator('label:has-text("View")');
-  await expect(activityViewFields.nth(1)).toBeVisible({ timeout: 5000 });
-
-  const activityViewCount = await activityViewFields.count();
-  expect(activityViewCount).toBeGreaterThanOrEqual(2);
-
-  const activityViewInput = activityViewFields.nth(1).locator('..').locator('input').first();
+  // The activity view field appears once the overlay is on.
+  const activityViewInput = editorRow.locator('#activity-view-A');
+  await expect(activityViewInput).toBeVisible({ timeout: 5000 });
   await activityViewInput.click();
 
   const activityViewOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteActivity.*cdf_cdm/i });
@@ -667,19 +664,19 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
-  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  const scheduledToggle = editorRow.getByRole('radio', { name: 'Scheduled' });
   await expect(scheduledToggle).toBeVisible({ timeout: 5000 });
 
   await expect(scheduledToggle).not.toBeChecked();
 
-  await scheduledToggle.check({ force: true });
+  await scheduledToggle.click();
   await expect(scheduledToggle).toBeChecked();
 
-  await scheduledToggle.uncheck({ force: true });
+  await editorRow.getByRole('radio', { name: 'Actual' }).click();
   await expect(scheduledToggle).not.toBeChecked();
 });

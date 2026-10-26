@@ -6,7 +6,7 @@ export const ASSET_CENTRIC_RETIREMENT_DATE = 'December 31, 2027';
 export const DEPRECATED_DOCS_URL = 'https://docs.cognite.com/cdf/deprecated';
 export const DEPRECATED_CHIP_TEXT = 'Deprecated';
 
-const DEFAULT_REPLACEMENT = 'Use the Core Data Model features, such as the Time Series and GraphQL tabs, instead.';
+const DEFAULT_REPLACEMENT = 'Use the Core Data Model features, such as the Time series and GraphQL tabs, instead.';
 
 interface DeprecationNoticeProps {
   /** What to use instead, as a full sentence. Defaults to the Core Data Model tabs. */

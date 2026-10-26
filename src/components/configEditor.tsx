@@ -349,7 +349,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                   <FeatureToggleRow
                     id="enable-cognite-timeseries"
                     feature="enableCogniteTimeSeries"
-                    label="Time Series"
+                    label="Time series"
                     value={enableCogniteTimeSeries}
                     onChange={onJsonBoolValueChange("enableCogniteTimeSeries")}
                   />

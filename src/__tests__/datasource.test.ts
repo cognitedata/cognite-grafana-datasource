@@ -848,7 +848,7 @@ describe('custom query granularity less then a second', () => {
   });
 });
 
-describe('Given a Time Series (data modeling) query with gap filling', () => {
+describe('Given a Time series (data modeling) query with gap filling', () => {
   const fetcher = { fetch: jest.fn() };
   const ds = getMockedDataSource(fetcher);
   const target = (gapFill: CogniteQuery['gapFill'], granularity = ''): QueryTargetLike => ({
@@ -910,7 +910,7 @@ describe('Given a Time Series (data modeling) query with gap filling', () => {
   });
 });
 
-describe('Given a string Time Series (data modeling) query', () => {
+describe('Given a string Time series (data modeling) query', () => {
   const fetcher = { fetch: jest.fn() };
   const ds = getMockedDataSource(fetcher);
   const instanceId = { space: 'grafana-ts-fixtures', externalId: 'batch_phase' };

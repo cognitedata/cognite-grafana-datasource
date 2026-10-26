@@ -76,16 +76,62 @@ const KIND_GROUP_LABELS: Record<TimeSeriesKind, string> = { numeric: 'Numeric', 
 /**
  * The editor's options for a series of this type, grouped: None, then the aggregates
  * only this type has, then those every type has. Numeric when the type is not known.
+ * Without None for an editor that offers raw data points as a mode of its own.
  */
-export function aggregateGroupsFor(kind: TimeSeriesKind = 'numeric'): Array<SelectableValue<string>> {
+export function aggregateGroupsFor(
+  kind: TimeSeriesKind = 'numeric',
+  { withNone = true }: { withNone?: boolean } = {}
+): Array<SelectableValue<string>> {
   const options = AGGREGATES_BY_KIND[kind];
   const own = options.filter(({ value }) => value !== 'none' && !COMMON_AGGREGATES.has(value));
   const common = options.filter(({ value }) => COMMON_AGGREGATES.has(value));
   return [
-    ...options.filter(({ value }) => value === 'none'),
+    ...(withNone ? options.filter(({ value }) => value === 'none') : []),
     ...(own.length ? [{ label: KIND_GROUP_LABELS[kind], options: own }] : []),
     ...(common.length ? [{ label: 'Common', options: common }] : []),
   ];
+}
+
+/** How a CDM tab reads data points: aggregated per interval, as stored, or the latest only. */
+export type DatapointsMode = 'aggregate' | 'raw' | 'latest';
+
+type DatapointsQuery = { aggregation?: string; latestValue?: boolean };
+
+export const datapointsModeOf = ({ aggregation, latestValue }: DatapointsQuery): DatapointsMode =>
+  latestValue ? 'latest' : !aggregation || aggregation === 'none' ? 'raw' : 'aggregate';
+
+/** Whether a series of this type can be aggregated at all. */
+export const canAggregate = (kind: TimeSeriesKind = 'numeric'): boolean =>
+  AGGREGATES_BY_KIND[kind].some(({ value }) => value !== 'none');
+
+/** The first aggregate the type's list offers: what Aggregate mode starts on. */
+export const firstAggregateFor = (kind: TimeSeriesKind = 'numeric'): string =>
+  AGGREGATES_BY_KIND[kind].find(({ value }) => value !== 'none')?.value ?? 'none';
+
+/**
+ * The query fields a mode sets. Aggregate keeps an aggregation the type accepts, else
+ * the one the query had before Raw (`previous`), else the type's first; the saved
+ * aggregation is left alone by Latest, so switching back finds it again.
+ */
+export function datapointsModePatch(
+  mode: DatapointsMode,
+  { aggregation, latestValue }: DatapointsQuery,
+  kind?: TimeSeriesKind,
+  previous?: string
+): DatapointsQuery {
+  if (mode === 'latest') {
+    return { latestValue: true };
+  }
+  const off = latestValue ? { latestValue: false } : {};
+  if (mode === 'raw') {
+    return { ...off, aggregation: 'none' };
+  }
+  const usable = (candidate?: string): candidate is string =>
+    !!candidate && candidate !== 'none' && isAggregateAllowed(kind ?? 'numeric', candidate);
+  return {
+    ...off,
+    aggregation: usable(aggregation) ? aggregation : usable(previous) ? previous : firstAggregateFor(kind),
+  };
 }
 
 /** The editor's options for a series of this type; numeric when the type is not known yet. */

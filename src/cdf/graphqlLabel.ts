@@ -8,7 +8,7 @@ import { LABEL_TOKEN, renderLabelToken, resolvePath } from './labelTokens';
  * win, so `{{name}}` is the series' own name, while fields it does not carry, or
  * carries as null -- `{{name}}` on a parent asset, say -- resolve against the row.
  *
- * Unresolved tokens follow the same rules as the Time Series tab's labels (see
+ * Unresolved tokens follow the same rules as the Time series tab's labels (see
  * `renderLabelToken`), so `{{nope}}` reads `:nope` on either tab.
  *
  * An empty result means the template produced nothing useful, and the caller keeps

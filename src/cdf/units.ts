@@ -67,7 +67,7 @@ export function unitSymbol(
  * Appends the unit to a field name, e.g. "ActiveDuration (day)".
  *
  * The unit rides on the column/series label rather than `field.config.unit` so the
- * values stay bare numbers, matching how the Time Series tab labels its series.
+ * values stay bare numbers, matching how the Time series tab labels its series.
  */
 export function withUnitSuffix(
   name: string,

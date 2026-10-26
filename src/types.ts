@@ -30,7 +30,7 @@ export enum Tab {
 
 export const TabTitles = {
   [Tab.Timeseries]: "Time series search",
-  [Tab.CogniteTimeSeriesSearch]: "Time Series",
+  [Tab.CogniteTimeSeriesSearch]: "Time series",
   [Tab.Asset]: "Time series from asset",
   [Tab.Custom]: "Time series custom query",
   [Tab.Event]: "Events",
