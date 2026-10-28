@@ -62,6 +62,13 @@ describe('CogniteTimeSeriesSearchTab aggregation by series type', () => {
     expect(onQueryChange).not.toHaveBeenCalledWith(expect.objectContaining({ aggregation: expect.anything() }));
   });
 
+  it('keeps the saved aggregation while on Latest, whatever the type', async () => {
+    const onQueryChange = renderTab('string', 'max', { latestValue: true });
+    // The chip renders once the type lookup has answered; the reset effect has run by then.
+    await screen.findByTestId('cognite-timeseries-type-A');
+    expect(onQueryChange).not.toHaveBeenCalledWith(expect.objectContaining({ aggregation: expect.anything() }));
+  });
+
   it('shows the selected series type as a chip', async () => {
     renderTab('string', 'none');
     expect((await screen.findByTestId('cognite-timeseries-type-A')).textContent).toBe('string');

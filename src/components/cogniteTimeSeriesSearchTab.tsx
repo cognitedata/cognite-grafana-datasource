@@ -180,12 +180,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const kind = isTimeSeriesKind(timeSeriesType) ? timeSeriesType : undefined;
 
   // An aggregation the series' type refuses (Average on a string series, say) would
-  // fail the query, so it gives way to that type's default.
+  // fail the query, so it gives way to that type's default. Latest reads no aggregation,
+  // so the saved one is left alone there for coming back to Aggregate.
   useEffect(() => {
-    if (kind && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
+    if (kind && !query.latestValue && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
       onQueryChange({ aggregation: defaultAggregationFor(kind) });
     }
-  }, [kind, query.aggregation, onQueryChange]);
+  }, [kind, query.aggregation, query.latestValue, onQueryChange]);
 
   const handleViewChange = (view: InvolvedView | null) => {
     onQueryChange({
@@ -220,7 +221,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
         } : undefined,
       },
       // A string series starts on its raw values, like it always did.
-      ...(isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
+      ...(!query.latestValue && isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
         ? { aggregation: defaultAggregationFor(type) }
         : {}),
     });
