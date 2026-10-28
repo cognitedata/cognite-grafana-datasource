@@ -66,7 +66,7 @@ describe('QueryEditor Utility Functions', () => {
       expect(mockDataSource.connector.isRecordsEnabled).toHaveBeenCalled();
     });
 
-    it('should gate Activities tab on enableCogniteActivities independent of Time Series', () => {
+    it('should gate Activities tab on enableCogniteActivities independent of Time series', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
       mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
 

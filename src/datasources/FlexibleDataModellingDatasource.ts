@@ -84,7 +84,7 @@ export class FlexibleDataModellingDatasource {
     const schemaTsKeys = query.schemaTsKeys ?? [];
     // An unset label falls back to the name, so a series is never unnamed. A
     // mistyped field renders as `:field` (see renderLabelToken), same as the
-    // Time Series tab, so the typo shows instead of a silent fallback.
+    // Time series tab, so the typo shows instead of a silent fallback.
     const labelFor = (series: unknown, row?: unknown) =>
       interpolateGraphqlLabel(query.label ?? '', series, row) ||
       readScalarPath(series, 'name') ||

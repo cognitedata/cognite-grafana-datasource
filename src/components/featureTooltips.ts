@@ -16,7 +16,7 @@ export const FEATURE_TOOLTIPS: Record<FeatureKey, string> = {
     `Master toggle for asset-centric features. When disabled, all asset-centric features will be hidden. Enabling this will disable CDM features. ${DEPRECATED}`,
 
   enableCogniteTimeSeries:
-    `Enable the Time Series tab to browse and select time series instances from the Core Data Model (CogniteTimeSeries type).`,
+    `Enable the Time series tab to browse and select time series instances from the Core Data Model (CogniteTimeSeries type).`,
   enableCogniteActivities:
     `Enable the Activities tab to query CogniteActivity instances from the Core Data Model.`,
   enableRecords:
@@ -25,11 +25,11 @@ export const FEATURE_TOOLTIPS: Record<FeatureKey, string> = {
     `Enable the GraphQL tab to query custom data models in CDF using GraphQL. Supports listing, searching, and aggregating data model instances.`,
 
   enableTimeseriesSearch:
-    `Enable the Time series search tab to find and select time series by name, description, or metadata. ${DEPRECATED} Use the CDM Time Series tab instead.`,
+    `Enable the Time series search tab to find and select time series by name, description, or metadata. ${DEPRECATED} Use the CDM Time series tab instead.`,
   enableTimeseriesFromAsset:
     `Enable the Time series from asset tab to browse the asset hierarchy and select time series linked to specific assets. ${DEPRECATED} Use the GraphQL tab to plot the time series of an asset instead.`,
   enableTimeseriesCustomQuery:
-    `Enable the Custom query tab to retrieve time series by external ID, with support for synthetic time series expressions and custom aggregations. ${DEPRECATED} Use the CDM Time Series or GraphQL tab instead.`,
+    `Enable the Custom query tab to retrieve time series by external ID, with support for synthetic time series expressions and custom aggregations. ${DEPRECATED} Use the CDM Time series or GraphQL tab instead.`,
   enableEvents:
     `Enable the Events tab to query CDF events. Events represent time-bounded occurrences (e.g. alarms, maintenance activities) linked to assets. ${DEPRECATED} Use the Records or Activities tab instead.`,
   enableEventsAdvancedFiltering:

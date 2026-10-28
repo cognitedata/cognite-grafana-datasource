@@ -43,7 +43,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
     await expect(editorRow.getByText('Deprecated', { exact: true }).first()).toBeVisible();
     await expect(editorRow.getByText('Asset-centric features are deprecated')).toBeVisible();
 
-    await expect(editorRow.getByText('Time Series', { exact: true })).not.toBeVisible();
+    await expect(editorRow.getByText('Time series', { exact: true }).first()).not.toBeVisible();
     await expect(editorRow.getByText('GraphQL', { exact: true })).not.toBeVisible();
     await expect(editorRow.getByText(/^Records/)).not.toBeVisible();
   });
@@ -62,7 +62,7 @@ test.describe('Feature Flags - Tab Visibility', () => {
 
     const editorRow = panelEditPage.getQueryEditorRow("A");
 
-    const cogniteTimeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+    const cogniteTimeSeriesTab = editorRow.getByText('Time series', { exact: true }).first();
     await expect(cogniteTimeSeriesTab).toBeVisible();
     await expect(editorRow.getByText('GraphQL', { exact: true })).toBeVisible();
     await expect(editorRow.getByText(/^Records/)).toBeVisible();

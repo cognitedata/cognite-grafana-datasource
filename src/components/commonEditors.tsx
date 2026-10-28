@@ -1,9 +1,10 @@
-import React, { ChangeEvent } from 'react';
-import { InlineField, InlineSegmentGroup, InlineFieldRow, Input, Select } from '@grafana/ui';
+import React from 'react';
+import { InlineField, InlineSegmentGroup, InlineFieldRow, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
 import { NUMERIC_AGGREGATES } from '../cdf/aggregates';
 import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
+import { BlurInput } from './records/BlurInput';
 
 /** Shared with the GraphQL tab's own options row. */
 export const GRANULARITY_TOOLTIP =
@@ -62,7 +63,7 @@ const AggregationEditor = (
   );
 };
 
-const LABEL_TOOLTIP =
+export const LABEL_TOOLTIP =
   'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.';
 
 export const LabelEditor = (
@@ -76,12 +77,13 @@ export const LabelEditor = (
         labelWidth={labelWidth}
         tooltip={tooltip}
       >
-        <Input
+        {/* Committed on blur: every change to the query re-runs it. */}
+        <BlurInput
           id={`label-${query.refId}`}
-          value={query.label}
+          value={query.label ?? ''}
           width={width}
           placeholder="default"
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ label: e.target.value })}
+          onCommit={(label) => onQueryChange({ label })}
         />
       </InlineField>
     </InlineSegmentGroup>

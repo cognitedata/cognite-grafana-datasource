@@ -12,14 +12,14 @@ describe('DeprecationNotice', () => {
     render(<DeprecationNotice />);
     expect(screen.getByText('Asset-centric features are deprecated')).toBeTruthy();
     expect(screen.getByText(new RegExp(ASSET_CENTRIC_RETIREMENT_DATE))).toBeTruthy();
-    expect(screen.getByText(/Time Series and GraphQL tabs/)).toBeTruthy();
+    expect(screen.getByText(/Time series and GraphQL tabs/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Learn more' }).getAttribute('href')).toBe(DEPRECATED_DOCS_URL);
   });
 
   it('names the replacement it is given', () => {
     render(<DeprecationNotice replacement="Use the Records tab instead." />);
     expect(screen.getByText(/Use the Records tab instead\./)).toBeTruthy();
-    expect(screen.queryByText(/Time Series and GraphQL tabs/)).toBeNull();
+    expect(screen.queryByText(/Time series and GraphQL tabs/)).toBeNull();
   });
 });
 

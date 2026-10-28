@@ -1,7 +1,11 @@
 import {
   aggregateGroupsFor,
   aggregateOptionsFor,
+  canAggregate,
+  datapointsModeOf,
+  datapointsModePatch,
   defaultAggregationFor,
+  firstAggregateFor,
   isAggregateAllowed,
   isDurationAggregate,
   returnsSeriesValues,
@@ -73,9 +77,63 @@ describe('aggregateGroupsFor', () => {
     expect(shape('string')).toEqual(['none']);
   });
 
+  it('leaves None out for an editor that offers raw data points as a mode', () => {
+    expect(shape('numeric')[0]).toBe('none');
+    expect(
+      aggregateGroupsFor('numeric', { withNone: false }).map((entry) => entry.label)
+    ).toEqual(['Numeric', 'Common']);
+  });
+
   it('describes every aggregate', () => {
     for (const kind of ['numeric', 'string', 'state'] as const) {
       expect(aggregateOptionsFor(kind).filter((option) => !option.description)).toEqual([]);
+    }
+  });
+});
+
+describe('data points mode', () => {
+  it('reads Latest, Raw or Aggregate off the saved query', () => {
+    expect(datapointsModeOf({ aggregation: 'average', latestValue: true })).toBe('latest');
+    expect(datapointsModeOf({ aggregation: 'none' })).toBe('raw');
+    expect(datapointsModeOf({})).toBe('raw');
+    expect(datapointsModeOf({ aggregation: 'count', latestValue: false })).toBe('aggregate');
+  });
+
+  it('Latest leaves the aggregation alone, so switching back finds it', () => {
+    expect(datapointsModePatch('latest', { aggregation: 'max' }, 'numeric')).toEqual({ latestValue: true });
+    expect(datapointsModePatch('aggregate', { aggregation: 'max', latestValue: true }, 'numeric')).toEqual({
+      latestValue: false,
+      aggregation: 'max',
+    });
+  });
+
+  it('Raw sets None, and Aggregate starts on the first aggregate of the type', () => {
+    expect(datapointsModePatch('raw', { aggregation: 'max' }, 'numeric')).toEqual({ aggregation: 'none' });
+    expect(datapointsModePatch('aggregate', { aggregation: 'none' }, 'numeric')).toEqual({ aggregation: 'average' });
+    expect(datapointsModePatch('aggregate', {}, undefined)).toEqual({ aggregation: 'average' });
+    // An aggregation the type refuses gives way too.
+    expect(datapointsModePatch('aggregate', { aggregation: 'stateCount', latestValue: true }, 'numeric')).toEqual({
+      latestValue: false,
+      aggregation: 'average',
+    });
+  });
+
+  it('Aggregate comes back to the aggregate the query had before Raw', () => {
+    expect(datapointsModePatch('aggregate', { aggregation: 'none' }, 'numeric', 'max')).toEqual({ aggregation: 'max' });
+    // Unless the type refuses it.
+    expect(datapointsModePatch('aggregate', { aggregation: 'none' }, 'numeric', 'stateCount')).toEqual({
+      aggregation: 'average',
+    });
+  });
+
+  it('starts numeric series on Average', () => {
+    expect(firstAggregateFor('numeric')).toBe('average');
+  });
+
+  it('has nothing to aggregate string and state series with, which are read raw only', () => {
+    for (const kind of ['string', 'state'] as const) {
+      expect(canAggregate(kind)).toBe(false);
+      expect(firstAggregateFor(kind)).toBe('none');
     }
   });
 });

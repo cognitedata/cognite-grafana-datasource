@@ -1,10 +1,8 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { EditorField, EditorFieldGroup, EditorRow } from '@grafana/plugin-ui';
-import { Input, Select } from '@grafana/ui';
+import React from 'react';
+import { EditorFieldGroup, EditorRow } from '@grafana/plugin-ui';
 import { CogniteQuery } from '../../types';
-import { GRANULARITY_TOOLTIP, aggregateOptions } from '../commonEditors';
-import { GAP_FILL_TOOLTIP, GapFillControls } from '../common/GapFillEditor';
-import { GranularityPicker, granularityInputId } from '../common/GranularityPicker';
+import { DatapointsFields } from '../common/DatapointsFields';
+import { LabelField } from '../common/LabelField';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -27,11 +25,8 @@ export const labelTooltip = (labelFields: string[]): string =>
     : LABEL_TOOLTIP;
 
 /**
- * How the returned series are aggregated and named.
- *
- * The same three controls the other tabs get from `CommonEditors`, rebuilt on the
- * editor-row primitives this tab uses so they share one row instead of sitting in a
- * second, differently styled one.
+ * How the GraphQL tab reads the numeric series its query returns, and how they are
+ * named. Laid out in rows like the Time series tab: the data points, then the label.
  */
 export const FlexibleDataModellingOptions = ({
   query,
@@ -40,68 +35,20 @@ export const FlexibleDataModellingOptions = ({
   onQueryChange,
   onLabelChange,
   intervalMs,
-}: FlexibleDataModellingOptionsProps) => {
-  const aggregated = !!query.aggregation && query.aggregation !== 'none';
-
-  // Typing is held locally and committed on blur. Committing per keystroke would
-  // re-run the whole query -- a GraphQL request plus a datapoints fetch per series --
-  // for every character of a label template.
-  const [draftLabel, setDraftLabel] = useState(label ?? '');
-
-  useEffect(() => setDraftLabel(label ?? ''), [label]);
-
-  return (
+}: FlexibleDataModellingOptionsProps) => (
+  <>
+    <EditorRow>
+      <DatapointsFields query={query} kind="numeric" intervalMs={intervalMs} onQueryChange={onQueryChange} />
+    </EditorRow>
     <EditorRow>
       <EditorFieldGroup>
-        <EditorField label="Aggregation" tooltip="How each series is aggregated over time.">
-          <Select
-            inputId={`aggregation-${query.refId}`}
-            width={24}
-            options={aggregateOptions}
-            value={query.aggregation}
-            menuPosition="fixed"
-            onChange={({ value }) => onQueryChange({ aggregation: value })}
-          />
-        </EditorField>
-        {aggregated && (
-          <EditorField
-            label="Granularity"
-            optional
-            tooltip={GRANULARITY_TOOLTIP}
-            htmlFor={granularityInputId(query.refId, query.granularity)}
-          >
-            <GranularityPicker
-              refId={query.refId}
-              value={query.granularity}
-              intervalMs={intervalMs}
-              onChange={(granularity) => onQueryChange({ granularity })}
-            />
-          </EditorField>
-        )}
-        {aggregated && (
-          <EditorField label="Gap filling" optional tooltip={GAP_FILL_TOOLTIP}>
-            <GapFillControls
-              query={query}
-              intervalMs={intervalMs}
-              onChange={(gapFill) => onQueryChange({ gapFill })}
-            />
-          </EditorField>
-        )}
-        <EditorField
-          label="Label"
-          optional
+        <LabelField
+          id={`fdm-label-${query.refId}`}
+          value={label}
           tooltip={labelTooltip(labelFields)}
-        >
-          <Input
-            id={`fdm-label-${query.refId}`}
-            width={44}
-            value={draftLabel}
-            placeholder="{{name}}"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftLabel(e.target.value)}
-            onBlur={() => draftLabel !== (label ?? '') && onLabelChange(draftLabel)}
-          />
-        </EditorField>
+          onCommit={onLabelChange}
+        />
       </EditorFieldGroup>
     </EditorRow>
-  );
-};
+  </>
+);

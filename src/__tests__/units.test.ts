@@ -18,7 +18,7 @@ const index = new Map<string, CogniteUnit>([
 
 describe('unit display', () => {
   it('prefers the description over the terse catalog name', () => {
-    // The Time Series tab already read units this way; the Records tab now matches
+    // The Time series tab already read units this way; the Records tab now matches
     expect(unitDisplayName('time:sec', index)).toBe('second (s)');
   });
 

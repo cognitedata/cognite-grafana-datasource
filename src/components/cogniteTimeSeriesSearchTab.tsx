@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Select, Alert, Badge, BadgeColor, InlineFieldRow, InlineField, InlineSwitch } from '@grafana/ui';
+import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { Select, Alert, Badge, BadgeColor, InlineSwitch, RadioButtonGroup, Stack } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SelectedProps } from '../types';
+import { CogniteActivityQuery, defaultCogniteActivityQuery, SelectedProps } from '../types';
 import { getCogniteUnitIndex, getTimeSeriesProperties, stringifyError } from '../cdf/client';
 import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/units';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
-import { CommonEditors, LabelRow } from './commonEditors';
+import { LABEL_TOOLTIP } from './commonEditors';
 import { Connector } from '../connector';
-import {
-  aggregateGroupsFor,
-  defaultAggregationFor,
-  isAggregateAllowed,
-  isTimeSeriesKind,
-} from '../cdf/aggregates';
-import { GAP_FILL_TOOLTIP, GapFillControls } from './common/GapFillEditor';
+import { defaultAggregationFor, isAggregateAllowed, isTimeSeriesKind } from '../cdf/aggregates';
+import { DatapointsFields } from './common/DatapointsFields';
+import { LabelField } from './common/LabelField';
 
 interface CogniteTimeSeriesSearchTabProps extends SelectedProps {
   connector: Connector;
@@ -32,23 +29,83 @@ const TYPE_BADGE_COLORS: Record<string, BadgeColor> = {
 export const getTypeBadgeColor = (type: string): BadgeColor =>
   TYPE_BADGE_COLORS[type] ?? 'darkgrey';
 
-const LatestValueCheckbox = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+type ActivityTimes = 'actual' | 'scheduled';
+
+const ACTIVITY_TIMES_OPTIONS: Array<{ label: string; value: ActivityTimes; description: string }> = [
+  { label: 'Actual', value: 'actual', description: 'startTime and endTime' },
+  { label: 'Scheduled', value: 'scheduled', description: 'scheduledStartTime and scheduledEndTime' },
+];
+
+interface ActivitiesRowProps {
+  refId: string;
+  connector: Connector;
+  activityQuery?: CogniteActivityQuery;
+  onChange: (activityQuery: CogniteActivityQuery) => void;
+}
+
+/**
+ * The activity overlay: a switch that gates the view the activities come from and
+ * which of their times are drawn.
+ */
+const ActivitiesRow = ({ refId, connector, activityQuery, onChange }: ActivitiesRowProps) => {
+  const enabled = activityQuery?.enabled || false;
+  // A query saved before the overlay existed has no activity query yet.
+  const patch = (fields: Partial<CogniteActivityQuery>) =>
+    onChange({ ...defaultCogniteActivityQuery, ...activityQuery, ...fields });
   return (
-    <InlineFieldRow>
-      <InlineField
-        label="Latest value"
-        labelWidth={14}
-        tooltip="Fetch the latest data point in the provided time range"
-      >
-        <InlineSwitch
-          label='Latest value'
-          id={`latest-value-${query.refId}`}
-          value={query.latestValue}
-          onChange={({ currentTarget }) => onQueryChange({ latestValue: currentTarget.checked })}
-        />
-      </InlineField>
-    </InlineFieldRow>
+    <EditorRow>
+      <EditorFieldGroup>
+        <EditorField
+          label="Activities"
+          tooltip="Overlay activities from a CogniteActivity view on the time series chart."
+          htmlFor={`overlay-activities-${refId}`}
+        >
+          <InlineSwitch
+            id={`overlay-activities-${refId}`}
+            label="Activities"
+            value={enabled}
+            onChange={({ currentTarget }) => patch({ enabled: currentTarget.checked })}
+          />
+        </EditorField>
+        {enabled && (
+          <>
+            <EditorField
+              label="Activity view"
+              tooltip="The CogniteActivity view the activities are read from."
+              htmlFor={`activity-view-${refId}`}
+            >
+              <ViewPicker
+                inputId={`activity-view-${refId}`}
+                connector={connector}
+                container="CogniteActivity"
+                value={activityQuery}
+                onChange={(view: InvolvedView | null) =>
+                  patch({
+                    space: view?.space || 'cdf_cdm',
+                    externalId: view?.externalId || 'CogniteActivity',
+                    version: view?.version || 'v1',
+                  })
+                }
+                placeholder="Select a CogniteActivity view"
+                isClearable
+                width={40}
+              />
+            </EditorField>
+            <EditorField
+              label="Times"
+              tooltip="Which times of each activity are drawn: the actual start and end, or the scheduled ones."
+            >
+              <RadioButtonGroup
+                options={ACTIVITY_TIMES_OPTIONS}
+                value={activityQuery?.useScheduledTime ? 'scheduled' : 'actual'}
+                onChange={(next) => patch({ useScheduledTime: next === 'scheduled' })}
+                aria-label="Activity times"
+              />
+            </EditorField>
+          </>
+        )}
+      </EditorFieldGroup>
+    </EditorRow>
   );
 };
 
@@ -63,6 +120,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [timeSeriesUnit, setTimeSeriesUnit] = useState<string | undefined>(undefined);
   const [timeSeriesType, setTimeSeriesType] = useState<string | undefined>(undefined);
   const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingType, setLoadingType] = useState(false);
 
   const { cogniteTimeSeries, cogniteActivityQuery } = query;
 
@@ -98,6 +156,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       const instanceId = cogniteTimeSeries.instanceId;
       if (instanceId?.space && instanceId?.externalId) {
         setLoadingUnits(true);
+        setLoadingType(true);
         try {
           const { unit, type } = await getTimeSeriesProperties(connector, instanceId);
           setTimeSeriesUnit(unit);
@@ -108,6 +167,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           setTimeSeriesType(undefined);
         } finally {
           setLoadingUnits(false);
+          setLoadingType(false);
         }
       } else {
         setTimeSeriesUnit(undefined);
@@ -120,12 +180,13 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const kind = isTimeSeriesKind(timeSeriesType) ? timeSeriesType : undefined;
 
   // An aggregation the series' type refuses (Average on a string series, say) would
-  // fail the query, so it gives way to that type's default.
+  // fail the query, so it gives way to that type's default. Latest reads no aggregation,
+  // so the saved one is left alone there for coming back to Aggregate.
   useEffect(() => {
-    if (kind && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
+    if (kind && !query.latestValue && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
       onQueryChange({ aggregation: defaultAggregationFor(kind) });
     }
-  }, [kind, query.aggregation, onQueryChange]);
+  }, [kind, query.aggregation, query.latestValue, onQueryChange]);
 
   const handleViewChange = (view: InvolvedView | null) => {
     onQueryChange({
@@ -160,7 +221,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
         } : undefined,
       },
       // A string series starts on its raw values, like it always did.
-      ...(isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
+      ...(!query.latestValue && isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
         ? { aggregation: defaultAggregationFor(type) }
         : {}),
     });
@@ -215,224 +276,129 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
     }));
   };
 
-  const isUnitConversionEnabled = !!timeSeriesUnit && !!cogniteTimeSeries.instanceId;
-  const isStateType = timeSeriesType === 'state';
-
-  // Activity overlay handlers
-  const handleActivityOverlayToggle = (checked: boolean) => {
-    onQueryChange({
-      cogniteActivityQuery: {
-        ...cogniteActivityQuery,
-        enabled: checked,
-      },
-    });
-  };
-
-  const handleActivityViewChange = (view: InvolvedView | null) => {
-    onQueryChange({
-      cogniteActivityQuery: {
-        ...cogniteActivityQuery,
-        space: view?.space || 'cdf_cdm',
-        externalId: view?.externalId || 'CogniteActivity',
-        version: view?.version || 'v1',
-      },
-    });
-  };
-
-  const handleUseScheduledTimeToggle = (checked: boolean) => {
-    onQueryChange({
-      cogniteActivityQuery: {
-        ...cogniteActivityQuery,
-        useScheduledTime: checked,
-      },
-    });
-  };
+  const picked = !!cogniteTimeSeries.instanceId;
+  // A target unit converts numeric values only; the request never carries one for
+  // string or state series.
+  const isUnitConversionEnabled = picked && !!timeSeriesUnit && kind === 'numeric';
 
   return (
     <div>
-      <div>
-        <InlineFieldRow>
-          <InlineField
-            label="View"
-            labelWidth={14}
-            tooltip="Select a CogniteTimeSeries view to search in"
-          >
-            <ViewPicker
-              connector={connector}
-              container="CogniteTimeSeries"
-              value={cogniteTimeSeries}
-              onChange={handleViewChange}
-              placeholder="Select a CogniteTimeSeries view"
-              isClearable
-              width={40}
-              onError={setError}
-            />
-          </InlineField>
-        </InlineFieldRow>
-
-        <InlineFieldRow>
-          <InlineField
-            label="Search"
-            labelWidth={14}
-            tooltip="Search for timeseries by name or description"
-          >
-            <InstancePicker
-              connector={connector}
-              view={{
-                space: cogniteTimeSeries.space,
-                externalId: cogniteTimeSeries.externalId,
-                version: cogniteTimeSeries.version,
-              }}
-              value={getCurrentTimeseriesValue()}
-              onChange={handleTimeseriesSelection}
-              placeholder="Search timeseries by name/description"
-              width={40}
-              noOptionsMessage="No timeseries found"
-              inputId={`cognite-timeseries-search-${query.refId}`}
-              badgeOf={(props) =>
-                props.type
-                  ? { text: props.type, color: getTypeBadgeColor(props.type) }
-                  : undefined
-              }
-              onError={setError}
-            />
-          </InlineField>
-          {/* The type decides which aggregations are offered below. */}
-          {cogniteTimeSeries.instanceId && kind && (
-            <InlineField transparent style={{ alignItems: 'center' }}>
-              <Badge
-                text={kind}
-                color={getTypeBadgeColor(kind)}
-                tooltip="The type of the selected time series. It decides which aggregations are offered."
-                data-testid={`cognite-timeseries-type-${query.refId}`}
+      <EditorRows>
+        <EditorRow>
+          <EditorFieldGroup>
+            <EditorField label="View" tooltip="The CogniteTimeSeries view to search in." htmlFor={`view-${query.refId}`}>
+              <ViewPicker
+                inputId={`view-${query.refId}`}
+                connector={connector}
+                container="CogniteTimeSeries"
+                value={cogniteTimeSeries}
+                onChange={handleViewChange}
+                placeholder="Select a CogniteTimeSeries view"
+                isClearable
+                width={44}
+                onError={setError}
               />
-            </InlineField>
-          )}
-        </InlineFieldRow>
+            </EditorField>
+            <EditorField
+              label="Time series"
+              tooltip="Search by name or description. The type of the picked time series decides which aggregations are offered."
+              htmlFor={`cognite-timeseries-search-${query.refId}`}
+            >
+              <Stack gap={1} alignItems="center">
+                <InstancePicker
+                  connector={connector}
+                  view={{
+                    space: cogniteTimeSeries.space,
+                    externalId: cogniteTimeSeries.externalId,
+                    version: cogniteTimeSeries.version,
+                  }}
+                  value={getCurrentTimeseriesValue()}
+                  onChange={handleTimeseriesSelection}
+                  placeholder="Search timeseries by name/description"
+                  width={44}
+                  noOptionsMessage="No timeseries found"
+                  inputId={`cognite-timeseries-search-${query.refId}`}
+                  badgeOf={(props) =>
+                    props.type
+                      ? { text: props.type, color: getTypeBadgeColor(props.type) }
+                      : undefined
+                  }
+                  onError={setError}
+                />
+                {picked && kind && (
+                  <Badge
+                    text={kind}
+                    color={getTypeBadgeColor(kind)}
+                    tooltip="The type of the selected time series. It decides which aggregations are offered."
+                    data-testid={`cognite-timeseries-type-${query.refId}`}
+                  />
+                )}
+              </Stack>
+            </EditorField>
+          </EditorFieldGroup>
+        </EditorRow>
 
-        {cogniteTimeSeries.instanceId && isStateType && (
+        {picked && kind === 'state' ? (
           <Alert title="Unsupported time series type" severity="info">
             State time series are not currently supported in Grafana.
           </Alert>
+        ) : (
+          <EditorRow>
+            {/* Until the type is known, a mode switch could pick an aggregate the type refuses. */}
+            <DatapointsFields {...{ query, kind, intervalMs, onQueryChange }} disabled={loadingType} />
+          </EditorRow>
         )}
 
-        {cogniteTimeSeries.instanceId && isUnitConversionEnabled && !isStateType && (
-          <InlineFieldRow>
-            <InlineField
-              label="Target Unit"
-              labelWidth={14}
-              tooltip={`Convert data to target unit. Current unit: ${getUnitDisplayName(timeSeriesUnit)}`}
-            >
-              <Select
-                options={getFilteredUnits()}
-                value={cogniteTimeSeries.targetUnit || timeSeriesUnit}
-                onChange={handleTargetUnitChange}
-                placeholder="Select target unit"
-                isClearable
-                isLoading={loadingUnits}
-                width={40}
-              />
-            </InlineField>
-            {timeSeriesUnit && (
-              <InlineField transparent style={{ alignItems: 'center' }}>
-                <Badge
-                  text={storageUnitLabel(timeSeriesUnit, unitLookup)}
-                  color="darkgrey"
-                />
-              </InlineField>
-            )}
-          </InlineFieldRow>
+        {/* An overlay needs a series to draw on. */}
+        {picked && kind !== 'state' && (
+          <ActivitiesRow
+            refId={query.refId}
+            connector={connector}
+            activityQuery={cogniteActivityQuery}
+            onChange={(next) => onQueryChange({ cogniteActivityQuery: next })}
+          />
         )}
 
-        {/* Activity Overlay Section - only show when time series is selected */}
-        {cogniteTimeSeries.instanceId && !isStateType && (
-          <>
-            <InlineFieldRow>
-              <InlineField
-                label="Activities"
-                labelWidth={14}
-                tooltip="Overlay activities from CogniteActivity views on the time series chart"
+        <EditorRow>
+          <EditorFieldGroup>
+            {isUnitConversionEnabled && (
+              <EditorField
+                label="Target unit"
+                optional
+                tooltip={`Convert the values to this unit. Storage unit: ${getUnitDisplayName(timeSeriesUnit)}.`}
               >
-                <InlineSwitch
-                  label='Activities'
-                  id={`overlay-activities-${query.refId}`}
-                  value={cogniteActivityQuery?.enabled || false}
-                  onChange={({ currentTarget }) => handleActivityOverlayToggle(currentTarget.checked)}
-                />
-              </InlineField>
-            </InlineFieldRow>
-
-            {cogniteActivityQuery?.enabled && (
-              <>
-                <InlineFieldRow>
-                  <InlineField
-                    label="View"
-                    labelWidth={14}
-                    tooltip="Select a CogniteActivity view to overlay"
-                  >
-                    <ViewPicker
-                      connector={connector}
-                      container="CogniteActivity"
-                      value={cogniteActivityQuery}
-                      onChange={handleActivityViewChange}
-                      placeholder="Select a CogniteActivity view"
-                      isClearable
-                      width={40}
-                    />
-                  </InlineField>
-                </InlineFieldRow>
-
-                <InlineFieldRow>
-                  <InlineField
-                    label="Scheduled"
-                    labelWidth={14}
-                    tooltip="Use scheduledStartTime/scheduledEndTime instead of actual startTime/endTime"
-                  >
-                    <InlineSwitch
-                      label='Scheduled'
-                      id={`use-scheduled-time-${query.refId}`}
-                      value={cogniteActivityQuery?.useScheduledTime || false}
-                      onChange={({ currentTarget }) => handleUseScheduledTimeToggle(currentTarget.checked)}
-                    />
-                  </InlineField>
-                </InlineFieldRow>
-              </>
-            )}
-          </>
-        )}
-
-        {!isStateType && (
-          <>
-            <LatestValueCheckbox {...{ query, onQueryChange }} />
-            {!query.latestValue && (
-              <CommonEditors
-                {...{ query, onQueryChange, intervalMs }}
-                aggregateOptions={aggregateGroupsFor(kind)}
-                hideLabel
-              />
-            )}
-            {!query.latestValue && query.aggregation && query.aggregation !== 'none' && (
-              <InlineFieldRow>
-                <InlineField label="Gap filling" labelWidth={14} tooltip={GAP_FILL_TOOLTIP}>
-                  <GapFillControls
-                    query={query}
-                    intervalMs={intervalMs}
-                    onChange={(gapFill) => onQueryChange({ gapFill })}
+                <Stack gap={1} alignItems="center">
+                  <Select
+                    inputId={`target-unit-${query.refId}`}
+                    options={getFilteredUnits()}
+                    value={cogniteTimeSeries.targetUnit || timeSeriesUnit}
+                    onChange={handleTargetUnitChange}
+                    placeholder="Select target unit"
+                    isClearable
+                    isLoading={loadingUnits}
+                    width={40}
                   />
-                </InlineField>
-              </InlineFieldRow>
+                  <Badge text={storageUnitLabel(timeSeriesUnit, unitLookup)} color="darkgrey" />
+                </Stack>
+              </EditorField>
             )}
-          </>
-        )}
-        {/* Last, as on the GraphQL tab: it names whatever the rows above produce. */}
-        <LabelRow {...{ onQueryChange, query }} />
+            {/* Last: it names whatever the rows above produce. */}
+            <LabelField
+              id={`label-${query.refId}`}
+              value={query.label}
+              placeholder="default"
+              tooltip={LABEL_TOOLTIP}
+              onCommit={(label) => onQueryChange({ label })}
+            />
+          </EditorFieldGroup>
+        </EditorRow>
+      </EditorRows>
 
-        {error && (
-          <Alert title="Information" severity="info">
-            {error}
-          </Alert>
-        )}
-      </div>
+      {error && (
+        <Alert title="Information" severity="info">
+          {error}
+        </Alert>
+      )}
     </div>
   );
 };

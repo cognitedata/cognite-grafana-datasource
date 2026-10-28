@@ -303,9 +303,9 @@ export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
  * the chip without the banner.
  */
 export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
-  [Tabs.Timeseries]: 'Use the Time Series tab instead.',
+  [Tabs.Timeseries]: 'Use the Time series tab instead.',
   [Tabs.Asset]: 'Use the GraphQL tab to plot the time series of an asset instead.',
-  [Tabs.Custom]: 'Use the Time Series or GraphQL tab instead.',
+  [Tabs.Custom]: 'Use the Time series or GraphQL tab instead.',
   [Tabs.Event]: 'Use the Records or Activities tab instead.',
   [Tabs.Relationships]: 'Use the GraphQL tab instead.',
 };
