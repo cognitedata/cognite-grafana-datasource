@@ -62,4 +62,10 @@ describe('interpolateGraphqlLabel', () => {
       '{"symbol":"degC"}'
     );
   });
+
+  it('leaves {{state}} for the per-state series to fill in, unless the row has a state field', () => {
+    expect(interpolateGraphqlLabel('{{name}} - {{state}}', { name: 'Pump 7' })).toBe('Pump 7 - {{state}}');
+    expect(interpolateGraphqlLabel('{{state}}', { state: 'open' })).toBe('open');
+    expect(interpolateGraphqlLabel('{{state}}', { state: null })).toBe('{{state}}');
+  });
 });

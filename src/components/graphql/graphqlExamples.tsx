@@ -18,13 +18,16 @@ export const PANEL_GRAPHQL_EXAMPLES: GraphqlExample[] = [
     title: 'Time series on a data modelling instance',
     lead: (
       <>
-        Select <code>space</code> and <code>externalId</code> on the time series and every row
-        is plotted, using <code>name</code> as its label. Selecting <code>type</code> too skips
-        the rows that are not <code>numeric</code>.
+        Select <code>space</code> and <code>externalId</code> on the time series and the rows
+        are plotted, using <code>name</code> as their label. <strong>Query type</strong> picks
+        which time series: <strong>Numeric</strong> (the default), <strong>String</strong> or{' '}
+        <strong>State</strong>. Rows of another type are skipped, and a warning names them.
+        Selecting <code>type</code> lets the panel tell the types apart without looking up
+        each time series.
       </>
     ),
     code: `query MyQuery {
-  listCogniteTimeSeries {
+  listCogniteTimeSeries(first: 10) {
     items {
       space
       externalId
@@ -35,12 +38,61 @@ export const PANEL_GRAPHQL_EXAMPLES: GraphqlExample[] = [
 }`,
   },
   {
+    title: 'String or state time series',
+    lead: (
+      <>
+        Filter on <code>type</code> to return one type of time series only, and set{' '}
+        <strong>Query type</strong> to match. The type is an enum, written without quotes:{' '}
+        <code>numeric</code>, <code>string</code> or <code>state</code>. A state time series aggregated
+        per state (State duration, State count, State transitions) can name the time series of each
+        state with <code>{'{{state}}'}</code> in the label. Selecting <code>stateSet</code> too saves
+        a lookup per state time series.
+      </>
+    ),
+    code: `query MyQuery {
+  listCogniteTimeSeries(
+    first: 10,
+    filter: { type: { eq: state } }
+  ) {
+    items {
+      space
+      externalId
+      name
+      type
+      stateSet
+    }
+  }
+}`,
+  },
+  {
+    title: 'Instances without data points',
+    lead: (
+      <>
+        With <strong>Query type</strong> set to <strong>Instances</strong>, the panel returns
+        the rows as a table and fetches no data points, even for rows that are time series.
+      </>
+    ),
+    code: `query MyQuery {
+  listCogniteTimeSeries(first: 100) {
+    items {
+      space
+      externalId
+      name
+      type
+      sourceUnit
+      lastUpdatedTime
+    }
+  }
+}`,
+  },
+  {
     title: 'Time series reached through a relation',
     lead: (
       <>
         The same fields work one level down, so a query can start from an activity or a piece
         of equipment and plot the time series hanging off it. A relation to many instances is
-        a connection, so its rows sit under <code>items</code>.
+        a connection, so its rows sit under <code>items</code>. <strong>Query type</strong>{' '}
+        applies to these time series as it does to rows.
       </>
     ),
     code: `query MyQuery {

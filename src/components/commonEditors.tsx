@@ -66,8 +66,8 @@ const AggregationEditor = (
 export const LABEL_TOOLTIP =
   'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.';
 
-/** How a label names the time series of each state. */
-const STATE_LABEL_TOOLTIP_SUFFIX =
+/** How a label names the time series of each state; shared with the GraphQL tab's own tooltip. */
+export const STATE_LABEL_TOOLTIP_SUFFIX =
   'For State duration, State count and State transitions, {{state}} places each state in the label; without it, the state is appended.';
 
 /** The Time series tab's label tooltip, which also names each state's series. */

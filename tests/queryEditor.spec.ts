@@ -749,3 +749,44 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
   await editorRow.getByRole('radio', { name: 'Actual' }).click();
   await expect(scheduledToggle).not.toBeChecked();
 });
+
+test('"GraphQL" query type plots its type and skips the others', async ({ readProvisionedDataSource, page }) => {
+  test.setTimeout(90_000);
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Core Only' });
+  // Only the fixture spaces, which hold numeric, string and state time series, so the
+  // rows do not depend on whatever else the project holds.
+  const graphQlQuery = `{
+  listCogniteTimeSeries(first: 1000, filter: { space: { in: ["grafana-ts-fixtures", "state-ts-real-data"] } }) {
+    items { space externalId name type }
+  }
+}`;
+  const query = {
+    refId: 'A',
+    datasource: { type: ds.type, uid: ds.uid },
+    tab: 'Data Models',
+    aggregation: 'none',
+    flexibleDataModellingQuery: { externalId: 'CogniteCore', space: 'cdf_cdm', version: 'v1', graphQlQuery, tsKeys: [] },
+  };
+  const panes = { e2e: { datasource: ds.uid, queries: [query], range: { from: 'now-1y', to: 'now' } } };
+  const dataOfType = (type: string) =>
+    page.waitForResponse(
+      async (response) =>
+        response.url().endsWith('/timeseries/data/list') &&
+        response.ok() &&
+        (await response.json()).items?.[0]?.type === type
+    );
+
+  const numeric = dataOfType('numeric');
+  await page.goto(`/explore?schemaVersion=1&orgId=1&panes=${encodeURIComponent(JSON.stringify(panes))}`);
+  await numeric;
+
+  for (const [label, type] of [['String', 'string'], ['State', 'state']]) {
+    const data = dataOfType(type);
+    await page.getByRole('radio', { name: label }).click();
+    await data;
+    await expect(page.locator('.gf-formatted-warning')).toContainText(
+      new RegExp(`time series that (is|are) not ${type}`),
+      { timeout: 30000 }
+    );
+  }
+});
