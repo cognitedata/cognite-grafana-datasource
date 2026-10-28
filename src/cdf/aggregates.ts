@@ -63,8 +63,14 @@ export const NUMERIC_AGGREGATES: AggregateOption[] = [
 const AGGREGATES_BY_KIND: Record<TimeSeriesKind, AggregateOption[]> = {
   // The list the editor always offered, with the status aggregates after it.
   numeric: [...NUMERIC_AGGREGATES, ...STATUS],
-  // Aggregates on string and state series are still in preview in CDF: raw values only.
-  string: [NONE],
+  string: [
+    NONE,
+    { ...INTERPOLATION[0], description: 'The value at the start of each interval' },
+    { ...INTERPOLATION[1], description: 'The value at the start of each interval' },
+    COUNT,
+    ...STATUS,
+  ],
+  // State time series are not supported yet.
   state: [NONE],
 };
 

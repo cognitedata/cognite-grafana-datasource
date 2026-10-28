@@ -958,6 +958,19 @@ describe('Given a string Time series (data modeling) query', () => {
     expect(frame.fields[1].config.displayNameFromDS).toBe('grafana-ts-fixtures:batch_phase');
   });
 
+  it('returns interpolated values as a text field', async () => {
+    respond([{ timestamp: t0, interpolation: 'HEATING' }]);
+    const [frame] = await run({ aggregation: 'interpolation' });
+    expect(frame.fields[1].type).toBe('string');
+    expect(frame.fields[1].values).toEqual(['HEATING']);
+  });
+
+  it('returns counts as numbers and durations in milliseconds', async () => {
+    respond([{ timestamp: t0, durationGood: 3_600_000 }]);
+    const [series] = await run({ aggregation: 'durationGood' });
+    expect(series).toEqual({ target: 'grafana-ts-fixtures:batch_phase', datapoints: [[3_600_000, t0]], unit: 'ms' });
+  });
+
   it('fails the query when the aggregation is one string series do not have', async () => {
     respond([]);
     const data = await run({ aggregation: 'average' });

@@ -421,6 +421,37 @@ test('"CogniteTimeSeries" coarser auto granularity and gap filling reach the req
   await expect(editorRow.getByTestId('gap-fill-badge-A')).toHaveText(`= ${body.items[0].fill.limit}`);
 });
 
+test('"CogniteTimeSeries" string series offer their own aggregates', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // grafana-ts-fixtures:batch_phase, a string series of batch phases.
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'batch_phase');
+  await waitForQueriesToFinish(page);
+
+  // String and state series start on Raw; the aggregates are offered in Aggregate mode.
+  await editorRow.getByRole('radio', { name: 'Aggregate' }).click();
+  await waitForQueriesToFinish(page);
+
+  const aggregationInput = editorRow.locator('input[id="aggregation-A"]');
+  await aggregationInput.click();
+  await expect(panelEditPage.getByGrafanaSelector(option).filter({ hasText: /^Average$/ })).toHaveCount(0);
+  const counted = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.aggregates?.[0] === 'countGood'
+  );
+  await aggregationInput.fill('Count (good)');
+  await aggregationInput.press('Enter');
+  expect((await counted).status()).toBe(200);
+});
+
 test('"CogniteTimeSeries" a string series shows its type and is read raw', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,

@@ -38,11 +38,18 @@ describe('DatapointsFields', () => {
     expect(onQueryChange).toHaveBeenCalledWith({ aggregation: 'none' });
   });
 
+  it('starts a string series on its first aggregate when switched to Aggregate', () => {
+    const onQueryChange = renderFields({ aggregation: 'none' }, 'string');
+    fireEvent.click(screen.getByRole('radio', { name: 'Aggregate' }));
+    expect(onQueryChange).toHaveBeenCalledWith({ aggregation: 'interpolation' });
+  });
+
   it('offers the aggregates of the type, without None', () => {
-    renderFields({ aggregation: 'average' }, 'numeric');
+    renderFields({ aggregation: 'interpolation' }, 'string');
     fireEvent.keyDown(document.getElementById('aggregation-A')!, { key: 'ArrowDown' });
-    expect(screen.getByText('Discrete Variance')).toBeTruthy();
+    expect(screen.getByText('Step Interpolation')).toBeTruthy();
     expect(screen.queryByText('None')).toBeNull();
+    expect(screen.queryByText('Average')).toBeNull();
   });
 
   it('offers Raw and Latest only for a type it cannot aggregate', () => {
