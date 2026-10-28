@@ -3,12 +3,14 @@ import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/p
 import { Select, Alert, Badge, BadgeColor, InlineSwitch, RadioButtonGroup, Stack } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CogniteActivityQuery, defaultCogniteActivityQuery, SelectedProps } from '../types';
-import { getCogniteUnitIndex, getTimeSeriesProperties, stringifyError } from '../cdf/client';
+import { getCogniteUnitIndex, getStateSet, getTimeSeriesProperties, stringifyError } from '../cdf/client';
+import { StateSetEntry } from '../cdf/typedFrames';
+import { StateSetPreview } from './common/StateSetPreview';
 import { storageUnitLabel, targetUnitApplies, unitDisplayName } from '../cdf/units';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
 import { CogniteUnit, InvolvedView } from '../types/dms';
-import { LABEL_TOOLTIP } from './commonEditors';
+import { LABEL_TOOLTIP, STATE_LABEL_TOOLTIP } from './commonEditors';
 import { Connector } from '../connector';
 import { defaultAggregationFor, isAggregateAllowed, isTimeSeriesKind } from '../cdf/aggregates';
 import { DatapointsFields } from './common/DatapointsFields';
@@ -121,6 +123,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
   const [timeSeriesType, setTimeSeriesType] = useState<string | undefined>(undefined);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [loadingType, setLoadingType] = useState(false);
+  const [stateSetRef, setStateSetRef] = useState<{ space: string; externalId: string } | undefined>();
 
   const { cogniteTimeSeries, cogniteActivityQuery } = query;
 
@@ -158,13 +161,15 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
         setLoadingUnits(true);
         setLoadingType(true);
         try {
-          const { unit, type } = await getTimeSeriesProperties(connector, instanceId);
+          const { unit, type, stateSet } = await getTimeSeriesProperties(connector, instanceId);
           setTimeSeriesUnit(unit);
           setTimeSeriesType(type);
+          setStateSetRef(stateSet);
         } catch (err) {
           console.warn('Failed to fetch timeseries properties:', stringifyError(err));
           setTimeSeriesUnit(undefined);
           setTimeSeriesType(undefined);
+          setStateSetRef(undefined);
         } finally {
           setLoadingUnits(false);
           setLoadingType(false);
@@ -172,6 +177,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
       } else {
         setTimeSeriesUnit(undefined);
         setTimeSeriesType(undefined);
+        setStateSetRef(undefined);
       }
     };
     fetchProperties();
@@ -179,11 +185,31 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
 
   const kind = isTimeSeriesKind(timeSeriesType) ? timeSeriesType : undefined;
 
+  // A state series' states, for the state set preview. Cached with the lookup the
+  // query itself makes; kept with the state set they were read for, so a series
+  // switch never shows the previous series' states.
+  const [loadedStates, setLoadedStates] = useState<{ key: string; states?: StateSetEntry[] }>();
+  const stateSetKey = stateSetRef ? `${stateSetRef.space}:${stateSetRef.externalId}` : undefined;
+  useEffect(() => {
+    if (kind !== 'state' || !stateSetRef || !stateSetKey) {
+      return;
+    }
+    let current = true;
+    getStateSet(connector, stateSetRef).then((loaded) => current && setLoadedStates({ key: stateSetKey, states: loaded }));
+    return () => {
+      current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connector, kind, stateSetKey]);
+  // Both keys are undefined before a state set is known, so check that one has loaded.
+  const states =
+    kind === 'state' && loadedStates && loadedStates.key === stateSetKey ? loadedStates.states : undefined;
+
   // An aggregation the series' type refuses (Average on a string series, say) would
   // fail the query, so it gives way to that type's default. Latest reads no aggregation,
   // so the saved one is left alone there for coming back to Aggregate.
   useEffect(() => {
-    if (kind && !query.latestValue && kind !== 'state' && !isAggregateAllowed(kind, query.aggregation)) {
+    if (kind && !query.latestValue && !isAggregateAllowed(kind, query.aggregation)) {
       onQueryChange({ aggregation: defaultAggregationFor(kind) });
     }
   }, [kind, query.aggregation, query.latestValue, onQueryChange]);
@@ -220,8 +246,8 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
           externalId: selected.externalId,
         } : undefined,
       },
-      // A string series starts on its raw values, like it always did.
-      ...(!query.latestValue && isTimeSeriesKind(type) && type !== 'state' && !isAggregateAllowed(type, query.aggregation)
+      // String and state series start on their raw values.
+      ...(!query.latestValue && isTimeSeriesKind(type) && !isAggregateAllowed(type, query.aggregation)
         ? { aggregation: defaultAggregationFor(type) }
         : {}),
     });
@@ -333,24 +359,21 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
                     data-testid={`cognite-timeseries-type-${query.refId}`}
                   />
                 )}
+                {picked && kind === 'state' && stateSetRef && states?.length ? (
+                  <StateSetPreview refId={query.refId} stateSet={stateSetRef} states={states} />
+                ) : null}
               </Stack>
             </EditorField>
           </EditorFieldGroup>
         </EditorRow>
 
-        {picked && kind === 'state' ? (
-          <Alert title="Unsupported time series type" severity="info">
-            State time series are not currently supported in Grafana.
-          </Alert>
-        ) : (
-          <EditorRow>
-            {/* Until the type is known, a mode switch could pick an aggregate the type refuses. */}
-            <DatapointsFields {...{ query, kind, intervalMs, onQueryChange }} disabled={loadingType} />
-          </EditorRow>
-        )}
+        <EditorRow>
+          {/* Until the type is known, a mode switch could pick an aggregate the type refuses. */}
+          <DatapointsFields {...{ query, kind, intervalMs, onQueryChange }} disabled={loadingType} />
+        </EditorRow>
 
         {/* An overlay needs a series to draw on. */}
-        {picked && kind !== 'state' && (
+        {picked && (
           <ActivitiesRow
             refId={query.refId}
             connector={connector}
@@ -387,7 +410,7 @@ export const CogniteTimeSeriesSearchTab: React.FC<CogniteTimeSeriesSearchTabProp
               id={`label-${query.refId}`}
               value={query.label}
               placeholder="default"
-              tooltip={LABEL_TOOLTIP}
+              tooltip={kind === 'state' ? STATE_LABEL_TOOLTIP : LABEL_TOOLTIP}
               onCommit={(label) => onQueryChange({ label })}
             />
           </EditorFieldGroup>

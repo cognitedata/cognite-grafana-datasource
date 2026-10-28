@@ -1,7 +1,6 @@
 import {
   aggregateGroupsFor,
   aggregateOptionsFor,
-  canAggregate,
   datapointsModeOf,
   datapointsModePatch,
   defaultAggregationFor,
@@ -73,6 +72,7 @@ describe('aggregateGroupsFor', () => {
       'Numeric: average,max,min,sum,stepInterpolation,continuousVariance,discreteVariance,totalVariation',
       'Common: count,interpolation,countGood,countUncertain,countBad,durationGood,durationUncertain,durationBad',
     ]);
+    expect(shape('state')[1]).toBe('State: dominantState,stateDuration,stateCount,stateTransitions');
     expect(shape()).toEqual(shape('numeric'));
   });
 
@@ -132,10 +132,6 @@ describe('data points mode', () => {
   it('starts each type on a sensible aggregate', () => {
     expect(firstAggregateFor('numeric')).toBe('average');
     expect(firstAggregateFor('string')).toBe('interpolation');
-  });
-
-  it('has nothing to aggregate a state series with, which is read raw only', () => {
-    expect(canAggregate('state')).toBe(false);
-    expect(firstAggregateFor('state')).toBe('none');
+    expect(firstAggregateFor('state')).toBe('interpolation');
   });
 });

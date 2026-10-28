@@ -10,6 +10,7 @@ import {
 import { DataQuery } from "@grafana/schema";
 import { Datapoints, IdEither, Items, Limit } from "./cdf/types";
 import { TimeSeriesKind } from "./cdf/aggregates";
+import { StateSetEntry } from "./cdf/typedFrames";
 import { ViewRef } from "./types/dms";
 import CogniteDatasource from "./datasource";
 
@@ -564,6 +565,8 @@ export type QueriesDataItem = {
   target: QueryTarget;
   /** The series' type, when the query names one CogniteTimeSeries; numeric otherwise. */
   kind?: TimeSeriesKind;
+  /** A state series' states, to label its values. */
+  stateSet?: StateSetEntry[];
 };
 
 export type ResponseMetadata = {
@@ -571,6 +574,7 @@ export type ResponseMetadata = {
   target: QueryTarget;
   type: DataQueryRequestType;
   kind?: TimeSeriesKind;
+  stateSet?: StateSetEntry[];
   /** Shown on the query row once the request succeeds. */
   warnings?: string[];
 };

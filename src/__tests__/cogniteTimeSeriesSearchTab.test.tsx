@@ -1,20 +1,28 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { CogniteTimeSeriesSearchTab } from '../components/cogniteTimeSeriesSearchTab';
 import { defaultQuery } from '../types';
 import { getMockedDataSource } from '../test_utils';
 
 jest.mock('@grafana/runtime');
 
+const STATE_SET = { space: 'sp', externalId: 'pump_states' };
+const STATES = [
+  { numericValue: 1, stringValue: 'RUNNING', description: 'Pumping' },
+  { numericValue: 0, stringValue: 'OFF' },
+];
+
 /** The tab on a saved query, with CDF answering that the series has `type` and `unit`. */
 const renderTab = (type: string, aggregation: string, extra: Record<string, unknown> = {}, unit?: string) => {
   const fetcher = {
-    fetch: jest.fn().mockImplementation(async ({ url }) => ({
+    fetch: jest.fn().mockImplementation(async ({ url, data }) => ({
       status: 200,
       data: {
-        items: url.endsWith('/models/instances/byids')
-          ? [{ space: 'sp', externalId: 'ts', properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type, ...(unit ? { unit: { space: 'cdf_cdm_units', externalId: unit } } : {}) } } } }]
-          : [],
+        items: !url.endsWith('/models/instances/byids')
+          ? []
+          : data.sources[0].source.externalId === 'CogniteStateSet'
+            ? [{ properties: { cdf_cdm: { 'CogniteStateSet/v1': { states: STATES } } } }]
+            : [{ space: 'sp', externalId: 'ts', properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type, stateSet: STATE_SET, ...(unit ? { unit: { space: 'cdf_cdm_units', externalId: unit } } : {}) } } } }],
       },
     })),
   };
@@ -56,7 +64,7 @@ describe('CogniteTimeSeriesSearchTab aggregation by series type', () => {
   });
 
   it('keeps an aggregation the series type accepts', async () => {
-    const onQueryChange = renderTab('string', 'none');
+    const onQueryChange = renderTab('state', 'interpolation');
     // The chip renders once the type lookup has answered; the reset effect has run by then.
     await screen.findByTestId('cognite-timeseries-type-A');
     expect(onQueryChange).not.toHaveBeenCalledWith(expect.objectContaining({ aggregation: expect.anything() }));
@@ -70,8 +78,21 @@ describe('CogniteTimeSeriesSearchTab aggregation by series type', () => {
   });
 
   it('shows the selected series type as a chip', async () => {
-    renderTab('string', 'none');
-    expect((await screen.findByTestId('cognite-timeseries-type-A')).textContent).toBe('string');
+    renderTab('state', 'interpolation');
+    expect((await screen.findByTestId('cognite-timeseries-type-A')).textContent).toBe('state');
+  });
+
+  it('previews a state series state set, ordered by code', async () => {
+    renderTab('state', 'none');
+    fireEvent.click(await screen.findByRole('button', { name: 'Show the state set' }));
+    const rows = within(await screen.findByTestId('state-set-table-A')).getAllByRole('row');
+    expect(rows.map((row) => row.textContent)).toEqual(['CodeStateDescription', '0OFF', '1RUNNINGPumping']);
+  });
+
+  it('offers no state set preview for other series', async () => {
+    const onQueryChange = renderTab('string', 'none');
+    await waitFor(() => expect(onQueryChange.lookedUp()).toBe(true));
+    expect(screen.queryByRole('button', { name: 'Show the state set' })).toBeNull();
   });
 
   it('places the label last, below the aggregation and gap filling rows', async () => {
