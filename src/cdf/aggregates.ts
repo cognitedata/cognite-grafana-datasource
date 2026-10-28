@@ -11,18 +11,17 @@ type AggregateOption = SelectableValue<string> & { value: string; label: string 
 const NONE: AggregateOption = { value: 'none', label: 'None', description: 'Raw data points, not aggregated' };
 
 const COUNT: AggregateOption = { value: 'count', label: 'Count', description: 'Data points in each interval' };
-const INTERPOLATION: AggregateOption[] = [
-  {
-    value: 'interpolation',
-    label: 'Interpolation',
-    description: 'The value at the start of each interval, linear or stepwise as the series is',
-  },
-  {
-    value: 'stepInterpolation',
-    label: 'Step Interpolation',
-    description: 'The value at the start of each interval, as if the series were stepwise',
-  },
-];
+const INTERPOLATION: AggregateOption = {
+  value: 'interpolation',
+  label: 'Interpolation',
+  description: 'The value at the start of each interval, linear or stepwise as the series is',
+};
+// Numeric only: on string and state series it returns the same values as Interpolation.
+const STEP_INTERPOLATION: AggregateOption = {
+  value: 'stepInterpolation',
+  label: 'Step Interpolation',
+  description: 'The value at the start of each interval, as if the series were stepwise',
+};
 
 /** Counts and durations per status code: any type of series. */
 const STATUS: AggregateOption[] = [
@@ -45,7 +44,8 @@ export const NUMERIC_AGGREGATES: AggregateOption[] = [
   { value: 'min', label: 'Min', description: 'Lowest data point in each interval' },
   COUNT,
   { value: 'sum', label: 'Sum', description: 'Sum of the data points in each interval' },
-  ...INTERPOLATION,
+  INTERPOLATION,
+  STEP_INTERPOLATION,
   {
     value: 'continuousVariance',
     label: 'Continuous Variance',
@@ -65,8 +65,7 @@ const AGGREGATES_BY_KIND: Record<TimeSeriesKind, AggregateOption[]> = {
   numeric: [...NUMERIC_AGGREGATES, ...STATUS],
   string: [
     NONE,
-    { ...INTERPOLATION[0], description: 'The value at the start of each interval' },
-    { ...INTERPOLATION[1], description: 'The value at the start of each interval' },
+    { ...INTERPOLATION, description: 'The value at the start of each interval' },
     COUNT,
     ...STATUS,
   ],
@@ -75,7 +74,7 @@ const AGGREGATES_BY_KIND: Record<TimeSeriesKind, AggregateOption[]> = {
 };
 
 /** Aggregates every type of series has; the rest belong to one type. */
-const COMMON_AGGREGATES = new Set([COUNT, ...INTERPOLATION, ...STATUS].map(({ value }) => value));
+const COMMON_AGGREGATES = new Set([COUNT, INTERPOLATION, ...STATUS].map(({ value }) => value));
 
 const KIND_GROUP_LABELS: Record<TimeSeriesKind, string> = { numeric: 'Numeric', string: 'String', state: 'State' };
 

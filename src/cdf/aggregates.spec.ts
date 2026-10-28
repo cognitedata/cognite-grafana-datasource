@@ -26,11 +26,12 @@ describe('aggregate catalog', () => {
 
   it('offers string series only what CDF accepts for them', () => {
     expect(values('string')).toEqual([
-      'none', 'interpolation', 'stepInterpolation', 'count',
+      'none', 'interpolation', 'count',
       'countGood', 'countUncertain', 'countBad', 'durationGood', 'durationUncertain', 'durationBad',
     ]);
     expect(isAggregateAllowed('string', 'average')).toBe(false);
     expect(isAggregateAllowed('string', 'interpolation')).toBe(true);
+    expect(isAggregateAllowed('string', 'stepInterpolation')).toBe(false);
   });
 
   it('treats a missing aggregation as allowed', () => {
@@ -54,7 +55,7 @@ describe('aggregate catalog', () => {
   it('explains a refused aggregate with the choices that work', () => {
     expect(unavailableAggregateMessage('string', 'average')).toBe(
       'Average is not available for string time series. Choose None (raw data points) or one of: ' +
-        'Interpolation, Step Interpolation, Count, Count (good), Count (uncertain), Count (bad), ' +
+        'Interpolation, Count, Count (good), Count (uncertain), Count (bad), ' +
         'Duration (good), Duration (uncertain), Duration (bad).'
     );
   });
@@ -69,8 +70,8 @@ describe('aggregateGroupsFor', () => {
   it('lists None, then the aggregates of the type, then the common ones', () => {
     expect(shape('numeric')).toEqual([
       'none',
-      'Numeric: average,max,min,sum,continuousVariance,discreteVariance,totalVariation',
-      'Common: count,interpolation,stepInterpolation,countGood,countUncertain,countBad,durationGood,durationUncertain,durationBad',
+      'Numeric: average,max,min,sum,stepInterpolation,continuousVariance,discreteVariance,totalVariation',
+      'Common: count,interpolation,countGood,countUncertain,countBad,durationGood,durationUncertain,durationBad',
     ]);
     expect(shape()).toEqual(shape('numeric'));
   });
