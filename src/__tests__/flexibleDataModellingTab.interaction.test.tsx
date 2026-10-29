@@ -46,7 +46,7 @@ const SAVED_QUERY = 'query MyQuery { listCogniteTimeSeries { items { name } } }'
 const renderTab = (
   aggregation?: string,
   datasource = graphqlDatasourceStub(),
-  patch: { latestValue?: boolean } = {}
+  patch: { queryType?: string; latestValue?: boolean } = {}
 ) => {
   const onQueryChange = jest.fn();
   render(
@@ -63,6 +63,7 @@ const renderTab = (
             version: '1',
             graphQlQuery: SAVED_QUERY,
             tsKeys: ['_numeric_type'],
+            ...(patch.queryType ? { queryType: patch.queryType } : {}),
           },
         } as any
       }
@@ -196,6 +197,42 @@ describe('FlexibleDataModellingTab series options', () => {
     expect(onQueryChange).not.toHaveBeenCalled();
   });
 
+  it('switches the series type, and the aggregation to one that type has', async () => {
+    const onQueryChange = renderTab('average');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('State'));
+    expect(onQueryChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        aggregation: 'none',
+        flexibleDataModellingQuery: expect.objectContaining({ queryType: 'state' }),
+      })
+    );
+  });
+
+  it('keeps an aggregation the new series type also has', async () => {
+    const onQueryChange = renderTab('interpolation');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('String'));
+    expect(onQueryChange.mock.calls[0][0]).not.toHaveProperty('aggregation');
+  });
+
+  it('shows only the query type for Instances, which fetches no data points', async () => {
+    renderTab('average', undefined, { queryType: 'instances' });
+    expect((await screen.findByLabelText('Instances') as HTMLInputElement).checked).toBe(true);
+    expect(document.getElementById('aggregation-A')).toBeNull();
+    expect(screen.queryByLabelText('Latest')).toBeNull();
+    expect(document.getElementById('fdm-label-A')).toBeNull();
+  });
+
+  it('switches to Instances without touching the aggregation', async () => {
+    const onQueryChange = renderTab('average');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('Instances'));
+    expect(onQueryChange.mock.calls[0][0]).toEqual({
+      flexibleDataModellingQuery: expect.objectContaining({ queryType: 'instances' }),
+    });
+  });
+
   it('switches to Latest, which hides the aggregation and gap filling', async () => {
     const onQueryChange = renderTab('average');
     onQueryChange.mockClear();
@@ -212,13 +249,13 @@ describe('FlexibleDataModellingTab series options', () => {
     expect(document.getElementById('fdm-label-A')).not.toBeNull();
   });
 
-  it('opens a query without an aggregation on Raw, and Aggregate starts on Average', async () => {
-    const onQueryChange = renderTab('none');
+  it('opens a query without an aggregation on Raw, and Aggregate picks the type its first', async () => {
+    const onQueryChange = renderTab('none', undefined, { queryType: 'string' });
     expect((await screen.findByLabelText('Raw') as HTMLInputElement).checked).toBe(true);
     expect(document.getElementById('aggregation-A')).toBeNull();
     onQueryChange.mockClear();
     fireEvent.click(screen.getByLabelText('Aggregate'));
-    expect(onQueryChange).toHaveBeenCalledWith({ aggregation: 'average' });
+    expect(onQueryChange).toHaveBeenCalledWith({ aggregation: 'interpolation' });
   });
 
   it('offers no None in the aggregation list: Raw is a mode of its own', async () => {

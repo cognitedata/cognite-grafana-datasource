@@ -126,6 +126,9 @@ const defaultAssetQuery: AssetQuery = {
   includeSubTimeseries: true,
   relationshipsQuery: defaultRelationshipsQuery,
 };
+/** The GraphQL tab's query type: a time series type to fetch data points for, or the rows alone. */
+export type GraphqlQueryType = TimeSeriesKind | "instances";
+
 export interface FlexibleDataModellingQuery {
   externalId: string;
   version?: string;
@@ -148,6 +151,22 @@ export interface FlexibleDataModellingQuery {
   labels?: string[];
   targets?: string[];
   instanceIds?: Array<{ space: string; externalId: string }>;
+  /**
+   * Runtime only, never saved: set by the GraphQL tab on the request it sends for
+   * each time series. The type of each of `instanceIds`, when known.
+   */
+  instanceKinds?: Array<TimeSeriesKind | undefined>;
+  /**
+   * Runtime only, never saved, like `instanceKinds`: the state set of each state
+   * series, null when it has none, undefined when it is not known yet.
+   */
+  instanceStateSets?: Array<{ space: string; externalId: string } | null | undefined>;
+  /**
+   * What the panel fetches for the rows: the data points of one type of time
+   * series (rows of other types are skipped), or `instances`, the rows alone. It
+   * decides the aggregations offered. Absent means numeric, as before types existed.
+   */
+  queryType?: GraphqlQueryType;
 }
 
 export interface CogniteTimeSeries {

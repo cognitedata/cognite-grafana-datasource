@@ -1,4 +1,4 @@
-import { get, cloneDeep } from 'lodash';
+import { get, cloneDeep, chunk, sortBy, uniqBy } from 'lodash';
 import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
@@ -18,6 +18,7 @@ import {
   DMSSearchRequest,
   DMSSearchResponse,
   DMSInstance,
+  DMSInstanceId,
   DMSListRequest,
   DMSListResponse,
   DMSFilter,
@@ -806,58 +807,59 @@ export interface TimeSeriesProperties {
   stateSet?: { space: string; externalId: string };
 }
 
+const TIME_SERIES_VIEW = { type: 'view', space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+
+/** At most this many instances per `byids` request. */
+const BYIDS_LIMIT = 1000;
+
+/** The CogniteTimeSeries properties the connector reads, from an instance of the view. */
+function parseTimeSeriesProperties(instance: DMSInstance): TimeSeriesProperties {
+  const tsProps = instance.properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
+  // Only the structured `unit` direct relation (a CogniteUnit reference) qualifies as
+  // a storage unit for conversion. The free-text `sourceUnit` is informational and not
+  // resolvable against the unit catalog, so we ignore it here.
+  const rawUnit = tsProps?.unit;
+  const unit =
+    rawUnit && typeof rawUnit === 'object' && typeof rawUnit.externalId === 'string'
+      ? rawUnit.externalId
+      : undefined;
+
+  const rawType = tsProps?.type;
+  const type = typeof rawType === 'string' ? rawType : undefined;
+
+  const rawStateSet = tsProps?.stateSet;
+  const stateSet =
+    rawStateSet && typeof rawStateSet.space === 'string' && typeof rawStateSet.externalId === 'string'
+      ? { space: rawStateSet.space, externalId: rawStateSet.externalId }
+      : undefined;
+
+  return { unit, type, ...(stateSet ? { stateSet } : {}) };
+}
+
+const fetchTimeSeriesInstances = (connector: Connector, instanceIds: DMSInstanceId[]) =>
+  retryOnRateLimit(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/byids',
+      // A series' type, unit and state set rarely change.
+      cacheTime: CacheTime.ResourceByIds,
+      data: {
+        sources: [{ source: TIME_SERIES_VIEW }],
+        items: instanceIds.map(({ space, externalId }) => ({ instanceType: 'node', space, externalId })),
+        includeTyping: false,
+      },
+    })
+  );
+
 export async function getTimeSeriesProperties(
   connector: Connector,
   instanceId: { space: string; externalId: string },
   { rethrow = false }: { rethrow?: boolean } = {}
 ): Promise<TimeSeriesProperties> {
   try {
-    const instances = await retryOnRateLimit(() =>
-      connector.fetchItems<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/byids',
-        // A series' type, unit and state set rarely change.
-        cacheTime: CacheTime.ResourceByIds,
-        data: {
-          sources: [{
-            source: {
-              type: 'view',
-              space: 'cdf_cdm',
-              externalId: 'CogniteTimeSeries',
-              version: 'v1',
-            },
-          }],
-          items: [{
-            instanceType: 'node',
-            space: instanceId.space,
-            externalId: instanceId.externalId,
-          }],
-          includeTyping: false,
-        },
-      })
-    );
-
+    const instances = await fetchTimeSeriesInstances(connector, [instanceId]);
     if (instances.length > 0) {
-      const tsProps = instances[0].properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
-      // Only the structured `unit` direct relation (a CogniteUnit reference) qualifies as
-      // a storage unit for conversion. The free-text `sourceUnit` is informational and not
-      // resolvable against the unit catalog, so we ignore it here.
-      const rawUnit = tsProps?.unit;
-      const unit =
-        rawUnit && typeof rawUnit === 'object' && typeof rawUnit.externalId === 'string'
-          ? rawUnit.externalId
-          : undefined;
-
-      const rawType = tsProps?.type;
-      const type = typeof rawType === 'string' ? rawType : undefined;
-
-      const rawStateSet = tsProps?.stateSet;
-      const stateSet =
-        rawStateSet && typeof rawStateSet.space === 'string' && typeof rawStateSet.externalId === 'string'
-          ? { space: rawStateSet.space, externalId: rawStateSet.externalId }
-          : undefined;
-
-      return { unit, type, ...(stateSet ? { stateSet } : {}) };
+      return parseTimeSeriesProperties(instances[0]);
     }
   } catch (err) {
     if (rethrow) {
@@ -866,6 +868,26 @@ export async function getTimeSeriesProperties(
     console.warn('Failed to fetch timeseries properties:', err);
   }
   return {};
+}
+
+/** The key `getTimeSeriesPropertiesBatch` files an instance under. */
+export const instanceKey = ({ space, externalId }: DMSInstanceId) => `${space}:${externalId}`;
+
+/**
+ * The properties of many time series in as few requests as `byids` allows, keyed
+ * by `instanceKey`. An instance CDF does not return is absent. A failed request
+ * fails the lookup.
+ */
+export async function getTimeSeriesPropertiesBatch(
+  connector: Connector,
+  instanceIds: DMSInstanceId[]
+): Promise<Map<string, TimeSeriesProperties>> {
+  // Sorted, so the same rows in another order make the same, cached request.
+  const unique = sortBy(uniqBy(instanceIds, instanceKey), instanceKey);
+  const pages = await Promise.all(
+    chunk(unique, BYIDS_LIMIT).map((page) => fetchTimeSeriesInstances(connector, page))
+  );
+  return new Map(pages.flat().map((instance) => [instanceKey(instance), parseTimeSeriesProperties(instance)]));
 }
 
 const STATE_SET_VIEW = { type: 'view', space: 'cdf_cdm', externalId: 'CogniteStateSet', version: 'v1' };

@@ -141,6 +141,23 @@ export async function getDataQueryRequestItems(
       const externalIdItems = _.map(flexibleDataModellingQuery.targets, (externalId) => ({ externalId }));
       const instanceIdItems = _.map(flexibleDataModellingQuery.instanceIds, (instanceId) => ({ instanceId }));
       items = [...externalIdItems, ...instanceIdItems];
+      // The tab sends one series per request, with its type and, for a state
+      // series, its state set when the tab looked them up. Otherwise they are
+      // looked up here.
+      if (instanceIdItems.length === 1 && !externalIdItems.length) {
+        const hint = flexibleDataModellingQuery.instanceKinds?.[0];
+        const stateSetRef = flexibleDataModellingQuery.instanceStateSets?.[0];
+        // A state series' state set is known when the tab passes it, or null for none.
+        if (hint && (hint !== 'state' || stateSetRef !== undefined)) {
+          if (type === 'data' && !isAggregateAllowed(hint, target.aggregation)) {
+            throw new Error(unavailableAggregateMessage(hint, target.aggregation));
+          }
+          kind = hint;
+          stateSet = stateSetRef ? await getStateSet(connector, stateSetRef) : undefined;
+        } else {
+          ({ kind, stateSet } = await resolveTimeSeriesKind(connector, instanceIdItems[0].instanceId, target, type));
+        }
+      }
       break;
     }
     case Tab.CogniteTimeSeriesSearch: {

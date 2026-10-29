@@ -272,3 +272,68 @@ describe('formQueryForItems: unit conversion by series type', () => {
     }
   });
 });
+
+describe('getDataQueryRequestItems: GraphQL series types', () => {
+  const instanceId = { space: 'sp', externalId: 'ts' };
+  const fdmTarget = (instanceKinds: Array<'numeric' | 'string' | 'state' | undefined>) =>
+    ({
+      ...defaultCogniteQuery,
+      tab: Tab.FlexibleDataModelling,
+      aggregation: 'none',
+      flexibleDataModellingQuery: { instanceIds: [instanceId], instanceKinds },
+    }) as unknown as CogniteQuery;
+
+  it('trusts the type the query selected, without a lookup', async () => {
+    const connector = { fetchItems: jest.fn() } as unknown as Connector;
+    const res = await getDataQueryRequestItems(fdmTarget(['string']), connector, 1000, undefined);
+    expect(res.kind).toBe('string');
+    expect(connector.fetchItems).not.toHaveBeenCalled();
+  });
+
+  it('fails a query whose aggregation the selected type does not have, without a lookup', async () => {
+    const connector = { fetchItems: jest.fn() } as unknown as Connector;
+    const target = { ...fdmTarget(['string']), aggregation: 'average' } as CogniteQuery;
+    await expect(getDataQueryRequestItems(target, connector, 1000, undefined)).rejects.toThrow(
+      'Average is not available for string time series.'
+    );
+    expect(connector.fetchItems).not.toHaveBeenCalled();
+  });
+
+  it('reads only the state set of a state series the tab already looked up', async () => {
+    const fetchItems = jest
+      .fn()
+      .mockResolvedValue([{ properties: { cdf_cdm: { 'CogniteStateSet/v1': { states: [{ numericValue: 0, stringValue: 'OFF' }] } } } }]);
+    const connector = { fetchItems } as unknown as Connector;
+    const target = fdmTarget(['state']) as any;
+    target.flexibleDataModellingQuery.instanceStateSets = [{ space: 'sp', externalId: 'set' }];
+    const res = await getDataQueryRequestItems(target, connector, 1000, undefined);
+    expect(res.kind).toBe('state');
+    expect(res.stateSet).toEqual([{ numericValue: 0, stringValue: 'OFF' }]);
+    expect(fetchItems).toHaveBeenCalledTimes(1);
+    expect(fetchItems.mock.calls[0][0].data.sources[0].source.externalId).toBe('CogniteStateSet');
+  });
+
+  it('makes no lookup for a state series the tab found without a state set', async () => {
+    const connector = { fetchItems: jest.fn() } as unknown as Connector;
+    const target = fdmTarget(['state']) as any;
+    target.flexibleDataModellingQuery.instanceStateSets = [null];
+    const res = await getDataQueryRequestItems(target, connector, 1000, undefined);
+    expect(res.kind).toBe('state');
+    expect(res.stateSet).toBeUndefined();
+    expect(connector.fetchItems).not.toHaveBeenCalled();
+  });
+
+  it('looks up a series whose type was not selected, and a state series state set', async () => {
+    const fetchItems = jest.fn().mockImplementation(async ({ data }) =>
+      data.sources[0].source.externalId === 'CogniteStateSet'
+        ? [{ properties: { cdf_cdm: { 'CogniteStateSet/v1': { states: [{ numericValue: 0, stringValue: 'OFF' }] } } } }]
+        : [{ properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type: 'state', stateSet: { space: 'sp', externalId: 'set' } } } } }]
+    );
+    const connector = { fetchItems } as unknown as Connector;
+    for (const hint of [undefined, 'state'] as const) {
+      const res = await getDataQueryRequestItems(fdmTarget([hint]), connector, 1000, undefined);
+      expect(res.kind).toBe('state');
+      expect(res.stateSet).toEqual([{ numericValue: 0, stringValue: 'OFF' }]);
+    }
+  });
+});

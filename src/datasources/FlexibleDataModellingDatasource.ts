@@ -2,10 +2,12 @@ import { DataQueryRequest, TableData, TimeSeries, DataQueryResponse } from '@gra
 import _, { Many } from 'lodash';
 import { getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { CogniteQuery, FDMQueryResponse, FlexibleDataModellingQuery, HttpMethod } from '../types';
+import { DMSInstanceId } from '../types/dms';
 import { Connector } from '../connector';
-import { handleError } from '../appEventHandler';
+import { handleError, handleWarning } from '../appEventHandler';
 import { TimeseriesDatasource } from './TimeseriesDatasource';
-import { convertItemsToTable } from '../cdf/client';
+import { convertItemsToTable, getTimeSeriesPropertiesBatch, instanceKey } from '../cdf/client';
+import { isTimeSeriesKind, TimeSeriesKind } from '../cdf/aggregates';
 import { graphqlEndpointPath } from '../cdf/graphqlEndpoint';
 import { readGraphqlRows } from '../cdf/graphqlRows';
 import { readScalarPath } from '../cdf/instanceRef';
@@ -64,6 +66,39 @@ interface TimeseriesItem {
   type: 'target' | 'instanceId';
   value: string | { space: string; externalId: string };
   label: string;
+  /** The series' type, when the query selects `type`. */
+  kind?: TimeSeriesKind;
+  /** A state series' state set: from the row when the query selects `stateSet`, else looked up; null when it has none. */
+  stateSet?: DMSInstanceId | null;
+}
+
+/** A series' type, or `unknown` when a lookup found no time series for the row. */
+type SeriesKind = TimeSeriesKind | 'unknown';
+
+const idOf = (item: TimeseriesItem) => item.value as DMSInstanceId;
+
+/** A row's `stateSet` field: the reference, null when the row has none, undefined when not selected. */
+const stateSetOf = (value: any): DMSInstanceId | null | undefined => {
+  const field = value?.stateSet;
+  if (field === undefined) {
+    return undefined;
+  }
+  return typeof field?.space === 'string' && typeof field?.externalId === 'string'
+    ? { space: field.space, externalId: field.externalId }
+    : null;
+};
+
+/** Names the series skipped for not being of the panel's series type, at most a few of them. */
+function skippedSeriesWarning(skipped: Array<{ label: string; kind: SeriesKind }>, selected: TimeSeriesKind): string {
+  const shown = 5;
+  const names = skipped
+    .slice(0, shown)
+    .map(({ label, kind }) => `${label || '(unnamed)'} (${kind === 'unknown' ? 'unknown type' : kind})`);
+  const more = skipped.length > shown ? ` and ${skipped.length - shown} more` : '';
+  return (
+    `Skipped ${skipped.length} time series that ${skipped.length === 1 ? 'is' : 'are'} not ${selected}: ` +
+    `${names.join(', ')}${more}. Pick their type under Query type, in a query of their own, to plot them.`
+  );
 }
 
 export class FlexibleDataModellingDatasource {
@@ -74,9 +109,10 @@ export class FlexibleDataModellingDatasource {
    *
    * A row, or an object field of one, is a time series when the editor's schema
    * lookup vouched for it in `schemaTsKeys` (TIME_SERIES_ROOT_KEY for the rows
-   * themselves, the field name for a nested one), or when its `type` reads
-   * numeric. Legacy `tsKeys` still name `__typename === 'TimeSeries'` objects; they
-   * never vouch on their own, since `typeNameList` accepts any type.
+   * themselves, the field name for a nested one), or when its `type` names a time
+   * series type (numeric, string or state). Legacy `tsKeys` still name
+   * `__typename === 'TimeSeries'` objects; they never vouch on their own, since
+   * `typeNameList` accepts any type.
    */
   private extractTimeseriesItems(dataItems: any[], query: FlexibleDataModellingQuery): TimeseriesItem[] {
     const items: TimeseriesItem[] = [];
@@ -92,7 +128,7 @@ export class FlexibleDataModellingDatasource {
 
     /**
      * Whether the datapoints API can serve this object. When the query selects
-     * `type` and it is populated, only numeric series are plotted, whatever vouched
+     * `type` and it is populated, it must be a time series type, whatever vouched
      * for the object; otherwise the schema's word is needed.
      */
     const isPlottable = (value: any, vouchedFor: boolean): boolean => {
@@ -100,8 +136,10 @@ export class FlexibleDataModellingDatasource {
         return false;
       }
       const type = (value as any).type;
-      return type == null ? vouchedFor : type === 'numeric';
+      return type == null ? vouchedFor : isTimeSeriesKind(type);
     };
+    const kindOf = (value: any): TimeSeriesKind | undefined =>
+      isTimeSeriesKind(value?.type) ? value.type : undefined;
 
     _.forEach(dataItems, (item) => {
       if (isPlottable(item, schemaTsKeys.includes(TIME_SERIES_ROOT_KEY))) {
@@ -109,6 +147,8 @@ export class FlexibleDataModellingDatasource {
           type: 'instanceId',
           value: { space: item.space, externalId: item.externalId },
           label: labelFor(item),
+          kind: kindOf(item),
+          stateSet: stateSetOf(item),
         });
       }
 
@@ -133,6 +173,8 @@ export class FlexibleDataModellingDatasource {
               type: 'instanceId',
               value: { space: (value as any).space, externalId: (value as any).externalId },
               label: labelFor(value, item),
+              kind: kindOf(value),
+              stateSet: stateSetOf(value),
             });
           }
         });
@@ -153,16 +195,25 @@ export class FlexibleDataModellingDatasource {
     options: any,
     target: any
   ): Promise<any[]> {
-    if (items.length === 0) {
+    // Instances: the rows alone, already returned as a table, without data points.
+    if (items.length === 0 || query.queryType === 'instances') {
       return [];
     }
 
+    // The panel plots one type of series, so its aggregation is valid for every
+    // series it plots. Rows of other types are skipped and named in a warning.
+    const selected = query.queryType ?? 'numeric';
+    const typed = await this.withKinds(items, selected);
+    const skipped = typed.filter(({ kind }) => kind !== selected);
+    const plotted = typed.filter((item): item is (typeof typed)[number] & { kind: TimeSeriesKind } => item.kind === selected);
+    if (skipped.length) {
+      handleWarning(skippedSeriesWarning(skipped, selected), target.refId);
+    }
+
     // Query each time series individually with unique refIds
-    const queryPromises = items.map((item, index) => {
+    const queryPromises = plotted.map((item, index) => {
       const targets = item.type === 'target' ? [item.value as string] : [];
-      const instanceIds = item.type === 'instanceId' 
-        ? [item.value as { space: string; externalId: string }] 
-        : [];
+      const instanceIds = item.type === 'instanceId' ? [idOf(item)] : [];
 
       return this.timeseriesDatasource.query({
         ...options,
@@ -175,6 +226,8 @@ export class FlexibleDataModellingDatasource {
               targets,
               instanceIds,
               labels: [item.label],
+              instanceKinds: [item.kind],
+              instanceStateSets: [item.kind === 'state' ? item.stateSet : undefined],
             },
           },
         ],
@@ -183,6 +236,41 @@ export class FlexibleDataModellingDatasource {
 
     const results = await Promise.all(queryPromises);
     return _.flatten(results.map((r) => r.data));
+  }
+
+  /**
+   * Each series with its type: the one the query selected, or else the one stored
+   * on the instance. Legacy series are numeric. A numeric panel takes rows without
+   * a type as numeric, as it always did, without a lookup. On a state panel, state
+   * rows whose query did not select `stateSet` are looked up too, for their state
+   * sets. All lookups go out as one cached batch, and a failed one fails the query
+   * rather than guessing numeric. A row the lookup finds no time series for is of
+   * an unknown type.
+   */
+  private async withKinds(
+    items: TimeseriesItem[],
+    selected: TimeSeriesKind
+  ): Promise<Array<Omit<TimeseriesItem, 'kind'> & { kind: SeriesKind }>> {
+    const lookups = items.filter(
+      (item) =>
+        item.type === 'instanceId' &&
+        selected !== 'numeric' &&
+        (!item.kind || (selected === 'state' && item.kind === 'state' && item.stateSet === undefined))
+    );
+    if (!lookups.length) {
+      return items.map((item) => ({ ...item, kind: item.kind ?? 'numeric' }));
+    }
+    const properties = await getTimeSeriesPropertiesBatch(this.connector, lookups.map(idOf));
+    const looked = new Set(lookups);
+
+    return items.map((item) => {
+      if (!looked.has(item)) {
+        return { ...item, kind: item.kind ?? 'numeric' };
+      }
+      const stored = properties.get(instanceKey(idOf(item)));
+      const kind = item.kind ?? (isTimeSeriesKind(stored?.type) ? stored.type : 'unknown');
+      return { ...item, kind, stateSet: stored?.stateSet ?? null };
+    });
   }
 
   async listFlexibleDataModelling(refId: string): Promise<

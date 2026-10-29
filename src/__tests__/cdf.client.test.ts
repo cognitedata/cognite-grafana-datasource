@@ -8,6 +8,7 @@ import {
   interpolateCogniteTimeSeriesInstanceLabel,
   concurrent,
   convertItemsToTable,
+  getTimeSeriesPropertiesBatch,
 } from '../cdf/client';
 import { getDataqueryResponse, getMeta } from '../test_utils';
 
@@ -314,5 +315,39 @@ describe('reduceTimeseries: the {{state}} label token', () => {
       [0, 10]
     ) as TimeSeries[];
     expect(series.target).toBe('Pump :state');
+  });
+});
+
+describe('getTimeSeriesPropertiesBatch', () => {
+  const node = (externalId: string) => ({
+    space: 's',
+    externalId,
+    properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type: 'string' } } },
+  });
+
+  it('looks up every instance once, in pages of 1000, keyed by space and externalId', async () => {
+    const fetchItems = jest.fn().mockImplementation(async ({ data }) => data.items.map(({ externalId }: any) => node(externalId)));
+    const ids = Array.from({ length: 1001 }, (_, i) => ({ space: 's', externalId: `ts${i}` }));
+    const properties = await getTimeSeriesPropertiesBatch({ fetchItems } as any, [...ids, ids[0]]);
+    expect(fetchItems.mock.calls.map(([request]) => request.data.items.length)).toEqual([1000, 1]);
+    expect(properties.size).toBe(1001);
+    expect(properties.get('s:ts1000')).toEqual({ type: 'string', unit: undefined });
+  });
+
+  it('asks for the same rows in the same order, however they arrive, so the request is cached', async () => {
+    const fetchItems = jest.fn().mockResolvedValue([]);
+    const ids = [{ space: 's', externalId: 'b' }, { space: 's', externalId: 'a' }];
+    await getTimeSeriesPropertiesBatch({ fetchItems } as any, ids);
+    await getTimeSeriesPropertiesBatch({ fetchItems } as any, [...ids].reverse());
+    const [first, second] = fetchItems.mock.calls.map(([request]) => request.data);
+    expect(first).toEqual(second);
+    expect(first.items.map(({ externalId }: any) => externalId)).toEqual(['a', 'b']);
+  });
+
+  it('fails when a request fails', async () => {
+    const fetchItems = jest.fn().mockRejectedValue(new Error('boom'));
+    await expect(getTimeSeriesPropertiesBatch({ fetchItems } as any, [{ space: 's', externalId: 'a' }])).rejects.toThrow(
+      'boom'
+    );
   });
 });

@@ -7,6 +7,7 @@ import {
   timeSeriesKeysFromSchema,
 } from '../cdf/graphqlTimeSeries';
 import { FlexibleDataModellingDatasource } from '../datasources/FlexibleDataModellingDatasource';
+import { eventBusService } from '../appEventHandler';
 
 const CORE = buildSchema(`
   type CogniteTimeSeries { space: String, externalId: String, name: String, type: String }
@@ -108,15 +109,36 @@ describe('timeSeriesKeysFromSchema', () => {
 });
 
 describe('plotting the series a GraphQL query returns', () => {
+  let lastConnector: any;
   /** The per-series datapoint requests a query produces. */
   const runRequests = async (
-    keys: { tsKeys?: string[]; schemaTsKeys?: string[]; label?: string },
+    keys: { tsKeys?: string[]; schemaTsKeys?: string[]; label?: string; queryType?: string },
     items: any[],
-    graphQlQuery: string
+    graphQlQuery: string,
+    targetPatch: Record<string, unknown> = {},
+    storedType?: string
   ) => {
     const connector = {
       fetchQuery: jest.fn().mockResolvedValue({ data: { listCogniteTimeSeries: { items } } }),
+      // The type lookup for rows that do not select `type`: every instance asked for.
+      fetchItems: jest.fn().mockImplementation(async ({ data }) =>
+        storedType
+          ? data.items.map(({ space, externalId }: any) => ({
+              space,
+              externalId,
+              properties: {
+                cdf_cdm: {
+                  'CogniteTimeSeries/v1': {
+                    type: storedType,
+                    ...(storedType === 'state' ? { stateSet: { space, externalId: 'set' } } : {}),
+                  },
+                },
+              },
+            }))
+          : []
+      ),
     } as any;
+    lastConnector = connector;
     const timeseries = { query: jest.fn().mockResolvedValue({ data: [] }) } as any;
     const ds = new FlexibleDataModellingDatasource(connector, timeseries);
     const query = {
@@ -127,8 +149,9 @@ describe('plotting the series a GraphQL query returns', () => {
       tsKeys: keys.tsKeys ?? [],
       schemaTsKeys: keys.schemaTsKeys,
       label: keys.label,
+      queryType: keys.queryType as any,
     };
-    await ds.runQuery(query, {}, { refId: 'A', flexibleDataModellingQuery: query });
+    await ds.runQuery(query, {}, { refId: 'A', flexibleDataModellingQuery: query, ...targetPatch });
     return timeseries.query.mock.calls.map(
       ([request]: any[]) => request.targets[0].flexibleDataModellingQuery
     );
@@ -160,16 +183,92 @@ describe('plotting the series a GraphQL query returns', () => {
     ]);
   });
 
-  it('skips rows whose selected type is not numeric', async () => {
-    const fetched = await run(
-      vouchedRows,
-      [
-        { space: 's', externalId: 'numeric', type: 'numeric' },
-        { space: 's', externalId: 'text', type: 'string' },
-      ],
-      rowsQuery
-    );
-    expect(fetched).toEqual([{ space: 's', externalId: 'numeric' }]);
+  const mixedRows = [
+    { space: 's', externalId: 'numeric', name: 'Level', type: 'numeric' },
+    { space: 's', externalId: 'text', name: 'Phase', type: 'string' },
+    { space: 's', externalId: 'pump', name: 'Pump', type: 'state' },
+    { space: 's', externalId: 'other', type: 'notATimeSeriesType' },
+  ];
+
+  it('plots only the rows of the panel series type, numeric unless chosen', async () => {
+    const ids = async (queryType?: string) =>
+      (await runRequests({ ...vouchedRows, queryType }, mixedRows, rowsQuery)).map(
+        (q) => q.instanceIds[0].externalId
+      );
+    expect(await ids(undefined)).toEqual(['numeric']);
+    expect(await ids('string')).toEqual(['text']);
+    expect(await ids('state')).toEqual(['pump']);
+  });
+
+  it('fetches no data points for Instances', async () => {
+    expect(await runRequests({ ...vouchedRows, queryType: 'instances' }, mixedRows, rowsQuery)).toEqual([]);
+  });
+
+  it('passes the type on with each series, so it is not looked up again', async () => {
+    const requests = await runRequests({ ...vouchedRows, queryType: 'state' }, mixedRows, rowsQuery);
+    expect(requests.map((q) => q.instanceKinds)).toEqual([['state']]);
+  });
+
+  it('names the skipped series in a warning on the query row', async () => {
+    const emit = jest.spyOn(eventBusService, 'emit').mockImplementation(() => undefined);
+    await runRequests(vouchedRows, mixedRows.slice(0, 3), rowsQuery);
+    expect(emit).toHaveBeenCalledWith(expect.anything(), {
+      refId: 'A',
+      warning: expect.stringMatching(/^Skipped 2 time series that are not numeric: Phase \(string\), Pump \(state\)\./),
+    });
+    emit.mockRestore();
+  });
+
+  it('looks up rows without a type for a string or state panel, not for a numeric one', async () => {
+    const untyped = [{ space: 's', externalId: 'phase' }];
+    const asState = await runRequests({ ...vouchedRows, queryType: 'state' }, untyped, rowsQuery, {}, 'state');
+    expect(asState).toHaveLength(1);
+    expect(lastConnector.fetchItems).toHaveBeenCalled();
+
+    const asNumeric = await runRequests(vouchedRows, untyped, rowsQuery, {}, 'state');
+    expect(asNumeric).toHaveLength(1);
+    expect(lastConnector.fetchItems).not.toHaveBeenCalled();
+  });
+
+  it('looks up all the rows in one request, and passes a state series state set on', async () => {
+    const untyped = [
+      { space: 's', externalId: 'a' },
+      { space: 's', externalId: 'b' },
+      { space: 's', externalId: 'c' },
+    ];
+    const requests = await runRequests({ ...vouchedRows, queryType: 'state' }, untyped, rowsQuery, {}, 'state');
+    expect(lastConnector.fetchItems).toHaveBeenCalledTimes(1);
+    expect(lastConnector.fetchItems.mock.calls[0][0].data.items).toHaveLength(3);
+    expect(requests.map((q) => q.instanceStateSets)).toEqual([
+      [{ space: 's', externalId: 'set' }],
+      [{ space: 's', externalId: 'set' }],
+      [{ space: 's', externalId: 'set' }],
+    ]);
+  });
+
+  it('looks up typed state rows on a state panel too, for their state sets', async () => {
+    await runRequests({ ...vouchedRows, queryType: 'state' }, mixedRows, rowsQuery, {}, 'state');
+    expect(lastConnector.fetchItems.mock.calls[0][0].data.items).toEqual([
+      { instanceType: 'node', space: 's', externalId: 'pump' },
+    ]);
+  });
+
+  it('takes a state set the row selected, without a lookup', async () => {
+    const rows = [{ space: 's', externalId: 'pump', name: 'Pump', type: 'state', stateSet: { space: 's', externalId: 'set' } }];
+    const requests = await runRequests({ ...vouchedRows, queryType: 'state' }, rows, rowsQuery, {}, 'state');
+    expect(lastConnector.fetchItems).not.toHaveBeenCalled();
+    expect(requests.map((q) => q.instanceStateSets)).toEqual([[{ space: 's', externalId: 'set' }]]);
+  });
+
+  it('names a row the lookup finds no time series for as of an unknown type', async () => {
+    const emit = jest.spyOn(eventBusService, 'emit').mockImplementation(() => undefined);
+    const requests = await runRequests({ ...vouchedRows, queryType: 'string' }, [{ space: 's', externalId: 'gone', name: 'Gone' }], rowsQuery);
+    expect(requests).toEqual([]);
+    expect(emit).toHaveBeenCalledWith(expect.anything(), {
+      refId: 'A',
+      warning: expect.stringContaining('Gone (unknown type)'),
+    });
+    emit.mockRestore();
   });
 
   it('lets the schema decide when the selected type is not populated', async () => {
