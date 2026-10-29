@@ -1,9 +1,18 @@
 import { DataQueryRequest, DataQueryResponse, DataFrame, FieldType, DataTopic } from '@grafana/data';
-import { CogniteQuery, CogniteActivityQuery, HttpMethod, Tuple, ActivitySortProp } from '../types';
+import {
+  CogniteQuery,
+  CogniteActivityQuery,
+  HttpMethod,
+  Tuple,
+  ActivitySortProp,
+  ALL_ACTIVITY_COLUMNS,
+  LEGACY_ACTIVITY_COLUMNS,
+} from '../types';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
-import { CogniteActivity } from '../types/dms';
-import { fetchActivitiesFromDMS, fetchActivitiesByAssets } from '../cdf/client';
+import { CogniteActivity, DMSViewWithProperties } from '../types/dms';
+import { fetchActivitiesFromDMS, fetchActivitiesByAssets, fetchDMSView } from '../cdf/client';
+import { INSTANCE_PROPERTIES } from '../cdf/instanceProperties';
 import { handleError } from '../appEventHandler';
 
 function inferFieldType(values: any[]): FieldType {
@@ -62,6 +71,44 @@ export const convertActivitiesDateFields = (activities: CogniteActivity[]) => {
     };
   });
 };
+
+/** Mapped by the activity fetch but not a property: the instance's version. */
+const NOT_A_COLUMN = new Set(['version']);
+
+/** A direct relation's value: a reference, or a list of them. */
+const isReference = (value: unknown): boolean =>
+  Array.isArray(value)
+    ? value.length > 0 && value.every(isReference)
+    : typeof value === 'object' && value !== null && 'space' in value && 'externalId' in value;
+
+/**
+ * The columns "every property" shows: the view's properties in the view's order, then
+ * the instance properties. Relations are left out: the column of related instances
+ * names them, and their values are references, not text. Edges and reverse relations,
+ * which carry no stored type, are never returned with the activities. Without the
+ * view, the properties the activities actually carry.
+ */
+export function allActivityColumns(view: DMSViewWithProperties | null, activities: CogniteActivity[]): string[] {
+  const instanceProps = INSTANCE_PROPERTIES.map(({ name }) => name);
+  const viewProps = view?.properties
+    ? Object.entries(view.properties)
+        .filter(([, def]) => typeof def.type?.type === 'string' && def.type.type !== 'direct')
+        .map(([name]) => name)
+    : [
+        ...new Set(
+          activities.flatMap((activity) =>
+            Object.entries(activity)
+              .filter(([, value]) => value !== undefined && value !== null && !isReference(value))
+              .map(([name]) => name)
+          )
+        ),
+      ].filter((name) => !instanceProps.includes(name) && !NOT_A_COLUMN.has(name));
+  return [...viewProps, ...instanceProps.filter((name) => !viewProps.includes(name))];
+}
+
+/** A cell value: lists and objects (a json property, say) as JSON, so they read as text. */
+const cellValue = (value: unknown) =>
+  value !== null && typeof value === 'object' && !(value instanceof Date) ? JSON.stringify(value) : value ?? null;
 
 const sortActivities = (activities: CogniteActivity[], sort: ActivitySortProp[]): CogniteActivity[] => {
   return [...activities].sort((a, b) => {
@@ -140,7 +187,8 @@ export class ActivityDatasource {
         const {
           space, externalId, version, resourceType, assetInstances,
           activeOnly = true,
-          columns: selectedColumns = ['externalId', 'description', 'startTime', 'endTime'],
+          // A query saved before columns could be chosen keeps the ones it always showed.
+          columns = LEGACY_ACTIVITY_COLUMNS,
           sort = [],
         } = cogniteActivityTabQuery;
         const filterPropertyMap: Record<string, string> = {
@@ -149,13 +197,14 @@ export class ActivityDatasource {
           CogniteTimeSeries: 'timeSeries',
         };
         const filterProperty = filterPropertyMap[resourceType] ?? 'assets';
+        const allColumns = columns.includes(ALL_ACTIVITY_COLUMNS);
         try {
-          let activities = await fetchActivitiesByAssets(
-            this.connector,
-            { space, externalId, version },
-            assetInstances,
-            filterProperty
-          );
+          // The view, for "every property", is read alongside the activities.
+          const [fetched, view] = await Promise.all([
+            fetchActivitiesByAssets(this.connector, { space, externalId, version }, assetInstances, filterProperty),
+            allColumns ? fetchDMSView(this.connector, { space, externalId, version }) : Promise.resolve(null),
+          ]);
+          let activities = fetched;
 
           // Active only: keep activities that overlap [rangeStart, rangeEnd]
           if (activeOnly) {
@@ -176,6 +225,7 @@ export class ActivityDatasource {
           }
 
           const converted = convertActivitiesDateFields(activities);
+          const selectedColumns = allColumns ? allActivityColumns(view, activities) : columns;
 
           // Build lookup: "space:externalId" -> display name (name only, fallback to externalId)
           const instanceNameMap = new Map(
@@ -208,7 +258,7 @@ export class ActivityDatasource {
             name: 'CogniteActivities',
             fields: [
               ...selectedColumns.map((col) => {
-                const values = converted.map((item) => (item as any)[col] ?? null);
+                const values = converted.map((item) => cellValue((item as any)[col]));
                 return {
                   name: col,
                   type: inferFieldType(values),

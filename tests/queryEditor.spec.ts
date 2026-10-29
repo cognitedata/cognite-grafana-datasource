@@ -790,3 +790,27 @@ test('"GraphQL" query type plots its type and skips the others', async ({ readPr
     );
   }
 });
+
+test('"Activities" tab opens on the active activities with its default sort and columns', async ({ readProvisionedDataSource, readProvisionedDashboard, gotoDashboardPage, page, grafanaVersion }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
+  await panelEditPage.datasource.set(ds.name);
+  const editorRow = panelEditPage.getQueryEditorRow('A');
+
+  const activitiesTab = editorRow.getByText('Activities', { exact: true });
+  await expect(activitiesTab).toBeVisible();
+  await activitiesTab.click();
+
+  await expect(editorRow.getByRole('radio', { name: 'Active in time range' })).toBeChecked();
+  await expect(editorRow.getByRole('radio', { name: 'Assets' })).toBeChecked();
+  // The default sort key, which also appears as a column chip.
+  await expect(editorRow.getByText('startTime', { exact: true }).first()).toBeVisible();
+  await expect(editorRow.locator('#activity-columns-A')).toBeVisible();
+  await expect(editorRow.locator('#cognite-activity-instances-A')).toBeVisible();
+
+  // The standard activity view is picked once the views load.
+  await expect(editorRow.getByText(/CogniteActivity.*cdf_cdm/i).first()).toBeVisible({ timeout: 10000 });
+});
