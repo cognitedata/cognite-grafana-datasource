@@ -167,8 +167,14 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   await expect.poll(async () => {
     const panelContent = panelEditPage.panel.locator;
-    // Time series visualization (Grafana < 13): series appear as clickable legend buttons
-    const buttons = await panelContent.getByRole('button', { name: /59\.9139-10\.7522/ }).allInnerTexts();
+    // Time series visualization (Grafana < 13): series appear as clickable legend buttons.
+    // Matched by text: the color swatch next to each is a button named after the series
+    // too ("Edit color for ..."), but it has no text, and the label button's accessible
+    // name may not be the series name.
+    const buttons = await panelContent
+      .getByRole('button')
+      .filter({ hasText: /59\.9139-10\.7522/ })
+      .allInnerTexts();
     if (buttons.length > 0) return buttons.sort();
     // Grafana 13 inline editor may use a Stat visualization: series appear as plain text
     const textElems = await panelContent.getByText(/59\.9139-10\.7522/).allInnerTexts();
