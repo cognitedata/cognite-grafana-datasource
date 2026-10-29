@@ -69,8 +69,24 @@ const AGGREGATES_BY_KIND: Record<TimeSeriesKind, AggregateOption[]> = {
     COUNT,
     ...STATUS,
   ],
-  // State time series are not supported yet.
-  state: [NONE],
+  state: [
+    NONE,
+    { ...INTERPOLATION, description: 'The state at the start of each interval' },
+    {
+      value: 'dominantState',
+      label: 'Most time in state',
+      description: 'The state held longest in each interval (worked out from State duration)',
+    },
+    { value: 'stateDuration', label: 'State duration', description: 'Time in each state, in milliseconds: one time series per state' },
+    { value: 'stateCount', label: 'State count', description: 'Data points in each state: one time series per state' },
+    {
+      value: 'stateTransitions',
+      label: 'State transitions',
+      description: 'Changes into each state: one time series per state',
+    },
+    COUNT,
+    ...STATUS,
+  ],
 };
 
 /** Aggregates every type of series has; the rest belong to one type. */
@@ -151,6 +167,10 @@ export const defaultAggregationFor = (kind: TimeSeriesKind): string =>
   kind === 'numeric' ? 'average' : 'none';
 
 const DURATION_AGGREGATES = new Set(['durationGood', 'durationUncertain', 'durationBad']);
+
+/** What is requested from CDF for an aggregation the editor offers. */
+export const requestedAggregate = (aggregation: string) =>
+  aggregation === 'dominantState' ? 'stateDuration' : aggregation;
 
 /** Aggregates whose values are milliseconds. */
 export const isDurationAggregate = (aggregation?: string) =>

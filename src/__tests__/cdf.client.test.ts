@@ -301,3 +301,18 @@ describe('CDF client', () => {
     });
   });
 });
+
+describe('reduceTimeseries: the {{state}} label token', () => {
+  it('shows as a missing field on a series that is not per state', () => {
+    const [series] = reduceTimeseries(
+      [
+        {
+          result: { data: { items: [{ id: 1, datapoints: [{ timestamp: 1, count: 2 }] }] }, config: { data: { aggregates: ['count'] } } },
+          metadata: { labels: ['Pump {{state}}'], type: 'data', kind: 'numeric', target: { aggregation: 'count' } },
+        } as any,
+      ],
+      [0, 10]
+    ) as TimeSeries[];
+    expect(series.target).toBe('Pump :state');
+  });
+});

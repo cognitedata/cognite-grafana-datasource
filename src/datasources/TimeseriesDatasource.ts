@@ -33,7 +33,9 @@ import {
   targetToIdEither,
   resolveTargetFill,
   getTimeSeriesProperties,
+  getStateSet,
 } from '../cdf/client';
+import { StateSetEntry } from '../cdf/typedFrames';
 import {
   isAggregateAllowed,
   isTimeSeriesKind,
@@ -113,6 +115,7 @@ export async function getDataQueryRequestItems(
   const type = getDataQueryRequestType(target);
   let items: DataQueryRequestItem[];
   let kind: TimeSeriesKind | undefined;
+  let stateSet: StateSetEntry[] | undefined;
 
   switch (tab) {
     default:
@@ -147,12 +150,12 @@ export async function getDataQueryRequestItems(
         externalId: cogniteTimeSeries.instanceId.externalId,
       };
       items = [{ instanceId }];
-      kind = await resolveTimeSeriesKind(connector, instanceId, target, type);
+      ({ kind, stateSet } = await resolveTimeSeriesKind(connector, instanceId, target, type));
       break;
     }
   }
 
-  return { type, items, target, kind };
+  return { type, items, target, kind, stateSet };
 }
 
 /**
@@ -165,18 +168,17 @@ async function resolveTimeSeriesKind(
   instanceId: { space: string; externalId: string },
   { aggregation }: QueryTarget,
   type: DataQueryRequestType
-): Promise<TimeSeriesKind> {
+): Promise<{ kind: TimeSeriesKind; stateSet?: StateSetEntry[] }> {
   // A failed lookup fails the query: guessing numeric would send a request CDF
   // refuses for string and state series, with a less useful error.
   const properties = await getTimeSeriesProperties(connector, instanceId, { rethrow: true });
   const kind = isTimeSeriesKind(properties.type) ? properties.type : 'numeric';
-  if (kind === 'state') {
-    throw new Error('State time series are not supported yet.');
-  }
   if (type === 'data' && !isAggregateAllowed(kind, aggregation)) {
     throw new Error(unavailableAggregateMessage(kind, aggregation));
   }
-  return kind;
+  const stateSet =
+    kind === 'state' && properties.stateSet ? await getStateSet(connector, properties.stateSet) : undefined;
+  return { kind, stateSet };
 }
 export class TimeseriesDatasource {
   constructor(private connector: Connector) {}
@@ -206,7 +208,7 @@ export class TimeseriesDatasource {
     );
     const queries = formQueriesForTargets(queryData, options);
     const metadata = await Promise.all(
-      queryData.map(async ({ target, items, type, kind }): Promise<ResponseMetadata> => {
+      queryData.map(async ({ target, items, type, kind, stateSet }): Promise<ResponseMetadata> => {
         let labels = [];
         try {
           labels = target.flexibleDataModellingQuery?.labels?.length
@@ -216,7 +218,7 @@ export class TimeseriesDatasource {
           handleError(err, target.refId);
         }
         const { warning } = resolveTargetFill(target, type, options.intervalMs);
-        return { target, labels, type, kind, ...(warning ? { warnings: [warning] } : {}) };
+        return { target, labels, type, kind, stateSet, ...(warning ? { warnings: [warning] } : {}) };
       })
     );
     const queryProxy = async ([data, metadata]: [CDFDataQueryRequest, ResponseMetadata]) => {

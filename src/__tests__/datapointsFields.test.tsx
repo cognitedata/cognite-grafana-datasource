@@ -45,18 +45,12 @@ describe('DatapointsFields', () => {
   });
 
   it('offers the aggregates of the type, without None', () => {
-    renderFields({ aggregation: 'interpolation' }, 'string');
+    renderFields({ aggregation: 'stateDuration' }, 'state');
     fireEvent.keyDown(document.getElementById('aggregation-A')!, { key: 'ArrowDown' });
-    expect(screen.getByText('Count (good)')).toBeTruthy();
+    expect(screen.getByText('Most time in state')).toBeTruthy();
     expect(screen.queryByText('None')).toBeNull();
     expect(screen.queryByText('Average')).toBeNull();
     expect(screen.queryByText('Step Interpolation')).toBeNull();
-  });
-
-  it('offers Raw and Latest only for a type it cannot aggregate', () => {
-    renderFields({ aggregation: 'none' }, 'state');
-    expect(screen.queryByRole('radio', { name: 'Aggregate' })).toBeNull();
-    expect(checked('Raw')).toBe(true);
   });
 
   it('goes back to the aggregate in use before Raw', () => {

@@ -167,8 +167,14 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   await expect.poll(async () => {
     const panelContent = panelEditPage.panel.locator;
-    // Time series visualization (Grafana < 13): series appear as clickable legend buttons
-    const buttons = await panelContent.getByRole('button', { name: /59\.9139-10\.7522/ }).allInnerTexts();
+    // Time series visualization (Grafana < 13): series appear as clickable legend buttons.
+    // Matched by text: the color swatch next to each is a button named after the series
+    // too ("Edit color for ..."), but it has no text, and the label button's accessible
+    // name may not be the series name.
+    const buttons = await panelContent
+      .getByRole('button')
+      .filter({ hasText: /59\.9139-10\.7522/ })
+      .allInnerTexts();
     if (buttons.length > 0) return buttons.sort();
     // Grafana 13 inline editor may use a Stat visualization: series appear as plain text
     const textElems = await panelContent.getByText(/59\.9139-10\.7522/).allInnerTexts();
@@ -450,6 +456,38 @@ test('"CogniteTimeSeries" string series offer their own aggregates', async ({ se
   await aggregationInput.fill('Count (good)');
   await aggregationInput.press('Enter');
   expect((await counted).status()).toBe(200);
+});
+
+test('"CogniteTimeSeries" state series aggregate by state', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // state-ts-real-data:wind_turbine_status, whose state set is wind_turbine_ops.
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'wind_turbine_status');
+  await waitForQueriesToFinish(page);
+
+  // String and state series start on Raw; the aggregates are offered in Aggregate mode.
+  await editorRow.getByRole('radio', { name: 'Aggregate' }).click();
+  await waitForQueriesToFinish(page);
+
+  const durations = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.aggregates?.[0] === 'stateDuration'
+  );
+  const aggregationInput = editorRow.locator('input[id="aggregation-A"]');
+  await aggregationInput.click();
+  await aggregationInput.fill('State duration');
+  await aggregationInput.press('Enter');
+  const response = await durations;
+  expect(response.status()).toBe(200);
+  expect((await response.json()).items[0].type).toBe('state');
 });
 
 test('"CogniteTimeSeries" a string series shows its type and is read raw', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {

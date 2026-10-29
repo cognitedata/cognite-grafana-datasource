@@ -58,8 +58,14 @@ import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
 import { FillResolution, granularityToMs, resolveFillLimit } from './gapFill';
 import { resolveDatapointsGranularity } from './granularity';
-import { isDurationAggregate, returnsSeriesValues } from './aggregates';
-import { stringSeriesFrame } from './typedFrames';
+import { isDurationAggregate, requestedAggregate, returnsSeriesValues } from './aggregates';
+import {
+  STATE_LABEL_TOKEN,
+  StateSetEntry,
+  stateFramesFor,
+  stringSeriesFrame,
+  withoutStateToken,
+} from './typedFrames';
 
 const { Asset, Custom, Timeseries } = Tab;
 const UNITS_SPACE = 'cdf_cdm_units';
@@ -88,7 +94,7 @@ export function formQueryForItems(
       const isAggregated = aggregation && aggregation !== 'none';
       if (isAggregated) {
         aggregations = {
-          aggregates: [aggregation],
+          aggregates: [requestedAggregate(aggregation)],
           granularity: resolveDatapointsGranularity(granularity, intervalMs),
           timeZone,
         };
@@ -253,8 +259,12 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   // `space` and `externalId` come from the instance node itself (not the view
   // schema), but are exposed in `props` and useful in labels.
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
-  return labelSrc.replace(LABEL_TOKEN, (_full, group) => {
+  return labelSrc.replace(LABEL_TOKEN, (full, group) => {
     const rootKey = group.split('.')[0];
+    // `{{state}}` names the state of a per-state series; it is filled in with the frames.
+    if (group === STATE_LABEL_TOKEN && !validPropNames.has(group)) {
+      return full;
+    }
     // Own props resolved by the caller (e.g. the effective `unit`) count as valid even when
     // the view schema doesn't declare them.
     if (!validPropNames.has(rootKey) && !Object.prototype.hasOwnProperty.call(props, rootKey)) {
@@ -348,30 +358,46 @@ export function reduceTimeseries(
   const responseTimeseries: Array<TimeSeries | DataFrame> = [];
 
   metaResponses.forEach(({ result, metadata }) => {
-    const { labels, type, kind } = metadata;
+    const { labels, type, kind, stateSet, target } = metadata;
     const { aggregates, granularity } = result.config.data;
     const aggregate = aggregates?.[0];
     const { items } = result.data;
 
-    const series = items.map(({ datapoints, externalId, id }, i): TimeSeries | DataFrame => {
+    const series = items.flatMap(({ datapoints, externalId, id }, i): Array<TimeSeries | DataFrame> => {
       const label = labels && labels[i];
       const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
         type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end, granularity);
+      // A state series' states, per point or per state, become frames of their own.
+      if (kind === 'state') {
+        const frames = stateFramesFor(
+          resTarget,
+          dpsInRange,
+          type === 'latest' ? 'none' : target.aggregation,
+          stateSet
+        );
+        if (frames) {
+          return frames;
+        }
+      }
       // A string series' own values (raw, latest, interpolated) are text.
       if (kind === 'string' && returnsSeriesValues(aggregate)) {
         const key = aggregate && aggregate !== 'none' ? aggregate : 'value';
-        return stringSeriesFrame(
-          resTarget,
-          dpsInRange.map((dp) => ({ timestamp: dp.timestamp, value: dp[key] ?? null }))
-        );
+        return [
+          stringSeriesFrame(
+            resTarget,
+            dpsInRange.map((dp) => ({ timestamp: dp.timestamp, value: dp[key] ?? null }))
+          ),
+        ];
       }
       const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
-      return {
-        target: resTarget,
-        datapoints: rawDatapoints,
-        ...(isDurationAggregate(aggregate) ? { unit: 'ms' } : {}),
-      };
+      return [
+        {
+          target: withoutStateToken(resTarget),
+          datapoints: rawDatapoints,
+          ...(isDurationAggregate(aggregate) ? { unit: 'ms' } : {}),
+        },
+      ];
     });
 
     responseTimeseries.push(...series);
@@ -776,6 +802,8 @@ export async function resolveEffectiveUnit(
 export interface TimeSeriesProperties {
   unit?: string;
   type?: string;
+  /** The state set of a state series. */
+  stateSet?: { space: string; externalId: string };
 }
 
 export async function getTimeSeriesProperties(
@@ -823,7 +851,13 @@ export async function getTimeSeriesProperties(
       const rawType = tsProps?.type;
       const type = typeof rawType === 'string' ? rawType : undefined;
 
-      return { unit, type };
+      const rawStateSet = tsProps?.stateSet;
+      const stateSet =
+        rawStateSet && typeof rawStateSet.space === 'string' && typeof rawStateSet.externalId === 'string'
+          ? { space: rawStateSet.space, externalId: rawStateSet.externalId }
+          : undefined;
+
+      return { unit, type, ...(stateSet ? { stateSet } : {}) };
     }
   } catch (err) {
     if (rethrow) {
@@ -832,6 +866,47 @@ export async function getTimeSeriesProperties(
     console.warn('Failed to fetch timeseries properties:', err);
   }
   return {};
+}
+
+const STATE_SET_VIEW = { type: 'view', space: 'cdf_cdm', externalId: 'CogniteStateSet', version: 'v1' };
+
+/** A state set's states, ordered by code, or undefined if it cannot be read. */
+export async function getStateSet(
+  connector: Connector,
+  stateSet: { space: string; externalId: string }
+): Promise<StateSetEntry[] | undefined> {
+  try {
+    const instances = await retryOnRateLimit(() =>
+      connector.fetchItems<DMSInstance>({
+        method: HttpMethod.POST,
+        path: '/models/instances/byids',
+        cacheTime: CacheTime.ResourceByIds,
+        data: {
+          sources: [{ source: STATE_SET_VIEW }],
+          items: [{ instanceType: 'node', space: stateSet.space, externalId: stateSet.externalId }],
+          includeTyping: false,
+        },
+      })
+    );
+    const states = instances[0]?.properties?.['cdf_cdm']?.['CogniteStateSet/v1']?.states;
+    if (!Array.isArray(states)) {
+      return undefined;
+    }
+    return states
+      .filter(
+        (state): state is StateSetEntry =>
+          typeof state?.numericValue === 'number' && typeof state?.stringValue === 'string'
+      )
+      .map(({ numericValue, stringValue, description }) => ({
+        numericValue,
+        stringValue,
+        ...(typeof description === 'string' && description ? { description } : {}),
+      }))
+      .sort((a, b) => a.numericValue - b.numericValue);
+  } catch (err) {
+    console.warn('Failed to fetch the state set:', err);
+    return undefined;
+  }
 }
 
 export async function getTimeSeriesUnit(

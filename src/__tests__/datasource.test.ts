@@ -982,3 +982,108 @@ describe('Given a string Time series (data modeling) query', () => {
     });
   });
 });
+
+describe('Given a state Time series (data modeling) query', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const instanceId = { space: 'state-ts-real-data', externalId: 'wind_turbine_status' };
+  const stateSetRef = { space: 'state-ts-real-data', externalId: 'wind_turbine_ops' };
+  const t0 = +options.range.from;
+  const target = (patch: QueryTargetLike = {}): QueryTargetLike => ({
+    refId: 'T',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'none',
+    granularity: '1h',
+    label: '',
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId,
+    },
+    ...patch,
+  });
+  const respond = (datapoints: any[]) =>
+    fetcher.fetch.mockImplementation(async ({ url, data }) => {
+      if (url.endsWith('/models/instances/byids')) {
+        const view = data.sources[0].source.externalId;
+        return getItemsResponseObject([
+          view === 'CogniteStateSet'
+            ? {
+              ...stateSetRef,
+              properties: {
+                cdf_cdm: {
+                  'CogniteStateSet/v1': {
+                    states: [
+                      { numericValue: 1, stringValue: 'AVAILABLE' },
+                      { numericValue: 0, stringValue: 'RUNNING' },
+                    ],
+                  },
+                },
+              },
+            }
+            : {
+              ...instanceId,
+              properties: {
+                cdf_cdm: {
+                  'CogniteTimeSeries/v1': { name: 'Turbine 1', type: 'state', stateSet: stateSetRef },
+                },
+              },
+            },
+        ]);
+      }
+      if (url.endsWith('/models/views/byids')) {
+        return getItemsResponseObject([{ properties: { name: {} } }]);
+      }
+      return { ...getItemsResponseObject([{ instanceId, type: 'state', datapoints }]), config: { data } };
+    });
+  const datapointsRequest = () =>
+    fetcher.fetch.mock.calls.map(([request]) => request).find(({ url }) => url.endsWith('/timeseries/data/list'));
+  const run = async (patch: QueryTargetLike = {}) =>
+    (await lastValueFrom(ds.query({ ...options, panelId: `state-${patch.aggregation}`, targets: [target(patch)] }))).data;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('labels raw states from the state set', async () => {
+    respond([{ timestamp: t0, numericValue: 1, stringValue: 'AVAILABLE' }]);
+    const [frame] = await run();
+    expect(frame.fields[1].values).toEqual([1]);
+    expect(frame.fields[1].config.mappings[0].options).toEqual({
+      '0': { text: 'RUNNING', index: 0 },
+      '1': { text: 'AVAILABLE', index: 1 },
+    });
+  });
+
+  it('requests Most time in state as stateDuration', async () => {
+    respond([
+      {
+        timestamp: t0,
+        stateAggregates: [
+          { numericValue: 0, stringValue: 'RUNNING', stateDuration: 10 },
+          { numericValue: 1, stringValue: 'AVAILABLE', stateDuration: 50 },
+        ],
+      },
+    ]);
+    const [frame] = await run({ aggregation: 'dominantState' });
+    expect(datapointsRequest().data.aggregates).toEqual(['stateDuration']);
+    expect(frame.fields[1].values).toEqual([1]);
+  });
+
+  it('returns a series per state, named through a {{state}} label', async () => {
+    respond([
+      {
+        timestamp: t0,
+        stateAggregates: [
+          { numericValue: 1, stringValue: 'AVAILABLE', stateCount: 2 },
+          { numericValue: 0, stringValue: 'RUNNING', stateCount: 1 },
+        ],
+      },
+    ]);
+    const frames = await run({ aggregation: 'stateCount', label: '{{name}} {{state}}' });
+    expect(datapointsRequest().data.aggregates).toEqual(['stateCount']);
+    expect(frames.map((f) => f.name)).toEqual(['Turbine 1 RUNNING', 'Turbine 1 AVAILABLE']);
+    expect(frames.map((f) => f.fields[1].values)).toEqual([[1], [2]]);
+  });
+});
