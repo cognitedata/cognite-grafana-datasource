@@ -98,10 +98,25 @@ describe('CDF client', () => {
         data: { items: [{ id: 1, datapoints }] },
         config: { data: { aggregates: [aggregate], granularity: '1h' } },
       },
-      metadata: { labels: ['phase'], type: 'data', target: { aggregation: aggregate } },
+      metadata: { labels: ['phase'], type: 'data', kind: 'string', target: { aggregation: aggregate } },
     });
 
-    it('keeps the bucket at the range start, since its interval overlaps the range', () => {
+    it('keeps the bucket a string value holds from', () => {
+      const [frame] = reduceTimeseries(
+        [
+          response('interpolation', [
+            { timestamp: h10, interpolation: 'IDLE' },
+            { timestamp: h11, interpolation: 'FILLING' },
+            { timestamp: h12, interpolation: 'HEATING' },
+          ]),
+        ],
+        range
+      ) as any[];
+      expect(frame.fields[0].values).toEqual([h10, h11, h12]);
+      expect(frame.fields[1].values).toEqual(['IDLE', 'FILLING', 'HEATING']);
+    });
+
+    it('keeps it for any aggregate, since its interval overlaps the range', () => {
       const [series] = reduceTimeseries(
         [
           response('count', [
