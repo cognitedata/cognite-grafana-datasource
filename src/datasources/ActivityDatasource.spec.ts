@@ -331,6 +331,40 @@ describe('queryByAssets: every property', () => {
     expect(names.slice(-5)).toEqual(['space', 'externalId', 'createdTime', 'lastUpdatedTime', 'asset']);
   });
 
+  it('reads every timestamp property of the view as time, not only the known ones', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity({ sourceCreatedTime: '2026-01-02T03:04:05.000Z' })]);
+    fetchDMSView.mockResolvedValue({ properties: { sourceCreatedTime: prop('timestamp') } });
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['sourceCreatedTime'])]));
+    const field = result.data[0].fields[0];
+    expect(field.type).toBe(FieldType.time);
+    expect(field.values[0]).toEqual(new Date('2026-01-02T03:04:05.000Z'));
+  });
+
+  it('leaves empty lists out of the fallback, and keeps json values that only look like a relation', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([
+      makeActivity({ equipment: [], origin: { space: 's', externalId: 'x', note: 'n' } }),
+    ]);
+    fetchDMSView.mockResolvedValue(null);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const names = result.data[0].fields.map((field: any) => field.name);
+    expect(names).not.toContain('equipment');
+    expect(names).toContain('origin');
+  });
+
+  it('sorts lists by their JSON, as the table shows them', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([
+      makeActivity({ externalId: 'b', tags: ['b'] }),
+      makeActivity({ externalId: 'a', tags: ['a'] }),
+    ]);
+    const datasource = new ActivityDatasource({} as Connector);
+    const target = emptyColumnsTarget(['externalId']);
+    target.cogniteActivityTabQuery.sort = [{ property: 'tags', order: 'asc' }];
+    const result = await datasource.queryByAssets(makeOptions([target]));
+    expect(result.data[0].fields[0].values).toEqual(['a', 'b']);
+  });
+
   it('keeps the columns a query saved before they could be chosen always showed', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
     const datasource = new ActivityDatasource({} as Connector);

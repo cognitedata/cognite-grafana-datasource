@@ -75,11 +75,25 @@ export const convertActivitiesDateFields = (activities: CogniteActivity[]) => {
 /** Mapped by the activity fetch but not a property: the instance's version. */
 const NOT_A_COLUMN = new Set(['version']);
 
-/** A direct relation's value: a reference, or a list of them. */
+/** A direct relation's value: a reference (space and externalId, nothing else), or a list of them. */
 const isReference = (value: unknown): boolean =>
   Array.isArray(value)
     ? value.length > 0 && value.every(isReference)
-    : typeof value === 'object' && value !== null && 'space' in value && 'externalId' in value;
+    : typeof value === 'object' &&
+      value !== null &&
+      Object.keys(value).sort().join() === 'externalId,space';
+
+/** A value that shows in the fallback's columns: not empty, and not a relation. */
+const isShownValue = (value: unknown): boolean =>
+  value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0) && !isReference(value);
+
+/** The view's properties stored as a timestamp or date, read as ISO text. */
+const timeProperties = (view: DMSViewWithProperties | null) =>
+  new Set(
+    Object.entries(view?.properties ?? {})
+      .filter(([, def]) => def.type?.type === 'timestamp' || def.type?.type === 'date')
+      .map(([name]) => name)
+  );
 
 /**
  * The columns "every property" shows: the view's properties in the view's order, then
@@ -98,7 +112,7 @@ export function allActivityColumns(view: DMSViewWithProperties | null, activitie
         ...new Set(
           activities.flatMap((activity) =>
             Object.entries(activity)
-              .filter(([, value]) => value !== undefined && value !== null && !isReference(value))
+              .filter(([, value]) => isShownValue(value))
               .map(([name]) => name)
           )
         ),
@@ -110,11 +124,14 @@ export function allActivityColumns(view: DMSViewWithProperties | null, activitie
 const cellValue = (value: unknown) =>
   value !== null && typeof value === 'object' && !(value instanceof Date) ? JSON.stringify(value) : value ?? null;
 
+/** Lists and objects compare by their JSON, as the table shows them. */
+const sortValue = (value: unknown) => (value !== null && typeof value === 'object' ? JSON.stringify(value) : value);
+
 const sortActivities = (activities: CogniteActivity[], sort: ActivitySortProp[]): CogniteActivity[] => {
   return [...activities].sort((a, b) => {
     for (const { property, order } of sort) {
-      const aVal = (a as any)[property];
-      const bVal = (b as any)[property];
+      const aVal = sortValue((a as any)[property]);
+      const bVal = sortValue((b as any)[property]);
       if (aVal === bVal) {
         continue;
       }
@@ -199,10 +216,10 @@ export class ActivityDatasource {
         const filterProperty = filterPropertyMap[resourceType] ?? 'assets';
         const allColumns = columns.includes(ALL_ACTIVITY_COLUMNS);
         try {
-          // The view, for "every property", is read alongside the activities.
+          // The view, for "every property" and its time properties, is read alongside the activities.
           const [fetched, view] = await Promise.all([
             fetchActivitiesByAssets(this.connector, { space, externalId, version }, assetInstances, filterProperty),
-            allColumns ? fetchDMSView(this.connector, { space, externalId, version }) : Promise.resolve(null),
+            fetchDMSView(this.connector, { space, externalId, version }),
           ]);
           let activities = fetched;
 
@@ -226,6 +243,8 @@ export class ActivityDatasource {
 
           const converted = convertActivitiesDateFields(activities);
           const selectedColumns = allColumns ? allActivityColumns(view, activities) : columns;
+          // Time properties the fetch does not already convert, such as sourceCreatedTime.
+          const times = timeProperties(view);
 
           // Build lookup: "space:externalId" -> display name (name only, fallback to externalId)
           const instanceNameMap = new Map(
@@ -258,7 +277,10 @@ export class ActivityDatasource {
             name: 'CogniteActivities',
             fields: [
               ...selectedColumns.map((col) => {
-                const values = converted.map((item) => cellValue((item as any)[col]));
+                const values = converted.map((item) => {
+                  const value = (item as any)[col];
+                  return times.has(col) && typeof value === 'string' ? new Date(value) : cellValue(value);
+                });
                 return {
                   name: col,
                   type: inferFieldType(values),

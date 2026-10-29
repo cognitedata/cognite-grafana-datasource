@@ -49,7 +49,7 @@ const getStyles = (theme: GrafanaTheme2) => {
     direct: cx(base, css({ color: theme.colors.primary.text })),
     boolean: cx(base, css({ color: theme.visualization.getColorByName('purple') })),
     other: cx(base, css({ color: theme.colors.text.secondary })),
-    recordMarker: css({
+    originMarker: css({
       fontFamily: theme.typography.fontFamilyMonospace,
       fontSize: theme.typography.bodySmall.fontSize,
       color: theme.colors.text.disabled,
@@ -88,7 +88,7 @@ export const PropertyOptionLabel = ({ option }: { option: PropertyOption }) => {
     <Stack gap={1} alignItems="center" wrap={false}>
       <TypeToken type={type} isList={isList} />
       <span>{option.label}</span>
-      {option.origin && <span className={styles.recordMarker}>{option.origin}</span>}
+      {option.origin && <span className={styles.originMarker}>{option.origin}</span>}
     </Stack>
   );
 };

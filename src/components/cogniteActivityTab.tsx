@@ -89,6 +89,8 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   const loadViewProperties = useCallback(
     async (viewSpec: { space: string; externalId: string; version: string }) => {
       const request = ++viewRequest.current;
+      // The previous view's properties are not offered while the new one loads.
+      setActivityView(null);
       const view = await fetchDMSView(connector, viewSpec);
       if (request === viewRequest.current) {
         setActivityView(view);
