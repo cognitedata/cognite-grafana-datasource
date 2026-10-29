@@ -84,7 +84,8 @@ export function stateValueMappings(states: StateSetEntry[]): ValueMapping[] {
 /**
  * A state per point. With the state set known, the codes are kept as numbers and
  * mapped to their labels, so the state timeline shows labels in the set's order and
- * a time series panel can still plot the codes. Without it, the labels are text.
+ * a time series panel can still plot the codes. Without it, or when a label is not in
+ * the state set, the labels are text.
  */
 export function stateValueFrame(
   name: string,
@@ -94,12 +95,18 @@ export function stateValueFrame(
   const label = withoutStateToken(name);
   const timestamps = points.map((p) => p.timestamp);
   if (states?.length) {
-    return frame(label, timestamps, {
-      name: 'Value',
-      type: FieldType.number,
-      config: { displayNameFromDS: label, mappings: stateValueMappings(states) },
-      values: points.map((p) => p.state?.numericValue ?? null),
-    });
+    // A state data point may carry only its label: its code comes from the state set.
+    const codes = new Map(states.map(({ numericValue, stringValue }) => [stringValue, numericValue]));
+    const code = (state: StateValue) =>
+      state?.numericValue ?? (state?.stringValue != null ? codes.get(state.stringValue) : undefined);
+    if (points.every(({ state }) => state?.stringValue == null || code(state) !== undefined)) {
+      return frame(label, timestamps, {
+        name: 'Value',
+        type: FieldType.number,
+        config: { displayNameFromDS: label, mappings: stateValueMappings(states) },
+        values: points.map((p) => code(p.state) ?? null),
+      });
+    }
   }
   return frame(
     label,

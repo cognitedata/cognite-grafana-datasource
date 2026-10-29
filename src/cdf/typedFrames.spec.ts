@@ -75,6 +75,22 @@ describe('stateValueFrame', () => {
     ]);
   });
 
+  it('takes the code of a point that carries only its label from the state set', () => {
+    const value = stateValueFrame('turbine', [{ timestamp: 1, state: { stringValue: 'AVAILABLE' } }], STATES).fields[1];
+    expect(value.type).toBe(FieldType.number);
+    expect(value.values).toEqual([1]);
+  });
+
+  it('keeps the labels as text when one is not in the state set', () => {
+    const value = stateValueFrame(
+      'turbine',
+      [...points, { timestamp: 3, state: { stringValue: 'ICING' } }],
+      STATES
+    ).fields[1];
+    expect(value.type).toBe(FieldType.string);
+    expect(value.values).toEqual(['FAULT', null, 'ICING']);
+  });
+
   it('falls back to the labels as text without a state set', () => {
     const value = stateValueFrame('turbine', points).fields[1];
     expect(value.type).toBe(FieldType.string);
