@@ -274,6 +274,15 @@ export interface CogniteActivityTabQuery {
   sort?: ActivitySortProp[];
 }
 
+/** The columns a query saved before it could choose them shows, as it always has. */
+export const LEGACY_ACTIVITY_COLUMNS = ['externalId', 'description', 'startTime', 'endTime'];
+
+/**
+ * The Activities tab's columns for "every property". An empty list keeps the meaning
+ * it always had: no columns but the related instances.
+ */
+export const ALL_ACTIVITY_COLUMNS = '*';
+
 export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
   space: 'cdf_cdm',
   externalId: 'CogniteActivity',
@@ -282,7 +291,8 @@ export const defaultCogniteActivityTabQuery: CogniteActivityTabQuery = {
   instanceSpace: '',
   assetInstances: [],
   activeOnly: true,
-  columns: ['externalId', 'description', 'startTime', 'endTime'],
+  // Every property of the activity view, then the instance properties.
+  columns: [ALL_ACTIVITY_COLUMNS],
   sort: [{ property: 'startTime', order: 'asc' }],
 };
 

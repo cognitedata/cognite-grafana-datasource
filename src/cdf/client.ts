@@ -589,10 +589,11 @@ export function fetchDMSViews(
 }
 
 // Fetch all property names of a specific DMS view (includes inherited properties)
-export async function fetchDMSViewProperties(
+/** A view with its properties, inherited ones included, or null when it cannot be read. */
+export async function fetchDMSView(
   connector: Connector,
   viewSpec: { space: string; externalId: string; version: string }
-): Promise<string[]> {
+): Promise<DMSViewWithProperties | null> {
   try {
     const response = await connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
       method: HttpMethod.POST,
@@ -603,15 +604,19 @@ export async function fetchDMSViewProperties(
       },
       cacheTime: CacheTime.ResourceByIds,
     });
-    const view = response.data?.items?.[0];
-    if (!view?.properties) {
-      return [];
-    }
-    return Object.keys(view.properties);
+    return response.data?.items?.[0] ?? null;
   } catch (err) {
     console.warn('Failed to fetch DMS view properties:', err);
-    return [];
+    return null;
   }
+}
+
+export async function fetchDMSViewProperties(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string }
+): Promise<string[]> {
+  const view = await fetchDMSView(connector, viewSpec);
+  return Object.keys(view?.properties ?? {});
 }
 
 // Helper function to retry DMS API calls with exponential backoff and jitter on 429 errors

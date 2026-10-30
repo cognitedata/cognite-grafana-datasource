@@ -1,206 +1,80 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Select,
-  InlineFieldRow,
-  InlineField,
-  InlineSwitch,
-  InlineFormLabel,
-  InlineSegmentGroup,
-  Segment,
-  Button,
-} from '@grafana/ui';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { RadioButtonGroup, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { SelectedProps, CogniteActivityResourceType, ActivitySortProp, EventsOrderDirection, CogniteActivityTabQuery, defaultCogniteActivityTabQuery } from '../types';
 import {
-  fetchDMSSpaces,
-  fetchDMSViewProperties,
-  stringifyError,
-} from '../cdf/client';
-import { InvolvedView } from '../types/dms';
+  SelectedProps,
+  CogniteActivityResourceType,
+  ActivitySortProp,
+  CogniteActivityTabQuery,
+  defaultCogniteActivityTabQuery,
+  ALL_ACTIVITY_COLUMNS,
+  LEGACY_ACTIVITY_COLUMNS,
+} from '../types';
+import { fetchDMSSpaces, fetchDMSView, stringifyError } from '../cdf/client';
+import { DMSViewWithProperties, InvolvedView } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
 import { ViewPicker } from './common/ViewPicker';
+import { PropertySortEditor } from './common/PropertySortEditor';
+import { PropertyColumnsField } from './common/PropertyColumnsField';
+import { instancePropertyOptions, PropertyOption, viewPropertyOptions } from './records/shared';
 
 interface CogniteActivityTabProps extends SelectedProps {
   connector: Connector;
 }
 
-const RESOURCE_TYPE_OPTIONS: Array<SelectableValue<CogniteActivityResourceType>> = [
-  { label: 'CogniteAsset', value: 'CogniteAsset' },
-  { label: 'CogniteEquipment', value: 'CogniteEquipment' },
-  { label: 'CogniteTimeSeries', value: 'CogniteTimeSeries' },
+const RESOURCE_TYPE_OPTIONS: Array<{ label: string; value: CogniteActivityResourceType; description: string }> = [
+  { label: 'Assets', value: 'CogniteAsset', description: 'Activities related to CogniteAsset instances' },
+  { label: 'Equipment', value: 'CogniteEquipment', description: 'Activities related to CogniteEquipment instances' },
+  { label: 'Time series', value: 'CogniteTimeSeries', description: 'Activities related to CogniteTimeSeries instances' },
 ];
 
-const LABEL_WIDTH = 16;
+/** Which of the instances' activities are shown: the saved `activeOnly` flag. */
+type Shown = 'active' | 'all';
 
-const ActivityOrderDirectionEditor = ({
-  onChange,
-  direction = 'asc',
-}: {
-  direction: EventsOrderDirection;
-  onChange: (val: EventsOrderDirection) => void;
-}) => {
-  const options = [
-    { label: 'ascending', value: 'asc' as EventsOrderDirection },
-    { label: 'descending', value: 'desc' as EventsOrderDirection },
-  ];
-  return (
-    <InlineFieldRow>
-      <InlineFormLabel width={6}>Order</InlineFormLabel>
-      <Select
-        onChange={({ value }) => onChange(value!)}
-        options={options}
-        menuPosition="fixed"
-        value={direction}
-        className="cog-mr-4 width-10"
-      />
-    </InlineFieldRow>
-  );
-};
+const SHOWN_OPTIONS: Array<{ label: string; value: Shown; description: string }> = [
+  { label: 'Active in time range', value: 'active', description: 'Activities that overlap the dashboard time range' },
+  { label: 'All', value: 'all', description: 'Every activity related to the instances, whenever it was' },
+];
 
-interface ActivitySubProps {
-  query: CogniteActivityTabQuery;
-  onChange: (e: Partial<CogniteActivityTabQuery>) => void;
-  fields: string[];
-}
+/** Sorting is done client side, over the activities fetched; two keys suffice. */
+const MAX_SORT_ROWS = 2;
 
-const ActiveOnlySwitch = ({ query, onChange, fields: _ }: ActivitySubProps) => (
-  <InlineFieldRow>
-    <InlineField
-      label="Active only"
-      labelWidth={LABEL_WIDTH}
-      tooltip="Show only activities that are active (overlapping) within the current time range"
-    >
-      <InlineSwitch
-        label="Active only"
-        id="activity-active-only"
-        value={query.activeOnly ?? true}
-        onChange={({ currentTarget }) => onChange({ activeOnly: currentTarget.checked })}
-      />
-    </InlineField>
-  </InlineFieldRow>
-);
+/** A property a query was saved with that the view no longer lists, kept so it can be seen and removed. */
+const unlistedOption = (value: string): PropertyOption => ({ value, label: value });
 
-const ActivityColumnsPicker = ({ query, onChange, fields }: ActivitySubProps) => {
-  const allOptions = fields.map((value) => ({ value, label: value }));
-  const columns = query.columns ?? defaultCogniteActivityTabQuery.columns!;
-  const addOptions = fields
-    .filter((f) => !columns.includes(f))
-    .map((value) => ({ value, label: value }));
-  return (
-    <InlineFieldRow>
-      <InlineFormLabel tooltip="Choose which columns to display" width={LABEL_WIDTH}>
-        Columns
-      </InlineFormLabel>
-      <InlineSegmentGroup>
-        {columns.map((val, key) => (
-          <React.Fragment key={key}>
-            <Segment
-              value={val}
-              options={allOptions}
-              onChange={({ value }) =>
-                onChange({ columns: columns.map((old, i) => (i === key ? value! : old)) })
-              }
-              allowCustomValue
-            />
-            <Button
-              variant="secondary"
-              onClick={() => onChange({ columns: columns.filter((_, i) => i !== key) })}
-              icon="times"
-              className="cog-mr-4"
-              data-testId={`activity-remove-col-${key}`}
-            />
-          </React.Fragment>
-        ))}
-        {addOptions.length > 0 && (
-          <Segment
-            value="+"
-            options={addOptions}
-            onChange={({ value }) => onChange({ columns: [...columns, value!] })}
-            data-testId="activity-add-col"
-          />
-        )}
-      </InlineSegmentGroup>
-    </InlineFieldRow>
-  );
-};
-
-const ActivitySortByPicker = ({ query, onChange, fields }: ActivitySubProps) => {
-  const options = fields.map((value) => ({ value, label: value }));
-  const sort: ActivitySortProp[] = query.sort ?? [];
-  return (
-    <InlineFieldRow>
-      <InlineFormLabel tooltip="Property to sort results by" width={LABEL_WIDTH}>
-        Sort by
-      </InlineFormLabel>
-      <InlineSegmentGroup>
-        {sort.map((val, key) => (
-          <React.Fragment key={key}>
-            <Segment
-              value={val.property}
-              options={options}
-              onChange={({ value }) =>
-                onChange({ sort: sort.map((old, i) => (i === key ? { ...old, property: value! } : old)) })
-              }
-              allowCustomValue
-            />
-            <ActivityOrderDirectionEditor
-              direction={val.order}
-              onChange={(value) =>
-                onChange({ sort: sort.map((old, i) => (i === key ? { ...old, order: value } : old)) })
-              }
-            />
-            <Button
-              variant="secondary"
-              onClick={() => onChange({ sort: sort.filter((_, i) => i !== key) })}
-              icon="times"
-              className="cog-mr-4"
-              data-testId={`activity-remove-sort-${key}`}
-            />
-          </React.Fragment>
-        ))}
-        {sort.length < 2 && (
-          <Button
-            variant="secondary"
-            onClick={() => onChange({ sort: [...sort, { property: 'startTime', order: 'asc' }] })}
-            icon="plus-circle"
-            data-testId="activity-add-sort"
-          />
-        )}
-      </InlineSegmentGroup>
-    </InlineFieldRow>
-  );
-};
-
+/**
+ * Activities related to picked instances, laid out like the Records tab: the
+ * activity view, then the instances the activities relate to, then which of their
+ * activities are shown, then how the rows are sorted and which columns they show.
+ */
 export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   query,
   onQueryChange,
   connector,
 }) => {
-  const { cogniteActivityTabQuery } = query;
-  const {
-    space,
-    externalId,
-    version,
-    resourceType,
-    instanceView,
-    instanceSpace,
-    assetInstances,
-  } = cogniteActivityTabQuery ?? {
-    space: 'cdf_cdm',
-    externalId: 'CogniteActivity',
-    version: 'v1',
-    resourceType: 'CogniteAsset' as CogniteActivityResourceType,
-    instanceView: undefined,
-    instanceSpace: '',
-    assetInstances: [],
-  };
+  const cogniteActivityTabQuery = query.cogniteActivityTabQuery ?? defaultCogniteActivityTabQuery;
+  const { space, externalId, version, resourceType, instanceView, instanceSpace, assetInstances } =
+    cogniteActivityTabQuery;
 
   // The loaded instance views, lifted out of the picker to derive the default below.
   const [instanceViewCandidates, setInstanceViewCandidates] = useState<InvolvedView[]>([]);
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
-  const [viewProperties, setViewProperties] = useState<string[]>([]);
+  const [activityView, setActivityView] = useState<DMSViewWithProperties | null>(null);
+  // The view's properties, then the instance ones, then any a query was saved with.
+  // Edges and reverse relations carry no stored type and never come back as values.
+  const propertyOptionsOf = useMemo(
+    () => [...viewPropertyOptions(activityView, (type) => !!type), ...instancePropertyOptions()],
+    [activityView]
+  );
+  const withUnlisted = (names: string[]) => [
+    ...propertyOptionsOf,
+    ...names
+      .filter((name) => name && !propertyOptionsOf.some((option) => option.value === name))
+      .map(unlistedOption),
+  ];
 
   // Queries saved before the instance view was persisted fall back to the cdf_cdm
   // standard view, or the first available one — the default the tab always applied.
@@ -210,10 +84,17 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     instanceViewCandidates[0] ??
     null;
 
+  // Only the latest request is applied, so a slow earlier view never replaces it.
+  const viewRequest = useRef(0);
   const loadViewProperties = useCallback(
     async (viewSpec: { space: string; externalId: string; version: string }) => {
-      const props = await fetchDMSViewProperties(connector, viewSpec);
-      setViewProperties(props);
+      const request = ++viewRequest.current;
+      // The previous view's properties are not offered while the new one loads.
+      setActivityView(null);
+      const view = await fetchDMSView(connector, viewSpec);
+      if (request === viewRequest.current) {
+        setActivityView(view);
+      }
     },
     [connector]
   );
@@ -247,6 +128,9 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
     name: a.name,
   }));
 
+  const patchTabQuery = (partial: Partial<CogniteActivityTabQuery>) =>
+    onQueryChange({ cogniteActivityTabQuery: { ...cogniteActivityTabQuery, ...partial } });
+
   const handleActivityViewsLoaded = (views: InvolvedView[]) => {
     if (views.length !== 1) {
       return;
@@ -256,185 +140,192 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
       // Already saved: writing again would dirty the dashboard just by opening it
       return;
     }
-    onQueryChange({
-      cogniteActivityTabQuery: {
-        ...cogniteActivityTabQuery,
-        space: v.space,
-        externalId: v.externalId,
-        version: v.version,
-      },
-    });
+    patchTabQuery({ space: v.space, externalId: v.externalId, version: v.version });
     loadViewProperties(v);
   };
 
   const handleActivityViewChange = (view: InvolvedView | null) => {
     if (view) {
-      onQueryChange({
-        cogniteActivityTabQuery: {
-          ...cogniteActivityTabQuery,
-          space: view.space,
-          externalId: view.externalId,
-          version: view.version,
-        },
-      });
+      patchTabQuery({ space: view.space, externalId: view.externalId, version: view.version });
       loadViewProperties(view);
     }
   };
 
-  const handleResourceTypeChange = (selected: SelectableValue<CogniteActivityResourceType>) => {
-    if (selected?.value) {
-      setInstanceViewCandidates([]);
-      onQueryChange({
-        cogniteActivityTabQuery: {
-          ...cogniteActivityTabQuery,
-          resourceType: selected.value,
-          instanceView: undefined,
-          assetInstances: [],
-        },
-      });
-    }
+  const handleResourceTypeChange = (next: CogniteActivityResourceType) => {
+    setInstanceViewCandidates([]);
+    patchTabQuery({ resourceType: next, instanceView: undefined, assetInstances: [] });
   };
 
   const handleInstanceViewChange = (view: InvolvedView | null) => {
     if (view) {
       // Persisted so the instances keep the view they were searched in across reloads
-      onQueryChange({
-        cogniteActivityTabQuery: {
-          ...cogniteActivityTabQuery,
-          instanceView: view,
-          assetInstances: [],
-        },
-      });
+      patchTabQuery({ instanceView: view, assetInstances: [] });
     }
   };
 
-  const handleSpaceChange = (selected: SelectableValue<string>) => {
-    const newSpace = selected?.value ?? '';
-    onQueryChange({
-      cogniteActivityTabQuery: {
-        ...cogniteActivityTabQuery,
-        instanceSpace: newSpace,
-        assetInstances: [],
-      },
+  const handleInstancesChange = (picked: PickedInstance[]) =>
+    patchTabQuery({
+      assetInstances: picked
+        .filter((v) => v.space && v.externalId)
+        .map((v) => ({
+          space: v.space!,
+          externalId: v.externalId!,
+          name: v.name ?? v.externalId!,
+        })),
     });
-  };
 
-  const handleInstancesChange = (picked: PickedInstance[]) => {
-    onQueryChange({
-      cogniteActivityTabQuery: {
-        ...cogniteActivityTabQuery,
-        assetInstances: picked
-          .filter((v) => v.space && v.externalId)
-          .map((v) => ({
-            space: v.space!,
-            externalId: v.externalId!,
-            name: v.name ?? v.externalId!,
-          })),
-      },
-    });
-  };
-
-  const handleTabQueryChange = (partial: Partial<CogniteActivityTabQuery>) => {
-    onQueryChange({ cogniteActivityTabQuery: { ...cogniteActivityTabQuery, ...partial } });
-  };
+  const sort: ActivitySortProp[] = cogniteActivityTabQuery.sort ?? [];
+  // Absent: the columns the tab always showed. '*': every property, shown as no chips.
+  const savedColumns = cogniteActivityTabQuery.columns ?? LEGACY_ACTIVITY_COLUMNS;
+  const allColumns = savedColumns.includes(ALL_ACTIVITY_COLUMNS);
+  const columns = savedColumns.filter((column) => column !== ALL_ACTIVITY_COLUMNS);
 
   return (
-    <>
-      <InlineFieldRow>
-        <InlineField
-          label="Activity View"
-          labelWidth={LABEL_WIDTH}
-          tooltip="Select which CogniteActivity view to query"
-        >
-          <ViewPicker
-            connector={connector}
-            container="CogniteActivity"
-            value={{ space, externalId, version }}
-            onChange={handleActivityViewChange}
-            onViewsLoaded={handleActivityViewsLoaded}
-            placeholder="Select a CogniteActivity view"
-            isClearable={false}
-            width={40}
-          />
-        </InlineField>
-      </InlineFieldRow>
-      <InlineFieldRow>
-        <InlineField
-          label="Resource Type"
-          labelWidth={LABEL_WIDTH}
-          tooltip="Type of resource the activity is related to"
-        >
-          <Select
-            options={RESOURCE_TYPE_OPTIONS}
-            value={resourceType}
-            onChange={handleResourceTypeChange}
-            width={40}
-          />
-        </InlineField>
-      </InlineFieldRow>
-      <InlineFieldRow>
-        <InlineField
-          label="Instance View"
-          labelWidth={LABEL_WIDTH}
-          tooltip={`Select which ${resourceType} view to search instances in`}
-        >
-          <ViewPicker
-            connector={connector}
-            container={resourceType}
-            value={effectiveInstanceView}
-            onChange={handleInstanceViewChange}
-            onViewsLoaded={setInstanceViewCandidates}
-            placeholder={`Select a ${resourceType} view`}
-            isClearable={false}
-            width={40}
-          />
-        </InlineField>
-      </InlineFieldRow>
-      <InlineFieldRow>
-        <InlineField
-          label="Space"
-          labelWidth={LABEL_WIDTH}
-          tooltip="Filter instance search to a specific DMS space (leave empty to search all spaces)"
-        >
-          <Select
-            options={spaceOptions}
-            value={instanceSpace || ''}
-            onChange={handleSpaceChange}
-            isLoading={loadingSpaces}
-            placeholder="All spaces"
-            isClearable={false}
-            width={40}
-          />
-        </InlineField>
-      </InlineFieldRow>
-      <InlineFieldRow>
-        <InlineField
-          label="Instance(s)"
-          labelWidth={LABEL_WIDTH}
-          tooltip={`Select one or more ${resourceType} instances. Activities related to these will be shown.`}
-        >
-          <InstancePicker
-            connector={connector}
-            view={{
-              space: effectiveInstanceView?.space ?? '',
-              externalId: effectiveInstanceView?.externalId ?? '',
-              version: effectiveInstanceView?.version ?? '',
-            }}
-            multi
-            limit={100}
-            filter={instanceSpace ? { inSpace: instanceSpace } : undefined}
-            value={selectedInstanceValues}
-            onChange={handleInstancesChange}
-            placeholder={`Search ${resourceType} by name...`}
-            width={40}
-            noOptionsMessage="No instances found"
-            inputId={`cognite-activity-instances-${query.refId}`}
-          />
-        </InlineField>
-      </InlineFieldRow>
-      <ActiveOnlySwitch query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
-      <ActivityColumnsPicker query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
-      <ActivitySortByPicker query={cogniteActivityTabQuery} onChange={handleTabQueryChange} fields={viewProperties} />
-    </>
+    <EditorRows>
+      <EditorRow>
+        <EditorFieldGroup>
+          <EditorField
+            label="Activity view"
+            tooltip="The CogniteActivity view the activities are read from."
+            htmlFor={`activity-view-${query.refId}`}
+          >
+            <ViewPicker
+              inputId={`activity-view-${query.refId}`}
+              connector={connector}
+              container="CogniteActivity"
+              value={{ space, externalId, version }}
+              onChange={handleActivityViewChange}
+              onViewsLoaded={handleActivityViewsLoaded}
+              placeholder="Select a CogniteActivity view"
+              isClearable={false}
+              width={44}
+            />
+          </EditorField>
+        </EditorFieldGroup>
+      </EditorRow>
+
+      <EditorRow>
+        <EditorFieldGroup>
+          <EditorField
+            label="Related to"
+            tooltip="The type of instance the activities are related to: CogniteAsset, CogniteEquipment or CogniteTimeSeries."
+          >
+            <RadioButtonGroup
+              options={RESOURCE_TYPE_OPTIONS}
+              value={resourceType}
+              onChange={handleResourceTypeChange}
+              aria-label="Related to"
+            />
+          </EditorField>
+          <EditorField
+            label="Instance view"
+            tooltip={`The ${resourceType} view the instances are searched in.`}
+            htmlFor={`activity-instance-view-${query.refId}`}
+          >
+            <ViewPicker
+              inputId={`activity-instance-view-${query.refId}`}
+              connector={connector}
+              container={resourceType}
+              value={effectiveInstanceView}
+              onChange={handleInstanceViewChange}
+              onViewsLoaded={setInstanceViewCandidates}
+              placeholder={`Select a ${resourceType} view`}
+              isClearable={false}
+              width={40}
+            />
+          </EditorField>
+          <EditorField
+            label="Space"
+            optional
+            tooltip="Narrows the instance search to one space."
+            htmlFor={`activity-instance-space-${query.refId}`}
+          >
+            <Select
+              inputId={`activity-instance-space-${query.refId}`}
+              options={spaceOptions}
+              value={instanceSpace || ''}
+              onChange={({ value }) => patchTabQuery({ instanceSpace: value ?? '', assetInstances: [] })}
+              isLoading={loadingSpaces}
+              placeholder="All spaces"
+              isClearable={false}
+              width={24}
+            />
+          </EditorField>
+        </EditorFieldGroup>
+        <EditorFieldGroup>
+          <EditorField
+            label="Instances"
+            tooltip={`The ${resourceType} instances whose activities are shown. Search by name.`}
+            htmlFor={`cognite-activity-instances-${query.refId}`}
+          >
+            <InstancePicker
+              connector={connector}
+              view={{
+                space: effectiveInstanceView?.space ?? '',
+                externalId: effectiveInstanceView?.externalId ?? '',
+                version: effectiveInstanceView?.version ?? '',
+              }}
+              multi
+              limit={100}
+              filter={instanceSpace ? { inSpace: instanceSpace } : undefined}
+              value={selectedInstanceValues}
+              onChange={handleInstancesChange}
+              placeholder={`Search ${resourceType} by name...`}
+              width={44}
+              noOptionsMessage="No instances found"
+              inputId={`cognite-activity-instances-${query.refId}`}
+            />
+          </EditorField>
+        </EditorFieldGroup>
+      </EditorRow>
+
+      <EditorRow>
+        <EditorFieldGroup>
+          <EditorField
+            label="Show"
+            tooltip={
+              'Active in time range: the activities that overlap the dashboard time range, so those started ' +
+              'before it ends and not ended before it starts. All: every activity related to the instances, ' +
+              'whenever it took place.'
+            }
+          >
+            <RadioButtonGroup
+              options={SHOWN_OPTIONS}
+              value={cogniteActivityTabQuery.activeOnly ?? true ? 'active' : 'all'}
+              onChange={(next) => patchTabQuery({ activeOnly: next === 'active' })}
+              aria-label="Show"
+            />
+          </EditorField>
+        </EditorFieldGroup>
+      </EditorRow>
+
+      <EditorRow>
+        <PropertySortEditor
+          rows={sort.map(({ property, order }) => ({ property, direction: order }))}
+          options={withUnlisted(sort.map(({ property }) => property))}
+          max={MAX_SORT_ROWS}
+          testIdPrefix="activity"
+          newRow={{ property: 'startTime', direction: 'asc' }}
+          tooltip="Properties to sort the activities by, in order."
+          allowCustomValue
+          onChange={(rows) => patchTabQuery({ sort: rows.map(({ property, direction }) => ({ property, order: direction })) })}
+        />
+        <PropertyColumnsField
+          inputId={`activity-columns-${query.refId}`}
+          columns={columns}
+          options={withUnlisted(columns)}
+          tooltip="The properties shown, in order. Removing them all shows every view property, then the instance properties."
+          // A query saved with every column removed still shows only the related instances.
+          placeholder={allColumns ? 'all properties' : 'related instances only'}
+          optional
+          allowCustomValue
+          onChange={(next) => {
+            // A typed '*' is not a property; every property is the empty field.
+            const picked = next.filter((column) => column !== ALL_ACTIVITY_COLUMNS);
+            patchTabQuery({ columns: picked.length ? picked : [ALL_ACTIVITY_COLUMNS] });
+          }}
+        />
+      </EditorRow>
+    </EditorRows>
   );
 };

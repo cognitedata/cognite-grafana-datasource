@@ -7,7 +7,7 @@ import { Tab } from '../types';
 jest.mock('../cdf/client');
 jest.mock('../appEventHandler', () => ({ handleError: jest.fn() }));
 
-const { fetchActivitiesByAssets } = jest.requireMock('../cdf/client');
+const { fetchActivitiesByAssets, fetchDMSView } = jest.requireMock('../cdf/client');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -233,5 +233,144 @@ describe('ActivityDatasource.queryByAssets', () => {
       [{ space: 'cdm_try', externalId: 'ts-001', name: 'My TS' }],
       'timeSeries'
     );
+  });
+});
+
+describe('queryByAssets: every property', () => {
+  const emptyColumnsTarget = (columns?: string[]) =>
+    makeTarget({
+      cogniteActivityTabQuery: {
+        space: 'cdf_cdm', externalId: 'CogniteActivity', version: 'v1',
+        resourceType: 'CogniteAsset', instanceSpace: '',
+        assetInstances: [{ space: 'cdm_try', externalId: 'weather-station-fornebu', name: 'Fornebu' }],
+        ...(columns ? { columns } : {}),
+      },
+    });
+
+  const prop = (type: string, list = false) => ({ type: { type, list } });
+
+  it('shows every view property in the view order, then the instance properties', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
+    fetchDMSView.mockResolvedValue({
+      properties: { name: prop('text'), description: prop('text'), startTime: prop('timestamp'), endTime: prop('timestamp'), tags: prop('text', true) },
+    });
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    expect(result.data[0].fields.map((field: any) => field.name)).toEqual([
+      'name', 'description', 'startTime', 'endTime', 'tags',
+      'space', 'externalId', 'createdTime', 'lastUpdatedTime',
+      'asset',
+    ]);
+  });
+
+  it('leaves the relations out, so the related instances column is the only one by its name', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity({ equipment: [{ space: 'cdm_try', externalId: 'sensor-1' }] })]);
+    fetchDMSView.mockResolvedValue({
+      properties: { name: prop('text'), equipment: prop('direct', true), source: prop('direct') },
+    });
+    const datasource = new ActivityDatasource({} as Connector);
+    const target = emptyColumnsTarget(['*']);
+    target.cogniteActivityTabQuery.resourceType = 'CogniteEquipment';
+    const result = await datasource.queryByAssets(makeOptions([target]));
+    const names = result.data[0].fields.map((field: any) => field.name);
+    expect(names.filter((name: string) => name === 'equipment')).toHaveLength(1);
+    expect(names).not.toContain('source');
+  });
+
+  it('leaves out edges and reverse relations, which never come back with the activities', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
+    fetchDMSView.mockResolvedValue({
+      properties: {
+        name: prop('text'),
+        steps: { type: { space: 'my_space', externalId: 'Activity.steps' }, connectionType: 'edge' },
+        orders: { connectionType: 'multi_reverse_direct_relation', through: { identifier: 'activity' } },
+      },
+    });
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const names = result.data[0].fields.map((field: any) => field.name);
+    expect(names).toContain('name');
+    expect(names).not.toContain('steps');
+    expect(names).not.toContain('orders');
+  });
+
+  it('writes list and object values as JSON text', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity({ tags: ['a', 'b'] })]);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['tags'])]));
+    expect(result.data[0].fields[0].values).toEqual(['["a","b"]']);
+  });
+
+  it('keeps an empty list meaning the related instances only, as it always did', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget([])]));
+    expect(result.data[0].fields.map((field: any) => field.name)).toEqual(['asset']);
+  });
+
+  it('falls back to the properties the activities carry when the view cannot be read', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([
+      makeActivity({
+        version: 3,
+        scheduledStartTime: undefined,
+        tags: ['a'],
+        assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }],
+      }),
+    ]);
+    fetchDMSView.mockResolvedValue(null);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const names = result.data[0].fields.map((field: any) => field.name);
+    expect(names.slice(0, 2)).toEqual(['name', 'description']);
+    // Neither the instance version nor a property no activity has.
+    expect(names).not.toContain('version');
+    expect(names).not.toContain('scheduledStartTime');
+    // Lists and objects are kept, as with the view; relations are not.
+    expect(names).toContain('tags');
+    expect(names.filter((name: string) => name === 'asset' || name === 'assets')).toEqual(['asset']);
+    expect(names.slice(-5)).toEqual(['space', 'externalId', 'createdTime', 'lastUpdatedTime', 'asset']);
+  });
+
+  it('reads every timestamp property of the view as time, not only the known ones', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity({ sourceCreatedTime: '2026-01-02T03:04:05.000Z' })]);
+    fetchDMSView.mockResolvedValue({ properties: { sourceCreatedTime: prop('timestamp') } });
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['sourceCreatedTime'])]));
+    const field = result.data[0].fields[0];
+    expect(field.type).toBe(FieldType.time);
+    expect(field.values[0]).toEqual(new Date('2026-01-02T03:04:05.000Z'));
+  });
+
+  it('leaves empty lists out of the fallback, and keeps json values that only look like a relation', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([
+      makeActivity({ equipment: [], origin: { space: 's', externalId: 'x', note: 'n' } }),
+    ]);
+    fetchDMSView.mockResolvedValue(null);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const names = result.data[0].fields.map((field: any) => field.name);
+    expect(names).not.toContain('equipment');
+    expect(names).toContain('origin');
+  });
+
+  it('sorts lists by their JSON, as the table shows them', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([
+      makeActivity({ externalId: 'b', tags: ['b'] }),
+      makeActivity({ externalId: 'a', tags: ['a'] }),
+    ]);
+    const datasource = new ActivityDatasource({} as Connector);
+    const target = emptyColumnsTarget(['externalId']);
+    target.cogniteActivityTabQuery.sort = [{ property: 'tags', order: 'asc' }];
+    const result = await datasource.queryByAssets(makeOptions([target]));
+    expect(result.data[0].fields[0].values).toEqual(['a', 'b']);
+  });
+
+  it('keeps the columns a query saved before they could be chosen always showed', async () => {
+    fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
+    const datasource = new ActivityDatasource({} as Connector);
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget()]));
+    expect(result.data[0].fields.map((field: any) => field.name)).toEqual([
+      'externalId', 'description', 'startTime', 'endTime', 'asset',
+    ]);
   });
 });
