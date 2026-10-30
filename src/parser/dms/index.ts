@@ -27,12 +27,13 @@ import { DMSFilter, ViewRef } from '../../types/dms';
 import {
   CdmSyntheticQuery,
   SyntheticScopeValue,
+  SyntheticFlatInstance,
   SyntheticVariable,
   DataQueryRequestItem,
 } from '../../types';
 import { Connector } from '../../connector';
 import { LABEL_TOKEN, renderLabelToken, resolvePath } from '../../cdf/labelTokens';
-import { listAllDmsInstances, flattenInstance, FlatSyntheticInstance } from '../../cdf/syntheticTimeSeries';
+import { listAllDmsInstances, flattenInstance } from '../../cdf/syntheticTimeSeries';
 import { filterPropertiesOf } from '../../cdf/filterVariables';
 import {
   countSyntheticReferences,
@@ -169,7 +170,7 @@ export const toSyntheticGranularity = (granularity: string): string => {
 
 export interface ResolvedVariable {
   variable: SyntheticVariable;
-  instances: FlatSyntheticInstance[];
+  instances: SyntheticFlatInstance[];
   /** The instance lookup a filter variable compiled to; absent for a picked series. */
   filter?: DMSFilter;
 }
@@ -189,7 +190,7 @@ const lookupFilterVariable = async (
   connector: Connector,
   properties: ViewFilterProperties | undefined
 ): Promise<{
-  instances: FlatSyntheticInstance[];
+  instances: SyntheticFlatInstance[];
   filter?: DMSFilter;
   truncated: boolean;
   /** Set when part of the filter (=~, !~, nested values) runs locally on what CDF returned. */
@@ -227,7 +228,7 @@ const lookupFilterVariable = async (
     filter,
     MAX_SYNTHETIC_FANOUT
   );
-  let matched: FlatSyntheticInstance[];
+  let matched: SyntheticFlatInstance[];
   try {
     matched = instances
       .map((instance) => flattenInstance(instance, view))
@@ -281,14 +282,14 @@ export const resolveVariables = async (
   view: ViewRef,
   connector: Connector
 ): Promise<{ resolved: Record<string, ResolvedVariable>; warnings: string[] }> => {
-  const resolved: Record<string, ResolvedVariable> = {};
-  const warnings: string[] = [];
   const properties = variables.some(
     (v) => v.mode === 'filter' && names.includes(v.name.trim()) && v.filter?.trim()
   )
     ? await readViewProperties(connector, view)
     : undefined;
-  for (const name of names) {
+  const resolveOne = async (
+    name: string
+  ): Promise<{ resolved: ResolvedVariable; warning?: string }> => {
     const row = variables.find((v) => v.name.trim() === name);
     if (!row) {
       throw new Error(`Unknown variable "${name}". Add it to the variables or fix the expression.`);
@@ -303,17 +304,17 @@ export const resolveVariables = async (
         throw new Error(`Variable ${name} has no time series. Pick one, or remove the variable.`);
       }
       const { space, externalId, name: instanceName } = row.instance;
-      resolved[name] = {
-        variable: row,
-        instances: [{ space, externalId, ...(instanceName ? { name: instanceName } : {}) }],
+      return {
+        resolved: {
+          variable: row,
+          instances: [{ space, externalId, ...(instanceName ? { name: instanceName } : {}) }],
+        },
       };
-      continue;
     }
     // An empty filter would match the whole view; it defines nothing instead.
     if (!row.filter?.trim()) {
       throw new Error(`Variable ${name} is not defined: its filter is empty.`);
     }
-    /* eslint no-await-in-loop: "off" */
     const {
       instances: matched,
       filter,
@@ -323,19 +324,35 @@ export const resolveVariables = async (
     if (truncated && checkedAfterwards) {
       throw new Error(incompleteLocalFilterMessage(name));
     }
-    if (truncated) {
-      warnings.push(
-        `Variable ${name} matches more than ${MAX_SYNTHETIC_FANOUT} time series; ` +
-          `only the first ${MAX_SYNTHETIC_FANOUT} are used. Narrow its filter.`
-      );
-    }
     if (!matched.length) {
       throw new Error(
         `Variable ${name} matches no time series. Check its filter with the row's {} preview.`
       );
     }
-    resolved[name] = { variable: row, instances: matched, filter };
-  }
+    return {
+      resolved: { variable: row, instances: matched, filter },
+      ...(truncated
+        ? {
+            warning:
+              `Variable ${name} matches more than ${MAX_SYNTHETIC_FANOUT} time series; ` +
+              `only the first ${MAX_SYNTHETIC_FANOUT} are used. Narrow its filter.`,
+          }
+        : {}),
+    };
+  };
+  // Looked up together, but reported in the order of the names, whichever fails first.
+  const results = await Promise.allSettled(names.map(resolveOne));
+  const resolved: Record<string, ResolvedVariable> = {};
+  const warnings: string[] = [];
+  results.forEach((result, i) => {
+    if (result.status === 'rejected') {
+      throw result.reason;
+    }
+    resolved[names[i]] = result.value.resolved;
+    if (result.value.warning) {
+      warnings.push(result.value.warning);
+    }
+  });
   return { resolved, warnings };
 };
 
@@ -379,7 +396,7 @@ export type LabelScope = Record<string, SyntheticScopeValue>;
 
 /** The synthetic `ts{}` parameters one instance of a variable is sent with. */
 const refFilters = (
-  instance: FlatSyntheticInstance,
+  instance: SyntheticFlatInstance,
   row: SyntheticVariable,
   { datapoints, granularity }: ExpandOptions
 ): STSFilter[] => [
@@ -408,20 +425,28 @@ const syntheticReference = (filters: STSFilter[]): string =>
     })
     .join(', ')}}`;
 
-/** CDF's avg(), min() and max() take at least two inputs; a variable on its own is expanded to them. */
-const refuseSingleInputFunctions = (ast: STSQuery) =>
+/**
+ * A variable on its own is expanded to the inputs avg(), sum(), min() and max()
+ * combine. CDF's avg(), min() and max() take at least two, and sum(A * 2) is only
+ * a sum of one when A stands for one time series, not a total over several.
+ */
+const refuseSingleInputFunctions = (ast: STSQuery, resolved: Record<string, ResolvedVariable>) =>
   walk(ast, (item) => {
     if (
       isMultiaryFunction(item) &&
-      ['avg', 'min', 'max'].includes(item.func) &&
+      ['avg', 'sum', 'min', 'max'].includes(item.func) &&
       item.args.length === 1 &&
       !isVariableNode(item.args[0])
     ) {
-      const { func } = item;
-      throw new Error(
-        `${func}() needs a variable on its own or at least two inputs: ` +
-          `write ${func}(A) * 2, not ${func}(A * 2).`
-      );
+      const [arg] = item.args;
+      const argNames = variableNamesIn(arg as STSQuery);
+      if (item.func !== 'sum' || argNames.some((name) => resolved[name].instances.length > 1)) {
+        const name = argNames[0] ?? variableNamesIn(ast)[0];
+        throw new Error(
+          `${item.func}(${composeExpression(arg as STSQuery)}) needs a variable on its own or ` +
+            `at least two inputs, such as ${item.func}(${name}).`
+        );
+      }
     }
   });
 
@@ -442,7 +467,7 @@ export const expandExpression = (
   if (template) {
     throw new Error(`Dashboard variable ${template.name} is not defined.`);
   }
-  refuseSingleInputFunctions(ast);
+  refuseSingleInputFunctions(ast, resolved);
   const lockedIndices = lockedVariableIndices(ast, names);
   const locked = new Set(lockedIndices.map((i) => names[i]));
   // One variable may fan out; two would pair every series of one with every series of the other.
@@ -477,7 +502,7 @@ export const expandExpression = (
   const items: DataQueryRequestItem[] = [];
   const scopes: LabelScope[] = [];
   for (const permutation of permutations) {
-    const byName: Record<string, FlatSyntheticInstance[]> = Object.fromEntries(
+    const byName: Record<string, SyntheticFlatInstance[]> = Object.fromEntries(
       names.map((name, i) => [name, permutation[i]])
     );
     const refs = (name: string) =>

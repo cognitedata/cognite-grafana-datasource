@@ -378,9 +378,15 @@ describe('expandExpression', () => {
       A: { variable: instanceVar('A', 'a'), instances: [inst('a')] },
     } as Record<string, ResolvedVariable>;
     expect(() => expandExpression(parseExpression('avg(A * 2)'), resolved, rawOptions)).toThrow(
-      'write avg(A) * 2, not avg(A * 2)'
+      'avg(A * 2) needs a variable on its own or at least two inputs, such as avg(A).'
     );
     expect(() => expandExpression(parseExpression('sum(A * 2)'), resolved, rawOptions)).not.toThrow();
+    const several = {
+      A: { variable: instanceVar('A', 'a'), instances: [inst('a'), inst('b')] },
+    } as Record<string, ResolvedVariable>;
+    expect(() => expandExpression(parseExpression('sum(A * 2)'), several, rawOptions)).toThrow(
+      'sum(A * 2) needs a variable on its own'
+    );
     expect(() => expandExpression(parseExpression('avg(A, 2)'), resolved, rawOptions)).not.toThrow();
   });
 
@@ -501,6 +507,7 @@ describe('resolveVariables', () => {
     expect(await ids("description=~'n.*'")).toEqual(['e1']);
     expect(await ids("description!~'x.*'")).toEqual(['e1', 'e2']);
     expect(await ids("unit.externalId!='a(b'")).toEqual(['e1', 'e2']);
+    expect(await ids("description!~'n|ew'")).toEqual(['e1', 'e2']);
     await expect(ids("description=~'a(b'")).rejects.toThrow(/^Variable A: .*regular expression/);
   });
 
@@ -515,7 +522,64 @@ describe('resolveVariables', () => {
       'Variable A: dashboard variable $missing is not defined.'
     );
     await expect(resolve('name=[[missing]]')).rejects.toThrow('[[missing]] is not defined');
+    await expect(resolve("name='$5")).rejects.toThrow('Unexpected end of input');
+    await expect(resolve('name=$__interval')).resolves.toBeDefined();
     await expect(resolve("name='$5', tag=\"[[x]]\"")).resolves.toBeDefined();
+  });
+
+  it('compares a nested != as text, as a dashboard variable renders', async () => {
+    const connector = {
+      fetchAndPaginate: jest
+        .fn()
+        .mockResolvedValue([
+          dmsInstance('e1', { unit: { version: 3 } }),
+          dmsInstance('e2', { unit: { version: 4 } }),
+        ]),
+      fetchData: jest.fn().mockResolvedValue({ data: { items: [] } }),
+    } as any;
+    const { resolved } = await resolveVariables(
+      [filterVar('A', "unit.version!='3'")],
+      ['A'],
+      view,
+      connector
+    );
+    expect(resolved.A.instances.map((i) => i.externalId)).toEqual(['e2']);
+  });
+
+  it('looks filter variables up together, and reports the first by name', async () => {
+    let releaseFirst = () => {};
+    const first = new Promise<DMSInstance[]>((resolve) => {
+      releaseFirst = () => resolve([dmsInstance('e1')]);
+    });
+    const fetchAndPaginate = jest
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockResolvedValueOnce([dmsInstance('e2')]);
+    const connector = {
+      fetchAndPaginate,
+      fetchData: jest.fn().mockResolvedValue({ data: { items: [] } }),
+    } as any;
+    const pending = resolveVariables(
+      [filterVar('A', 'name="a"'), filterVar('B', 'name="b"')],
+      ['A', 'B'],
+      view,
+      connector
+    );
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(fetchAndPaginate).toHaveBeenCalledTimes(2);
+    releaseFirst();
+    expect(Object.keys((await pending).resolved)).toEqual(['A', 'B']);
+    const failing = resolveVariables(
+      [
+        instanceVar('A', 'x'),
+        { ...instanceVar('B', 'y'), instance: undefined },
+        { ...instanceVar('C', 'z'), instance: undefined },
+      ],
+      ['A', 'C', 'B'],
+      view,
+      connector
+    );
+    await expect(failing).rejects.toThrow('Variable C has no time series');
   });
 
   it('retries the view read on a temporary failure', async () => {

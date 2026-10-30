@@ -125,14 +125,18 @@ export const matchesLocalFilter = (
 ): boolean => {
   const actual = get(instance, path, null);
   if (filter === FilterTypes.NotEquals) {
-    return isArray(value) ? !(value as unknown[]).includes(actual) : value !== actual;
+    // Compared as text: a dashboard variable renders as text, whatever the value holds.
+    const isValue = (expected: unknown) => actual !== null && String(expected) === String(actual);
+    return isArray(value) ? !value.some(isValue) : !isValue(value);
   }
-  const matches = actual !== null && new RegExp(`^${value}$`).test(String(actual));
+  const matches = actual !== null && new RegExp(`^(?:${value})$`).test(String(actual));
   return filter === FilterTypes.RegexEquals ? matches : !matches;
 };
 
-const QUOTED_TEXT = /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g;
-const VARIABLE_TOKEN = /\$\{?\w+|\[\[\w+\]\]/;
+// A quote left open runs to the end, so the parser reports it instead of what it holds.
+const QUOTED_TEXT = /'(?:\\.|[^'\\])*(?:'|$)|"(?:\\.|[^"\\])*(?:"|$)/g;
+// Grafana's own $__ variables can depend on the panel, so the editor can't tell they exist.
+const VARIABLE_TOKEN = /\$\{?(?!__)\w+|\[\[(?!__)\w+\]\]/;
 
 /**
  * A dashboard variable still in an interpolated filter is not defined. Inside

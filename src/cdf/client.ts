@@ -310,7 +310,9 @@ export async function getLabelsForTarget(
       }
       // A picked series only carries its id and name; its view properties are fetched
       // once so `{{A.unit.externalId}}` works on it like on a filtered series.
-      const enriched = view ? await enrichPickedInstanceScopes(connector, view, variables, scopes) : scopes;
+      const enriched = view
+        ? await enrichPickedInstanceScopes(connector, labelSrc, view, variables, scopes)
+        : scopes;
       const withUnits = await resolveScopeUnits(connector, labelSrc, variables, enriched);
       return getLabelsForSyntheticQuery(labelSrc, expression, withUnits);
     }
@@ -357,12 +359,23 @@ async function resolveScopeUnits(
 
 async function enrichPickedInstanceScopes(
   connector: Connector,
+  label: string,
   view: { space: string; externalId: string; version: string },
-  variables: Array<{ name: string; mode: string; instance?: { space: string; externalId: string } }>,
+  variables: Array<{
+    name: string;
+    mode: string;
+    instance?: { space: string; externalId: string; name?: string };
+  }>,
   scopes: NonNullable<QueriesDataItem['scopes']>
 ): Promise<NonNullable<QueriesDataItem['scopes']>> {
+  const tokens = [...label.matchAll(LABEL_TOKEN)].map(([, group]) => group.split('.'));
+  // {{A}} alone only needs the name, which is saved with the pick unless it has none.
   const picked = variables.filter(
-    (row) => row.mode === 'instance' && row.instance && scopes.some((scope) => scope[row.name] !== undefined)
+    (row) =>
+      row.mode === 'instance' &&
+      row.instance &&
+      scopes.some((scope) => scope[row.name] !== undefined) &&
+      tokens.some(([head, ...rest]) => head === row.name && (rest.length > 0 || !row.instance?.name))
   );
   if (!picked.length) {
     return scopes;

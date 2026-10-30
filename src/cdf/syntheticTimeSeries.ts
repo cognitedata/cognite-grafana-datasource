@@ -6,6 +6,7 @@
 import { Connector } from '../connector';
 import {
   CdmSyntheticQuery,
+  SyntheticFlatInstance,
   SyntheticVariable,
   SyntheticVariableMode,
   defaultCdmSyntheticQuery,
@@ -14,7 +15,12 @@ import {
 import { DMSFilter, DMSInstance, DMSListRequest, DMSViewReference, ViewRef } from '../types/dms';
 import { retryOnTransientError } from './client';
 
-export type SyntheticViewRef = ViewRef;
+export const toViewReference = (view: ViewRef): DMSViewReference => ({
+  type: 'view',
+  space: view.space,
+  externalId: view.externalId,
+  version: view.version,
+});
 
 /**
  * Flattened DMS instance: the node identity plus the properties it holds
@@ -22,20 +28,7 @@ export type SyntheticViewRef = ViewRef;
  * (reserved, so never colliding) view property names, and together form the
  * instance id the synthetic API understands.
  */
-export type FlatSyntheticInstance = {
-  space: string;
-  externalId: string;
-  [prop: string]: unknown;
-};
-
-export const toViewReference = (view: SyntheticViewRef): DMSViewReference => ({
-  type: 'view',
-  space: view.space,
-  externalId: view.externalId,
-  version: view.version,
-});
-
-export const flattenInstance = (instance: DMSInstance, view: SyntheticViewRef): FlatSyntheticInstance => ({
+export const flattenInstance = (instance: DMSInstance, view: ViewRef): SyntheticFlatInstance => ({
   ...(instance.properties?.[view.space]?.[`${view.externalId}/${view.version}`] ?? {}),
   space: instance.space,
   externalId: instance.externalId,
@@ -47,7 +40,7 @@ export const flattenInstance = (instance: DMSInstance, view: SyntheticViewRef): 
  * Shared by the lookup and its request preview.
  */
 export const instanceListRequest = (
-  view: SyntheticViewRef,
+  view: ViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number
 ): DMSListRequest & { limit: number } => ({
@@ -60,7 +53,7 @@ export const instanceListRequest = (
 /** Lists the node instances of a view matching the filter, up to `maxInstances`. */
 export async function listAllDmsInstances(
   connector: Connector,
-  view: SyntheticViewRef,
+  view: ViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number
 ): Promise<{ instances: DMSInstance[]; truncated: boolean }> {
@@ -167,7 +160,7 @@ export const interpolateCdmSyntheticQuery = (
 
 /** Body + path of the /models/instances/list call, for the editor's request preview. */
 export const buildListRequestPreview = (
-  view: SyntheticViewRef,
+  view: ViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number,
   project = '{project}'
