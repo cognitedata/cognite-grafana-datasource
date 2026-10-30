@@ -619,8 +619,9 @@ export async function fetchDMSViewProperties(
   return Object.keys(view?.properties ?? {});
 }
 
-// Helper function to retry DMS API calls with exponential backoff and jitter on 429 errors
-async function retryOnRateLimit<T>(
+// Helper function to retry DMS API calls with exponential backoff and jitter on temporary failures.
+// Every caller only reads, so sending a request again is safe.
+export async function retryOnTransientError<T>(
   fn: () => Promise<T>,
   maxRetries = 3,
   baseDelay = 1000
@@ -633,11 +634,11 @@ async function retryOnRateLimit<T>(
     } catch (error: any) {
       lastError = error;
 
-      // Only retry on 429 (rate limit) errors
-      const isRateLimitError = error?.status === 429;
-      const hasRetriesLeft = attempt < maxRetries;
+      const isTransient = [408, 425, 429, 502, 503, 504].includes(error?.status);
+      // Only CDF's rate limit says to wait and try again; one more try is enough for the rest.
+      const hasRetriesLeft = attempt < (error?.status === 429 ? maxRetries : Math.min(maxRetries, 1));
 
-      if (!isRateLimitError || !hasRetriesLeft) {
+      if (!isTransient || !hasRetriesLeft) {
         throw error;
       }
 
@@ -646,7 +647,7 @@ async function retryOnRateLimit<T>(
       const delay = exponentialDelay + jitter;
 
       console.warn(
-        `Rate limited (429). Retrying in ${Math.round(delay)}ms ` +
+        `Request failed (${error.status}). Retrying in ${Math.round(delay)}ms ` +
         `(attempt ${attempt + 1}/${maxRetries})`
       );
 
@@ -661,7 +662,7 @@ export function searchDMSInstances(
   connector: Connector,
   searchRequest: DMSSearchRequest
 ): Promise<DMSInstance[]> {
-  return retryOnRateLimit(() =>
+  return retryOnTransientError(() =>
     connector.fetchItems<DMSInstance>({
       method: HttpMethod.POST,
       path: '/models/instances/search',
@@ -674,7 +675,7 @@ export async function listDMSInstances(
   connector: Connector,
   listRequest: DMSListRequest
 ): Promise<DMSInstance[]> {
-  return retryOnRateLimit(() =>
+  return retryOnTransientError(() =>
     connector.fetchItems<DMSInstance>({
       method: HttpMethod.POST,
       path: '/models/instances/list',
@@ -705,7 +706,7 @@ export async function fetchCogniteUnits(
         },
       },
     };
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       // The catalog can exceed a single page, so follow cursors instead of a one-shot list.
       connector.fetchAndPaginate<DMSInstance>({
         method: HttpMethod.POST,
@@ -842,7 +843,7 @@ function parseTimeSeriesProperties(instance: DMSInstance): TimeSeriesProperties 
 }
 
 const fetchTimeSeriesInstances = (connector: Connector, instanceIds: DMSInstanceId[]) =>
-  retryOnRateLimit(() =>
+  retryOnTransientError(() =>
     connector.fetchItems<DMSInstance>({
       method: HttpMethod.POST,
       path: '/models/instances/byids',
@@ -903,7 +904,7 @@ export async function getStateSet(
   stateSet: { space: string; externalId: string }
 ): Promise<StateSetEntry[] | undefined> {
   try {
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
@@ -951,7 +952,7 @@ export async function fetchCogniteTimeSeriesInstance(
   instanceId: { space: string; externalId: string }
 ): Promise<Record<string, any>> {
   try {
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
@@ -1002,7 +1003,7 @@ export async function fetchContainerViews(
   connector: Connector,
   containerExternalId: string
 ): Promise<InvolvedView[]> {
-  const response = await retryOnRateLimit(() =>
+  const response = await retryOnTransientError(() =>
     connector.fetchData<{ data: ContainerInspectResponse }>({
       method: HttpMethod.POST,
       path: '/models/containers/inspect',
@@ -1107,7 +1108,7 @@ export async function fetchActivitiesFromDMS(
       filter: timeFilter,
     };
 
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/list',
@@ -1174,7 +1175,7 @@ export async function fetchActivitiesByAssets(
       filter,
     };
 
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/list',

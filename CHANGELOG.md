@@ -29,6 +29,7 @@ Data Source for Grafana**.
 - **Time series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
 - **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. Errors and warnings from the panel's series are now shown on the row, each once.
 - **Time series aggregates**: when the time range did not start on a whole interval (a range from 10:43 with a 1h granularity, say), the first interval was dropped, so series started blank until the next one. An interval that overlaps the range is now shown.
+- Data modeling requests are now tried once more after a temporary failure (a timeout, or a 502, 503 or 504 from the server). Rate limited requests are retried as before.
 
 ## 4.6.0 - October 14th, 2026
 
