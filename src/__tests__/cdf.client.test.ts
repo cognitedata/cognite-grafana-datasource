@@ -9,10 +9,48 @@ import {
   concurrent,
   convertItemsToTable,
   getTimeSeriesPropertiesBatch,
+  retryOnTransientError,
 } from '../cdf/client';
 import { getDataqueryResponse, getMeta } from '../test_utils';
 
 describe('CDF client', () => {
+  describe('retryOnTransientError', () => {
+    const failing = (status: number) => jest.fn().mockRejectedValue({ status });
+
+    beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => undefined));
+    afterEach(() => jest.restoreAllMocks());
+
+    it.each([408, 425, 429, 502, 503, 504])(
+      'retries a %i and returns the result',
+      async (status) => {
+        const fn = jest.fn().mockRejectedValueOnce({ status }).mockResolvedValue('ok');
+        await expect(retryOnTransientError(fn, 3, 0)).resolves.toBe('ok');
+        expect(fn).toHaveBeenCalledTimes(2);
+      }
+    );
+
+    it('tries a rate limited request up to the maximum, and other failures once more', async () => {
+      const limited = failing(429);
+      await expect(retryOnTransientError(limited, 2, 0)).rejects.toEqual({ status: 429 });
+      expect(limited).toHaveBeenCalledTimes(3);
+      const unavailable = failing(503);
+      await expect(retryOnTransientError(unavailable, 2, 0)).rejects.toEqual({ status: 503 });
+      expect(unavailable).toHaveBeenCalledTimes(2);
+    });
+
+    it.each([400, 401, 403, 404, 409, 500, 501, 505])('does not retry a %i', async (status) => {
+      const fn = failing(status);
+      await expect(retryOnTransientError(fn, 3, 0)).rejects.toEqual({ status });
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry an error without a status', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('boom'));
+      await expect(retryOnTransientError(fn, 3, 0)).rejects.toThrow('boom');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('datapoints to tuples', () => {
     it('converts non aggregated values', () => {
       expect(
