@@ -18,7 +18,6 @@ import {
 } from '../shared';
 import { FilterTypes } from '../types';
 import { DMSFilter, ViewRef } from '../../types/dms';
-import { INSTANCE_PROPERTIES } from '../../cdf/instanceProperties';
 
 const compiledFilter = Grammar.fromCompiled(filterGrammar);
 
@@ -57,11 +56,17 @@ export const validateWith = (
 export const validateFilter = (s: string) => validateWith(compiledFilter, s);
 
 /**
- * DMS reserves these property names on the instance itself (they never appear as
- * view properties), so they filter through node-scoped paths like ["node", "space"].
- * The node's `type` is left out: views can have their own, as CogniteTimeSeries does.
+ * The instance's own properties that CDF filters on, through node-scoped paths like
+ * ["node", "space"], unless the view has a property of that name. Their times are
+ * milliseconds, which a filter compares as numbers.
  */
-const RESERVED_INSTANCE_PROPS = [...INSTANCE_PROPERTIES.map(({ name }) => name), 'version'];
+const NODE_PROPERTY_TYPES: Record<string, string> = {
+  space: 'text',
+  externalId: 'text',
+  createdTime: 'int64',
+  lastUpdatedTime: 'int64',
+  version: 'int64',
+};
 
 const RANGE_OPERATOR_KEYS: Record<string, 'gte' | 'gt' | 'lte' | 'lt'> = {
   [FilterTypes.GreaterOrEquals as string]: 'gte',
@@ -111,10 +116,19 @@ export const splitRefFilters = (ref: STSReference): SplitRefFilters => {
 };
 
 /** ["prop"]-style DMS filter path for a property of the selected view. */
-export const viewPropertyPath = (view: ViewRef, prop: string): string[] =>
-  RESERVED_INSTANCE_PROPS.indexOf(prop) !== -1
+export const viewPropertyPath = (
+  view: ViewRef,
+  prop: string,
+  properties: ViewFilterProperties = new Map()
+): string[] => {
+  // The node's `type` is only meant when the view is known to have no `type` of its own.
+  const isNodeProperty =
+    !properties.has(prop) &&
+    (prop in NODE_PROPERTY_TYPES || (prop === 'type' && properties.size > 0));
+  return isNodeProperty
     ? ['node', prop]
     : [view.space, `${view.externalId}/${view.version}`, prop];
+};
 
 /** Converts a parsed STS value (which may hold nested filter pairs) into a plain DMS value. */
 const toDmsValue = (value: unknown): any => {
@@ -133,14 +147,15 @@ export type ViewFilterProperties = Map<string, { type: string; list: boolean }>;
 export interface BuildDmsFilterOptions {
   /**
    * The view's properties. `=` on a list property means "contains any of", as DMS
-   * has no equals for lists, and text is turned into the boolean or number a
-   * property holds, as a dashboard variable always renders as text.
+   * has no equals for lists, and a value is turned into the type a property holds,
+   * as a dashboard variable renders as text, or as a number after a range operator.
    */
   properties?: ViewFilterProperties;
 }
 
 const NUMBER_TYPES = ['int32', 'int64', 'float32', 'float64'];
-const NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
+/** A number as the filter grammar reads it. */
+export const NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
 /** The value a property of this type holds, or the value as it is when text doesn't convert. */
 const toPropertyValue = (value: any, type: string | undefined): any => {
@@ -148,15 +163,19 @@ const toPropertyValue = (value: any, type: string | undefined): any => {
     return isSTSFilterArr(value) ? value : value.map((item) => toPropertyValue(item, type));
   }
   if (typeof value !== 'string') {
-    return value;
+    return type === 'text' && (typeof value === 'number' || typeof value === 'boolean')
+      ? String(value)
+      : value;
   }
   if (type === 'boolean' && (value === 'true' || value === 'false')) {
     return value === 'true';
   }
   if (type && NUMBER_TYPES.includes(type) && NUMBER.test(value)) {
     const number = Number(value);
-    // An integer too large for a JavaScript number would change value.
-    return type.startsWith('int') && !Number.isSafeInteger(number) ? value : number;
+    // An integer too large for a JavaScript number would change value, and a float would become null.
+    return (type.startsWith('int') ? Number.isSafeInteger(number) : Number.isFinite(number))
+      ? number
+      : value;
   }
   return value;
 };
@@ -176,11 +195,15 @@ export const buildDmsFilter = (
   const rangesByProp: { [path: string]: DMSFilter['range'] } = {};
 
   serverFilters.forEach((parsed) => {
-    const f = { ...parsed, value: toPropertyValue(parsed.value, properties.get(parsed.path)?.type) };
+    const type = properties.get(parsed.path)?.type ?? NODE_PROPERTY_TYPES[parsed.path];
+    // A prefix is text whatever the property holds, so CDF sees it as written.
+    const f = isPrefixFilter(parsed)
+      ? parsed
+      : { ...parsed, value: toPropertyValue(parsed.value, type) };
     if (f.path.indexOf('.') !== -1) {
       throw new Error(`"${f.path}" only works with !=, =~ and !~.`);
     }
-    const property = viewPropertyPath(view, f.path);
+    const property = viewPropertyPath(view, f.path, properties);
     const isList = !!properties.get(f.path)?.list;
     if ((isRangeFilter(f) || isPrefixFilter(f)) && isArray(f.value)) {
       throw new Error(`"${f.filter}" takes one value, but "${f.path}" has several.`);

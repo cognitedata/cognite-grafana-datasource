@@ -84,6 +84,14 @@ describe('splitRefFilters + buildDmsFilter', () => {
     expect(viewPropertyPath(view, 'instanceType')).toEqual(viewProp('instanceType'));
   });
 
+  it('prefers a property of the view, and uses the node for what the view lacks', () => {
+    const properties = new Map([['version', { type: 'text', list: false }]]);
+    expect(viewPropertyPath(view, 'version', properties)).toEqual(viewProp('version'));
+    expect(viewPropertyPath(view, 'type', properties)).toEqual(['node', 'type']);
+    const withType = new Map([['type', { type: 'text', list: false }]]);
+    expect(viewPropertyPath(view, 'type', withType)).toEqual(viewProp('type'));
+  });
+
   it('compiles != as the negated equality, keeping instances without a value', () => {
     expect(buildDmsFilter(view, serverOf('description!="x"'))).toEqual({
       not: { equals: { property: viewProp('description'), value: 'x' } },
@@ -220,6 +228,28 @@ describe('values of boolean and number properties', () => {
     expect(compile("count>='5'")).toEqual({ range: { property: property('count'), gte: 5 } });
   });
 
+  it('turns numbers and booleans into text on a text property', () => {
+    expect(compile('tag>=5')).toEqual({ range: { property: property('tag'), gte: '5' } });
+    expect(compile('tag=1001')).toEqual({ equals: { property: property('tag'), value: '1001' } });
+    expect(compile('tag=[1, true]')).toEqual({
+      in: { property: property('tag'), values: ['1', 'true'] },
+    });
+  });
+
+  it('converts the instance properties too', () => {
+    expect(compile("version='3'")).toEqual({
+      equals: { property: ['node', 'version'], value: 3 },
+    });
+    expect(compile("createdTime='1000'")).toEqual({
+      equals: { property: ['node', 'createdTime'], value: 1000 },
+    });
+    expect(compile('space=1')).toEqual({ equals: { property: ['node', 'space'], value: '1' } });
+  });
+
+  it('leaves a prefix as written', () => {
+    expect(compile("count^='05'")).toEqual({ prefix: { property: property('count'), value: '05' } });
+  });
+
   it('keeps text on a text property, and text that does not convert', () => {
     expect(compile("tag='1001'")).toEqual({ equals: { property: property('tag'), value: '1001' } });
     expect(compile("isStep='yes'")).toEqual({
@@ -230,6 +260,9 @@ describe('values of boolean and number properties', () => {
     });
     expect(compile("count='9007199254740993'")).toEqual({
       equals: { property: property('count'), value: '9007199254740993' },
+    });
+    expect(compile("ratio='1e400'")).toEqual({
+      equals: { property: property('ratio'), value: '1e400' },
     });
   });
 });

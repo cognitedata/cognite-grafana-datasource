@@ -5,7 +5,7 @@
 import { ScopedVars } from '@grafana/data';
 import { TemplateSrv } from '@grafana/runtime';
 import { DMSViewWithProperties } from '../types/dms';
-import { ViewFilterProperties } from '../parser/dms/filterCompiler';
+import { NUMBER, ViewFilterProperties } from '../parser/dms/filterCompiler';
 import { currentValues, INSTANCE_REF_VARIABLE_TOKEN, isAll } from './graphqlInstanceRefs';
 import { InstanceRef, parseInstanceRef } from './instanceRef';
 
@@ -16,8 +16,6 @@ const quoteFilterString = (value: string): string =>
 /** The filter syntax for a direct relation value. */
 export const toFilterInstanceLiteral = ({ space, externalId }: InstanceRef): string =>
   `{space=${quoteFilterString(space)}, externalId=${quoteFilterString(externalId)}}`;
-
-const NUMBER = /^-?\d+(\.\d+)?$/;
 
 /** A pattern matching any of the values, each taken literally. */
 const anyOfPattern = (values: string[]): string => {
@@ -41,8 +39,8 @@ const valueContextOf = (rendered: string): ValueContext =>
  * becomes the selected instance(s), and `name=~$tag` a pattern matching any of
  * the values. Inside a list (`[$tag, 'x']`) the values join the list instead of
  * nesting one, and an empty selection leaves the list. A number stays bare after
- * a range operator; elsewhere it is quoted, as text properties need, and
- * buildDmsFilter turns it back for a number or boolean property.
+ * a range operator; elsewhere it is quoted, as text properties need.
+ * buildDmsFilter converts either form to the type the property holds.
  * `${asset.space}` / `${asset.externalId}` give the quoted part(s).
  *
  * Variables inside quotes, tokens with a `:format`, and variables Grafana
@@ -167,6 +165,7 @@ const renderFilterVariable = (
     return quoteFilterPattern(anyOfPattern(texts));
   }
   // Only a range compares numbers; anywhere else a number-like value may be text, like a tag "1001".
+  // buildDmsFilter converts the value to the property's type once it knows the view.
   const numbers = context === 'range' && texts.every((text) => NUMBER.test(text));
   return asList(numbers ? texts : texts.map(quoteFilterString));
 };
