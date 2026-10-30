@@ -170,12 +170,17 @@ const renderFilterVariable = (
   return asList(numbers ? texts : texts.map(quoteFilterString));
 };
 
-/** What a filter needs to know about a view's properties; connections have no type to compare. */
+/**
+ * What a filter needs to know about a view's properties, or undefined when the
+ * view is unknown; connections have no type to compare.
+ */
 export const filterPropertiesOf = (
   viewDef: DMSViewWithProperties | null | undefined
-): ViewFilterProperties =>
-  new Map(
-    Object.entries(viewDef?.properties ?? {})
-      .filter(([, def]) => !!def.type?.type)
-      .map(([name, def]) => [name, { type: def.type.type, list: !!def.type.list }])
-  );
+): ViewFilterProperties | undefined =>
+  viewDef
+    ? new Map(
+        Object.entries(viewDef.properties ?? {})
+          .filter(([, def]) => !!def.type?.type)
+          .map(([name, def]) => [name, { type: def.type.type, list: !!def.type.list }])
+      )
+    : undefined;

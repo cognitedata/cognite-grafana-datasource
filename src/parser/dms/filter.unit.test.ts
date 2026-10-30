@@ -55,6 +55,17 @@ describe('filter grammar', () => {
     expect(validateFilter('')).toBeNull();
     expect(validateFilter("name^='PT'")).toBeNull();
   });
+
+  it.each(['.name', 'name.', 'unit..externalId', '.'])('refuses the malformed path %s', (path) => {
+    expect(validateFilter(`${path}='x'`)).toEqual(
+      expect.objectContaining({ message: 'Syntax error' })
+    );
+    expect(() => parseFilter(`${path}='x'`)).toThrow(/Syntax error/);
+  });
+
+  it('reads a nested path as written', () => {
+    expect(parseFilter("a.b_1.c!='x'")[0].path).toEqual('a.b_1.c');
+  });
 });
 
 const listProperties = (...names: string[]) =>
@@ -90,6 +101,21 @@ describe('splitRefFilters + buildDmsFilter', () => {
     expect(viewPropertyPath(view, 'type', properties)).toEqual(['node', 'type']);
     const withType = new Map([['type', { type: 'text', list: false }]]);
     expect(viewPropertyPath(view, 'type', withType)).toEqual(viewProp('type'));
+  });
+
+  it('uses the node for type on a view known to have no properties, not on an unknown one', () => {
+    const empty = filterPropertiesOf({ ...view, properties: {} });
+    expect(viewPropertyPath(view, 'type', empty)).toEqual(['node', 'type']);
+    const connections = filterPropertiesOf({
+      ...view,
+      properties: { related: { connectionType: 'multi_reverse_direct_relation' } as any },
+    });
+    expect(viewPropertyPath(view, 'type', connections)).toEqual(['node', 'type']);
+    expect(viewPropertyPath(view, 'type', filterPropertiesOf(null))).toEqual(viewProp('type'));
+  });
+
+  it('treats names inherited from Object as view properties', () => {
+    expect(viewPropertyPath(view, 'constructor')).toEqual(viewProp('constructor'));
   });
 
   it('compiles != as the negated equality, keeping instances without a value', () => {
@@ -444,6 +470,6 @@ describe('instance-reference variables in filters', () => {
         ['name', { type: 'text', list: false }],
       ])
     );
-    expect(filterPropertiesOf(null)).toEqual(new Map());
+    expect(filterPropertiesOf(null)).toBeUndefined();
   });
 });

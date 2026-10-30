@@ -60,13 +60,13 @@ export const validateFilter = (s: string) => validateWith(compiledFilter, s);
  * ["node", "space"], unless the view has a property of that name. Their times are
  * milliseconds, which a filter compares as numbers.
  */
-const NODE_PROPERTY_TYPES: Record<string, string> = {
-  space: 'text',
-  externalId: 'text',
-  createdTime: 'int64',
-  lastUpdatedTime: 'int64',
-  version: 'int64',
-};
+const NODE_PROPERTY_TYPES = new Map([
+  ['space', 'text'],
+  ['externalId', 'text'],
+  ['createdTime', 'int64'],
+  ['lastUpdatedTime', 'int64'],
+  ['version', 'int64'],
+]);
 
 const RANGE_OPERATOR_KEYS: Record<string, 'gte' | 'gt' | 'lte' | 'lt'> = {
   [FilterTypes.GreaterOrEquals as string]: 'gte',
@@ -119,12 +119,12 @@ export const splitRefFilters = (ref: STSReference): SplitRefFilters => {
 export const viewPropertyPath = (
   view: ViewRef,
   prop: string,
-  properties: ViewFilterProperties = new Map()
+  properties?: ViewFilterProperties
 ): string[] => {
   // The node's `type` is only meant when the view is known to have no `type` of its own.
   const isNodeProperty =
-    !properties.has(prop) &&
-    (prop in NODE_PROPERTY_TYPES || (prop === 'type' && properties.size > 0));
+    !properties?.has(prop) &&
+    (NODE_PROPERTY_TYPES.has(prop) || (prop === 'type' && properties !== undefined));
   return isNodeProperty
     ? ['node', prop]
     : [view.space, `${view.externalId}/${view.version}`, prop];
@@ -149,6 +149,7 @@ export interface BuildDmsFilterOptions {
    * The view's properties. `=` on a list property means "contains any of", as DMS
    * has no equals for lists, and a value is turned into the type a property holds,
    * as a dashboard variable renders as text, or as a number after a range operator.
+   * Absent when the view couldn't be read; empty when it has no properties.
    */
   properties?: ViewFilterProperties;
 }
@@ -189,13 +190,13 @@ const toPropertyValue = (value: any, type: string | undefined): any => {
 export const buildDmsFilter = (
   view: ViewRef,
   serverFilters: STSFilter[],
-  { properties = new Map() }: BuildDmsFilterOptions = {}
+  { properties }: BuildDmsFilterOptions = {}
 ): DMSFilter | undefined => {
   const leaves: DMSFilter[] = [];
   const rangesByProp: { [path: string]: DMSFilter['range'] } = {};
 
   serverFilters.forEach((parsed) => {
-    const type = properties.get(parsed.path)?.type ?? NODE_PROPERTY_TYPES[parsed.path];
+    const type = properties?.get(parsed.path)?.type ?? NODE_PROPERTY_TYPES.get(parsed.path);
     // A prefix is text whatever the property holds, so CDF sees it as written.
     const f = isPrefixFilter(parsed)
       ? parsed
@@ -204,7 +205,7 @@ export const buildDmsFilter = (
       throw new Error(`"${f.path}" only works with !=, =~ and !~.`);
     }
     const property = viewPropertyPath(view, f.path, properties);
-    const isList = !!properties.get(f.path)?.list;
+    const isList = !!properties?.get(f.path)?.list;
     if ((isRangeFilter(f) || isPrefixFilter(f)) && isArray(f.value)) {
       throw new Error(`"${f.filter}" takes one value, but "${f.path}" has several.`);
     }

@@ -55,7 +55,7 @@ pair -> dms_prop _ equals _ value {% d => ([d[0], d[2], d[4]]) %}
   # Lists only parse so that buildDmsFilter can say ^= and ranges take one value.
   | dms_prop _ prefix_op _ array {% d => ([d[0], d[2], d[4]]) %}
 
-dms_prop -> [A-Za-z0-9_.]:+ {% join %}
+dms_prop -> prop_name ("." prop_name):* {% d => d[0] + d[1].map((part) => part.join('')).join('') %}
 
 variable -> "$" prop_name {% joinArr %}
   | "[[" prop_name "]]" {% joinArr %}

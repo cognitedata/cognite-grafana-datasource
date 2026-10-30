@@ -437,13 +437,18 @@ const grammar: Grammar = {
       symbols: ['dms_prop', '_', 'prefix_op', '_', 'array'],
       postprocess: (d) => [d[0], d[2], d[4]],
     },
-    { name: 'dms_prop$ebnf$1', symbols: [/[A-Za-z0-9_.]/] },
+    { name: 'dms_prop$ebnf$1', symbols: [] },
+    { name: 'dms_prop$ebnf$1$subexpression$1', symbols: [{ literal: '.' }, 'prop_name'] },
     {
       name: 'dms_prop$ebnf$1',
-      symbols: ['dms_prop$ebnf$1', /[A-Za-z0-9_.]/],
+      symbols: ['dms_prop$ebnf$1', 'dms_prop$ebnf$1$subexpression$1'],
       postprocess: (d) => d[0].concat([d[1]]),
     },
-    { name: 'dms_prop', symbols: ['dms_prop$ebnf$1'], postprocess: join },
+    {
+      name: 'dms_prop',
+      symbols: ['prop_name', 'dms_prop$ebnf$1'],
+      postprocess: (d) => d[0] + d[1].map((part) => part.join('')).join(''),
+    },
     { name: 'variable', symbols: [{ literal: '$' }, 'prop_name'], postprocess: joinArr },
     {
       name: 'variable$string$1',
