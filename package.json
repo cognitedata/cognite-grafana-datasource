@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "build-parser": "nearleyc ./src/parser/events-assets/grammar.ne -o ./src/parser/events-assets/grammar.ts && nearleyc ./src/parser/ts/grammar.ne -o ./src/parser/ts/grammar.ts",
+    "build-parser": "nearleyc ./src/parser/events-assets/grammar.ne -o ./src/parser/events-assets/grammar.ts && nearleyc ./src/parser/ts/grammar.ne -o ./src/parser/ts/grammar.ts && nearleyc ./src/parser/dms/filter.ne -o ./src/parser/dms/filter.ts",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "e2e": "playwright test",
     "lint": "eslint --cache -c .eslintrc.cjs . ",

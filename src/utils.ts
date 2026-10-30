@@ -41,7 +41,7 @@ export const checkFilter = <T>(obj: T, { path, filter, value }: ParsedFilter): b
     case FilterTypes.RegexNotEquals:
       return !regex.test(valueToFilter);
     case FilterTypes.NotEquals:
-      return value !== valueToFilter;
+      return Array.isArray(value) ? !value.includes(valueToFilter) : value !== valueToFilter;
     default:
       return false;
   }

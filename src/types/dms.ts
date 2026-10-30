@@ -41,6 +41,17 @@ export interface DMSFilter {
     lte?: any;
     lt?: any;
   };
+  prefix?: {
+    property: string[];
+    value: string;
+  };
+  exists?: {
+    property: string[];
+  };
+  containsAny?: {
+    property: string[];
+    values: any[];
+  };
   inSpace?: string;
 }
 
