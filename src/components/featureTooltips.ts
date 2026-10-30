@@ -21,6 +21,8 @@ export const FEATURE_TOOLTIPS: Record<FeatureKey, string> = {
     `Enable the Activities tab to query CogniteActivity instances from the Core Data Model.`,
   enableRecords:
     `Enable the Records tab to query high-volume records from streams through record views. Alpha: off by default, and its options may change before Beta.`,
+  enableSyntheticTimeSeries:
+    `Enable the Synthetic time series tab to pick or filter Core Data Model time series and compute expressions over them in CDF. Beta: off by default.`,
   enableFlexibleDataModelling:
     `Enable the GraphQL tab to query custom data models in CDF using GraphQL. Supports listing, searching, and aggregating data model instances.`,
 

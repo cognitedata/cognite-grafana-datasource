@@ -12,6 +12,7 @@ export const FEATURE_DEFAULTS = {
   enableCogniteTimeSeries: true,
   enableCogniteActivities: true,
   enableRecords: false, // Alpha: off by default until Beta
+  enableSyntheticTimeSeries: false, // Beta: off by default
   enableFlexibleDataModelling: true, // GraphQL tab
 
   // Legacy data model features - default to enabled for backward compatibility
