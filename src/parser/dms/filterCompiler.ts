@@ -127,10 +127,39 @@ const toDmsValue = (value: unknown): any => {
   return value;
 };
 
+/** A view's properties, by name, as far as a filter compiles against them. */
+export type ViewFilterProperties = Map<string, { type: string; list: boolean }>;
+
 export interface BuildDmsFilterOptions {
-  /** The view's list-valued properties: `=` on one means "contains any of", as DMS has no equals for lists. */
-  listProperties?: Set<string>;
+  /**
+   * The view's properties. `=` on a list property means "contains any of", as DMS
+   * has no equals for lists, and text is turned into the boolean or number a
+   * property holds, as a dashboard variable always renders as text.
+   */
+  properties?: ViewFilterProperties;
 }
+
+const NUMBER_TYPES = ['int32', 'int64', 'float32', 'float64'];
+const NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
+
+/** The value a property of this type holds, or the value as it is when text doesn't convert. */
+const toPropertyValue = (value: any, type: string | undefined): any => {
+  if (isArray(value)) {
+    return isSTSFilterArr(value) ? value : value.map((item) => toPropertyValue(item, type));
+  }
+  if (typeof value !== 'string') {
+    return value;
+  }
+  if (type === 'boolean' && (value === 'true' || value === 'false')) {
+    return value === 'true';
+  }
+  if (type && NUMBER_TYPES.includes(type) && NUMBER.test(value)) {
+    const number = Number(value);
+    // An integer too large for a JavaScript number would change value.
+    return type.startsWith('int') && !Number.isSafeInteger(number) ? value : number;
+  }
+  return value;
+};
 
 /**
  * Compiles a variable's server-side filters into a DMS FilterDefinition scoped
@@ -141,16 +170,18 @@ export interface BuildDmsFilterOptions {
 export const buildDmsFilter = (
   view: ViewRef,
   serverFilters: STSFilter[],
-  { listProperties = new Set<string>() }: BuildDmsFilterOptions = {}
+  { properties = new Map() }: BuildDmsFilterOptions = {}
 ): DMSFilter | undefined => {
   const leaves: DMSFilter[] = [];
   const rangesByProp: { [path: string]: DMSFilter['range'] } = {};
 
-  serverFilters.forEach((f) => {
+  serverFilters.forEach((parsed) => {
+    const f = { ...parsed, value: toPropertyValue(parsed.value, properties.get(parsed.path)?.type) };
     if (f.path.indexOf('.') !== -1) {
       throw new Error(`"${f.path}" only works with !=, =~ and !~.`);
     }
     const property = viewPropertyPath(view, f.path);
+    const isList = !!properties.get(f.path)?.list;
     if ((isRangeFilter(f) || isPrefixFilter(f)) && isArray(f.value)) {
       throw new Error(`"${f.filter}" takes one value, but "${f.path}" has several.`);
     }
@@ -174,10 +205,10 @@ export const buildDmsFilter = (
       }
       const equality: DMSFilter =
         isArray(f.value) && !isSTSFilterArr(f.value)
-          ? listProperties.has(f.path)
+          ? isList
             ? { containsAny: { property, values: toDmsValue(f.value) } }
             : { in: { property, values: toDmsValue(f.value) } }
-          : listProperties.has(f.path)
+          : isList
             ? { containsAny: { property, values: [toDmsValue(f.value)] } }
             : { equals: { property, value: toDmsValue(f.value) } };
       // prop!=x keeps instances without a value, like a local comparison would.

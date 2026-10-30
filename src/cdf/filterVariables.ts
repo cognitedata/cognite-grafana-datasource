@@ -5,6 +5,7 @@
 import { ScopedVars } from '@grafana/data';
 import { TemplateSrv } from '@grafana/runtime';
 import { DMSViewWithProperties } from '../types/dms';
+import { ViewFilterProperties } from '../parser/dms/filterCompiler';
 import { currentValues, INSTANCE_REF_VARIABLE_TOKEN, isAll } from './graphqlInstanceRefs';
 import { InstanceRef, parseInstanceRef } from './instanceRef';
 
@@ -40,7 +41,8 @@ const valueContextOf = (rendered: string): ValueContext =>
  * becomes the selected instance(s), and `name=~$tag` a pattern matching any of
  * the values. Inside a list (`[$tag, 'x']`) the values join the list instead of
  * nesting one, and an empty selection leaves the list. A number stays bare after
- * a range operator; elsewhere it is quoted, as text properties need.
+ * a range operator; elsewhere it is quoted, as text properties need, and
+ * buildDmsFilter turns it back for a number or boolean property.
  * `${asset.space}` / `${asset.externalId}` give the quoted part(s).
  *
  * Variables inside quotes, tokens with a `:format`, and variables Grafana
@@ -169,10 +171,12 @@ const renderFilterVariable = (
   return asList(numbers ? texts : texts.map(quoteFilterString));
 };
 
-/** The names of a view's list-valued properties, which filter with containsAny instead of equals. */
-export const listPropertiesOf = (viewDef: DMSViewWithProperties | null | undefined): Set<string> =>
-  new Set(
+/** What a filter needs to know about a view's properties; connections have no type to compare. */
+export const filterPropertiesOf = (
+  viewDef: DMSViewWithProperties | null | undefined
+): ViewFilterProperties =>
+  new Map(
     Object.entries(viewDef?.properties ?? {})
-      .filter(([, def]) => !!def.type?.list)
-      .map(([name]) => name)
+      .filter(([, def]) => !!def.type?.type)
+      .map(([name, def]) => [name, { type: def.type.type, list: !!def.type.list }])
   );

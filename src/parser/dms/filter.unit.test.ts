@@ -7,7 +7,7 @@ import {
 } from './filterCompiler';
 import { composeSTSQuery, STSFilter, STSReference } from '../shared';
 import { applyFilters } from '../../utils';
-import { interpolateFilterVariables, listPropertiesOf } from '../../cdf/filterVariables';
+import { interpolateFilterVariables, filterPropertiesOf } from '../../cdf/filterVariables';
 
 const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
 const viewProp = (prop: string) => ['cdf_cdm', 'CogniteTimeSeries/v1', prop];
@@ -57,6 +57,9 @@ describe('filter grammar', () => {
   });
 });
 
+const listProperties = (...names: string[]) =>
+  new Map(names.map((name) => [name, { type: 'text', list: true }]));
+
 describe('splitRefFilters + buildDmsFilter', () => {
   const serverOf = (filter: string) => splitRefFilters(STSReference(parseFilter(filter))).server;
 
@@ -86,7 +89,7 @@ describe('splitRefFilters + buildDmsFilter', () => {
       not: { equals: { property: viewProp('description'), value: 'x' } },
     });
     expect(
-      buildDmsFilter(view, serverOf('tags!="obsolete"'), { listProperties: new Set(['tags']) })
+      buildDmsFilter(view, serverOf('tags!="obsolete"'), { properties: listProperties('tags') })
     ).toEqual({
       not: { containsAny: { property: viewProp('tags'), values: ['obsolete'] } },
     });
@@ -99,13 +102,13 @@ describe('splitRefFilters + buildDmsFilter', () => {
     expect(buildDmsFilter(view, serverOf('unit!={space="u", externalId="x"}'))).toEqual({
       not: { equals: { property: viewProp('unit'), value: { space: 'u', externalId: 'x' } } },
     });
-    const listProperties = new Set(['assets']);
+    const properties = listProperties('assets');
     expect(
       buildDmsFilter(
         view,
         serverOf('assets!=[{space="s", externalId="a1"}, {space="s", externalId="a2"}]'),
         {
-          listProperties,
+          properties,
         }
       )
     ).toEqual({
@@ -149,9 +152,9 @@ describe('splitRefFilters + buildDmsFilter', () => {
   });
 
   it('compiles equality on a list property to containsAny', () => {
-    const listProperties = new Set(['assets']);
+    const properties = listProperties('assets');
     expect(
-      buildDmsFilter(view, serverOf('assets={space="s", externalId="a1"}'), { listProperties })
+      buildDmsFilter(view, serverOf('assets={space="s", externalId="a1"}'), { properties })
     ).toEqual({
       containsAny: { property: viewProp('assets'), values: [{ space: 's', externalId: 'a1' }] },
     });
@@ -160,7 +163,7 @@ describe('splitRefFilters + buildDmsFilter', () => {
         view,
         serverOf('assets=[{space="s", externalId="a1"}, {space="s", externalId="a2"}]'),
         {
-          listProperties,
+          properties,
         }
       )
     ).toEqual({
@@ -185,6 +188,49 @@ describe('splitRefFilters + buildDmsFilter', () => {
 
   it('an empty filter compiles to no filter', () => {
     expect(buildDmsFilter(view, [])).toBeUndefined();
+  });
+});
+
+describe('values of boolean and number properties', () => {
+  const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+  const property = (name: string) => ['cdf_cdm', 'CogniteTimeSeries/v1', name];
+  const properties = new Map([
+    ['isStep', { type: 'boolean', list: false }],
+    ['count', { type: 'int64', list: false }],
+    ['ratio', { type: 'float64', list: false }],
+    ['ratios', { type: 'float64', list: true }],
+    ['tag', { type: 'text', list: false }],
+  ]);
+  const compile = (filter: string) =>
+    buildDmsFilter(view, splitRefFilters(STSReference(parseFilter(filter))).server, { properties });
+
+  it('turns text into the type the property holds', () => {
+    expect(compile("isStep='true'")).toEqual({
+      equals: { property: property('isStep'), value: true },
+    });
+    expect(compile("count!='5'")).toEqual({
+      not: { equals: { property: property('count'), value: 5 } },
+    });
+    expect(compile("ratio=['0.5', '1e3']")).toEqual({
+      in: { property: property('ratio'), values: [0.5, 1000] },
+    });
+    expect(compile("ratios='2'")).toEqual({
+      containsAny: { property: property('ratios'), values: [2] },
+    });
+    expect(compile("count>='5'")).toEqual({ range: { property: property('count'), gte: 5 } });
+  });
+
+  it('keeps text on a text property, and text that does not convert', () => {
+    expect(compile("tag='1001'")).toEqual({ equals: { property: property('tag'), value: '1001' } });
+    expect(compile("isStep='yes'")).toEqual({
+      equals: { property: property('isStep'), value: 'yes' },
+    });
+    expect(compile("count='12a'")).toEqual({
+      equals: { property: property('count'), value: '12a' },
+    });
+    expect(compile("count='9007199254740993'")).toEqual({
+      equals: { property: property('count'), value: '9007199254740993' },
+    });
   });
 });
 
@@ -338,7 +384,7 @@ describe('instance-reference variables in filters', () => {
       templateSrv([ref('a1'), ref('a2')])
     );
     const { server } = splitRefFilters(STSReference(parseFilter(rendered)));
-    expect(buildDmsFilter(view, server, { listProperties: new Set(['assets']) })).toEqual({
+    expect(buildDmsFilter(view, server, { properties: listProperties('assets') })).toEqual({
       containsAny: {
         property: viewProp('assets'),
         values: [
@@ -349,16 +395,22 @@ describe('instance-reference variables in filters', () => {
     });
   });
 
-  it('reads a view definition for its list properties', () => {
+  it('reads a view definition for its properties, skipping connections', () => {
     expect(
-      listPropertiesOf({
+      filterPropertiesOf({
         ...view,
         properties: {
           assets: { type: { type: 'direct', list: true } },
           name: { type: { type: 'text' } },
+          related: { connectionType: 'multi_reverse_direct_relation' } as any,
         },
       })
-    ).toEqual(new Set(['assets']));
-    expect(listPropertiesOf(null)).toEqual(new Set());
+    ).toEqual(
+      new Map([
+        ['assets', { type: 'direct', list: true }],
+        ['name', { type: 'text', list: false }],
+      ])
+    );
+    expect(filterPropertiesOf(null)).toEqual(new Map());
   });
 });
