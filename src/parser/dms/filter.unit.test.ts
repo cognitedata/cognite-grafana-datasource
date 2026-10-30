@@ -75,7 +75,10 @@ describe('splitRefFilters + buildDmsFilter', () => {
 
   it('scopes reserved props through the node and the rest through the view', () => {
     expect(viewPropertyPath(view, 'space')).toEqual(['node', 'space']);
+    expect(viewPropertyPath(view, 'version')).toEqual(['node', 'version']);
     expect(viewPropertyPath(view, 'name')).toEqual(viewProp('name'));
+    expect(viewPropertyPath(view, 'type')).toEqual(viewProp('type'));
+    expect(viewPropertyPath(view, 'instanceType')).toEqual(viewProp('instanceType'));
   });
 
   it('compiles != as the negated equality, keeping instances without a value', () => {

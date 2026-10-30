@@ -59,12 +59,9 @@ export const validateFilter = (s: string) => validateWith(compiledFilter, s);
 /**
  * DMS reserves these property names on the instance itself (they never appear as
  * view properties), so they filter through node-scoped paths like ["node", "space"].
+ * The node's `type` is left out: views can have their own, as CogniteTimeSeries does.
  */
-const RESERVED_INSTANCE_PROPS = [
-  ...INSTANCE_PROPERTIES.map(({ name }) => name),
-  'deletedTime',
-  'instanceType',
-];
+const RESERVED_INSTANCE_PROPS = [...INSTANCE_PROPERTIES.map(({ name }) => name), 'version'];
 
 const RANGE_OPERATOR_KEYS: Record<string, 'gte' | 'gt' | 'lte' | 'lt'> = {
   [FilterTypes.GreaterOrEquals as string]: 'gte',
