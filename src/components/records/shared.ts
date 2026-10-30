@@ -8,6 +8,7 @@ import {
 import { RecordViewDefinition } from '../../types/records';
 import { TOP_LEVEL_PROPERTIES, TopLevelProperty, topLevelProperty } from '../../cdf/records';
 import { AUTO_STEP_OPTIONS } from '../../cdf/granularity';
+import { INSTANCE_PROPERTIES } from '../../cdf/instanceProperties';
 
 export const MODE_OPTIONS: Array<SelectableValue<RecordsQueryMode>> = [
   { label: 'List', value: 'list' },
@@ -57,10 +58,34 @@ export const enumValuesOf = (
 /** A property option, carrying its type for the badge renderer. */
 export type PropertyOption = SelectableValue<string> & {
   propertyType?: { type?: string; isList: boolean };
+  /** Where a property outside the view comes from, shown as a marker: 'record' or 'instance'. */
+  origin?: string;
 };
 
+/** Any view that declares typed properties: a record view or a data modelling view. */
+export interface TypedPropertiesView {
+  properties?: Record<string, { type?: { type?: string; list?: boolean } }>;
+}
+
+/** Options for the view's own properties, each carrying its type for the badge. */
+export function viewPropertyOptions(
+  view: TypedPropertiesView | null,
+  predicate: (type?: string, isList?: boolean) => boolean = () => true
+): PropertyOption[] {
+  return Object.entries(view?.properties ?? {})
+    .filter(([, def]) => predicate(def.type?.type, def.type?.list))
+    .map(([name, def]) => ({
+      label: name,
+      value: name,
+      description: def.type?.list ? `${def.type?.type}[]` : def.type?.type,
+      // Carried structurally as well as in the description, so the type badge does
+      // not have to parse the text back out of a string meant for humans.
+      propertyType: { type: def.type?.type, isList: !!def.type?.list },
+    }));
+}
+
 /**
- * Options for a property picker. Top-level record properties (space, externalId,
+ * Options for a record property picker. Top-level record properties (space, externalId,
  * createdTime, lastUpdatedTime) are offered alongside the view's own properties,
  * grouped separately so it is clear they come from the record rather than the view.
  * `topLevelFilter` decides which of them the current position accepts, since the
@@ -71,26 +96,28 @@ export function propertyOptions(
   predicate: (type?: string, isList?: boolean) => boolean = () => true,
   topLevelFilter: (p: TopLevelProperty) => boolean = () => true
 ): PropertyOption[] {
-  const viewProps = Object.entries(viewDef?.properties ?? {})
-    .filter(([, def]) => predicate(def.type?.type, def.type?.list))
-    .map(([name, def]) => ({
-      label: name,
-      value: name,
-      description: def.type?.list ? `${def.type?.type}[]` : def.type?.type,
-      // Carried structurally as well as in the description, so the type badge does
-      // not have to parse the text back out of a string meant for humans.
-      propertyType: { type: def.type?.type, isList: !!def.type?.list },
-    }));
+  const viewProps = viewPropertyOptions(viewDef, predicate);
 
   const topLevel = TOP_LEVEL_PROPERTIES.filter(topLevelFilter).map((p) => ({
     label: p.name,
     value: p.name,
     description: `${p.type} · record property`,
     propertyType: { type: p.type, isList: false },
+    origin: 'record',
   }));
 
   return [...viewProps, ...topLevel];
 }
+
+/** The instance-level properties of a data modelling node, listed after a view's own. */
+export const instancePropertyOptions = (): PropertyOption[] =>
+  INSTANCE_PROPERTIES.map((p) => ({
+    label: p.name,
+    value: p.name,
+    description: `${p.type} · instance property`,
+    propertyType: { type: p.type, isList: false },
+    origin: 'instance',
+  }));
 
 /** Adjacent swap used by the bucket reorder buttons; no-op at the boundaries. */
 export function moveItem<T>(items: T[], index: number, delta: -1 | 1): T[] {
