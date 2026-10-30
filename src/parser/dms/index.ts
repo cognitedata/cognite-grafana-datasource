@@ -26,13 +26,13 @@ import {
 import { DMSFilter, ViewRef } from '../../types/dms';
 import {
   CdmSyntheticQuery,
-  CdmExpressionScopeValue,
-  CdmExpressionVariable,
+  SyntheticScopeValue,
+  SyntheticVariable,
   DataQueryRequestItem,
 } from '../../types';
 import { Connector } from '../../connector';
 import { LABEL_TOKEN, renderLabelToken, resolvePath } from '../../cdf/labelTokens';
-import { listAllDmsInstances, flattenInstance, FlatCdmInstance } from '../../cdf/cdmExpression';
+import { listAllDmsInstances, flattenInstance, FlatSyntheticInstance } from '../../cdf/syntheticTimeSeries';
 import { filterPropertiesOf } from '../../cdf/filterVariables';
 import {
   countSyntheticReferences,
@@ -127,7 +127,7 @@ export const renameVariableInExpression = (
 };
 
 /** Per-variable cap on matched instances, and cap on total generated expressions. */
-export const MAX_CDM_EXPRESSION_FANOUT = 100;
+export const MAX_SYNTHETIC_FANOUT = 100;
 
 /** The aggregates a synthetic time series reference accepts. */
 export const SYNTHETIC_AGGREGATES = ['average', 'interpolation', 'stepInterpolation'];
@@ -168,8 +168,8 @@ export const toSyntheticGranularity = (granularity: string): string => {
 };
 
 export interface ResolvedVariable {
-  variable: CdmExpressionVariable;
-  instances: FlatCdmInstance[];
+  variable: SyntheticVariable;
+  instances: FlatSyntheticInstance[];
   /** The instance lookup a filter variable compiled to; absent for a picked series. */
   filter?: DMSFilter;
 }
@@ -180,7 +180,7 @@ const readViewProperties = async (connector: Connector, view: ViewRef) =>
 
 /**
  * One filter variable's time series: the view lookup its server-side operators
- * compile to (at most MAX_CDM_EXPRESSION_FANOUT), narrowed by the client-side ones.
+ * compile to (at most MAX_SYNTHETIC_FANOUT), narrowed by the client-side ones.
  */
 const lookupFilterVariable = async (
   name: string,
@@ -189,7 +189,7 @@ const lookupFilterVariable = async (
   connector: Connector,
   properties: ViewFilterProperties | undefined
 ): Promise<{
-  instances: FlatCdmInstance[];
+  instances: FlatSyntheticInstance[];
   filter?: DMSFilter;
   truncated: boolean;
   /** Set when part of the filter (=~, !~, nested values) runs locally on what CDF returned. */
@@ -225,9 +225,9 @@ const lookupFilterVariable = async (
     connector,
     view,
     filter,
-    MAX_CDM_EXPRESSION_FANOUT
+    MAX_SYNTHETIC_FANOUT
   );
-  let matched: FlatCdmInstance[];
+  let matched: FlatSyntheticInstance[];
   try {
     matched = instances
       .map((instance) => flattenInstance(instance, view))
@@ -243,8 +243,8 @@ const lookupFilterVariable = async (
  * silently miss time series; the query refuses instead.
  */
 export const incompleteLocalFilterMessage = (name: string): string =>
-  `Variable ${name}: CDF returned more than ${MAX_CDM_EXPRESSION_FANOUT} time series, so =~, !~ and ` +
-  `filters on nested values would only see the first ${MAX_CDM_EXPRESSION_FANOUT} and could miss some. ` +
+  `Variable ${name}: CDF returned more than ${MAX_SYNTHETIC_FANOUT} time series, so =~, !~ and ` +
+  `filters on nested values would only see the first ${MAX_SYNTHETIC_FANOUT} and could miss some. ` +
   'Narrow the filter with = or ^=, which CDF applies.';
 
 /**
@@ -252,7 +252,7 @@ export const incompleteLocalFilterMessage = (name: string): string =>
  * resolve it; null for an empty filter, which stands for none.
  */
 export const countVariableMatches = async (
-  row: CdmExpressionVariable,
+  row: SyntheticVariable,
   view: ViewRef,
   connector: Connector
 ): Promise<{ count: number; truncated: boolean; checkedAfterwards: boolean } | null> => {
@@ -276,7 +276,7 @@ export const countVariableMatches = async (
  * applies the client-side operators on their properties.
  */
 export const resolveVariables = async (
-  variables: CdmExpressionVariable[],
+  variables: SyntheticVariable[],
   names: string[],
   view: ViewRef,
   connector: Connector
@@ -325,8 +325,8 @@ export const resolveVariables = async (
     }
     if (truncated) {
       warnings.push(
-        `Variable ${name} matches more than ${MAX_CDM_EXPRESSION_FANOUT} time series; ` +
-          `only the first ${MAX_CDM_EXPRESSION_FANOUT} are used. Narrow its filter.`
+        `Variable ${name} matches more than ${MAX_SYNTHETIC_FANOUT} time series; ` +
+          `only the first ${MAX_SYNTHETIC_FANOUT} are used. Narrow its filter.`
       );
     }
     if (!matched.length) {
@@ -375,12 +375,12 @@ export interface ExpandOptions {
   granularity: string;
 }
 
-export type LabelScope = Record<string, CdmExpressionScopeValue>;
+export type LabelScope = Record<string, SyntheticScopeValue>;
 
 /** The synthetic `ts{}` parameters one instance of a variable is sent with. */
 const refFilters = (
-  instance: FlatCdmInstance,
-  row: CdmExpressionVariable,
+  instance: FlatSyntheticInstance,
+  row: SyntheticVariable,
   { datapoints, granularity }: ExpandOptions
 ): STSFilter[] => [
   STSFilter('space', instance.space),
@@ -477,7 +477,7 @@ export const expandExpression = (
   const items: DataQueryRequestItem[] = [];
   const scopes: LabelScope[] = [];
   for (const permutation of permutations) {
-    const byName: Record<string, FlatCdmInstance[]> = Object.fromEntries(
+    const byName: Record<string, FlatSyntheticInstance[]> = Object.fromEntries(
       names.map((name, i) => [name, permutation[i]])
     );
     const refs = (name: string) =>
@@ -531,7 +531,7 @@ export interface CdmSyntheticQueryItems {
   counts: Record<string, number>;
 }
 
-export const formQueriesForCdmExpression = async (
+export const formQueriesForSyntheticQuery = async (
   query: CdmSyntheticQuery,
   options: ExpandOptions,
   connector: Connector
@@ -554,7 +554,7 @@ export const formQueriesForCdmExpression = async (
   };
 };
 
-const displayName = (value: CdmExpressionScopeValue, fallback: string): string =>
+const displayName = (value: SyntheticScopeValue, fallback: string): string =>
   Array.isArray(value) ? fallback : String(value.name || value.externalId);
 
 /**
@@ -565,7 +565,7 @@ const displayName = (value: CdmExpressionScopeValue, fallback: string): string =
 const renderScopedToken = (
   path: string,
   subPath: string,
-  instance: CdmExpressionScopeValue
+  instance: SyntheticScopeValue
 ): string => {
   const resolution = resolvePath(instance, subPath);
   if (resolution.found && resolution.value == null) {
@@ -580,7 +580,7 @@ const renderScopedToken = (
  * one, tokens are qualified by variable: `{{A}}` is its name, `{{A.unit.externalId}}`
  * a property; a combined variable lists its series; an unknown head renders `:path`.
  */
-export const getLabelsForCdmExpressions = (
+export const getLabelsForSyntheticQuery = (
   labelSrc: string,
   expression: string,
   scopes: LabelScope[]

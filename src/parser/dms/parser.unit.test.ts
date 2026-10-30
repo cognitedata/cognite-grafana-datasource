@@ -2,10 +2,10 @@ import {
   composeExpression,
   countVariableMatches,
   expandExpression,
-  formQueriesForCdmExpression,
-  getLabelsForCdmExpressions,
+  formQueriesForSyntheticQuery,
+  getLabelsForSyntheticQuery,
   lockedVariableIndices,
-  MAX_CDM_EXPRESSION_FANOUT,
+  MAX_SYNTHETIC_FANOUT,
   parseExpression,
   renameVariableInExpression,
   resolveVariables,
@@ -19,13 +19,13 @@ import {
   flattenInstance,
   interpolateCdmSyntheticQuery,
   normalizeCdmSyntheticQuery,
-} from '../../cdf/cdmExpression';
+} from '../../cdf/syntheticTimeSeries';
 import {
   buildSyntheticQueryRequest,
   countSyntheticReferences,
   SYNTHETIC_ITEMS_PER_REQUEST,
 } from '../../cdf/client';
-import { CdmSyntheticQuery, CdmExpressionVariable } from '../../types';
+import { CdmSyntheticQuery, SyntheticVariable } from '../../types';
 import { DMSInstance } from '../../types/dms';
 
 const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
@@ -51,8 +51,8 @@ const inst = (externalId: string, props: Record<string, unknown> = {}) => ({
 const filterVar = (
   name: string,
   filter: string,
-  extra: Partial<CdmExpressionVariable> = {}
-): CdmExpressionVariable => ({
+  extra: Partial<SyntheticVariable> = {}
+): SyntheticVariable => ({
   name,
   mode: 'filter',
   filter,
@@ -61,8 +61,8 @@ const filterVar = (
 const instanceVar = (
   name: string,
   externalId: string,
-  extra: Partial<CdmExpressionVariable> = {}
-): CdmExpressionVariable => ({
+  extra: Partial<SyntheticVariable> = {}
+): SyntheticVariable => ({
   name,
   mode: 'instance',
   instance: { space: 'pumps', externalId, name: `Series ${externalId}` },
@@ -73,7 +73,7 @@ const aggregateOptions = { datapoints: 'aggregate' as const, granularity: '1h' }
 const rawOptions = { datapoints: 'raw' as const, granularity: '1h' };
 
 const resolvedOf = (
-  entries: Array<[CdmExpressionVariable, Array<ReturnType<typeof inst>>]>
+  entries: Array<[SyntheticVariable, Array<ReturnType<typeof inst>>]>
 ): Record<string, ResolvedVariable> =>
   Object.fromEntries(
     entries.map(([variable, instances]) => [variable.name, { variable, instances }])
@@ -446,7 +446,7 @@ describe('resolveVariables', () => {
       sources: [{ source: viewRef }],
       instanceType: 'node',
       filter: { prefix: { property: viewProp('name'), value: 'PT' } },
-      limit: MAX_CDM_EXPRESSION_FANOUT + 1,
+      limit: MAX_SYNTHETIC_FANOUT + 1,
     });
   });
 
@@ -573,7 +573,7 @@ describe('resolveVariables', () => {
   });
 
   it('refuses local operators when CDF returned more time series than they can check', async () => {
-    const many = Array.from({ length: MAX_CDM_EXPRESSION_FANOUT + 1 }, (_, i) =>
+    const many = Array.from({ length: MAX_SYNTHETIC_FANOUT + 1 }, (_, i) =>
       dmsInstance(`e${i}`)
     );
     const { connector } = mockConnector(many);
@@ -623,7 +623,7 @@ describe('resolveVariables', () => {
   });
 
   it('warns when a filter is truncated', async () => {
-    const many = Array.from({ length: MAX_CDM_EXPRESSION_FANOUT + 1 }, (_, i) =>
+    const many = Array.from({ length: MAX_SYNTHETIC_FANOUT + 1 }, (_, i) =>
       dmsInstance(`e${i}`)
     );
     const { connector } = mockConnector(many);
@@ -633,7 +633,7 @@ describe('resolveVariables', () => {
       view,
       connector
     );
-    expect(resolved.A.instances).toHaveLength(MAX_CDM_EXPRESSION_FANOUT);
+    expect(resolved.A.instances).toHaveLength(MAX_SYNTHETIC_FANOUT);
     expect(warnings[0]).toMatch(/Variable A matches more than 100/);
   });
 
@@ -661,7 +661,7 @@ describe('resolveVariables', () => {
     ).rejects.toThrow(/function name/);
   });
 
-  it('runs end to end through formQueriesForCdmExpression', async () => {
+  it('runs end to end through formQueriesForSyntheticQuery', async () => {
     const { connector } = mockConnector([
       dmsInstance('e1', { name: 'PT_1' }),
       dmsInstance('e2', { name: 'PT_2' }),
@@ -672,7 +672,7 @@ describe('resolveVariables', () => {
       variables: [filterVar('A', 'name^="PT"'), instanceVar('B', 'base')],
       expression: 'avg(A) - B',
     };
-    const { items, counts, scopes } = await formQueriesForCdmExpression(
+    const { items, counts, scopes } = await formQueriesForSyntheticQuery(
       query,
       aggregateOptions,
       connector
@@ -686,12 +686,12 @@ describe('resolveVariables', () => {
     expect(counts).toEqual({ A: 2, B: 1 });
     expect(scopes[0].B).toEqual(inst('base', { name: 'Series base' }));
     await expect(
-      formQueriesForCdmExpression({ ...query, expression: ' ' }, aggregateOptions, connector)
+      formQueriesForSyntheticQuery({ ...query, expression: ' ' }, aggregateOptions, connector)
     ).rejects.toThrow(/expression is empty/);
   });
 });
 
-describe('getLabelsForCdmExpressions', () => {
+describe('getLabelsForSyntheticQuery', () => {
   const scopes = [
     {
       A: inst('e1', { name: 'Pump 1', unit: { externalId: 'pressure:bar' }, source: null }),
@@ -700,14 +700,14 @@ describe('getLabelsForCdmExpressions', () => {
   ];
 
   it('defaults to the expression with each variable replaced by its series name', () => {
-    expect(getLabelsForCdmExpressions('', 'A * 2 - B', scopes)).toEqual(['Pump 1 * 2 - e2']);
-    expect(getLabelsForCdmExpressions('', 'avg(A)', [{ A: [inst('e1'), inst('e2')] }])).toEqual([
+    expect(getLabelsForSyntheticQuery('', 'A * 2 - B', scopes)).toEqual(['Pump 1 * 2 - e2']);
+    expect(getLabelsForSyntheticQuery('', 'avg(A)', [{ A: [inst('e1'), inst('e2')] }])).toEqual([
       'avg(A)',
     ]);
   });
 
   it('resolves variable-qualified tokens only', () => {
-    const render = (label: string) => getLabelsForCdmExpressions(label, 'A - B', scopes)[0];
+    const render = (label: string) => getLabelsForSyntheticQuery(label, 'A - B', scopes)[0];
     expect(render('{{A}} vs {{B}}')).toEqual('Pump 1 vs e2');
     expect(render('{{A.name}} ({{ A.unit.externalId }})')).toEqual('Pump 1 (pressure:bar)');
     expect(render('{{A.unit}}')).toEqual('{"externalId":"pressure:bar"}');
@@ -719,7 +719,7 @@ describe('getLabelsForCdmExpressions', () => {
 
   it('lists the series of a combined variable', () => {
     expect(
-      getLabelsForCdmExpressions('{{A.name}}', 'avg(A)', [
+      getLabelsForSyntheticQuery('{{A.name}}', 'avg(A)', [
         { A: [inst('e1', { name: 'P1' }), inst('e2', { name: 'P2' })] },
       ])
     ).toEqual(['P1, P2']);

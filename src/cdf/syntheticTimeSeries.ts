@@ -6,15 +6,15 @@
 import { Connector } from '../connector';
 import {
   CdmSyntheticQuery,
-  CdmExpressionVariable,
-  CdmExpressionVariableMode,
+  SyntheticVariable,
+  SyntheticVariableMode,
   defaultCdmSyntheticQuery,
   HttpMethod,
 } from '../types';
 import { DMSFilter, DMSInstance, DMSListRequest, DMSViewReference, ViewRef } from '../types/dms';
 import { retryOnTransientError } from './client';
 
-export type CdmViewRef = ViewRef;
+export type SyntheticViewRef = ViewRef;
 
 /**
  * Flattened DMS instance: the node identity plus the properties it holds
@@ -22,20 +22,20 @@ export type CdmViewRef = ViewRef;
  * (reserved, so never colliding) view property names, and together form the
  * instance id the synthetic API understands.
  */
-export type FlatCdmInstance = {
+export type FlatSyntheticInstance = {
   space: string;
   externalId: string;
   [prop: string]: unknown;
 };
 
-export const toViewReference = (view: CdmViewRef): DMSViewReference => ({
+export const toViewReference = (view: SyntheticViewRef): DMSViewReference => ({
   type: 'view',
   space: view.space,
   externalId: view.externalId,
   version: view.version,
 });
 
-export const flattenInstance = (instance: DMSInstance, view: CdmViewRef): FlatCdmInstance => ({
+export const flattenInstance = (instance: DMSInstance, view: SyntheticViewRef): FlatSyntheticInstance => ({
   ...(instance.properties?.[view.space]?.[`${view.externalId}/${view.version}`] ?? {}),
   space: instance.space,
   externalId: instance.externalId,
@@ -47,7 +47,7 @@ export const flattenInstance = (instance: DMSInstance, view: CdmViewRef): FlatCd
  * Shared by the lookup and its request preview.
  */
 export const instanceListRequest = (
-  view: CdmViewRef,
+  view: SyntheticViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number
 ): DMSListRequest & { limit: number } => ({
@@ -60,7 +60,7 @@ export const instanceListRequest = (
 /** Lists the node instances of a view matching the filter, up to `maxInstances`. */
 export async function listAllDmsInstances(
   connector: Connector,
-  view: CdmViewRef,
+  view: SyntheticViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number
 ): Promise<{ instances: DMSInstance[]; truncated: boolean }> {
@@ -75,12 +75,12 @@ export async function listAllDmsInstances(
   return { instances: truncated ? items.slice(0, maxInstances) : items, truncated };
 }
 
-const VARIABLE_MODES: CdmExpressionVariableMode[] = ['instance', 'filter'];
+const VARIABLE_MODES: SyntheticVariableMode[] = ['instance', 'filter'];
 
 /** A saved variable row with unknown fields dropped and exclusive fields reconciled. */
-export const normalizeCdmExpressionVariable = (
-  row: Partial<CdmExpressionVariable> = {}
-): CdmExpressionVariable => {
+export const normalizeSyntheticVariable = (
+  row: Partial<SyntheticVariable> = {}
+): SyntheticVariable => {
   const instance =
     row.instance?.space && row.instance?.externalId
       ? {
@@ -121,7 +121,7 @@ export const normalizeCdmSyntheticQuery = (
     version: 2,
     view: { ...defaultCdmSyntheticQuery.view, ...(query.view ?? {}) },
     variables: Array.isArray(query.variables)
-      ? query.variables.map(normalizeCdmExpressionVariable)
+      ? query.variables.map(normalizeSyntheticVariable)
       : [],
     expression: typeof query.expression === 'string' ? query.expression : '',
   };
@@ -167,7 +167,7 @@ export const interpolateCdmSyntheticQuery = (
 
 /** Body + path of the /models/instances/list call, for the editor's request preview. */
 export const buildListRequestPreview = (
-  view: CdmViewRef,
+  view: SyntheticViewRef,
   filter: DMSFilter | undefined,
   maxInstances: number,
   project = '{project}'

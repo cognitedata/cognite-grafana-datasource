@@ -29,7 +29,7 @@ import {
   DMSViewWithProperties,
 } from '../types/dms';
 import {
-  CdmExpressionFlatInstance,
+  SyntheticFlatInstance,
   Tab,
   QueryTarget,
   CDFDataQueryRequest,
@@ -55,7 +55,7 @@ import {
 import { getRange } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
-import { getLabelsForCdmExpressions } from '../parser/dms';
+import { getLabelsForSyntheticQuery } from '../parser/dms';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
@@ -86,7 +86,7 @@ export function formQueryForItems(
         items.map(({ expression }) => expression),
         [start, end],
         timeZone,
-        target.tab === Tab.CogniteTimeSeriesExpression ? SYNTHETIC_ITEMS_PER_REQUEST : undefined
+        target.tab === Tab.SyntheticTimeSeries ? SYNTHETIC_ITEMS_PER_REQUEST : undefined
       );
     }
     case 'latest': {
@@ -241,7 +241,7 @@ export async function getLabelsForTarget(
   target: QueryTarget,
   queryList: DataQueryRequestItem[],
   connector: Connector,
-  cdmScopes?: QueriesDataItem['scopes']
+  syntheticScopes?: QueriesDataItem['scopes']
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
@@ -299,11 +299,11 @@ export async function getLabelsForTarget(
       }
       return queryList.map(() => labelSrc);
     }
-    case Tab.CogniteTimeSeriesExpression: {
+    case Tab.SyntheticTimeSeries: {
       const { expression = '', variables = [], view } = target.cdmSyntheticQuery ?? {};
-      const scopes = cdmScopes ?? [];
+      const scopes = syntheticScopes ?? [];
       if (!labelSrc) {
-        return getLabelsForCdmExpressions('', expression, scopes);
+        return getLabelsForSyntheticQuery('', expression, scopes);
       }
       if (!labelContainsVariableProps(labelSrc)) {
         return queryList.map(() => labelSrc);
@@ -312,7 +312,7 @@ export async function getLabelsForTarget(
       // once so `{{A.unit.externalId}}` works on it like on a filtered series.
       const enriched = view ? await enrichPickedInstanceScopes(connector, view, variables, scopes) : scopes;
       const withUnits = await resolveScopeUnits(connector, labelSrc, variables, enriched);
-      return getLabelsForCdmExpressions(labelSrc, expression, withUnits);
+      return getLabelsForSyntheticQuery(labelSrc, expression, withUnits);
     }
   }
 }
@@ -335,7 +335,7 @@ async function resolveScopeUnits(
   if (!reached.length) {
     return scopes;
   }
-  const withUnit = async (instance: CdmExpressionFlatInstance, targetUnit?: string) => {
+  const withUnit = async (instance: SyntheticFlatInstance, targetUnit?: string) => {
     const unit = await resolveEffectiveUnit(connector, instance.unit, targetUnit);
     return unit ? { ...instance, unit } : instance;
   };

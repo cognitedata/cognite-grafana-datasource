@@ -18,7 +18,7 @@ export enum Tab {
   Timeseries = "Timeseries",
   CogniteTimeSeriesSearch = "CogniteTimeSeries",
   // Declaration order is tab-bar order: expressions sit next to the Time Series tab they build on.
-  CogniteTimeSeriesExpression = "CogniteTimeSeriesExpression",
+  SyntheticTimeSeries = "SyntheticTimeSeries",
   CogniteActivity = "CogniteActivity",
   Records = "Records",
   Asset = "Asset",
@@ -43,7 +43,7 @@ export const TabTitles = {
   [Tab.FlexibleDataModelling]: "GraphQL",
   [Tab.CogniteActivity]: "Activities",
   [Tab.Records]: "Records",
-  [Tab.CogniteTimeSeriesExpression]: "Synthetic time series",
+  [Tab.SyntheticTimeSeries]: "Synthetic time series",
 };
 /**
  * The core data model ships with every CDM-enabled project, so it is a starting
@@ -242,13 +242,13 @@ export const defaultExtractionPipelinesQuery: ExtractionPipelinesQuery = {
   limit: 1000,
 };
 
-export type CdmExpressionVariableMode = "instance" | "filter";
+export type SyntheticVariableMode = "instance" | "filter";
 
-/** One named input of a time series expression: a picked series, or every series a filter matches. */
-export interface CdmExpressionVariable {
+/** One named input of a synthetic expression: a picked series, or every series a filter matches. */
+export interface SyntheticVariable {
   /** The identifier used in the expression: letters, digits and _, not a function name. */
   name: string;
-  mode: CdmExpressionVariableMode;
+  mode: SyntheticVariableMode;
   /** mode instance: the picked CogniteTimeSeries; `name` is kept for the default label. */
   instance?: { space: string; externalId: string; name?: string };
   /** mode filter: filter pairs on the view's properties, e.g. name^='PT_', type='numeric'. */
@@ -264,7 +264,7 @@ export interface CdmSyntheticQuery {
   /** persisted-schema version; anything else is replaced by the defaults in normalizeCdmSyntheticQuery */
   version: 2;
   view: ViewRef;
-  variables: CdmExpressionVariable[];
+  variables: SyntheticVariable[];
   /** A synthetic expression over the variable names, e.g. `A * 2` or `avg(B) - A`. */
   expression: string;
 }
@@ -629,8 +629,8 @@ export type DataQueryError = {
 export type DataQueryRequestType = "data" | "latest" | "synthetic";
 
 /** A flattened instance, or the list of them a combined variable stands for. */
-export type CdmExpressionFlatInstance = { space: string; externalId: string; [prop: string]: unknown };
-export type CdmExpressionScopeValue = CdmExpressionFlatInstance | CdmExpressionFlatInstance[];
+export type SyntheticFlatInstance = { space: string; externalId: string; [prop: string]: unknown };
+export type SyntheticScopeValue = SyntheticFlatInstance | SyntheticFlatInstance[];
 
 export type QueriesDataItem = {
   type: DataQueryRequestType;
@@ -641,7 +641,7 @@ export type QueriesDataItem = {
   /** A state series' states, to label its values. */
   stateSet?: StateSetEntry[];
   /** Synthetic time series: per generated item, the instance(s) each variable resolved to, for labels. */
-  scopes?: Array<Record<string, CdmExpressionScopeValue>>;
+  scopes?: Array<Record<string, SyntheticScopeValue>>;
   /** Raised while building the items, e.g. a capped fan-out; shown with the response's. */
   warnings?: string[];
 };

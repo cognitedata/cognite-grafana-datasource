@@ -1,4 +1,4 @@
-/** Names of the variables a time series expression refers to. */
+/** Names of the variables a synthetic expression refers to. */
 
 export const VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const MAX_VARIABLE_NAME_LENGTH = 32;

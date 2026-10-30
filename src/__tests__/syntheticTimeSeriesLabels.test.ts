@@ -32,7 +32,7 @@ const connector = () =>
 const target = (label: string, variable: Record<string, unknown>) =>
   ({
     refId: 'A',
-    tab: Tab.CogniteTimeSeriesExpression,
+    tab: Tab.SyntheticTimeSeries,
     label,
     cdmSyntheticQuery: { version: 2, view: VIEW, variables: [variable], expression: 'A' },
   }) as unknown as QueryTarget;

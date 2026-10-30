@@ -692,7 +692,7 @@ describe('Datasource Query', () => {
       const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
       const target = {
         refId: 'A',
-        tab: Tab.CogniteTimeSeriesExpression,
+        tab: Tab.SyntheticTimeSeries,
         cdmSyntheticQuery: { version: 2, view, expression: 'A' },
       } as unknown as CogniteQuery;
       expect((ds as any).replaceVariablesInTarget(target).cdmSyntheticQuery.variables).toEqual([]);
@@ -703,7 +703,7 @@ describe('Datasource Query', () => {
       const synthetic = (expression: string) =>
         ({
           refId: 'A',
-          tab: Tab.CogniteTimeSeriesExpression,
+          tab: Tab.SyntheticTimeSeries,
           cdmSyntheticQuery: { version: 2, view, variables: [], expression },
         }) as unknown as CogniteQuery;
       expect(filterEmptyQueryTargets([synthetic('A - B')])).toHaveLength(1);

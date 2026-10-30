@@ -23,7 +23,7 @@ import {
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
 import { splitTopLevel } from "./cdf/instanceRef";
 import { isAutoInterval } from "./cdf/records";
-import { interpolateCdmSyntheticQuery, normalizeCdmSyntheticQuery } from "./cdf/cdmExpression";
+import { interpolateCdmSyntheticQuery, normalizeCdmSyntheticQuery } from "./cdf/syntheticTimeSeries";
 import { interpolateFilterVariables } from "./cdf/filterVariables";
 import { clearQueryMessages } from "./appEventHandler";
 import { CogniteVariableSupport } from "./variableSupport";
@@ -443,7 +443,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         : undefined;
     // Same reason as recordsQuery: every query carries the default sub-object.
     const templatedCdmSyntheticQuery =
-      target.tab === Tab.CogniteTimeSeriesExpression && target.cdmSyntheticQuery
+      target.tab === Tab.SyntheticTimeSeries && target.cdmSyntheticQuery
         ? {
           cdmSyntheticQuery: interpolateCdmSyntheticQuery(
             normalizeCdmSyntheticQuery(target.cdmSyntheticQuery),
@@ -714,7 +714,7 @@ export function filterEmptyQueryTargets(
           return !!target.cogniteActivityTabQuery?.assetInstances?.length;
         case Tab.Records:
           return !!target.recordsQuery?.view?.streamId;
-        case Tab.CogniteTimeSeriesExpression:
+        case Tab.SyntheticTimeSeries:
           return (
             !!target.cdmSyntheticQuery?.expression?.trim() &&
             !!target.cdmSyntheticQuery?.view?.externalId
@@ -775,7 +775,7 @@ function groupTargets(targets: CogniteQuery[]) {
       ...(groupedByTab[Tab.Asset] ?? []),
       ...(groupedByTab[Tab.Custom] ?? []),
       ...(groupedByTab[Tab.CogniteTimeSeriesSearch] ?? []),
-      ...(groupedByTab[Tab.CogniteTimeSeriesExpression] ?? []),
+      ...(groupedByTab[Tab.SyntheticTimeSeries] ?? []),
     ],
   };
 }

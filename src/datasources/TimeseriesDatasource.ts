@@ -48,8 +48,8 @@ import { emitEvent, handleError, showWarnings } from '../appEventHandler';
 import { TimeSeriesResponseItem } from '../cdf/types';
 import { responseWarningEvent, TIMESERIES_LIMIT_WARNING } from '../constants';
 import { formQueriesForExpression } from '../parser/ts';
-import { formQueriesForCdmExpression } from '../parser/dms';
-import { normalizeCdmSyntheticQuery } from '../cdf/cdmExpression';
+import { formQueriesForSyntheticQuery } from '../parser/dms';
+import { normalizeCdmSyntheticQuery } from '../cdf/syntheticTimeSeries';
 
 function handleFailedTargets(failed: FailResponse[]) {
   failed
@@ -60,7 +60,7 @@ function handleFailedTargets(failed: FailResponse[]) {
 function getDataQueryRequestType({ tab, latestValue }: QueryTarget) {
   switch (tab) {
     case Tab.Custom:
-    case Tab.CogniteTimeSeriesExpression: {
+    case Tab.SyntheticTimeSeries: {
       return 'synthetic';
     }
     default: {
@@ -143,11 +143,11 @@ export async function getDataQueryRequestItems(
       items = await formQueriesForExpression(expr, { ...target, granularity }, connector, granularity);
       break;
     }
-    case Tab.CogniteTimeSeriesExpression: {
+    case Tab.SyntheticTimeSeries: {
       // Raw (aggregation 'none', as DatapointsFields encodes it) sends no aggregate or granularity.
       const datapoints = datapointsModeOf(target) === 'raw' ? 'raw' : 'aggregate';
       const granularity = resolveDatapointsGranularity(target.granularity, intervalMs);
-      ({ items, scopes, warnings } = await formQueriesForCdmExpression(
+      ({ items, scopes, warnings } = await formQueriesForSyntheticQuery(
         normalizeCdmSyntheticQuery(target.cdmSyntheticQuery),
         { datapoints, granularity },
         connector
@@ -263,7 +263,7 @@ export class TimeseriesDatasource {
       const { target, type } = metadata;
       // The deprecated Custom query tab keeps its plain chunks.
       const split =
-        target.tab === Tab.CogniteTimeSeriesExpression
+        target.tab === Tab.SyntheticTimeSeries
           ? chunkSyntheticItems
           : type === 'synthetic'
             ? 10
