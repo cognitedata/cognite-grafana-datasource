@@ -38,6 +38,7 @@ import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CogniteActivityTab } from './cogniteActivityTab';
 import { RecordsTab } from './recordsTab';
+import { SyntheticTimeSeriesTab } from './syntheticTimeSeriesTab';
 import { CommonEditors, LabelRow } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { useQueryMessages } from './useQueryMessages';
@@ -295,6 +296,7 @@ export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
   [Tabs.Templates]: DEPRECATED_CHIP_TEXT,
   [Tabs.ExtractionPipelines]: DEPRECATED_CHIP_TEXT,
   [Tabs.Records]: 'Alpha',
+  [Tabs.SyntheticTimeSeries]: 'Alpha',
 };
 
 /**
@@ -305,7 +307,7 @@ export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
 export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
   [Tabs.Timeseries]: 'Use the Time series tab instead.',
   [Tabs.Asset]: 'Use the GraphQL tab to plot the time series of an asset instead.',
-  [Tabs.Custom]: 'Use the Time series or GraphQL tab instead.',
+  [Tabs.Custom]: 'Use the Synthetic time series tab instead.',
   [Tabs.Event]: 'Use the Records or Activities tab instead.',
   [Tabs.Relationships]: 'Use the GraphQL tab instead.',
 };
@@ -444,6 +446,14 @@ export function QueryEditor(props: EditorProps) {
                 datasource.interpolateRecordsQuery(recordsQuery, props.data?.request?.scopedVars),
               maxDataPoints: props.data?.request?.maxDataPoints,
             }}
+          />
+        )}
+        {activeTab === Tabs.SyntheticTimeSeries && (
+          <SyntheticTimeSeriesTab
+            {...{ onQueryChange, query, connector: datasource.connector }}
+            intervalMs={props.data?.request?.intervalMs}
+            range={props.range}
+            timezone={props.data?.request?.timezone}
           />
         )}
       </TabContent>

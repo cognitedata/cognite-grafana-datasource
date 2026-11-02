@@ -285,6 +285,8 @@ describe('tab chips', () => {
     // the tab by its exact label text.
     expect(TabTitles[Tabs.Records]).toBe('Records');
     expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Alpha');
+    expect(TabTitles[Tabs.SyntheticTimeSeries]).toBe('Synthetic time series');
+    expect(TAB_SUFFIX_TEXT[Tabs.SyntheticTimeSeries]).toBe('Alpha');
     for (const tab of [
       Tabs.Timeseries,
       Tabs.Asset,
@@ -305,5 +307,6 @@ describe('tab chips', () => {
     expect(Object.keys(ASSET_CENTRIC_REPLACEMENTS).sort()).toEqual(
       [Tabs.Timeseries, Tabs.Asset, Tabs.Custom, Tabs.Event, Tabs.Relationships].sort()
     );
+    expect(ASSET_CENTRIC_REPLACEMENTS[Tabs.Custom]).toBe('Use the Synthetic time series tab instead.');
   });
 });
