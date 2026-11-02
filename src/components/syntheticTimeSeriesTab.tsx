@@ -87,7 +87,12 @@ export const SyntheticTimeSeriesTab = ({
   const datapoints: Datapoints = datapointsModeOf(query) === 'raw' ? 'raw' : 'aggregate';
   const names = useMemo(() => variables.map((v) => v.name.trim()).filter(Boolean), [variables]);
 
-  const [viewDef, setViewDef] = useState<DMSViewWithProperties | null>(null);
+  // Kept with the view it was read for, so a view change never reads the previous view's definition.
+  const [loadedView, setLoadedView] = useState<{
+    key: string;
+    def: DMSViewWithProperties | null;
+  } | null>(null);
+  const viewDef = loadedView?.key === viewKey ? loadedView.def : null;
   const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
   const [unitSystems, setUnitSystems] = useState<UnitSystem[]>([]);
   const [preview, setPreview] = useState<PreviewState | null>(null);
@@ -97,7 +102,7 @@ export const SyntheticTimeSeriesTab = ({
 
   useEffect(() => {
     let cancelled = false;
-    fetchDMSView(connector, view).then((def) => !cancelled && setViewDef(def));
+    fetchDMSView(connector, view).then((def) => !cancelled && setLoadedView({ key: viewKey, def }));
     return () => {
       cancelled = true;
     };

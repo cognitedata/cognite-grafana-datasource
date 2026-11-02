@@ -372,6 +372,57 @@ describe('SyntheticTimeSeriesTab', () => {
   });
 });
 
+describe('SyntheticTimeSeriesTab after a view change', () => {
+  const OTHER = { space: 'cdf_cdm', externalId: 'OtherTimeSeries', version: 'v1' };
+
+  it('compiles a filter preview with the new view, not the one before it', async () => {
+    // isStep is a boolean on the first view and text on the other, so the body tells them apart.
+    const fetcher = {
+      fetch: jest.fn().mockImplementation(async ({ url, data }) => {
+        if (url.endsWith('/models/views/byids')) {
+          const [{ externalId }] = data.items;
+          const isStep = { type: { type: externalId === OTHER.externalId ? 'text' : 'boolean' } };
+          return {
+            status: 200,
+            data: { items: [{ ...VIEW, externalId, properties: { ...VIEW_PROPERTIES, isStep } }] },
+          };
+        }
+        return { status: 200, data: answer(url) };
+      }),
+    };
+    const connector = getMockedDataSource(fetcher).connector;
+    const tab = (view: typeof VIEW) => (
+      <SyntheticTimeSeriesTab
+        query={
+          {
+            ...defaultQuery,
+            refId: 'A',
+            aggregation: 'average',
+            granularity: '',
+            label: '',
+            cdmSyntheticQuery: expressionQuery({
+              view,
+              variables: [{ name: 'A', mode: 'filter', filter: "isStep='true'" }],
+            }),
+          } as CogniteQuery
+        }
+        onQueryChange={jest.fn()}
+        connector={connector}
+        intervalMs={60_000}
+        range={{ from: dateTime(1000), to: dateTime(2000), raw: { from: 'now-1h', to: 'now' } }}
+        timezone="utc"
+      />
+    );
+    let rerender: (ui: React.ReactElement) => void = () => {};
+    await act(async () => {
+      ({ rerender } = render(tab(VIEW)));
+    });
+    await act(async () => rerender(tab(OTHER)));
+    fireEvent.click(screen.getByTestId('variable-preview-A-0'));
+    await waitFor(() => expect(screen.getByDisplayValue(/"value": "true"/)).toBeInTheDocument());
+  });
+});
+
 describe('SyntheticTimeSeriesTab layout', () => {
   const resizeCallbacks: Array<(entries: Array<{ contentRect: { width: number } }>) => void> = [];
   const originalResizeObserver = (global as any).ResizeObserver;
