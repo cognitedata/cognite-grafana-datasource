@@ -17,6 +17,7 @@ const CDM_FEATURES: Array<[FeatureKey, Accessor]> = [
   ["enableCogniteTimeSeries", "isCogniteTimeSeriesEnabled"],
   ["enableCogniteActivities", "isCogniteActivitiesEnabled"],
   ["enableRecords", "isRecordsEnabled"],
+  ["enableSyntheticTimeSeries", "isSyntheticTimeSeriesEnabled"],
   ["enableFlexibleDataModelling", "isFlexibleDataModellingEnabled"],
 ];
 

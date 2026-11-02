@@ -686,6 +686,29 @@ describe('Datasource Query', () => {
       ] as CogniteQuery[]);
       expect(result).toEqual([]);
     });
+
+    it('interpolates a saved synthetic time series query that has no variables', () => {
+      const { ds } = getDataSourceWithMocks({ fetch: jest.fn() } as any);
+      const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+      const target = {
+        refId: 'A',
+        tab: Tab.SyntheticTimeSeries,
+        cdmSyntheticQuery: { version: 2, view, expression: 'A' },
+      } as unknown as CogniteQuery;
+      expect((ds as any).replaceVariablesInTarget(target).cdmSyntheticQuery.variables).toEqual([]);
+    });
+
+    it('keeps a synthetic time series query with an expression, so missing variables report an error', () => {
+      const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+      const synthetic = (expression: string) =>
+        ({
+          refId: 'A',
+          tab: Tab.SyntheticTimeSeries,
+          cdmSyntheticQuery: { version: 2, view, variables: [], expression },
+        }) as unknown as CogniteQuery;
+      expect(filterEmptyQueryTargets([synthetic('A - B')])).toHaveLength(1);
+      expect(filterEmptyQueryTargets([synthetic('  ')])).toEqual([]);
+    });
   });
   describe('replaceVariable', () => {
     const fetcher = { fetch: jest.fn() };

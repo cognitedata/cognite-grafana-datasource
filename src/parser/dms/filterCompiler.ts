@@ -3,7 +3,7 @@
  * variable's filter, splitting it into what CDF filters on and what is checked
  * afterwards, and compiling the CDF part into a DMS filter.
  */
-import { isArray } from 'lodash';
+import { get, isArray } from 'lodash';
 import { Grammar, Parser } from 'nearley';
 import filterGrammar from './filter';
 import { parseWith } from '../events-assets/index';
@@ -114,6 +114,36 @@ export const splitRefFilters = (ref: STSReference): SplitRefFilters => {
   });
   return { synthetic, server, client };
 };
+
+/**
+ * Whether an instance passes a filter CDF can't apply. A missing value matches no
+ * pattern, so it fails =~ and passes !~, and it is not equal to any value.
+ */
+export const matchesLocalFilter = (
+  instance: unknown,
+  { path, filter, value }: STSClientFilter
+): boolean => {
+  const actual = get(instance, path, null);
+  if (filter === FilterTypes.NotEquals) {
+    // Compared as text: a dashboard variable renders as text, whatever the value holds.
+    const isValue = (expected: unknown) => actual !== null && String(expected) === String(actual);
+    return isArray(value) ? !value.some(isValue) : !isValue(value);
+  }
+  const matches = actual !== null && new RegExp(`^(?:${value})$`).test(String(actual));
+  return filter === FilterTypes.RegexEquals ? matches : !matches;
+};
+
+// A quote left open runs to the end, so the parser reports it instead of what it holds.
+const QUOTED_TEXT = /'(?:\\.|[^'\\])*(?:'|$)|"(?:\\.|[^"\\])*(?:"|$)/g;
+// Grafana's own $__ variables can depend on the panel, so the editor can't tell they exist.
+const VARIABLE_TOKEN = /\$\{?(?!__)\w+|\[\[(?!__)\w+\]\]/;
+
+/**
+ * A dashboard variable still in an interpolated filter is not defined. Inside
+ * quotes it is plain text: Grafana pastes variables there, and `$` is a valid character.
+ */
+export const undefinedFilterVariable = (filter: string): string | undefined =>
+  VARIABLE_TOKEN.exec(filter.replace(QUOTED_TEXT, ''))?.[0];
 
 /** ["prop"]-style DMS filter path for a property of the selected view. */
 export const viewPropertyPath = (

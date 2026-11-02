@@ -63,12 +63,13 @@ export class Connector {
     return this.cachedRequest(body, cacheTime);
   }
 
+  /** `split` is a chunk size, or a function that splits the items into requests itself. */
   async chunkAndFetch<Req extends Items, Res extends ItemsResponse>(
     request: RequestParams<Req>,
-    chunkSize = 100,
+    split: number | ((items: Req['items']) => Array<Req['items']>) = 100,
   ): Promise<Res> {
     const { data, requestId } = request;
-    const chunkedItems = chunk(data.items, chunkSize);
+    const chunkedItems = typeof split === 'number' ? chunk(data.items, split) : split(data.items);
     const chunkedRequests = chunkedItems.map((items, i) => ({
       ...request,
       ...chunkedReqId(requestId, i),
@@ -176,6 +177,11 @@ export class Connector {
   isRecordsEnabled() {
     return this.flag("enableCoreDataModelFeatures") &&
       this.flag("enableRecords");
+  }
+
+  isSyntheticTimeSeriesEnabled() {
+    return this.flag("enableCoreDataModelFeatures") &&
+      this.flag("enableSyntheticTimeSeries");
   }
 
   isFlexibleDataModellingEnabled() {

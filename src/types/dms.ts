@@ -149,6 +149,9 @@ export interface ViewRef {
   version: string;
 }
 
+/** A view reference in the wire form sources take. */
+export type DMSViewReference = ViewRef & { type: 'view' };
+
 // Container inspect API types
 export type InvolvedView = ViewRef;
 

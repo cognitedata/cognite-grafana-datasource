@@ -29,6 +29,7 @@ import {
   DMSViewWithProperties,
 } from '../types/dms';
 import {
+  SyntheticFlatInstance,
   Tab,
   QueryTarget,
   CDFDataQueryRequest,
@@ -54,6 +55,7 @@ import {
 import { getRange } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
+import { getLabelsForSyntheticQuery } from '../parser/dms';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
@@ -80,10 +82,12 @@ export function formQueryForItems(
 
   switch (type) {
     case 'synthetic': {
-      const limit = calculateDPLimitPerQuery(items.length);
-      return {
-        items: items.map(({ expression }) => ({ expression, start, end, limit, timeZone })),
-      };
+      return buildSyntheticQueryRequest(
+        items.map(({ expression }) => expression),
+        [start, end],
+        timeZone,
+        target.tab === Tab.SyntheticTimeSeries ? SYNTHETIC_ITEMS_PER_REQUEST : undefined
+      );
     }
     case 'latest': {
       return {
@@ -148,19 +152,96 @@ function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates = true) {
   return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
 }
 
+/** Items per synthetic query request: the API's own cap. */
+export const SYNTHETIC_ITEMS_PER_REQUEST = 10;
+
+/** Time series references per synthetic query request, summed over its expressions: the API's own cap. */
+export const SYNTHETIC_REFERENCES_PER_REQUEST = 100;
+
+/** The `ts{…}` references in a synthetic expression, ignoring any inside quoted strings. */
+export const countSyntheticReferences = (expression: string): number => {
+  let count = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < expression.length; i++) {
+    const char = expression[i];
+    if (quote) {
+      // Double-quoted values are JSON, with its escapes; single quotes have none in CDF.
+      if (char === '\\' && quote === '"') {
+        i++;
+      } else if (char === quote) {
+        quote = null;
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (/^ts\{/i.test(expression.slice(i, i + 3))) {
+      count++;
+    }
+  }
+  return count;
+};
+
+/**
+ * Splits synthetic items into requests within the API's caps: at most
+ * SYNTHETIC_ITEMS_PER_REQUEST expressions and SYNTHETIC_REFERENCES_PER_REQUEST
+ * references each, in order. An expression over the reference cap gets a request of its own.
+ */
+export const chunkSyntheticItems = <T extends { expression?: string }>(items: T[]): T[][] => {
+  const chunks: T[][] = [];
+  let current: T[] = [];
+  let references = 0;
+  for (const item of items) {
+    const itemReferences = countSyntheticReferences(item.expression ?? '');
+    const full =
+      current.length >= SYNTHETIC_ITEMS_PER_REQUEST ||
+      references + itemReferences > SYNTHETIC_REFERENCES_PER_REQUEST;
+    if (current.length && full) {
+      chunks.push(current);
+      current = [];
+      references = 0;
+    }
+    current.push(item);
+    references += itemReferences;
+  }
+  if (current.length) {
+    chunks.push(current);
+  }
+  return chunks;
+};
+
+/**
+ * The body of a synthetic query over these expressions, before it is split into
+ * requests. The limit shares a request's datapoints between the expressions in it,
+ * so a query split into requests of `itemsPerRequest` passes that number.
+ */
+export const buildSyntheticQueryRequest = (
+  expressions: string[],
+  [start, end]: Tuple<number>,
+  timeZone: string | undefined,
+  itemsPerRequest = expressions.length
+): CDFDataQueryRequest => {
+  const limit = calculateDPLimitPerQuery(Math.min(expressions.length, itemsPerRequest));
+  return { items: expressions.map((expression) => ({ expression, start, end, limit, timeZone })) };
+};
+
+/** The time zone sent with requests: "browser" resolved to the browser's zone, "utc" as the API spells it. */
+export const resolveRequestTimeZone = (timezone: string | undefined): string | undefined => {
+  const timeZoneValue = timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone;
+  return timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue;
+};
+
 export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  const timeZoneValue = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
-  const timeZone = timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue
+  const timeZone = resolveRequestTimeZone(options.timezone);
   return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timeZone }));
 }
 
 export async function getLabelsForTarget(
   target: QueryTarget,
   queryList: DataQueryRequestItem[],
-  connector: Connector
+  connector: Connector,
+  syntheticScopes?: QueriesDataItem['scopes']
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
@@ -218,7 +299,100 @@ export async function getLabelsForTarget(
       }
       return queryList.map(() => labelSrc);
     }
+    case Tab.SyntheticTimeSeries: {
+      const { expression = '', variables = [], view } = target.cdmSyntheticQuery ?? {};
+      const scopes = syntheticScopes ?? [];
+      if (!labelSrc) {
+        return getLabelsForSyntheticQuery('', expression, scopes);
+      }
+      if (!labelContainsVariableProps(labelSrc)) {
+        return queryList.map(() => labelSrc);
+      }
+      // A picked series only carries its id and name; its view properties are fetched
+      // once so `{{A.unit.externalId}}` works on it like on a filtered series.
+      const enriched = view
+        ? await enrichPickedInstanceScopes(connector, labelSrc, view, variables, scopes)
+        : scopes;
+      const withUnits = await resolveScopeUnits(connector, labelSrc, variables, enriched);
+      return getLabelsForSyntheticQuery(labelSrc, expression, withUnits);
+    }
   }
+}
+
+/**
+ * A variable's `unit` is a direct relation, so `{{A.unit.symbol}}` and the like need
+ * the unit itself, as on the Time series tab: the variable's target unit when it has
+ * one, its storage unit otherwise. Only the variables the label reaches into are looked up.
+ */
+async function resolveScopeUnits(
+  connector: Connector,
+  label: string,
+  variables: Array<{ name: string; targetUnit?: string }>,
+  scopes: NonNullable<QueriesDataItem['scopes']>
+): Promise<NonNullable<QueriesDataItem['scopes']>> {
+  const tokens = [...label.matchAll(LABEL_TOKEN)].map(([, group]) => group.split('.'));
+  const reached = variables.filter(({ name }) =>
+    tokens.some(([head, prop, ...rest]) => head === name && prop === 'unit' && rest.length > 0)
+  );
+  if (!reached.length) {
+    return scopes;
+  }
+  const withUnit = async (instance: SyntheticFlatInstance, targetUnit?: string) => {
+    const unit = await resolveEffectiveUnit(connector, instance.unit, targetUnit);
+    return unit ? { ...instance, unit } : instance;
+  };
+  return Promise.all(
+    scopes.map(async (scope) => {
+      const next = { ...scope };
+      for (const { name, targetUnit } of reached) {
+        const value = scope[name];
+        if (Array.isArray(value)) {
+          next[name] = await Promise.all(value.map((instance) => withUnit(instance, targetUnit)));
+        } else if (value) {
+          next[name] = await withUnit(value, targetUnit);
+        }
+      }
+      return next;
+    })
+  );
+}
+
+async function enrichPickedInstanceScopes(
+  connector: Connector,
+  label: string,
+  view: { space: string; externalId: string; version: string },
+  variables: Array<{
+    name: string;
+    mode: string;
+    instance?: { space: string; externalId: string; name?: string };
+  }>,
+  scopes: NonNullable<QueriesDataItem['scopes']>
+): Promise<NonNullable<QueriesDataItem['scopes']>> {
+  const tokens = [...label.matchAll(LABEL_TOKEN)].map(([, group]) => group.split('.'));
+  // {{A}} alone only needs the name, which is saved with the pick unless it has none.
+  const picked = variables.filter(
+    (row) =>
+      row.mode === 'instance' &&
+      row.instance &&
+      scopes.some((scope) => scope[row.name] !== undefined) &&
+      tokens.some(([head, ...rest]) => head === row.name && (rest.length > 0 || !row.instance?.name))
+  );
+  if (!picked.length) {
+    return scopes;
+  }
+  const props = await Promise.all(
+    picked.map((row) => fetchCogniteTimeSeriesInstance(connector, view, row.instance!))
+  );
+  return scopes.map((scope) => {
+    const next = { ...scope };
+    picked.forEach((row, i) => {
+      const value = scope[row.name];
+      if (value && !Array.isArray(value)) {
+        next[row.name] = { ...props[i], ...value };
+      }
+    });
+    return next;
+  });
 }
 
 async function getTimeseriesLabel(
@@ -595,15 +769,17 @@ export async function fetchDMSView(
   viewSpec: { space: string; externalId: string; version: string }
 ): Promise<DMSViewWithProperties | null> {
   try {
-    const response = await connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
-      method: HttpMethod.POST,
-      path: '/models/views/byids',
-      data: {
-        items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
-        includeInheritedProperties: true,
-      },
-      cacheTime: CacheTime.ResourceByIds,
-    });
+    const response = await retryOnTransientError(() =>
+      connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
+        method: HttpMethod.POST,
+        path: '/models/views/byids',
+        data: {
+          items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
+          includeInheritedProperties: true,
+        },
+        cacheTime: CacheTime.ResourceByIds,
+      })
+    );
     return response.data?.items?.[0] ?? null;
   } catch (err) {
     console.warn('Failed to fetch DMS view properties:', err);
