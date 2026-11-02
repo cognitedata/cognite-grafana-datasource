@@ -425,6 +425,8 @@ const syntheticReference = (filters: STSFilter[]): string =>
     })
     .join(', ')}}`;
 
+const COMBINING_FUNCTIONS = ['avg', 'sum', 'min', 'max'];
+
 /**
  * A variable on its own is expanded to the inputs avg(), sum(), min() and max()
  * combine. CDF's avg(), min() and max() take at least two, and sum(A * 2) is only
@@ -434,7 +436,7 @@ const refuseSingleInputFunctions = (ast: STSQuery, resolved: Record<string, Reso
   walk(ast, (item) => {
     if (
       isMultiaryFunction(item) &&
-      ['avg', 'sum', 'min', 'max'].includes(item.func) &&
+      COMBINING_FUNCTIONS.includes(item.func) &&
       item.args.length === 1 &&
       !isVariableNode(item.args[0])
     ) {
@@ -510,22 +512,32 @@ export const expandExpression = (
         syntheticReference(refFilters(instance, resolved[name].variable, refOptions))
       );
     const custom = (item: STSQuery): string | undefined => {
-      // CDF has no sum(), so it is written out as an addition, as the legacy pipeline does.
-      if (isSumFunction(item)) {
-        const terms = item.args.flatMap((arg) =>
-          isVariableNode(arg) && !arg.template ? refs(arg.name) : [composeExpression(arg, custom)]
+      // A variable on its own in a combining function stands for all its time series, also
+      // where it fans out elsewhere: A - avg(A) is each series against the mean of all of them.
+      if (
+        isMultiaryFunction(item) &&
+        COMBINING_FUNCTIONS.includes(item.func) &&
+        item.args.length === 1 &&
+        isVariableNode(item.args[0]) &&
+        !item.args[0].template
+      ) {
+        const { name } = item.args[0];
+        const { func } = item;
+        const all = resolved[name].instances.map((instance) =>
+          syntheticReference(refFilters(instance, resolved[name].variable, refOptions))
         );
-        return `(${terms.join(' + ')})`;
-      }
-      // CDF's avg(), min() and max() take at least two inputs; one time series combined is itself.
-      if (isMultiaryFunction(item) && item.args.length === 1) {
-        const [arg] = item.args;
-        if (isVariableNode(arg) && !arg.template && byName[arg.name].length === 1) {
-          return refs(arg.name)[0];
+        // CDF has no sum(), and its avg(), min() and max() take at least two inputs.
+        if (func === 'sum') {
+          return `(${all.join(' + ')})`;
         }
+        return all.length === 1 ? all[0] : `${func}(${all.join(', ')})`;
+      }
+      // With several arguments, sum() is an addition of them, as the legacy pipeline writes it.
+      if (isSumFunction(item)) {
+        return `(${item.args.map((arg) => composeExpression(arg, custom)).join(' + ')})`;
       }
       if (isVariableNode(item) && !item.template) {
-        // Several references only for a locked variable, i.e. the sole argument of a combining function.
+        // A combined variable is written above, so this is the one series of this result.
         return refs(item.name).join(', ');
       }
       return undefined;
@@ -613,11 +625,21 @@ export const getLabelsForSyntheticQuery = (
   const ast = parseExpression(expression);
   return scopes.map((scope) => {
     if (!labelSrc) {
-      return composeExpression(ast, (item) =>
-        isVariableNode(item) && !item.template && scope[item.name] !== undefined
+      const name = (item: STSQuery): string | undefined => {
+        // A combined variable keeps its name, also where it fans out elsewhere: A - avg(A).
+        if (
+          isMultiaryFunction(item) &&
+          COMBINING_FUNCTIONS.includes(item.func) &&
+          item.args.length === 1 &&
+          isVariableNode(item.args[0])
+        ) {
+          return `${item.func}(${item.args[0].name})`;
+        }
+        return isVariableNode(item) && !item.template && scope[item.name] !== undefined
           ? displayName(scope[item.name], item.name)
-          : undefined
-      );
+          : undefined;
+      };
+      return composeExpression(ast, name);
     }
     return labelSrc.replace(LABEL_TOKEN, (_full, path: string) => {
       const [head, ...rest] = path.split('.');

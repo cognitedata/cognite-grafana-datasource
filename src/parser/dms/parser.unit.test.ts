@@ -357,6 +357,31 @@ describe('expandExpression', () => {
     }
   });
 
+  it('combines all of a variable inside a combining function, also where it fans out elsewhere', () => {
+    const resolved = {
+      A: {
+        variable: instanceVar('A', 'a'),
+        instances: [inst('a1'), inst('a2'), inst('a3')],
+      },
+    } as Record<string, ResolvedVariable>;
+    const ref = (id: string) => `ts{space='pumps', externalId='${id}'}`;
+    const all = ['a1', 'a2', 'a3'].map(ref);
+    const expressions = (expression: string) =>
+      expandExpression(parseExpression(expression), resolved, rawOptions).items.map(
+        (item) => item.expression
+      );
+    expect(expressions('A - avg(A)')).toEqual(
+      ['a1', 'a2', 'a3'].map((id) => `${ref(id)} - avg(${all.join(', ')})`)
+    );
+    expect(expressions('A / sum(A)')).toEqual(
+      ['a1', 'a2', 'a3'].map((id) => `${ref(id)} / (${all.join(' + ')})`)
+    );
+    expect(expressions('sum(A, 2)')).toEqual(['a1', 'a2', 'a3'].map((id) => `(${ref(id)} + 2)`));
+    expect(
+      getLabelsForSyntheticQuery('', 'A - avg(A)', [{ A: { ...inst('a1'), name: 'Pump 1' } }])
+    ).toEqual(['Pump 1 - avg(A)']);
+  });
+
   it('writes sum() with several arguments as an addition', () => {
     const resolved = {
       A: { variable: instanceVar('A', 'a'), instances: [inst('a')] },
