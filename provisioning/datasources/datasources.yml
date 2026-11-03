@@ -21,6 +21,7 @@ datasources:
       # Core data model (CDM) features
       enableCogniteTimeSeries: true
       enableRecords: true
+      enableSyntheticTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features (already enabled by default, but explicit for clarity)
       enableTimeseriesSearch: true
@@ -56,6 +57,7 @@ datasources:
       # Core data model (CDM) features (disabled)
       enableCogniteTimeSeries: false
       enableRecords: false
+      enableSyntheticTimeSeries: false
       enableFlexibleDataModelling: false
       # Legacy data model features (enabled)
       enableTimeseriesSearch: true
@@ -91,6 +93,7 @@ datasources:
       # Core data model (CDM) features (enabled)
       enableCogniteTimeSeries: true
       enableRecords: true
+      enableSyntheticTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features (disabled)
       enableTimeseriesSearch: false
@@ -126,6 +129,7 @@ datasources:
       # Core data model (CDM) features
       enableCogniteTimeSeries: true
       enableRecords: true
+      enableSyntheticTimeSeries: true
       enableFlexibleDataModelling: true
       # Legacy data model features
       enableTimeseriesSearch: true
