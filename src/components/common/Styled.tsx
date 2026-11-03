@@ -40,5 +40,12 @@ interface FormattedMessageProps {
 export const FormattedMessage = ({ severity, inline = false, children }: FormattedMessageProps) => {
   const styles = useStyles2(getStyles);
   const Element = inline ? 'span' : 'pre';
-  return <Element className={cx(!inline && styles.message, styles[severity])}>{children}</Element>;
+  return (
+    <Element
+      data-testid={`${severity}-message`}
+      className={cx(!inline && styles.message, styles[severity])}
+    >
+      {children}
+    </Element>
+  );
 };
