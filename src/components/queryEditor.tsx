@@ -30,7 +30,6 @@ import {
 import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
 import { DEPRECATED_CHIP_TEXT, DeprecatedChip, DeprecationNotice } from './common/DeprecationNotice';
-import '../css/common.css';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
@@ -42,6 +41,7 @@ import { SyntheticTimeSeriesTab } from './syntheticTimeSeriesTab';
 import { CommonEditors, LabelRow } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { useQueryMessages } from './useQueryMessages';
+import { FormattedMessage } from './common/Styled';
 import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
 
 const LatestValueCheckbox = (props: SelectedProps) => {
@@ -207,7 +207,7 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource; interv
             inputId={`asset-select-dropdown-${query.refId}`}
             data-testid='asset-select-dropdown'
             placeholder="Search asset by name/description"
-            className="width-20"
+            width={40}
             allowCustomValue
             onChange={setCurrent}
           />
@@ -456,8 +456,8 @@ export function QueryEditor(props: EditorProps) {
           />
         )}
       </TabContent>
-      {errorMessage && <pre className="gf-formatted-error">{errorMessage}</pre>}
-      {warningMessage && <pre className="gf-formatted-warning">{warningMessage}</pre>}
+      {errorMessage && <FormattedMessage severity="error">{errorMessage}</FormattedMessage>}
+      {warningMessage && <FormattedMessage severity="warning">{warningMessage}</FormattedMessage>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert } from '@grafana/ui';
+import { Alert, TextLink } from '@grafana/ui';
 import '../../css/query_editor.css';
 
 export const ASSET_CENTRIC_RETIREMENT_DATE = 'December 31, 2027';
@@ -20,9 +20,9 @@ interface DeprecationNoticeProps {
 export const DeprecationNotice = ({ replacement = DEFAULT_REPLACEMENT }: DeprecationNoticeProps) => (
   <Alert title="Asset-centric features are deprecated" severity="warning">
     CDF retires the asset-centric APIs on {ASSET_CENTRIC_RETIREMENT_DATE}. {replacement}{' '}
-    <a className="external-link" href={DEPRECATED_DOCS_URL} target="_blank" rel="noreferrer">
+    <TextLink external href={DEPRECATED_DOCS_URL}>
       Learn more
-    </a>
+    </TextLink>
   </Alert>
 );
 

@@ -25,6 +25,7 @@ Data Source for Grafana**.
 
 ### Bug fixes
 
+- Error and warning messages, keywords and links in the query help, and the **Assets** variable query field no longer depend on CSS classes that Grafana 12 removed, so they are styled again on Grafana 12.
 - The backend is now built with Go 1.27.3, which fixes a vulnerability in the Go standard library (`crypto/x509`, GO-2026-6809) that `govulncheck` reports.
 - The backend is now built with `golang.org/x/net` v0.62.0, which fixes two vulnerabilities (GO-2026-6860, GO-2026-6866) that `govulncheck` reports.
 - **Time series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.

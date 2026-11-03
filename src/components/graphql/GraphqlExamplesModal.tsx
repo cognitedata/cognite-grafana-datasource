@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Button, Modal, useStyles2 } from '@grafana/ui';
+import { Button, Modal, TextLink, useStyles2 } from '@grafana/ui';
 
 const getStyles = (theme: GrafanaTheme2) => ({
   modal: css({
@@ -63,14 +63,12 @@ export const GraphqlExamplesModal = ({
               <pre className={styles.code}>{example.code}</pre>
             </div>
           ))}
-          <a
-            className="query-keyword"
+          <TextLink
+            external
             href="https://docs.cognite.com/cdf/dashboards/guides/grafana/getting_started"
-            target="_blank"
-            rel="noreferrer"
           >
             Cognite Data Source documentation
-          </a>
+          </TextLink>
         </div>
         <Modal.ButtonRow>
           <Button variant="primary" onClick={toggle}>

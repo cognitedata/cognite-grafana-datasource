@@ -1,0 +1,167 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "cognitedata-datasource",
+        "uid": "42"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "cognitedata-datasource",
+            "uid": "42"
+          },
+          "refId": "A",
+          "tab": "SyntheticTimeSeries",
+          "cdmSyntheticQuery": {
+            "version": 2,
+            "view": {
+              "space": "cdf_cdm",
+              "externalId": "CogniteTimeSeries",
+              "version": "v1"
+            },
+            "variables": [
+              {
+                "name": "A",
+                "mode": "filter",
+                "filter": "space='grafana-ts-fixtures', assets!=$asset, name=$tag",
+                "aggregate": "average"
+              }
+            ],
+            "expression": "A"
+          },
+          "aggregation": "average",
+          "granularity": "1h",
+          "label": "{{A.name}}"
+        }
+      ],
+      "title": "Excluded asset, selected names",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ["Synthetic e2e north"],
+          "value": ["{\"space\":\"grafana-ts-fixtures\",\"externalId\":\"ts-expr-asset-north\"}"]
+        },
+        "datasource": {
+          "type": "cognitedata-datasource",
+          "uid": "42"
+        },
+        "definition": "",
+        "includeAll": true,
+        "multi": true,
+        "name": "asset",
+        "options": [],
+        "query": {
+          "query": "",
+          "queryType": "graphql",
+          "graphqlQuery": "query TsExpressionAssets {\n  listCogniteAsset(first: 10, filter: {space: {eq: \"grafana-ts-fixtures\"}}) {\n    items {\n      space\n      externalId\n      name\n    }\n  }\n}",
+          "dataModel": {
+            "space": "cdf_cdm",
+            "externalId": "CogniteCore",
+            "version": "v1"
+          },
+          "valueType": {
+            "label": "Instance ID (space + externalId)",
+            "value": "__instanceId"
+          },
+          "displayField": "name"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ["ts-expr-north-temp", "ts-expr-south-temp", "ts-expr-south-flow"],
+          "value": ["ts-expr-north-temp", "ts-expr-south-temp", "ts-expr-south-flow"]
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": true,
+        "name": "tag",
+        "options": [
+          {
+            "selected": true,
+            "text": "ts-expr-north-temp",
+            "value": "ts-expr-north-temp"
+          },
+          {
+            "selected": true,
+            "text": "ts-expr-south-temp",
+            "value": "ts-expr-south-temp"
+          },
+          {
+            "selected": true,
+            "text": "ts-expr-south-flow",
+            "value": "ts-expr-south-flow"
+          }
+        ],
+        "query": "ts-expr-north-temp,ts-expr-south-temp,ts-expr-south-flow",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-10-22T00:00:00.000Z",
+    "to": "2026-10-23T00:00:00.000Z"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Synthetic time series e2e variables",
+  "uid": "synthetic-time-series-e2e-vars",
+  "version": 1
+}

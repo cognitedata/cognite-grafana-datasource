@@ -60,7 +60,7 @@ describe('FlexibleDataModellingTab', () => {
     expect(screen.getByLabelText('Aggregation')).toBeTruthy();
     expect(screen.getByLabelText(/Label/)).toBeTruthy();
     expect(screen.getByPlaceholderText('{{name}}')).toBeTruthy();
-    expect(document.querySelector('.gf-form-inline')).toBeNull();
+    expect(document.querySelector('[class*="gf-form"]')).toBeNull();
   });
 
   it('hides the series options until the query yields series', async () => {

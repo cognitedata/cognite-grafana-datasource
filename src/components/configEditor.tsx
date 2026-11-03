@@ -24,7 +24,6 @@ import {
 } from "../configEditorUtils";
 import { FeatureToggleRow } from "./FeatureToggleRow";
 import { DEPRECATED_CHIP_TEXT, DeprecationNotice } from "./common/DeprecationNotice";
-import "../css/common.css";
 
 type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteDataSourceOptions,
