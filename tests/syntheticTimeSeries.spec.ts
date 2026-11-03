@@ -50,10 +50,12 @@ test('"Synthetic time series" resolves a filter variable and sends the instance 
 
   const editorRow = panelEditPage.getQueryEditorRow('A');
 
-  // By role: the Alpha chip sits inside the tab, so its text is not the label alone.
-  const tab = editorRow.getByRole('tab', { name: /^Synthetic time series/ });
+  // By its leading text, as the Records spec does: the Alpha chip sits inside the tab, and
+  // Grafana 10.4 does not expose the tab's role and name the way later versions do.
+  const tab = editorRow.getByText(/^Synthetic time series/);
   await expect(tab).toBeVisible();
   await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
 
   // The default view is selected, with one variable A as a picked series.
   await expect(editorRow.locator('input[id="view-A"]')).toBeVisible();
