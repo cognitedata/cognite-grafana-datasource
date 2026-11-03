@@ -18,8 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Check for backend
+        id: check-for-backend
+        shell: bash
+        run: |
+          if [ -f "Magefile.go" ]
+          then
+            echo "has-backend=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Read the Go version from go.mod
         id: go
+        if: steps.check-for-backend.outputs.has-backend == 'true'
         shell: bash
         # go.mod's toolchain line is the one place the Go version is set. setup-go
         # exports GOTOOLCHAIN=local, so Go never switches to it by itself: it has to
@@ -37,10 +47,13 @@ jobs:
         uses: grafana/plugin-actions/package-plugin@8377a91095147d68ea3a51681aa1773ed7f0025c # package-plugin/v1.3.3
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          # Empty without a backend: package-plugin only builds one when Magefile.go
+          # exists, and setup-go then just keeps the runner's Go.
           go-version: ${{ steps.go.outputs.version }}
           node-version: '20'
 
       - name: Check the packaged backend's Go version and vulnerabilities
+        if: steps.check-for-backend.outputs.has-backend == 'true'
         shell: bash
         env:
           PLUGIN_ARCHIVE: ${{ steps.package-plugin.outputs.archive }}

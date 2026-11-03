@@ -50,11 +50,6 @@ export function isTabDisabled(
     return !datasource.connector.isExtractionPipelinesEnabled();
   }
 
-  // DataModellingV2 tab - always enabled (no feature flag)
-  if (tab === Tabs.DataModellingV2) {
-    return false;
-  }
-
   if (tab === Tabs.CogniteActivity) {
     return !datasource.connector.isCogniteActivitiesEnabled();
   }
@@ -108,8 +103,9 @@ export function getFirstAvailableTab(datasource: CogniteDatasource): Tabs {
       return tab;
     }
   }
-  // Fallback to DataModellingV2 which is always enabled (no feature flag)
-  return Tabs.DataModellingV2;
+  // Every tab is disabled: fall back to Time Series, which the editor shows with
+  // its disabled-tab warning
+  return Tabs.CogniteTimeSeriesSearch;
 }
 
 /**

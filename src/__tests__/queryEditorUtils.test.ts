@@ -5,19 +5,11 @@ import { ASSET_CENTRIC_REPLACEMENTS, TAB_SUFFIX_TEXT } from '../components/query
 
 describe('Tab titles', () => {
   // The tab bar skips title-less tabs, otherwise they render as nameless, clickable
-  // tabs. DataModellingV2 is routed to the Go backend and is deliberately hidden;
-  // any new tab added without a title would silently join it.
-  it('only DataModellingV2 is intentionally without a title', () => {
-    const untitled = Object.values(Tabs).filter((tab) => !TabTitles[tab]);
-    expect(untitled).toEqual([Tabs.DataModellingV2]);
-  });
-
-  it('gives every user-facing tab a non-empty label', () => {
-    Object.values(Tabs)
-      .filter((tab) => tab !== Tabs.DataModellingV2)
-      .forEach((tab) => {
-        expect(TabTitles[tab]).toBeTruthy();
-      });
+  // tabs; a new tab added without a title would silently disappear from the editor.
+  it('gives every tab a non-empty label', () => {
+    Object.values(Tabs).forEach((tab) => {
+      expect(TabTitles[tab]).toBeTruthy();
+    });
   });
 });
 
@@ -195,7 +187,7 @@ describe('QueryEditor Utility Functions', () => {
 
       // Use a non-existent tab as current so no backward compatibility applies
       const result = getFirstAvailableTab(mockDataSource);
-      expect(result).toBe(Tabs.DataModellingV2); // DataModellingV2 is always enabled, so it's the fallback
+      expect(result).toBe(Tabs.CogniteTimeSeriesSearch);
     });
 
     it('should skip disabled tabs and find first available', () => {

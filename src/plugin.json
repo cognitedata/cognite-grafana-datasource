@@ -91,9 +91,6 @@
     "maxDataPoints": true
   },
 
-  "executable": "gpx_cognite_datasource",
-
-  "backend": true,
   "metrics": true,
   "annotations": true
 }

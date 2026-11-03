@@ -4,8 +4,6 @@
 - [Node.js](https://nodejs.org/en/download/)
 - [Yarn](https://yarnpkg.com/getting-started/install)
 - [Docker](https://docs.docker.com/get-docker/)
-- [Go](https://golang.org/doc/install)
-- [Mage](https://magefile.org/)
 
 The easiest way to work on this datasource is by using [docker compose](./docker-compose.yaml) approach. 
 First, run the connector:
@@ -14,7 +12,7 @@ First, run the connector:
 yarn dev
 ```
 
-And then use another terminal to build backend and run Grafana in docker:
+And then use another terminal to run Grafana in docker:
 
 ```
 yarn server
@@ -47,7 +45,7 @@ The datasources provisioned from `provisioning/datasources/datasources.yml` are 
 yarn docker-recreate
 ```
 
-(or `yarn server`, which rebuilds the backend first). There is no need to wipe the volume. The entries deliberately have no `version` field: with one, Grafana skips the file whenever the stored version is higher, and every UI save raises it, so the datasources silently keep their old values.
+(or `yarn server`, which does the same). There is no need to wipe the volume. The entries deliberately have no `version` field: with one, Grafana skips the file whenever the stored version is higher, and every UI save raises it, so the datasources silently keep their old values.
 
 Also note the volume does not survive a Docker Desktop reinstall or factory reset — export any dashboard you cannot afford to lose, or add it to provisioning.
 
@@ -59,19 +57,9 @@ Also note the volume does not survive a Docker Desktop reinstall or factory rese
 
 For debugging and development, use `yarn dev`, and for testing use `yarn test`.
 
-## Building backend separately
-Build backend for Linux (arm64) with:
-```bash
-mage -v build:linuxARM64
-```
-or (amd64) with:
-```bash
-mage -v build:linux
-```
-
 ## Without Docker
 
-If you are running Grafana natively, you need to build backend and frontend parts of the plugin and link the folder to Grafana's plugin directory.
+If you are running Grafana natively, you need to build the plugin and link the folder to Grafana's plugin directory.
 
 Run this command to create a symbolic link
 in `data/plugins` that points to this directory:

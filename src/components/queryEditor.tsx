@@ -376,8 +376,7 @@ export function QueryEditor(props: EditorProps) {
     <div>
       <TabsBar>
         {Object.values(Tabs).map((t) => {
-          // Tab.DataModellingV2 is routed to the Go backend and deliberately has no
-          // title; without this it renders as a nameless, clickable tab.
+          // A tab without a title would render as a nameless, clickable tab.
           if (hiddenTab(t) || !TabTitles[t]) {
             return null;
           }
