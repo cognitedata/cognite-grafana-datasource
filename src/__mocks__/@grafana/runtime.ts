@@ -67,8 +67,9 @@ export const getTemplateSrv = () =>
     }),
   } as any);
 
+// @grafana/plugin-ui's SqlDatasource extends this when the module loads.
 export class DataSourceWithBackend<TQuery, TOptions> {
   query() {
-    throw new Error('This is a backend method. Write the Golang or e2e tests for the backend-related code.');
+    throw new Error('DataSourceWithBackend.query is not available in unit tests.');
   }
 }

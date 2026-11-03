@@ -2,6 +2,7 @@ import {
   DataQueryError,
   DataQueryRequest,
   DataQueryResponse,
+  DataSourceApi,
   DataSourceInstanceSettings,
   ScopedVars,
   SelectableValue,
@@ -9,7 +10,6 @@ import {
 import {
   BackendSrv,
   BackendSrvRequest,
-  DataSourceWithBackend,
   getBackendSrv,
   getTemplateSrv,
   TemplateSrv,
@@ -63,7 +63,7 @@ import {
 import AnnotationsQueryEditor from "components/annotationsQueryEditor";
 import { from, lastValueFrom, map, Observable, of } from "rxjs";
 
-export default class CogniteDatasource extends DataSourceWithBackend<
+export default class CogniteDatasource extends DataSourceApi<
   CogniteQuery,
   CogniteDataSourceOptions
 > {
@@ -135,20 +135,6 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     QueryEditor: AnnotationsQueryEditor,
   };
 
-  // Queries the backend by using `super.query`
-  queryBackend(
-    backendTargets: QueryTarget[],
-    options: DataQueryRequest<CogniteQuery>,
-  ): Observable<DataQueryResponse> {
-    const request = {
-      ...options,
-      targets: backendTargets,
-    };
-
-    // Leverage super.query to make a backend request via Grafana
-    return super.query(request);
-  }
-
   /**
    * used by panels to get timeseries data
    */
@@ -176,16 +162,6 @@ export default class CogniteDatasource extends DataSourceWithBackend<
     let observables: Array<Observable<DataQueryResponse>> = [];
 
     if (queryTargets.length) {
-      // If there are backend targets (e.g., Tab.Backend), send them to the backend
-      const backendTargets = queryTargets.filter((t) =>
-        t.tab === Tab.DataModellingV2
-      );
-      if (backendTargets.length) {
-        const backendObservable = this.queryBackend(backendTargets, options);
-        observables.push(backendObservable);
-      }
-
-      // Handle other datasources (Timeseries, Events, etc.) in the frontend
       if (tsTargets.length) {
         const tsObservable = from(
           this.timeseriesDatasource.query({
@@ -719,8 +695,6 @@ export function filterEmptyQueryTargets(
             !!target.cdmSyntheticQuery?.expression?.trim() &&
             !!target.cdmSyntheticQuery?.view?.externalId
           );
-        case Tab.DataModellingV2:
-          return true;
         case Tab.ExtractionPipelines:
           return true;
         case Tab.Timeseries:

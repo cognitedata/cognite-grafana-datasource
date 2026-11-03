@@ -33,6 +33,10 @@ Data Source for Grafana**.
 - **Time series aggregates**: when the time range did not start on a whole interval (a range from 10:43 with a 1h granularity, say), the first interval was dropped, so series started blank until the next one. An interval that overlaps the range is now shown.
 - Data modeling requests are now tried once more after a temporary failure (a timeout, or a 502, 503 or 504 from the server). Rate limited requests are retried as before.
 
+### Other
+
+- The plugin no longer ships a Go backend. It was scaffolding that never handled a query, so the plugin is now frontend-only, as every query already ran in the browser. Queries, settings and dashboards are unchanged.
+
 ## 4.6.0 - October 14th, 2026
 
 ### Breaking changes
