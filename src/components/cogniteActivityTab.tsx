@@ -52,7 +52,8 @@ const ActivityOrderDirectionEditor = ({
         options={options}
         menuPosition="fixed"
         value={direction}
-        className="cog-mr-4 width-10"
+        className="cog-mr-4"
+        width={16}
       />
     </InlineFieldRow>
   );

@@ -1,10 +1,9 @@
-import { Alert, Icon } from '@grafana/ui';
+import { Alert, Icon, TextLink } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
+import { Keyword as Code, FormattedMessage } from './common/Styled';
 
 type HelpParams = { onDismiss: () => void; title: string; children: React.ReactNode, docsUrl?: boolean };
-
-const Code = ({ children }) => <code className="query-keyword">{children}</code>;
 
 const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) => (
   <Alert
@@ -70,12 +69,9 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     <br />
     <br />
     Check{' '}
-    <a
-      className="query-keyword"
-      href="https://grafana.com/docs/grafana/latest/reference/templating/#advanced-formatting-options"
-    >
+    <TextLink external href="https://grafana.com/docs/grafana/latest/reference/templating/#advanced-formatting-options">
       Grafana documentation
-    </a>{' '}
+    </TextLink>{' '}
     to get list of available formatters.
     <br />
     <br />
@@ -104,12 +100,9 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
     There is a support for some advanced functions, like <Code>round</Code>, <Code>on_error</Code>{' '}
     and <Code>map</Code>.<br />
     The documentation on how to use them can be found on{' '}
-    <a
-      className="query-keyword"
-      href="https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries"
-    >
+    <TextLink external href="https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries">
       docs.cognite.com/dev
-    </a>
+    </TextLink>
     .
   </HelpPanel>
 );
@@ -117,14 +110,9 @@ export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) =>
 export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
   <HelpPanel title="Event query syntax help" onDismiss={onDismiss}>
     Event queries use the{' '}
-    <a
-      className="query-keyword"
-      href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents"
-      target="_blank"
-      rel="noreferrer"
-    >
+    <TextLink external href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents">
       events/list
-    </a>{' '}
+    </TextLink>{' '}
     endpoint to retrieve data.
     <br />
     Format: <Code>{'events{someFilter=number, otherFilter="string"}'}</Code>
@@ -161,12 +149,12 @@ export const EventQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => 
     <br />
     Example: <Code>{`events{type='WORKORDER', subtype=~'SUB.*'}`}</Code>
     <br />
-    <span className="gf-formatted-warning">
+    <FormattedMessage severity="warning" inline>
       Note: Do not use client-side filters as the primary filtering method.
       <br />
       The filters are applied after items have been returned from CDF, and there is a risk that you
       will not see all data if CDF returned the maximum number of items (1000).
-    </span>
+    </FormattedMessage>
     <br />
     Templating is available by using the <Code>$variable_name</Code> syntax.
     <br />

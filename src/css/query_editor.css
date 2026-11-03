@@ -1,21 +1,3 @@
-.min-width-10 {
-  min-width: 10rem;
-}
-
-.min-width-12 {
-  min-width: 12rem;
-}
-
-.min-width-20 {
-  min-width: 20rem;
-}
-
-.gf-tabs-cognite.active:before,
-.gf-tabs-cognite.active:focus:before,
-.gf-tabs-cognite.active:hover:before {
-  background-image: linear-gradient(90deg, #33b5e5 0, #00b3ff 99%, #1b1b1b);
-}
-
 .custom-query input {
   font-family: monospace;
 }

@@ -3,7 +3,8 @@ import { AnnotationQuery, QueryEditorProps ,} from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 import { AnnotationQueryData, CogniteQuery } from 'types';
 import { parse } from '../parser/events-assets';
-import { FieldSet, InlineField, InlineSegmentGroup, Input } from '@grafana/ui';
+import { FieldSet, InlineField, InlineSegmentGroup, Input, TextLink } from '@grafana/ui';
+import { FormattedMessage, Keyword } from './common/Styled';
 
 
 type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any, TQuery> & {
@@ -13,43 +14,43 @@ type AnnotationQueryEditorProps<TQuery extends DataQuery> = QueryEditorProps<any
 
 const help = (
   <pre>
-    Annotation query uses the <a className="query-keyword" href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents" target="_blank" rel="noreferrer">events/list</a> endpoint to fetch data.
+    Annotation query uses the <TextLink external href="https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents">events/list</TextLink> endpoint to fetch data.
     <br />
     <br />
-    Use <code className="query-keyword">&apos;=&apos;</code> operator to provide parameters for the request.
+    Use <Keyword>&apos;=&apos;</Keyword> operator to provide parameters for the request.
     <br />
-    Format: <code className="query-keyword">{`events{param=number, ...}`}</code>
+    Format: <Keyword>{`events{param=number, ...}`}</Keyword>
     <br />
-    Example: <code className="query-keyword">{`events{externalIdPrefix='PT', type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}`}</code>
+    Example: <Keyword>{`events{externalIdPrefix='PT', type='WORKORDER', assetSubtreeIds=[{id=12}, {externalId='external'}]}`}</Keyword>
     <br />
     <br />
 
     By default, the query displays all events that are active in the time range.
     <br />
-    You can customize this with the additional time filters <code className="query-keyword">startTime</code>, <code className="query-keyword">endTime</code>.
+    You can customize this with the additional time filters <Keyword>startTime</Keyword>, <Keyword>endTime</Keyword>.
     <br />
     This example shows how to display all finished events that started in the current time range:
     <br />
-    <code className="query-keyword">{`events{startTime={min=$__from}, endTime={isNull=false}}`}</code>
+    <Keyword>{`events{startTime={min=$__from}, endTime={isNull=false}}`}</Keyword>
     <br />
     <br />
 
-    You can specify additional client-side filtering with the <code className="query-keyword">&apos;=~&apos;</code>, <code className="query-keyword">&apos;!~&apos;</code> and <code className="query-keyword">&apos;!=&apos;</code> operators. Comma between multiple filters acts as logic <code className="query-keyword">AND</code>.<br />
+    You can specify additional client-side filtering with the <Keyword>&apos;=~&apos;</Keyword>, <Keyword>&apos;!~&apos;</Keyword> and <Keyword>&apos;!=&apos;</Keyword> operators. Comma between multiple filters acts as logic <Keyword>AND</Keyword>.<br />
     Format:<br />
-      <code className="query-keyword">&apos;=~&apos;</code> – regex equality, returns results satisfying the regular expression.
+      <Keyword>&apos;=~&apos;</Keyword> – regex equality, returns results satisfying the regular expression.
       <br />
-      <code className="query-keyword">&apos;!~&apos;</code> – regex inequality, excludes results satisfying the regular expression.
+      <Keyword>&apos;!~&apos;</Keyword> – regex inequality, excludes results satisfying the regular expression.
       <br />
-      <code className="query-keyword">&apos;!=&apos;</code> – strict inequality, returns items where a property doesn&apos;t equal a given value.
+      <Keyword>&apos;!=&apos;</Keyword> – strict inequality, returns items where a property doesn&apos;t equal a given value.
       <br />
-    Example: <code className="query-keyword">{`events{type='WORKORDER', subtype=~'SUB.*'}`}</code>
+    Example: <Keyword>{`events{type='WORKORDER', subtype=~'SUB.*'}`}</Keyword>
     <br />
     <br />
-    Templating is available by using the <code className="query-keyword">$variable</code> syntax.
+    Templating is available by using the <Keyword>$variable</Keyword> syntax.
     <br />
-    Example: <code className="query-keyword">{`events{type='WORKORDER', subtype=$variable}`}</code>.
+    Example: <Keyword>{`events{type='WORKORDER', subtype=$variable}`}</Keyword>.
     <br />
-    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <a className="query-keyword" href="https://docs.cognite.com/cdf/dashboards/guides/grafana/timeseries">documentation</a>.
+    To learn more about the querying capabilities of Cognite Data Source for Grafana, please visit our <TextLink external href="https://docs.cognite.com/cdf/dashboards/guides/grafana/timeseries">documentation</TextLink>.
   </pre>
 );
 
@@ -101,7 +102,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
           </InlineField>
         </InlineSegmentGroup>
         <div>
-          {this.state.error ? <pre className="gf-formatted-error">{this.state.error}</pre> : null}
+          {this.state.error ? <FormattedMessage severity="error">{this.state.error}</FormattedMessage> : null}
           {help}
         </div>
       </FieldSet>

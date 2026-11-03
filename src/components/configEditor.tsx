@@ -23,7 +23,6 @@ import {
   stringValueHandler,
 } from "../configEditorUtils";
 import { FeatureToggleRow } from "./FeatureToggleRow";
-import "../css/common.css";
 
 type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteDataSourceOptions,

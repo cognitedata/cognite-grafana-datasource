@@ -58,7 +58,7 @@ const AggregationEditor = (props: SelectedProps) => {
           options={aggregateOptions}
           menuPosition="fixed"
           value={query.aggregation}
-          className="width-10"
+          width={24}
         />
       </InlineField>
     </InlineFieldRow>

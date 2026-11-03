@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## Unreleased
+
+### Bug fixes
+
+- Error and warning messages, keywords and links in the query help, and the **Assets** variable query field no longer depend on CSS classes that Grafana 12 removed, so they are styled again on Grafana 12.
+
 ## 4.6.0 - October 14th, 2026
 
 ### Breaking changes
