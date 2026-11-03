@@ -2,7 +2,6 @@ import React from 'react';
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { Stack, useStyles2 } from '@grafana/ui';
-import { isTopLevelProperty } from '../../cdf/records';
 import { PropertyOption } from './shared';
 
 type TypeTokenKind = 'enum' | 'numeric' | 'textTime' | 'direct' | 'boolean' | 'other';
@@ -50,7 +49,7 @@ const getStyles = (theme: GrafanaTheme2) => {
     direct: cx(base, css({ color: theme.colors.primary.text })),
     boolean: cx(base, css({ color: theme.visualization.getColorByName('purple') })),
     other: cx(base, css({ color: theme.colors.text.secondary })),
-    recordMarker: css({
+    originMarker: css({
       fontFamily: theme.typography.fontFamilyMonospace,
       fontSize: theme.typography.bodySmall.fontSize,
       color: theme.colors.text.disabled,
@@ -89,9 +88,7 @@ export const PropertyOptionLabel = ({ option }: { option: PropertyOption }) => {
     <Stack gap={1} alignItems="center" wrap={false}>
       <TypeToken type={type} isList={isList} />
       <span>{option.label}</span>
-      {isTopLevelProperty(option.value) && (
-        <span className={styles.recordMarker}>record</span>
-      )}
+      {option.origin && <span className={styles.originMarker}>{option.origin}</span>}
     </Stack>
   );
 };
@@ -100,12 +97,15 @@ export const PropertyOptionLabel = ({ option }: { option: PropertyOption }) => {
  * formatOptionLabel for property Selects. `menuOnly` keeps MultiSelect chips
  * clean by rendering the badge only inside the dropdown menu.
  */
-export const formatPropertyOptionLabel = (menuOnly = false) => (
-  option: PropertyOption,
-  meta: { context: string }
-) => {
-  if (menuOnly && meta.context !== 'menu') {
-    return <>{option.label}</>;
+export const formatPropertyOptionLabel = (menuOnly = false) => {
+  function renderPropertyOptionLabel(
+    option: PropertyOption,
+    meta: { context: string }
+  ) {
+    if (menuOnly && meta.context !== 'menu') {
+      return <>{option.label}</>;
+    }
+    return <PropertyOptionLabel option={option} />;
   }
-  return <PropertyOptionLabel option={option} />;
+  return renderPropertyOptionLabel;
 };

@@ -11,6 +11,7 @@ import {
   defaultRecordsQuery,
 } from '../types';
 import { evaluateTimeExpression } from '../cdf/timeExpression';
+import { autoStepFactor } from '../cdf/granularity';
 import { RecordViewDefinition, StreamDefinition, UnitSystem } from '../types/records';
 import {
   buildRequestPreviewParts,
@@ -277,7 +278,8 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
         ? customTo.ms - customFrom.ms
         : null;
     const span = custom ?? (timeRange ? timeRange[1] - timeRange[0] : 0);
-    return computeAutoInterval(span, maxDataPoints);
+    return (interval?: string) =>
+      computeAutoInterval(span, maxDataPoints, autoStepFactor(interval) ?? 1);
   }, [timeFilterMode, customFrom, customTo, timeRange, maxDataPoints]);
 
   const previewParts = useMemo(

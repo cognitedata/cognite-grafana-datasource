@@ -1,8 +1,11 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React from 'react';
 import { EditorField, EditorFieldGroup, EditorRow } from '@grafana/plugin-ui';
-import { Input, Select } from '@grafana/ui';
-import { CogniteQuery } from '../../types';
-import { GRANULARITY_TOOLTIP, aggregateOptions } from '../commonEditors';
+import { RadioButtonGroup } from '@grafana/ui';
+import { CogniteQuery, GraphqlQueryType } from '../../types';
+import { defaultAggregationFor, isAggregateAllowed, TimeSeriesKind } from '../../cdf/aggregates';
+import { STATE_LABEL_TOOLTIP_SUFFIX } from '../commonEditors';
+import { DatapointsFields } from '../common/DatapointsFields';
+import { LabelField } from '../common/LabelField';
 
 interface FlexibleDataModellingOptionsProps {
   query: CogniteQuery;
@@ -11,23 +14,33 @@ interface FlexibleDataModellingOptionsProps {
   labelFields: string[];
   onQueryChange: (patch: Partial<CogniteQuery>) => void;
   onLabelChange: (label: string) => void;
+  /** The panel's interval, for showing what an auto granularity resolves to. */
+  intervalMs?: number;
 }
 
 const LABEL_TOOLTIP =
   'Series label, interpolating fields of the response with {{field}}, for example {{name}} or {{externalId}}. Left empty, each series is labelled with its name.';
 
 /** The Label tooltip, naming the fields the current query actually selects. */
-export const labelTooltip = (labelFields: string[]): string =>
-  labelFields.length
+export const labelTooltip = (labelFields: string[], seriesType?: TimeSeriesKind): string =>
+  (labelFields.length
     ? `${LABEL_TOOLTIP} Fields in this query: ${labelFields.map((field) => `{{${field}}}`).join(', ')}.`
-    : LABEL_TOOLTIP;
+    : LABEL_TOOLTIP) + (seriesType === 'state' ? ` ${STATE_LABEL_TOOLTIP_SUFFIX}` : '');
+
+const QUERY_TYPE_OPTIONS: Array<{ label: string; value: GraphqlQueryType; description: string }> = [
+  { label: 'Numeric', value: 'numeric', description: 'Data points of the numeric time series the query returns' },
+  { label: 'String', value: 'string', description: 'Data points of the string time series the query returns' },
+  { label: 'State', value: 'state', description: 'Data points of the state time series the query returns' },
+  { label: 'Instances', value: 'instances', description: 'The rows the query returns, without data points' },
+];
+
+const QUERY_TYPE_TOOLTIP =
+  'The data points of one type of time series, or the rows alone (Instances). The Examples dialog shows each.';
 
 /**
- * How the returned series are aggregated and named.
- *
- * The same three controls the other tabs get from `CommonEditors`, rebuilt on the
- * editor-row primitives this tab uses so they share one row instead of sitting in a
- * second, differently styled one.
+ * What the GraphQL tab fetches for its rows, and how the returned series are read
+ * and named. Laid out in rows like the Time series tab: the query type, then the
+ * data points, then the label.
  */
 export const FlexibleDataModellingOptions = ({
   query,
@@ -35,69 +48,52 @@ export const FlexibleDataModellingOptions = ({
   labelFields,
   onQueryChange,
   onLabelChange,
+  intervalMs,
 }: FlexibleDataModellingOptionsProps) => {
-  const aggregated = !!query.aggregation && query.aggregation !== 'none';
+  const queryType = query.flexibleDataModellingQuery.queryType ?? 'numeric';
+  const seriesType = queryType === 'instances' ? undefined : queryType;
 
-  // Typing is held locally and committed on blur. Committing per keystroke would
-  // re-run the whole query -- a GraphQL request plus a datapoints fetch per series --
-  // for every character of a label template.
-  const [draftLabel, setDraftLabel] = useState(label ?? '');
-  const [draftGranularity, setDraftGranularity] = useState(query.granularity ?? '');
-
-  useEffect(() => setDraftLabel(label ?? ''), [label]);
-  useEffect(() => setDraftGranularity(query.granularity ?? ''), [query.granularity]);
+  const changeQueryType = (next: GraphqlQueryType) =>
+    onQueryChange({
+      flexibleDataModellingQuery: { ...query.flexibleDataModellingQuery, queryType: next },
+      // An aggregation the new type does not have gives way to that type's default.
+      // Latest reads no aggregation, so the saved one is left alone there.
+      ...(next === 'instances' || query.latestValue || isAggregateAllowed(next, query.aggregation)
+        ? {}
+        : { aggregation: defaultAggregationFor(next) }),
+    });
 
   return (
-    <EditorRow>
-      <EditorFieldGroup>
-        <EditorField label="Aggregation" tooltip="How each series is aggregated over time.">
-          <Select
-            inputId={`aggregation-${query.refId}`}
-            width={24}
-            options={aggregateOptions}
-            value={query.aggregation}
-            menuPosition="fixed"
-            onChange={({ value }) => onQueryChange({ aggregation: value })}
-          />
-        </EditorField>
-        {aggregated && (
-          <EditorField
-            label="Granularity"
-            optional
-            tooltip={GRANULARITY_TOOLTIP}
-          >
-            {/* Values are short, but the field still has to carry its own label:
-                "Granularity - optional" is wider than the input it sits above. */}
-            <Input
-              id={`granularity-${query.refId}`}
-              width={21}
-              value={draftGranularity}
-              placeholder="default"
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setDraftGranularity(e.target.value)
-              }
-              onBlur={() =>
-                draftGranularity !== (query.granularity ?? '') &&
-                onQueryChange({ granularity: draftGranularity })
-              }
+    <>
+      <EditorRow>
+        <EditorFieldGroup>
+          <EditorField label="Query type" tooltip={QUERY_TYPE_TOOLTIP}>
+            <RadioButtonGroup
+              options={QUERY_TYPE_OPTIONS}
+              value={queryType}
+              onChange={changeQueryType}
+              aria-label="Query type"
             />
           </EditorField>
-        )}
-        <EditorField
-          label="Label"
-          optional
-          tooltip={labelTooltip(labelFields)}
-        >
-          <Input
-            id={`fdm-label-${query.refId}`}
-            width={44}
-            value={draftLabel}
-            placeholder="{{name}}"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftLabel(e.target.value)}
-            onBlur={() => draftLabel !== (label ?? '') && onLabelChange(draftLabel)}
-          />
-        </EditorField>
-      </EditorFieldGroup>
-    </EditorRow>
+        </EditorFieldGroup>
+      </EditorRow>
+      {seriesType && (
+        <>
+          <EditorRow>
+            <DatapointsFields query={query} kind={seriesType} intervalMs={intervalMs} onQueryChange={onQueryChange} />
+          </EditorRow>
+          <EditorRow>
+            <EditorFieldGroup>
+              <LabelField
+                id={`fdm-label-${query.refId}`}
+                value={label}
+                tooltip={labelTooltip(labelFields, seriesType)}
+                onCommit={onLabelChange}
+              />
+            </EditorFieldGroup>
+          </EditorRow>
+        </>
+      )}
+    </>
   );
 };

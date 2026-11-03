@@ -47,8 +47,8 @@ async function setupCogniteTimeSeriesPanel({
 
   const editorRow = panelEditPage.getQueryEditorRow("A");
 
-  // Wait for Time Series tab to appear after datasource selection
-  const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+  // Wait for Time series tab to appear after datasource selection
+  const timeSeriesTab = editorRow.getByText('Time series', { exact: true }).first();
   await expect(timeSeriesTab).toBeVisible();
   await timeSeriesTab.click();
 
@@ -167,8 +167,14 @@ test('Panel with asset subtree queries rendered OK', async ({ selectors, readPro
 
   await expect.poll(async () => {
     const panelContent = panelEditPage.panel.locator;
-    // Time series visualization (Grafana < 13): series appear as clickable legend buttons
-    const buttons = await panelContent.getByRole('button', { name: /59\.9139-10\.7522/ }).allInnerTexts();
+    // Time series visualization (Grafana < 13): series appear as clickable legend buttons.
+    // Matched by text: the color swatch next to each is a button named after the series
+    // too ("Edit color for ..."), but it has no text, and the label button's accessible
+    // name may not be the series name.
+    const buttons = await panelContent
+      .getByRole('button')
+      .filter({ hasText: /59\.9139-10\.7522/ })
+      .allInnerTexts();
     if (buttons.length > 0) return buttons.sort();
     // Grafana 13 inline editor may use a Stat visualization: series appear as plain text
     const textElems = await panelContent.getByText(/59\.9139-10\.7522/).allInnerTexts();
@@ -213,7 +219,11 @@ test('"Timeseries custom query" multiple ts OK', async ({ selectors, readProvisi
     await panelEditPage.getByGrafanaSelector(option).filter({ hasText: 'Interpolation' }).first().click();
 
     await editorRow.getByRole('textbox', { name: 'Label' }).fill(`{{externalId}}-{{unit}}`);
-    await editorRow.getByRole('textbox', { name: 'Granularity' }).fill(`1d`);
+    // Granularity: Fixed, then the value, applied when the field loses focus.
+    await editorRow.getByRole('radio', { name: 'Fixed' }).click();
+    const granularity = editorRow.locator(`input[id="granularity-${panels[index]}"]`);
+    await granularity.fill('1d');
+    await granularity.blur();
   }
 
   await waitForQueriesToFinish(page);
@@ -348,8 +358,8 @@ test('"CogniteTimeSeries" tab can be selected and search works', async ({ select
   const aggregationValue = aggregationField.getByText('Average');
   await expect(aggregationValue).toBeVisible();
 
-  const granularityInput = editorRow.locator('input[id="granularity-A"]');
-  await expect(granularityInput).toBeVisible();
+  // Auto by default, with no fixed value to type.
+  await expect(editorRow.getByRole('radio', { name: 'Auto', exact: true })).toBeChecked();
 
   const labelInput = editorRow.locator('input[id="label-A"]');
   await expect(labelInput).toBeVisible();
@@ -377,6 +387,134 @@ test('"CogniteTimeSeries" query with selection works', async ({ selectors, readP
   await waitForQueriesToFinish(page);
 });
 
+test('"CogniteTimeSeries" coarser auto granularity and gap filling reach the request', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
+  await waitForQueriesToFinish(page);
+
+  // React-select options near the viewport edge don't click reliably: type and Enter.
+  const autoStep = editorRow.locator('input[id="granularity-auto-A"]');
+  await autoStep.click();
+  await autoStep.fill('Fewer');
+  await autoStep.press('Enter');
+  await expect(editorRow.getByText('Fewer points', { exact: true })).toBeVisible();
+  await expect(editorRow.getByTestId('granularity-badge-A')).toBeVisible();
+
+  const filled = page.waitForRequest((request) => {
+    if (!request.url().endsWith('/timeseries/data/list')) {
+      return false;
+    }
+    const body = request.postDataJSON();
+    return body?.items?.[0]?.fill?.limit !== undefined;
+  });
+  await editorRow.getByRole('radio', { name: '× granularity' }).click();
+  const body = (await filled).postDataJSON();
+
+  // The default multiple is 4: the limit is four times the granularity sent.
+  const toMs = (value: string) => {
+    const [, count, unit] = /^(\d+)([smhd])$/.exec(value)!;
+    return Number(count) * { s: 1e3, m: 6e4, h: 3.6e6, d: 8.64e7 }[unit as 's' | 'm' | 'h' | 'd'];
+  };
+  expect(toMs(body.items[0].fill.limit)).toBe(4 * toMs(body.granularity));
+  await expect(editorRow.getByTestId('gap-fill-badge-A')).toHaveText(`= ${body.items[0].fill.limit}`);
+});
+
+test('"CogniteTimeSeries" string series offer their own aggregates', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // grafana-ts-fixtures:batch_phase, a string series of batch phases.
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'batch_phase');
+  await waitForQueriesToFinish(page);
+
+  // String and state series start on Raw; the aggregates are offered in Aggregate mode.
+  await editorRow.getByRole('radio', { name: 'Aggregate' }).click();
+  await waitForQueriesToFinish(page);
+
+  const aggregationInput = editorRow.locator('input[id="aggregation-A"]');
+  await aggregationInput.click();
+  await expect(panelEditPage.getByGrafanaSelector(option).filter({ hasText: /^Average$/ })).toHaveCount(0);
+  const counted = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.aggregates?.[0] === 'countGood'
+  );
+  await aggregationInput.fill('Count (good)');
+  await aggregationInput.press('Enter');
+  expect((await counted).status()).toBe(200);
+});
+
+test('"CogniteTimeSeries" state series aggregate by state', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // state-ts-real-data:wind_turbine_status, whose state set is wind_turbine_ops.
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'wind_turbine_status');
+  await waitForQueriesToFinish(page);
+
+  // String and state series start on Raw; the aggregates are offered in Aggregate mode.
+  await editorRow.getByRole('radio', { name: 'Aggregate' }).click();
+  await waitForQueriesToFinish(page);
+
+  const durations = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.aggregates?.[0] === 'stateDuration'
+  );
+  const aggregationInput = editorRow.locator('input[id="aggregation-A"]');
+  await aggregationInput.click();
+  await aggregationInput.fill('State duration');
+  await aggregationInput.press('Enter');
+  const response = await durations;
+  expect(response.status()).toBe(200);
+  expect((await response.json()).items[0].type).toBe('state');
+});
+
+test('"CogniteTimeSeries" a string series shows its type and is read raw', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
+  const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
+    readProvisionedDataSource,
+    readProvisionedDashboard,
+    gotoDashboardPage,
+    selectors,
+    page,
+    grafanaVersion,
+  });
+
+  // grafana-ts-fixtures:batch_phase, a string series of batch phases.
+  const read = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/timeseries/data/list') &&
+      response.request().postDataJSON()?.items?.[0]?.instanceId?.externalId === 'batch_phase'
+  );
+  await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, 'batch_phase');
+  const response = await read;
+
+  // Picking it swaps the default Average, which string series do not have, for raw values.
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON().aggregates).toBeUndefined();
+  await expect(editorRow.getByTestId('cognite-timeseries-type-A')).toHaveText('string');
+});
+
 test('"CogniteTimeSeries" unit conversion is available for timeseries with units', async ({ selectors, readProvisionedDataSource, gotoDashboardPage, readProvisionedDashboard, page, grafanaVersion }) => {
   const { panelEditPage, editorRow, option } = await setupCogniteTimeSeriesPanel({
     readProvisionedDataSource,
@@ -393,7 +531,7 @@ test('"CogniteTimeSeries" unit conversion is available for timeseries with units
   const unitLabel = editorRow.getByText(/Unit:/i);
   await expect(unitLabel).toBeVisible({ timeout: 10000 });
 
-  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  const targetUnitField = editorRow.locator('label:has-text("Target unit")');
   await expect(targetUnitField).toBeVisible();
 
   const targetUnitInput = targetUnitField.locator('..').locator('input').first();
@@ -429,7 +567,7 @@ test('"CogniteTimeSeries" unit conversion not shown for timeseries without units
   await expect(dropdownOption).not.toBeVisible();
 
   // Target Unit and Unit label should NOT appear for timeseries without units
-  const targetUnitField = editorRow.locator('label:has-text("Target Unit")');
+  const targetUnitField = editorRow.locator('label:has-text("Target unit")');
   await expect(targetUnitField).not.toBeVisible();
 
   const unitLabel = editorRow.getByText(/Unit:/i);
@@ -457,8 +595,8 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const queryLetter = String.fromCharCode(65 + index);
     const editorRow = panelEditPage.getQueryEditorRow(queryLetter);
 
-    // Wait for Time Series tab and click it
-    const timeSeriesTab = editorRow.getByText('Time Series', { exact: true });
+    // Wait for Time series tab and click it
+    const timeSeriesTab = editorRow.getByText('Time series', { exact: true }).first();
     await expect(timeSeriesTab).toBeVisible();
     await timeSeriesTab.click();
 
@@ -476,6 +614,8 @@ test('"CogniteTimeSeries" multiple queries work', async ({ selectors, readProvis
     const labelInput = editorRow.locator(`input[id="label-${queryLetter}"]`);
     await labelInput.clear();
     await labelInput.fill(`TST ${expectedLabels[index]}`);
+    // The label is applied when the field loses focus.
+    await labelInput.blur();
   }
 
   await waitForQueriesToFinish(page);
@@ -513,13 +653,13 @@ test('"CogniteTimeSeries" activities toggle appears when timeseries selected', a
   });
 
   // Activities toggle should NOT be visible yet (no timeseries selected)
-  const activitiesToggleBefore = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggleBefore = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggleBefore).not.toBeVisible();
 
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Now the Activities toggle should appear
-  const activitiesToggleAfter = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggleAfter = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggleAfter).toBeVisible({ timeout: 5000 });
 });
 
@@ -536,16 +676,16 @@ test('"CogniteTimeSeries" enabling activities shows configuration options', asyn
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await expect(activitiesToggle).toBeChecked();
 
   // Wait for activity configuration UI to render
-  const activityViewLabel = editorRow.getByText('View').nth(1);
+  const activityViewLabel = editorRow.getByText('Activity view', { exact: true });
   await expect(activityViewLabel).toBeVisible({ timeout: 5000 });
 
-  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  const scheduledToggle = editorRow.getByRole('radio', { name: 'Scheduled' });
   await expect(scheduledToggle).toBeVisible();
 });
 
@@ -562,19 +702,14 @@ test('"CogniteTimeSeries" can select activity view', async ({ selectors, readPro
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
-  // Wait for the second View field (activity view) to appear
-  const activityViewFields = editorRow.locator('label:has-text("View")');
-  await expect(activityViewFields.nth(1)).toBeVisible({ timeout: 5000 });
-
-  const activityViewCount = await activityViewFields.count();
-  expect(activityViewCount).toBeGreaterThanOrEqual(2);
-
-  const activityViewInput = activityViewFields.nth(1).locator('..').locator('input').first();
+  // The activity view field appears once the overlay is on.
+  const activityViewInput = editorRow.locator('#activity-view-A');
+  await expect(activityViewInput).toBeVisible({ timeout: 5000 });
   await activityViewInput.click();
 
   const activityViewOption = panelEditPage.getByGrafanaSelector(option).filter({ hasText: /CogniteActivity.*cdf_cdm/i });
@@ -598,19 +733,84 @@ test('"CogniteTimeSeries" scheduled time toggle works', async ({ selectors, read
   await searchAndSelectTimeSeries(page, editorRow, panelEditPage, option, '59.9139-10.7522-current.temp');
 
   // Enable activities (use JS click to bypass scroll-container viewport restrictions in older Grafana)
-  const activitiesToggle = editorRow.getByLabel('Activities').nth(1);
+  const activitiesToggle = editorRow.locator('#overlay-activities-A');
   await expect(activitiesToggle).toBeVisible({ timeout: 5000 });
   await activitiesToggle.evaluate((el) => (el as HTMLInputElement).click());
   await page.waitForTimeout(1000);
 
-  const scheduledToggle = editorRow.getByLabel('Scheduled').nth(1);
+  const scheduledToggle = editorRow.getByRole('radio', { name: 'Scheduled' });
   await expect(scheduledToggle).toBeVisible({ timeout: 5000 });
 
   await expect(scheduledToggle).not.toBeChecked();
 
-  await scheduledToggle.check({ force: true });
+  await scheduledToggle.click();
   await expect(scheduledToggle).toBeChecked();
 
-  await scheduledToggle.uncheck({ force: true });
+  await editorRow.getByRole('radio', { name: 'Actual' }).click();
   await expect(scheduledToggle).not.toBeChecked();
+});
+
+test('"GraphQL" query type plots its type and skips the others', async ({ readProvisionedDataSource, page }) => {
+  test.setTimeout(90_000);
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml', name: 'Cognite Data Fusion - Core Only' });
+  // Only the fixture spaces, which hold numeric, string and state time series, so the
+  // rows do not depend on whatever else the project holds.
+  const graphQlQuery = `{
+  listCogniteTimeSeries(first: 1000, filter: { space: { in: ["grafana-ts-fixtures", "state-ts-real-data"] } }) {
+    items { space externalId name type }
+  }
+}`;
+  const query = {
+    refId: 'A',
+    datasource: { type: ds.type, uid: ds.uid },
+    tab: 'Data Models',
+    aggregation: 'none',
+    flexibleDataModellingQuery: { externalId: 'CogniteCore', space: 'cdf_cdm', version: 'v1', graphQlQuery, tsKeys: [] },
+  };
+  const panes = { e2e: { datasource: ds.uid, queries: [query], range: { from: 'now-1y', to: 'now' } } };
+  const dataOfType = (type: string) =>
+    page.waitForResponse(
+      async (response) =>
+        response.url().endsWith('/timeseries/data/list') &&
+        response.ok() &&
+        (await response.json()).items?.[0]?.type === type
+    );
+
+  const numeric = dataOfType('numeric');
+  await page.goto(`/explore?schemaVersion=1&orgId=1&panes=${encodeURIComponent(JSON.stringify(panes))}`);
+  await numeric;
+
+  for (const [label, type] of [['String', 'string'], ['State', 'state']]) {
+    const data = dataOfType(type);
+    await page.getByRole('radio', { name: label }).click();
+    await data;
+    await expect(page.locator('.gf-formatted-warning')).toContainText(
+      new RegExp(`time series that (is|are) not ${type}`),
+      { timeout: 30000 }
+    );
+  }
+});
+
+test('"Activities" tab opens on the active activities with its default sort and columns', async ({ readProvisionedDataSource, readProvisionedDashboard, gotoDashboardPage, page, grafanaVersion }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
+  const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
+  const dashboardPage = await gotoDashboardPage(dashboard);
+  const panelEditPage = await addPanelHelper(dashboardPage, page, grafanaVersion);
+  await panelEditPage.datasource.set(ds.name);
+  const editorRow = panelEditPage.getQueryEditorRow('A');
+
+  const activitiesTab = editorRow.getByText('Activities', { exact: true });
+  await expect(activitiesTab).toBeVisible();
+  await activitiesTab.click();
+
+  await expect(editorRow.getByRole('radio', { name: 'Active in time range' })).toBeChecked();
+  await expect(editorRow.getByRole('radio', { name: 'Assets' })).toBeChecked();
+  // The default sort key, which also appears as a column chip.
+  await expect(editorRow.getByText('startTime', { exact: true }).first()).toBeVisible();
+  await expect(editorRow.locator('#activity-columns-A')).toBeVisible();
+  await expect(editorRow.locator('#cognite-activity-instances-A')).toBeVisible();
+
+  // The standard activity view is picked once the views load.
+  await expect(editorRow.getByText(/CogniteActivity.*cdf_cdm/i).first()).toBeVisible({ timeout: 10000 });
 });

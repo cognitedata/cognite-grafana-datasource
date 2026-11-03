@@ -43,7 +43,11 @@ jest.mock('@grafana/ui', () => {
 
 const SAVED_QUERY = 'query MyQuery { listCogniteTimeSeries { items { name } } }';
 
-const renderTab = (aggregation?: string, datasource = graphqlDatasourceStub()) => {
+const renderTab = (
+  aggregation?: string,
+  datasource = graphqlDatasourceStub(),
+  patch: { queryType?: string; latestValue?: boolean } = {}
+) => {
   const onQueryChange = jest.fn();
   render(
     <FlexibleDataModellingTab
@@ -51,6 +55,7 @@ const renderTab = (aggregation?: string, datasource = graphqlDatasourceStub()) =
         {
           ...defaultQuery,
           ...(aggregation ? { aggregation } : {}),
+          ...(patch.latestValue ? { latestValue: true } : {}),
           refId: 'A',
           flexibleDataModellingQuery: {
             space: 'sp',
@@ -58,6 +63,7 @@ const renderTab = (aggregation?: string, datasource = graphqlDatasourceStub()) =
             version: '1',
             graphQlQuery: SAVED_QUERY,
             tsKeys: ['_numeric_type'],
+            ...(patch.queryType ? { queryType: patch.queryType } : {}),
           },
         } as any
       }
@@ -191,15 +197,83 @@ describe('FlexibleDataModellingTab series options', () => {
     expect(onQueryChange).not.toHaveBeenCalled();
   });
 
-  it('applies the granularity on blur, not per keystroke', async () => {
+  it('switches the series type, and the aggregation to one that type has', async () => {
     const onQueryChange = renderTab('average');
-    const granularity = await screen.findByPlaceholderText('default');
     onQueryChange.mockClear();
-
-    fireEvent.change(granularity, { target: { value: '1h' } });
-    expect(onQueryChange).not.toHaveBeenCalled();
-
-    fireEvent.blur(granularity);
-    await waitFor(() => expect(onQueryChange).toHaveBeenCalledWith({ granularity: '1h' }));
+    fireEvent.click(await screen.findByLabelText('State'));
+    expect(onQueryChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        aggregation: 'none',
+        flexibleDataModellingQuery: expect.objectContaining({ queryType: 'state' }),
+      })
+    );
   });
+
+  it('keeps an aggregation the new series type also has', async () => {
+    const onQueryChange = renderTab('interpolation');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('String'));
+    expect(onQueryChange.mock.calls[0][0]).not.toHaveProperty('aggregation');
+  });
+
+  it('shows only the query type for Instances, which fetches no data points', async () => {
+    renderTab('average', undefined, { queryType: 'instances' });
+    expect((await screen.findByLabelText('Instances') as HTMLInputElement).checked).toBe(true);
+    expect(document.getElementById('aggregation-A')).toBeNull();
+    expect(screen.queryByLabelText('Latest')).toBeNull();
+    expect(document.getElementById('fdm-label-A')).toBeNull();
+  });
+
+  it('switches to Instances without touching the aggregation', async () => {
+    const onQueryChange = renderTab('average');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('Instances'));
+    expect(onQueryChange.mock.calls[0][0]).toEqual({
+      flexibleDataModellingQuery: expect.objectContaining({ queryType: 'instances' }),
+    });
+  });
+
+  it('switches to Latest, which hides the aggregation and gap filling', async () => {
+    const onQueryChange = renderTab('average');
+    onQueryChange.mockClear();
+    fireEvent.click(await screen.findByLabelText('Latest'));
+    expect(onQueryChange).toHaveBeenCalledWith({ latestValue: true });
+  });
+
+  it('opens on Latest, offering no aggregation, granularity or gap filling', async () => {
+    renderTab('average', undefined, { latestValue: true });
+    expect((await screen.findByLabelText('Latest') as HTMLInputElement).checked).toBe(true);
+    expect(document.getElementById('aggregation-A')).toBeNull();
+    expect(document.getElementById('granularity-A')).toBeNull();
+    expect(screen.queryByLabelText('Gap filling')).toBeNull();
+    expect(document.getElementById('fdm-label-A')).not.toBeNull();
+  });
+
+  it('opens a query without an aggregation on Raw, and Aggregate picks the type its first', async () => {
+    const onQueryChange = renderTab('none', undefined, { queryType: 'string' });
+    expect((await screen.findByLabelText('Raw') as HTMLInputElement).checked).toBe(true);
+    expect(document.getElementById('aggregation-A')).toBeNull();
+    onQueryChange.mockClear();
+    fireEvent.click(screen.getByLabelText('Aggregate'));
+    expect(onQueryChange).toHaveBeenCalledWith({ aggregation: 'interpolation' });
+  });
+
+  it('offers no None in the aggregation list: Raw is a mode of its own', async () => {
+    renderTab('average');
+    fireEvent.keyDown(await screen.findByRole('combobox', { name: 'Aggregation' }), { key: 'ArrowDown' });
+    expect(screen.queryByText('None')).toBeNull();
+    expect(screen.getAllByText('Average').length).toBeGreaterThan(0);
+  });
+
+  it('commits the label on blur, not per keystroke', async () => {
+    const onQueryChange = renderTab('average');
+    const input = (await screen.findByLabelText('Label - optional')) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '{{name}}' } });
+    expect(onQueryChange).not.toHaveBeenCalledWith(expect.objectContaining({ flexibleDataModellingQuery: expect.objectContaining({ label: '{{name}}' }) }));
+    fireEvent.blur(input);
+    expect(onQueryChange).toHaveBeenCalledWith(
+      expect.objectContaining({ flexibleDataModellingQuery: expect.objectContaining({ label: '{{name}}' }) })
+    );
+  });
+
 });

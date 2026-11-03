@@ -686,6 +686,29 @@ describe('Datasource Query', () => {
       ] as CogniteQuery[]);
       expect(result).toEqual([]);
     });
+
+    it('interpolates a saved synthetic time series query that has no variables', () => {
+      const { ds } = getDataSourceWithMocks({ fetch: jest.fn() } as any);
+      const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+      const target = {
+        refId: 'A',
+        tab: Tab.SyntheticTimeSeries,
+        cdmSyntheticQuery: { version: 2, view, expression: 'A' },
+      } as unknown as CogniteQuery;
+      expect((ds as any).replaceVariablesInTarget(target).cdmSyntheticQuery.variables).toEqual([]);
+    });
+
+    it('keeps a synthetic time series query with an expression, so missing variables report an error', () => {
+      const view = { space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+      const synthetic = (expression: string) =>
+        ({
+          refId: 'A',
+          tab: Tab.SyntheticTimeSeries,
+          cdmSyntheticQuery: { version: 2, view, variables: [], expression },
+        }) as unknown as CogniteQuery;
+      expect(filterEmptyQueryTargets([synthetic('A - B')])).toHaveLength(1);
+      expect(filterEmptyQueryTargets([synthetic('  ')])).toEqual([]);
+    });
   });
   describe('replaceVariable', () => {
     const fetcher = { fetch: jest.fn() };
@@ -834,5 +857,256 @@ describe('custom query granularity less then a second', () => {
     expect(
       (fetcher.fetch as Mock).mock.calls[1][0].data.items[0].expression
     ).toMatch('granularity="1s"}');
+  });
+
+  it('resolves a coarser auto step inside the expression', async () => {
+    fetcher.fetch = jest.fn().mockResolvedValueOnce(tsResponseWithId(1));
+    await ds.timeseriesDatasource.fetchTimeseriesForTargets(
+      [{ ...targetA, granularity: 'auto:fewer' }],
+      { ...options, intervalMs: ms('10m') }
+    );
+    // The time series lookup may be served from the cache, so read the last call.
+    const calls = (fetcher.fetch as Mock).mock.calls;
+    expect(calls[calls.length - 1][0].data.items[0].expression).toMatch('granularity="1h"}');
+  });
+});
+
+describe('Given a Time series (data modeling) query with gap filling', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const target = (gapFill: CogniteQuery['gapFill'], granularity = ''): QueryTargetLike => ({
+    refId: 'G',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'average',
+    granularity,
+    gapFill,
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId: { space: 'sp', externalId: 'tank_level' },
+    },
+  });
+  const respond = () =>
+    fetcher.fetch.mockImplementation(async ({ url }) =>
+      url.endsWith('/models/instances/byids')
+        ? getItemsResponseObject([])
+        : getItemsResponseObject([
+          { instanceId: { space: 'sp', externalId: 'tank_level' }, datapoints: [] },
+        ])
+    );
+  const datapointsRequest = () =>
+    fetcher.fetch.mock.calls.map(([request]) => request).find(({ url }) => url.endsWith('/timeseries/data/list'));
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('sends fill with each item, scaled from the panel interval', async () => {
+    respond();
+    await lastValueFrom(
+      ds.query({
+        ...options,
+        intervalMs: ms('30s'),
+        targets: [target({ mode: 'granularity', multiple: 4 })],
+      })
+    );
+    const request = datapointsRequest();
+    expect(request.data.granularity).toBe('30s');
+    expect(request.data.items).toEqual([
+      { instanceId: { space: 'sp', externalId: 'tank_level' }, fill: { limit: '2m' } },
+    ]);
+    expect(messageEmits()).toHaveLength(0);
+  });
+
+  it('warns on the query row when a fixed limit had to be raised', async () => {
+    respond();
+    await lastValueFrom(
+      ds.query({ ...options, targets: [target({ mode: 'duration', limit: '30m' }, '1h')] })
+    );
+    expect(datapointsRequest().data.items[0].fill).toEqual({ limit: '1h' });
+    expect(messageEmits()).toHaveLength(1);
+    expect(messageEmits()[0][1]).toEqual({
+      refId: 'G',
+      warning: expect.stringMatching(/Fill limit 30m is shorter than the granularity \(1h\)/),
+    });
+  });
+});
+
+describe('Given a string Time series (data modeling) query', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const instanceId = { space: 'grafana-ts-fixtures', externalId: 'batch_phase' };
+  const target = (patch: QueryTargetLike = {}): QueryTargetLike => ({
+    refId: 'S',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'none',
+    granularity: '',
+    label: '',
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId,
+    },
+    ...patch,
+  });
+  const t0 = +options.range.from;
+  const respond = (datapoints: any[]) =>
+    fetcher.fetch.mockImplementation(async ({ url, data }) =>
+      url.endsWith('/models/instances/byids')
+        ? getItemsResponseObject([
+          { ...instanceId, properties: { cdf_cdm: { 'CogniteTimeSeries/v1': { type: 'string' } } } },
+        ])
+        : { ...getItemsResponseObject([{ instanceId, isString: true, type: 'string', datapoints }]), config: { data } }
+    );
+  const run = async (patch: QueryTargetLike = {}) =>
+    (await lastValueFrom(ds.query({ ...options, panelId: `string-${patch.aggregation}`, targets: [target(patch)] }))).data;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns raw values as a text field', async () => {
+    respond([
+      { timestamp: t0, value: 'FILLING' },
+      { timestamp: t0 + 1000, value: '{"device":"edge-01"}' },
+    ]);
+    const [frame] = await run();
+    expect(frame.fields.map(({ name, type }) => [name, type])).toEqual([
+      ['Time', 'time'],
+      ['grafana-ts-fixtures:batch_phase', 'string'],
+    ]);
+    expect(frame.fields[1].values).toEqual(['FILLING', '{"device":"edge-01"}']);
+    expect(frame.fields[1].config.displayNameFromDS).toBe('grafana-ts-fixtures:batch_phase');
+  });
+
+  it('returns interpolated values as a text field', async () => {
+    respond([{ timestamp: t0, interpolation: 'HEATING' }]);
+    const [frame] = await run({ aggregation: 'interpolation' });
+    expect(frame.fields[1].type).toBe('string');
+    expect(frame.fields[1].values).toEqual(['HEATING']);
+  });
+
+  it('returns counts as numbers and durations in milliseconds', async () => {
+    respond([{ timestamp: t0, durationGood: 3_600_000 }]);
+    const [series] = await run({ aggregation: 'durationGood' });
+    expect(series).toEqual({ target: 'grafana-ts-fixtures:batch_phase', datapoints: [[3_600_000, t0]], unit: 'ms' });
+  });
+
+  it('fails the query when the aggregation is one string series do not have', async () => {
+    respond([]);
+    const data = await run({ aggregation: 'average' });
+    expect(data).toEqual([]);
+    expect(fetcher.fetch.mock.calls.some(([{ url }]) => url.endsWith('/timeseries/data/list'))).toBe(false);
+    expect(messageEmits()[0][1]).toEqual({
+      refId: 'S',
+      error: expect.stringContaining('Average is not available for string time series'),
+    });
+  });
+});
+
+describe('Given a state Time series (data modeling) query', () => {
+  const fetcher = { fetch: jest.fn() };
+  const ds = getMockedDataSource(fetcher);
+  const instanceId = { space: 'state-ts-real-data', externalId: 'wind_turbine_status' };
+  const stateSetRef = { space: 'state-ts-real-data', externalId: 'wind_turbine_ops' };
+  const t0 = +options.range.from;
+  const target = (patch: QueryTargetLike = {}): QueryTargetLike => ({
+    refId: 'T',
+    tab: Tab.CogniteTimeSeriesSearch,
+    aggregation: 'none',
+    granularity: '1h',
+    label: '',
+    cogniteTimeSeries: {
+      space: 'cdf_cdm',
+      externalId: 'CogniteTimeSeries',
+      version: 'v1',
+      instanceId,
+    },
+    ...patch,
+  });
+  const respond = (datapoints: any[]) =>
+    fetcher.fetch.mockImplementation(async ({ url, data }) => {
+      if (url.endsWith('/models/instances/byids')) {
+        const view = data.sources[0].source.externalId;
+        return getItemsResponseObject([
+          view === 'CogniteStateSet'
+            ? {
+              ...stateSetRef,
+              properties: {
+                cdf_cdm: {
+                  'CogniteStateSet/v1': {
+                    states: [
+                      { numericValue: 1, stringValue: 'AVAILABLE' },
+                      { numericValue: 0, stringValue: 'RUNNING' },
+                    ],
+                  },
+                },
+              },
+            }
+            : {
+              ...instanceId,
+              properties: {
+                cdf_cdm: {
+                  'CogniteTimeSeries/v1': { name: 'Turbine 1', type: 'state', stateSet: stateSetRef },
+                },
+              },
+            },
+        ]);
+      }
+      if (url.endsWith('/models/views/byids')) {
+        return getItemsResponseObject([{ properties: { name: {} } }]);
+      }
+      return { ...getItemsResponseObject([{ instanceId, type: 'state', datapoints }]), config: { data } };
+    });
+  const datapointsRequest = () =>
+    fetcher.fetch.mock.calls.map(([request]) => request).find(({ url }) => url.endsWith('/timeseries/data/list'));
+  const run = async (patch: QueryTargetLike = {}) =>
+    (await lastValueFrom(ds.query({ ...options, panelId: `state-${patch.aggregation}`, targets: [target(patch)] }))).data;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('labels raw states from the state set', async () => {
+    respond([{ timestamp: t0, numericValue: 1, stringValue: 'AVAILABLE' }]);
+    const [frame] = await run();
+    expect(frame.fields[1].values).toEqual([1]);
+    expect(frame.fields[1].config.mappings[0].options).toEqual({
+      '0': { text: 'RUNNING', index: 0 },
+      '1': { text: 'AVAILABLE', index: 1 },
+    });
+  });
+
+  it('requests Most time in state as stateDuration', async () => {
+    respond([
+      {
+        timestamp: t0,
+        stateAggregates: [
+          { numericValue: 0, stringValue: 'RUNNING', stateDuration: 10 },
+          { numericValue: 1, stringValue: 'AVAILABLE', stateDuration: 50 },
+        ],
+      },
+    ]);
+    const [frame] = await run({ aggregation: 'dominantState' });
+    expect(datapointsRequest().data.aggregates).toEqual(['stateDuration']);
+    expect(frame.fields[1].values).toEqual([1]);
+  });
+
+  it('returns a series per state, named through a {{state}} label', async () => {
+    respond([
+      {
+        timestamp: t0,
+        stateAggregates: [
+          { numericValue: 1, stringValue: 'AVAILABLE', stateCount: 2 },
+          { numericValue: 0, stringValue: 'RUNNING', stateCount: 1 },
+        ],
+      },
+    ]);
+    const frames = await run({ aggregation: 'stateCount', label: '{{name}} {{state}}' });
+    expect(datapointsRequest().data.aggregates).toEqual(['stateCount']);
+    expect(frames.map((f) => f.name)).toEqual(['Turbine 1 RUNNING', 'Turbine 1 AVAILABLE']);
+    expect(frames.map((f) => f.fields[1].values)).toEqual([[1], [2]]);
   });
 });

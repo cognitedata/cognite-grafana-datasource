@@ -3,6 +3,7 @@ import { InlineField, InlineFieldRow, Input, Select, TextLink } from '@grafana/u
 import { SelectableValue } from '@grafana/data';
 import { variableValueOptions } from '../../constants';
 import { FormattedMessage, Keyword } from '../common/Styled';
+import { DeprecationNotice } from '../common/DeprecationNotice';
 
 const assetsHelp = (
   <pre>
@@ -63,6 +64,7 @@ export const AssetsVariableTab = ({
   onBlur,
 }: AssetsVariableTabProps) => (
   <div>
+    <DeprecationNotice replacement="Use the GraphQL tab to build variables from a data model instead." />
     <InlineFieldRow>
       <InlineField label="Query" labelWidth={10} htmlFor="assets-variable-query" grow>
         <Input

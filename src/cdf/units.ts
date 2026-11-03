@@ -24,6 +24,25 @@ export function unitDisplayName(
   return unit.symbol ? `${name} (${unit.symbol})` : name;
 }
 
+/**
+ * Whether a target unit can still convert a series stored in `storageUnit`: both
+ * must measure the same quantity. A series without a unit (every string or state
+ * series among them) cannot be converted at all. When the catalog cannot place
+ * either unit (not loaded yet, say), the target unit is kept: CDF still checks it.
+ */
+export function targetUnitApplies(
+  targetUnit: string | undefined,
+  storageUnit: string | undefined,
+  unitIndex: Map<string, CogniteUnit>
+): boolean {
+  if (!targetUnit || !storageUnit) {
+    return false;
+  }
+  const quantity = unitIndex.get(storageUnit)?.quantity;
+  const targetQuantity = unitIndex.get(targetUnit)?.quantity;
+  return !quantity || !targetQuantity || quantity === targetQuantity;
+}
+
 /** Badge text for the unit a property is stored in, before any conversion. */
 export const storageUnitLabel = (
   unitExternalId?: string,
@@ -48,7 +67,7 @@ export function unitSymbol(
  * Appends the unit to a field name, e.g. "ActiveDuration (day)".
  *
  * The unit rides on the column/series label rather than `field.config.unit` so the
- * values stay bare numbers, matching how the Time Series tab labels its series.
+ * values stay bare numbers, matching how the Time series tab labels its series.
  */
 export function withUnitSuffix(
   name: string,

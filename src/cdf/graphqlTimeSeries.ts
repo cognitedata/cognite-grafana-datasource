@@ -36,6 +36,17 @@ export const NUMERIC_TYPE_KEY = '_numeric_type';
 
 const TIME_SERIES_TYPE = 'CogniteTimeSeries';
 
+/**
+ * The GraphQL tab fetches each series in a request of its own, under a refId of
+ * its own so the requests do not cancel each other. Errors and warnings raised
+ * for one of them belong to the panel query row it came from.
+ */
+export const graphqlSeriesRefId = (refId: string, index: number) => `${refId}_fdm_${index}`;
+
+/** Whether a message raised for `messageRefId` is for the query row `rowRefId`. */
+export const isMessageForRow = (messageRefId: string, rowRefId: string) =>
+  messageRefId === rowRefId || messageRefId.startsWith(`${rowRefId}_fdm_`);
+
 /** The core time series type, or a model type that extends it. */
 export const isTimeSeriesType = (type: GraphQLNamedType | null | undefined): boolean => {
   if (!type) {

@@ -41,6 +41,17 @@ export interface DMSFilter {
     lte?: any;
     lt?: any;
   };
+  prefix?: {
+    property: string[];
+    value: string;
+  };
+  exists?: {
+    property: string[];
+  };
+  containsAny?: {
+    property: string[];
+    values: any[];
+  };
   inSpace?: string;
 }
 
@@ -137,6 +148,9 @@ export interface ViewRef {
   externalId: string;
   version: string;
 }
+
+/** A view reference in the wire form sources take. */
+export type DMSViewReference = ViewRef & { type: 'view' };
 
 // Container inspect API types
 export type InvolvedView = ViewRef;

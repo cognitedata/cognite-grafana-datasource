@@ -1,27 +1,21 @@
-import React, { ChangeEvent } from 'react';
-import { InlineField, InlineSegmentGroup, InlineFieldRow, Input, Select } from '@grafana/ui';
+import React from 'react';
+import { InlineField, InlineSegmentGroup, InlineFieldRow, Select } from '@grafana/ui';
+import { SelectableValue } from '@grafana/data';
 import { SelectedProps } from '../types';
+import { NUMERIC_AGGREGATES } from '../cdf/aggregates';
+import { GranularityPicker, granularityInputId } from './common/GranularityPicker';
+import { BlurInput } from './records/BlurInput';
 
 /** Shared with the GraphQL tab's own options row. */
 export const GRANULARITY_TOOLTIP =
-  `The granularity of the aggregate values. Use: 'day' (or 'd'), 'hour' (or 'h'), 'minute' (or 'm'), 'second' (or 's'). Example: 12h.`;
+  'The width of each aggregate interval. Auto follows the time range: Standard gives about one interval ' +
+  'per pixel of the panel, Fewer points intervals about 4 times wider, so a quarter as many points are fetched ' +
+  'and drawn and a dashboard with many time series loads faster. Fixed takes a value: ' +
+  `'second' (or 's'), 'minute' (or 'm'), 'hour' (or 'h'), 'day' (or 'd'), 'month' (or 'mo'). Example: 12h.`;
 
-export const aggregateOptions = [
-  { value: 'none', label: 'None' },
-  { value: 'average', label: 'Average' },
-  { value: 'max', label: 'Max' },
-  { value: 'min', label: 'Min' },
-  { value: 'count', label: 'Count' },
-  { value: 'sum', label: 'Sum' },
-  { value: 'interpolation', label: 'Interpolation' },
-  { value: 'stepInterpolation', label: 'Step Interpolation' },
-  { value: 'continuousVariance', label: 'Continuous Variance' },
-  { value: 'discreteVariance', label: 'Discrete Variance' },
-  { value: 'totalVariation', label: 'Total Variation' },
-];
+export const aggregateOptions = NUMERIC_AGGREGATES;
 
-const GranularityEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+const GranularityEditor = ({ query, onQueryChange, intervalMs }: SelectedProps & { intervalMs?: number }) => {
   return (
     query.aggregation &&
     query.aggregation !== 'none' && (
@@ -30,13 +24,14 @@ const GranularityEditor = (props: SelectedProps) => {
           label="Granularity"
           labelWidth={14}
           tooltip={GRANULARITY_TOOLTIP}
+          // The picker is wrapped with its badge, so the label is pointed at the control shown.
+          htmlFor={granularityInputId(query.refId, query.granularity)}
         >
-          <Input
+          <GranularityPicker
+            refId={query.refId}
             value={query.granularity}
-            id={`granularity-${query.refId}`}
-            width={12}
-            placeholder="default"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ granularity: e.target.value })}
+            intervalMs={intervalMs}
+            onChange={(granularity) => onQueryChange({ granularity })}
           />
         </InlineField>
       </InlineSegmentGroup>
@@ -44,8 +39,10 @@ const GranularityEditor = (props: SelectedProps) => {
   );
 };
 
-const AggregationEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+const AggregationEditor = (
+  props: SelectedProps & { options?: Array<SelectableValue<string>> }
+) => {
+  const { query, onQueryChange, options = aggregateOptions } = props;
   return (
     <InlineFieldRow>
       <InlineField
@@ -55,45 +52,78 @@ const AggregationEditor = (props: SelectedProps) => {
         <Select
           inputId={`aggregation-${query.refId}`}
           onChange={({ value }) => onQueryChange({ aggregation: value })}
-          options={aggregateOptions}
+          options={options}
           menuPosition="fixed"
           value={query.aggregation}
-          width={24}
+          // Wide enough for the option descriptions to read on one or two lines.
+          width={36}
         />
       </InlineField>
     </InlineFieldRow>
   );
 };
 
-export const LabelEditor = (props: SelectedProps) => {
-  const { query, onQueryChange } = props;
+export const LABEL_TOOLTIP =
+  'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.';
+
+/** How a label names the time series of each state; shared with the GraphQL tab's own tooltip. */
+export const STATE_LABEL_TOOLTIP_SUFFIX =
+  'For State duration, State count and State transitions, {{state}} places each state in the label; without it, the state is appended.';
+
+/** The Time series tab's label tooltip, which also names each state's series. */
+export const STATE_LABEL_TOOLTIP = `${LABEL_TOOLTIP} ${STATE_LABEL_TOOLTIP_SUFFIX}`;
+
+export const LabelEditor = (
+  props: SelectedProps & { tooltip?: string; labelWidth?: number; width?: number }
+) => {
+  const { query, onQueryChange, tooltip = LABEL_TOOLTIP, labelWidth = 10, width = 40 } = props;
   return (
     <InlineSegmentGroup>
       <InlineField
         label="Label"
-        labelWidth={10}
-        tooltip={
-          'Label for each time series. Can also access time series properties via {{property}}, e.g. {{description}}-{{metadata.key}}.'
-        }
+        labelWidth={labelWidth}
+        tooltip={tooltip}
       >
-        <Input
+        {/* Committed on blur: every change to the query re-runs it. */}
+        <BlurInput
           id={`label-${query.refId}`}
-          value={query.label}
-          width={40}
+          value={query.label ?? ''}
+          width={width}
           placeholder="default"
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange({ label: e.target.value })}
+          onCommit={(label) => onQueryChange({ label })}
         />
       </InlineField>
     </InlineSegmentGroup>
   );
 };
 
+/**
+ * The label on a row of its own, below everything else on the tab: it names whatever
+ * the rows above produce, raw, aggregated or latest.
+ */
+export const LabelRow = (props: SelectedProps & { tooltip?: string }) => (
+  <InlineFieldRow>
+    <LabelEditor {...props} labelWidth={14} width={64} />
+  </InlineFieldRow>
+);
+
 export const CommonEditors = (
-  { onQueryChange, query, hideAggregation }: SelectedProps & { hideAggregation?: boolean }
+  {
+    onQueryChange,
+    query,
+    intervalMs,
+    aggregateOptions: options,
+    hideLabel,
+  }: SelectedProps & {
+    intervalMs?: number;
+    aggregateOptions?: Array<SelectableValue<string>>;
+    /** For a tab that places the label on a row of its own. */
+    hideLabel?: boolean;
+  }
 ) => (
   <InlineFieldRow>
-    {!hideAggregation && <AggregationEditor {...{ onQueryChange, query }} />}
-    <GranularityEditor {...{ onQueryChange, query }} />
-    <LabelEditor {...{ onQueryChange, query }} />
+    <AggregationEditor {...{ onQueryChange, query, options }} />
+    <GranularityEditor {...{ onQueryChange, query, intervalMs }} />
+    {!hideLabel && <LabelEditor {...{ onQueryChange, query }} />}
   </InlineFieldRow>
 );

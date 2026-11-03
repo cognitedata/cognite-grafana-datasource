@@ -35,10 +35,16 @@ export interface GraphqlExample {
 interface GraphqlExamplesModalProps {
   title: string;
   examples: GraphqlExample[];
+  /** The button's text; "Examples" unless set. */
+  buttonLabel?: string;
 }
 
 /** An Examples button and the dialog of worked examples it opens. */
-export const GraphqlExamplesModal = ({ title, examples }: GraphqlExamplesModalProps) => {
+export const GraphqlExamplesModal = ({
+  title,
+  examples,
+  buttonLabel = 'Examples',
+}: GraphqlExamplesModalProps) => {
   const styles = useStyles2(getStyles);
   const [isOpen, setIsOpen] = useState(false);
   const toggle = () => setIsOpen((open) => !open);
@@ -46,7 +52,7 @@ export const GraphqlExamplesModal = ({ title, examples }: GraphqlExamplesModalPr
   return (
     <>
       <Button variant="secondary" size="sm" icon="question-circle" onClick={toggle}>
-        Examples
+        {buttonLabel}
       </Button>
       <Modal title={title} className={styles.modal} isOpen={isOpen} onDismiss={toggle}>
         <div>

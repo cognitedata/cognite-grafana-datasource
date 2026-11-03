@@ -10,6 +10,7 @@ test('annotation query in provisioned dashboard should return a 200 response', a
   }) => {
     const dashboard = await readProvisionedDashboard({ fileName: 'weather-station.json' });
     const annotationEditPage = await gotoAnnotationEditPage({ dashboard, id: '1' });
+    await expect(page.getByText('Asset-centric features are deprecated')).toBeVisible();
     
     // Try modern button first, fallback to legacy button
     try {

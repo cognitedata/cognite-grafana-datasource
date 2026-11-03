@@ -23,6 +23,8 @@ import {
 import { interpolateInstanceRefs } from "./cdf/graphqlInstanceRefs";
 import { splitTopLevel } from "./cdf/instanceRef";
 import { isAutoInterval } from "./cdf/records";
+import { interpolateCdmSyntheticQuery, normalizeCdmSyntheticQuery } from "./cdf/syntheticTimeSeries";
+import { interpolateFilterVariables } from "./cdf/filterVariables";
 import { clearQueryMessages } from "./appEventHandler";
 import { CogniteVariableSupport } from "./variableSupport";
 import {
@@ -345,6 +347,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       flexibleDataModellingQuery,
       templateQuery,
       cogniteTimeSeries,
+      gapFill,
     } = target;
 
     const [
@@ -357,6 +360,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       flexibleDataModellinggraphQlQueryTemplated,
       cogniteTimeSeriesTargetUnitTemplated,
       cogniteTimeSeriesTargetUnitSystemTemplated,
+      gapFillLimitTemplated,
     ] = this.replaceVariablesArr(
       [
         expr,
@@ -375,6 +379,7 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           ),
         cogniteTimeSeries?.targetUnit,
         cogniteTimeSeries?.targetUnitSystem,
+        gapFill?.limit,
       ],
       scopedVars,
     );
@@ -422,6 +427,9 @@ export default class CogniteDatasource extends DataSourceWithBackend<
         targetUnitSystem: cogniteTimeSeriesTargetUnitSystemTemplated,
       },
     };
+    const templatedGapFill = gapFill?.limit
+      ? { gapFill: { ...gapFill, limit: gapFillLimitTemplated } }
+      : undefined;
     // Every panel query carries a default recordsQuery, so only a Records target's
     // is interpolated.
     const templatedRecordsQuery =
@@ -430,6 +438,23 @@ export default class CogniteDatasource extends DataSourceWithBackend<
           recordsQuery: this.interpolateRecordsQuery(
             target.recordsQuery,
             scopedVars,
+          ),
+        }
+        : undefined;
+    // Same reason as recordsQuery: every query carries the default sub-object.
+    const templatedCdmSyntheticQuery =
+      target.tab === Tab.SyntheticTimeSeries && target.cdmSyntheticQuery
+        ? {
+          cdmSyntheticQuery: interpolateCdmSyntheticQuery(
+            normalizeCdmSyntheticQuery(target.cdmSyntheticQuery),
+            (value) => this.replaceVariable(value, scopedVars),
+            // Instance-reference variables become filter syntax before Grafana
+            // pastes the remaining variables in verbatim.
+            (filter) =>
+              this.replaceVariable(
+                interpolateFilterVariables(filter, this.templateSrv, scopedVars),
+                scopedVars,
+              ),
           ),
         }
         : undefined;
@@ -442,6 +467,8 @@ export default class CogniteDatasource extends DataSourceWithBackend<
       ...templatedflexibleDataModellingQuery,
       ...templatedCogniteTimeSeries,
       ...templatedRecordsQuery,
+      ...templatedCdmSyntheticQuery,
+      ...templatedGapFill,
       query: queryTemplated,
       expr: exprTemplated,
       label: labelTemplated,
@@ -687,6 +714,11 @@ export function filterEmptyQueryTargets(
           return !!target.cogniteActivityTabQuery?.assetInstances?.length;
         case Tab.Records:
           return !!target.recordsQuery?.view?.streamId;
+        case Tab.SyntheticTimeSeries:
+          return (
+            !!target.cdmSyntheticQuery?.expression?.trim() &&
+            !!target.cdmSyntheticQuery?.view?.externalId
+          );
         case Tab.DataModellingV2:
           return true;
         case Tab.ExtractionPipelines:
@@ -743,6 +775,7 @@ function groupTargets(targets: CogniteQuery[]) {
       ...(groupedByTab[Tab.Asset] ?? []),
       ...(groupedByTab[Tab.Custom] ?? []),
       ...(groupedByTab[Tab.CogniteTimeSeriesSearch] ?? []),
+      ...(groupedByTab[Tab.SyntheticTimeSeries] ?? []),
     ],
   };
 }

@@ -1,4 +1,5 @@
 import defaults from 'lodash/defaults';
+import mapValues from 'lodash/mapValues';
 import React, { useState, useEffect } from 'react';
 import {
   Tab,
@@ -13,7 +14,7 @@ import {
   InlineSwitch,
   useTheme2,
 } from '@grafana/ui';
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
 import CogniteDatasource, { resource2DropdownOption } from '../datasource';
 import {
@@ -28,6 +29,7 @@ import {
 } from '../types';
 import { ResourceSelect } from './resourceSelect';
 import '../css/query_editor.css';
+import { DEPRECATED_CHIP_TEXT, DeprecatedChip, DeprecationNotice } from './common/DeprecationNotice';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
@@ -35,7 +37,8 @@ import { FlexibleDataModellingTab } from './flexibleDataModellingTab';
 import { CogniteTimeSeriesSearchTab } from './cogniteTimeSeriesSearchTab';
 import { CogniteActivityTab } from './cogniteActivityTab';
 import { RecordsTab } from './recordsTab';
-import { CommonEditors, LabelEditor } from './commonEditors';
+import { SyntheticTimeSeriesTab } from './syntheticTimeSeriesTab';
+import { CommonEditors, LabelRow } from './commonEditors';
 import { EventsTab } from './eventsTab';
 import { useQueryMessages } from './useQueryMessages';
 import { FormattedMessage } from './common/Styled';
@@ -126,8 +129,12 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
 
   return (
     <InlineFieldRow>
-      <InlineFormLabel htmlFor={`include-relationships-${query.refId}`} tooltip="Fetch time series related to the asset" width={12}>
-        Include relationships
+      <InlineFormLabel
+        htmlFor={`include-relationships-${query.refId}`}
+        tooltip="Fetch time series related to the asset. Relationships are deprecated along with the other asset-centric APIs."
+        width={18}
+      >
+        Include relationships (deprecated)
       </InlineFormLabel>
       <InlineSwitch
         label='Include relationships'
@@ -138,8 +145,8 @@ const IncludeRelationshipsCheckbox = (props: SelectedProps) => {
     </InlineFieldRow>
   );
 };
-function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
-  const { query, datasource, onQueryChange } = props;
+function AssetTab(props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }) {
+  const { query, datasource, onQueryChange, intervalMs } = props;
 
   const [current, setCurrent] = useState<SelectableValue<string>>({
     value: query.assetQuery.target,
@@ -186,48 +193,47 @@ function AssetTab(props: SelectedProps & { datasource: CogniteDatasource }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.externalId, query.assetQuery.withRelationships]);
   return (
-    <InlineFieldRow>
-      <InlineField
-        label="Asset Tag"
-        labelWidth={14}
-        tooltip="Search asset by name/description"
-      >
-        <AsyncSelect
-          loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
-          value={current}
-          defaultOptions
-          inputId={`asset-select-dropdown-${query.refId}`}
-          data-testid='asset-select-dropdown'
-          placeholder="Search asset by name/description"
-          width={40}
-          allowCustomValue
-          onChange={setCurrent}
-        />
-      </InlineField>
-      <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
-      <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
-      <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {query.latestValue ? (
-        <LabelEditor {...{ onQueryChange, query }} />
-      ) : (
-        <CommonEditors {...{ query, onQueryChange }} />
-      )}
-      <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
-      {query.assetQuery.withRelationships && (
-        <RelationshipsTab
-          {...{
-            query,
-            datasource,
-            onQueryChange,
-            queryBinder: 'assetQuery',
-          }}
-        />
-      )}
-    </InlineFieldRow>
+    <>
+      <InlineFieldRow>
+        <InlineField
+          label="Asset Tag"
+          labelWidth={14}
+          tooltip="Search asset by name/description"
+        >
+          <AsyncSelect
+            loadOptions={(query) => datasource.getOptionsForDropdown(query, 'Asset')}
+            value={current}
+            defaultOptions
+            inputId={`asset-select-dropdown-${query.refId}`}
+            data-testid='asset-select-dropdown'
+            placeholder="Search asset by name/description"
+            width={40}
+            allowCustomValue
+            onChange={setCurrent}
+          />
+        </InlineField>
+        <IncludeSubAssetsCheckbox {...{ onQueryChange, query }} />
+        <IncludeTimeseriesCheckbox {...{ onQueryChange, query }} />
+        <LatestValueCheckbox {...{ query, onQueryChange }} />
+        {!query.latestValue && <CommonEditors {...{ query, onQueryChange, intervalMs }} hideLabel />}
+        <IncludeRelationshipsCheckbox {...{ onQueryChange, query }} />
+        {query.assetQuery.withRelationships && (
+          <RelationshipsTab
+            {...{
+              query,
+              datasource,
+              onQueryChange,
+              queryBinder: 'assetQuery',
+            }}
+          />
+        )}
+      </InlineFieldRow>
+      <LabelRow {...{ onQueryChange, query }} />
+    </>
   );
 }
-function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource }) {
-  const { query, datasource, onQueryChange } = props;
+function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }) {
+  const { query, datasource, onQueryChange, intervalMs } = props;
   return (
     <div>
       <ResourceSelect
@@ -240,16 +246,13 @@ function TimeseriesTab(props: SelectedProps & { datasource: CogniteDatasource })
         }}
       />
       <LatestValueCheckbox {...{ query, onQueryChange }} />
-      {query.latestValue ? (
-        <LabelEditor {...{ onQueryChange, query }} />
-      ) : (
-        <CommonEditors {...{ query, onQueryChange }} />
-      )}
+      {!query.latestValue && <CommonEditors {...{ query, onQueryChange, intervalMs }} hideLabel />}
+      <LabelRow {...{ onQueryChange, query }} />
     </div>
   );
 }
-function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
-  const { query, onQueryChange } = props;
+function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { intervalMs?: number }) {
+  const { query, onQueryChange, intervalMs } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.expr);
 
@@ -274,7 +277,8 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
           <Button variant="secondary" icon="question-circle" onClick={() => setShowHelp(!showHelp)} />
         </InlineField>
       </InlineFieldRow>
-      <CommonEditors {...{ onQueryChange, query }} />
+      <CommonEditors {...{ onQueryChange, query, intervalMs }} hideLabel />
+      <LabelRow {...{ onQueryChange, query }} />
       {showHelp && <CustomQueryHelp onDismiss={() => setShowHelp(false)} />}
     </>
   );
@@ -284,29 +288,57 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'>) {
  * only place a tab can carry one.
  */
 export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
-  [Tabs.Templates]: 'Preview',
-  [Tabs.ExtractionPipelines]: 'Preview',
+  [Tabs.Timeseries]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Asset]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Custom]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Event]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Relationships]: DEPRECATED_CHIP_TEXT,
+  [Tabs.Templates]: DEPRECATED_CHIP_TEXT,
+  [Tabs.ExtractionPipelines]: DEPRECATED_CHIP_TEXT,
   [Tabs.Records]: 'Alpha',
+  [Tabs.SyntheticTimeSeries]: 'Alpha',
 };
 
-const tabSuffix = (
-  tab: Tabs,
-  showingDisabledTab: boolean,
-  theme: GrafanaTheme2
-): (() => JSX.Element) | undefined => {
+/**
+ * What to use instead, for each tab running on the deprecated asset-centric APIs.
+ * Templates and Extraction Pipelines are deprecated on their own terms, so they carry
+ * the chip without the banner.
+ */
+export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
+  [Tabs.Timeseries]: 'Use the Time series tab instead.',
+  [Tabs.Asset]: 'Use the GraphQL tab to plot the time series of an asset instead.',
+  [Tabs.Custom]: 'Use the Synthetic time series tab instead.',
+  [Tabs.Event]: 'Use the Records or Activities tab instead.',
+  [Tabs.Relationships]: 'Use the GraphQL tab instead.',
+};
+
+type TabSuffixComponent = React.ComponentType<{ className?: string }>;
+
+function DisabledTabSuffix() {
+  const theme = useTheme2();
+  return (
+    <p className="preview-label" style={{ color: theme.colors.error.text }}>
+      Disabled
+    </p>
+  );
+}
+
+const SUFFIX_COMPONENTS: Partial<Record<Tabs, TabSuffixComponent>> = mapValues(
+  TAB_SUFFIX_TEXT,
+  (text) =>
+    text === DEPRECATED_CHIP_TEXT
+      ? DeprecatedChip
+      : () => <p className="preview-label">{text}</p>
+);
+
+const tabSuffix = (tab: Tabs, showingDisabledTab: boolean): TabSuffixComponent | undefined => {
   if (showingDisabledTab) {
-    return () => (
-      <p className="preview-label" style={{ color: theme.colors.error.text }}>
-        Disabled
-      </p>
-    );
+    return DisabledTabSuffix;
   }
-  const text = TAB_SUFFIX_TEXT[tab];
-  return text ? () => <p className="preview-label">{text}</p> : undefined;
+  return SUFFIX_COMPONENTS[tab];
 };
 
 export function QueryEditor(props: EditorProps) {
-  const theme = useTheme2();
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
@@ -360,15 +392,24 @@ export function QueryEditor(props: EditorProps) {
               active={activeTab === t}
               onChangeTab={onSelectTab(t)}
               style={{ display: 'flex' }}
-              suffix={tabSuffix(t, showingDisabledTab, theme)}
+              suffix={tabSuffix(t, showingDisabledTab)}
             />
           );
         })}
       </TabsBar>
       <TabContent>
-        {activeTab === Tabs.Asset && <AssetTab {...{ onQueryChange, query, datasource }} />}
-        {activeTab === Tabs.Timeseries && <TimeseriesTab {...{ onQueryChange, query, datasource }} />}
-        {activeTab === Tabs.Custom && <CustomTab {...{ onQueryChange, query, onRunQuery }} />}
+        {ASSET_CENTRIC_REPLACEMENTS[activeTab] && (
+          <DeprecationNotice replacement={ASSET_CENTRIC_REPLACEMENTS[activeTab]} />
+        )}
+        {activeTab === Tabs.Asset && (
+          <AssetTab {...{ onQueryChange, query, datasource }} intervalMs={props.data?.request?.intervalMs} />
+        )}
+        {activeTab === Tabs.Timeseries && (
+          <TimeseriesTab {...{ onQueryChange, query, datasource }} intervalMs={props.data?.request?.intervalMs} />
+        )}
+        {activeTab === Tabs.Custom && (
+          <CustomTab {...{ onQueryChange, query, onRunQuery }} intervalMs={props.data?.request?.intervalMs} />
+        )}
         {activeTab === Tabs.Event && <EventsTab {...{ onQueryChange, query, onRunQuery, datasource }} />}
         {activeTab === Tabs.Relationships && (
           <RelationshipsTab {...{ query, datasource, onQueryChange, queryBinder: null }} />
@@ -380,10 +421,16 @@ export function QueryEditor(props: EditorProps) {
           <TemplatesTab {...{ onQueryChange, query, onRunQuery, datasource }} />
         )}
         {activeTab === Tabs.FlexibleDataModelling && (
-          <FlexibleDataModellingTab {...{ onQueryChange, query, datasource }} />
+          <FlexibleDataModellingTab
+            {...{ onQueryChange, query, datasource }}
+            intervalMs={props.data?.request?.intervalMs}
+          />
         )}
         {activeTab === Tabs.CogniteTimeSeriesSearch && (
-          <CogniteTimeSeriesSearchTab {...{ onQueryChange, query, connector: datasource.connector }} />
+          <CogniteTimeSeriesSearchTab
+            {...{ onQueryChange, query, connector: datasource.connector }}
+            intervalMs={props.data?.request?.intervalMs}
+          />
         )}
         {activeTab === Tabs.CogniteActivity && (
           <CogniteActivityTab {...{ onQueryChange, query, connector: datasource.connector }} />
@@ -399,6 +446,14 @@ export function QueryEditor(props: EditorProps) {
                 datasource.interpolateRecordsQuery(recordsQuery, props.data?.request?.scopedVars),
               maxDataPoints: props.data?.request?.maxDataPoints,
             }}
+          />
+        )}
+        {activeTab === Tabs.SyntheticTimeSeries && (
+          <SyntheticTimeSeriesTab
+            {...{ onQueryChange, query, connector: datasource.connector }}
+            intervalMs={props.data?.request?.intervalMs}
+            range={props.range}
+            timezone={props.data?.request?.timezone}
           />
         )}
       </TabContent>

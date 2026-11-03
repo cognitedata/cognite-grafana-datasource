@@ -149,7 +149,7 @@ export function recordsToDataFrame(
   };
 
   // The unit is appended to the column name rather than set as field.config.unit, so
-  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  // the values stay bare numbers -- same convention as the Time series tab's labels.
   const labelOf = (name: string): string =>
     topLevelProperty(name)
       ? name
@@ -290,7 +290,7 @@ export function recordsAggregateToDataFrames(
     ? response.typing?.[query.view.space]?.[viewSourceKey(query.view)]
     : undefined;
   // The unit is appended to the series name rather than set as field.config.unit, so
-  // the values stay bare numbers -- same convention as the Time Series tab's labels.
+  // the values stay bare numbers -- same convention as the Time series tab's labels.
   const labelForMetric = (metricName: string): string => {
     const metric = (query.metrics ?? []).find((m) => m.name.trim() === metricName);
     if (!metric?.property || metric.function === 'count') {

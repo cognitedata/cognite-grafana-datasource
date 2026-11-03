@@ -4,6 +4,7 @@ import { DataQuery } from '@grafana/schema';
 import { AnnotationQueryData, CogniteQuery } from 'types';
 import { parse } from '../parser/events-assets';
 import { FieldSet, InlineField, InlineSegmentGroup, Input, TextLink } from '@grafana/ui';
+import { DeprecationNotice } from './common/DeprecationNotice';
 import { FormattedMessage, Keyword } from './common/Styled';
 
 
@@ -89,6 +90,7 @@ export class AnnotationsQueryEditor extends React.PureComponent<AnnotationQueryE
 
     render () { 
       return <FieldSet>
+        <DeprecationNotice replacement="Event annotations read from the Events API. Move events to records or activities in the core data model." />
         <InlineSegmentGroup grow={true}>
           <InlineField labelWidth={20} label="Query" grow={true}>
             <Input

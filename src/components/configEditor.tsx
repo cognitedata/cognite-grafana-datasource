@@ -23,6 +23,7 @@ import {
   stringValueHandler,
 } from "../configEditorUtils";
 import { FeatureToggleRow } from "./FeatureToggleRow";
+import { DEPRECATED_CHIP_TEXT, DeprecationNotice } from "./common/DeprecationNotice";
 
 type ConfigEditorProps = DataSourcePluginOptionsEditorProps<
   CogniteDataSourceOptions,
@@ -54,6 +55,7 @@ const CORE_DEPENDENT_KEYS: FeatureKey[] = [
   "enableCogniteTimeSeries",
   "enableCogniteActivities",
   "enableRecords",
+  "enableSyntheticTimeSeries",
   "enableFlexibleDataModelling",
 ];
 const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
@@ -62,6 +64,7 @@ const LEGACY_DEPENDENT_KEYS: FeatureKey[] = [
   "enableTimeseriesCustomQuery",
   "enableEvents",
   "enableEventsAdvancedFiltering",
+  "enableRelationships",
 ];
 
 const SECTION_STYLE = { marginTop: '8px', marginBottom: '8px' };
@@ -98,6 +101,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
     enableCogniteTimeSeries,
     enableCogniteActivities,
     enableRecords,
+    enableSyntheticTimeSeries,
     enableTimeseriesSearch,
     enableTimeseriesFromAsset,
     enableTimeseriesCustomQuery,
@@ -139,8 +143,8 @@ export function ConfigEditor(props: ConfigEditorProps) {
       [masterKey]: isEnabled,
     };
     // Re-enabling a master restores its sub-flags to their defaults; both
-    // masters follow this one rule. Records, an alpha, defaults off, so the
-    // CDM master leaves it off.
+    // masters follow this one rule. Records and Synthetic time series, alphas,
+    // default off, so the CDM master leaves them off.
     dependentKeys.forEach((key) => {
       patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
     });
@@ -346,7 +350,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                   <FeatureToggleRow
                     id="enable-cognite-timeseries"
                     feature="enableCogniteTimeSeries"
-                    label="Time Series"
+                    label="Time series"
                     value={enableCogniteTimeSeries}
                     onChange={onJsonBoolValueChange("enableCogniteTimeSeries")}
                   />
@@ -366,6 +370,14 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     badge={<Badge text="Alpha" color="purple" />}
                   />
                   <FeatureToggleRow
+                    id="enable-synthetic-time-series"
+                    feature="enableSyntheticTimeSeries"
+                    label="Synthetic time series"
+                    value={enableSyntheticTimeSeries}
+                    onChange={onJsonBoolValueChange("enableSyntheticTimeSeries")}
+                    badge={<Badge text="Alpha" color="purple" />}
+                  />
+                  <FeatureToggleRow
                     id="enable-flexible-data-modelling"
                     feature="enableFlexibleDataModelling"
                     label="GraphQL"
@@ -379,9 +391,10 @@ export function ConfigEditor(props: ConfigEditorProps) {
             <SectionDivider />
 
             <h6 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Asset-centric <Badge text="legacy" color="orange" />
+              Asset-centric <Badge text={DEPRECATED_CHIP_TEXT} color="orange" />
             </h6>
             <div style={SECTION_STYLE}>
+              <DeprecationNotice />
               <FeatureToggleRow
                 id="enable-legacy-data-model-features"
                 feature="enableLegacyDataModelFeatures"
@@ -431,21 +444,23 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     value={enableEventsAdvancedFiltering}
                     onChange={onJsonBoolValueChange("enableEventsAdvancedFiltering")}
                   />
+                  <FeatureToggleRow
+                    id="enable-relationships"
+                    feature="enableRelationships"
+                    label="Relationships"
+                    value={enableRelationships}
+                    onChange={onJsonBoolValueChange("enableRelationships")}
+                  />
                 </>
               )}
             </div>
 
             <SectionDivider />
 
-            <h6 style={{ marginBottom: 4 }}>Deprecated</h6>
+            <h6 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Other <Badge text={DEPRECATED_CHIP_TEXT} color="orange" />
+            </h6>
             <div style={SECTION_STYLE}>
-              <FeatureToggleRow
-                id="enable-relationships"
-                feature="enableRelationships"
-                label="Relationships"
-                value={enableRelationships}
-                onChange={onJsonBoolValueChange("enableRelationships")}
-              />
               <FeatureToggleRow
                 id="enable-extraction-pipelines"
                 feature="enableExtractionPipelines"

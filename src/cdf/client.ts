@@ -1,4 +1,4 @@
-import { get, cloneDeep } from 'lodash';
+import { get, cloneDeep, chunk, sortBy, uniqBy } from 'lodash';
 import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
@@ -18,6 +18,7 @@ import {
   DMSSearchRequest,
   DMSSearchResponse,
   DMSInstance,
+  DMSInstanceId,
   DMSListRequest,
   DMSListResponse,
   DMSFilter,
@@ -28,6 +29,7 @@ import {
   DMSViewWithProperties,
 } from '../types/dms';
 import {
+  SyntheticFlatInstance,
   Tab,
   QueryTarget,
   CDFDataQueryRequest,
@@ -50,18 +52,29 @@ import {
   QueriesDataItem,
   DataQueryRequestType,
 } from '../types';
-import { toGranularityWithLowerBound, getRange } from '../utils';
+import { getRange } from '../utils';
 import { Connector } from '../connector';
 import { getLabelsForExpression } from '../parser/ts';
+import { getLabelsForSyntheticQuery } from '../parser/dms';
 import { CacheTime, DATAPOINTS_LIMIT_WARNING, DateFields } from '../constants';
 import { filterdataSetIds, filterExternalId, filterLabels } from './helper';
 import { LABEL_TOKEN, renderLabelToken } from './labelTokens';
+import { FillResolution, granularityToMs, resolveFillLimit } from './gapFill';
+import { resolveDatapointsGranularity } from './granularity';
+import { isDurationAggregate, requestedAggregate, returnsSeriesValues } from './aggregates';
+import {
+  STATE_LABEL_TOKEN,
+  StateSetEntry,
+  stateFramesFor,
+  stringSeriesFrame,
+  withoutStateToken,
+} from './typedFrames';
 
 const { Asset, Custom, Timeseries } = Tab;
 const UNITS_SPACE = 'cdf_cdm_units';
 
 export function formQueryForItems(
-  { items, type, target }: QueriesDataItem,
+  { items, type, target, kind }: QueriesDataItem,
   { range, intervalMs, timeZone }: QueryOptions & { timeZone: string }
 ): CDFDataQueryRequest {
   const { aggregation, granularity, cogniteTimeSeries } = target;
@@ -69,10 +82,12 @@ export function formQueryForItems(
 
   switch (type) {
     case 'synthetic': {
-      const limit = calculateDPLimitPerQuery(items.length);
-      return {
-        items: items.map(({ expression }) => ({ expression, start, end, limit, timeZone })),
-      };
+      return buildSyntheticQueryRequest(
+        items.map(({ expression }) => expression),
+        [start, end],
+        timeZone,
+        target.tab === Tab.SyntheticTimeSeries ? SYNTHETIC_ITEMS_PER_REQUEST : undefined
+      );
     }
     case 'latest': {
       return {
@@ -84,47 +99,149 @@ export function formQueryForItems(
       const isAggregated = aggregation && aggregation !== 'none';
       if (isAggregated) {
         aggregations = {
-          aggregates: [aggregation],
-          granularity: granularity || toGranularityWithLowerBound(intervalMs),
+          aggregates: [requestedAggregate(aggregation)],
+          granularity: resolveDatapointsGranularity(granularity, intervalMs),
           timeZone,
         };
       }
       const limit = calculateDPLimitPerQuery(items.length, isAggregated);
       
-      // Add targetUnit to items if specified for CogniteTimeSeries queries
-      const targetUnit = cogniteTimeSeries?.targetUnit;
+      // Add targetUnit to items if specified for CogniteTimeSeries queries. Only
+      // numeric series convert: CDF refuses a target unit on any other type.
+      const targetUnit = !kind || kind === 'numeric' ? cogniteTimeSeries?.targetUnit : undefined;
       const itemsWithUnit = targetUnit
         ? items.map((item) => item.instanceId ? { ...item, targetUnit } : item)
         : items;
+
+      const { limit: fillLimit } = resolveTargetFill(target, type, intervalMs);
+      const itemsWithFill = fillLimit
+        ? itemsWithUnit.map((item) => ({ ...item, fill: { limit: fillLimit } }))
+        : itemsWithUnit;
       
       return {
         ...aggregations,
         end,
         start,
-        items: itemsWithUnit,
+        items: itemsWithFill,
         limit
       };
     }
   }
 }
 
+/** Tabs whose aggregate queries can gap fill. */
+const GAP_FILL_TABS = new Set<Tab>([Tab.CogniteTimeSeriesSearch, Tab.FlexibleDataModelling]);
+
+/**
+ * The gap fill for one target's datapoints request: a limit to send, a warning to
+ * show, or neither. Only aggregate `data` requests of the data modeling tabs fill.
+ */
+export function resolveTargetFill(
+  target: QueryTarget,
+  type: DataQueryRequestType,
+  intervalMs: number
+): FillResolution {
+  const { aggregation, granularity, gapFill, tab } = target;
+  if (type !== 'data' || !GAP_FILL_TABS.has(tab) || !aggregation || aggregation === 'none') {
+    return {};
+  }
+  return resolveFillLimit(gapFill, resolveDatapointsGranularity(granularity, intervalMs), aggregation);
+}
+
 function calculateDPLimitPerQuery(queriesNumber: number, hasAggregates = true) {
   return Math.floor((hasAggregates ? 10_000 : 100_000) / Math.min(queriesNumber, 100));
 }
+
+/** Items per synthetic query request: the API's own cap. */
+export const SYNTHETIC_ITEMS_PER_REQUEST = 10;
+
+/** Time series references per synthetic query request, summed over its expressions: the API's own cap. */
+export const SYNTHETIC_REFERENCES_PER_REQUEST = 100;
+
+/** The `ts{…}` references in a synthetic expression, ignoring any inside quoted strings. */
+export const countSyntheticReferences = (expression: string): number => {
+  let count = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < expression.length; i++) {
+    const char = expression[i];
+    if (quote) {
+      // Double-quoted values are JSON, with its escapes; single quotes have none in CDF.
+      if (char === '\\' && quote === '"') {
+        i++;
+      } else if (char === quote) {
+        quote = null;
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (/^ts\{/i.test(expression.slice(i, i + 3))) {
+      count++;
+    }
+  }
+  return count;
+};
+
+/**
+ * Splits synthetic items into requests within the API's caps: at most
+ * SYNTHETIC_ITEMS_PER_REQUEST expressions and SYNTHETIC_REFERENCES_PER_REQUEST
+ * references each, in order. An expression over the reference cap gets a request of its own.
+ */
+export const chunkSyntheticItems = <T extends { expression?: string }>(items: T[]): T[][] => {
+  const chunks: T[][] = [];
+  let current: T[] = [];
+  let references = 0;
+  for (const item of items) {
+    const itemReferences = countSyntheticReferences(item.expression ?? '');
+    const full =
+      current.length >= SYNTHETIC_ITEMS_PER_REQUEST ||
+      references + itemReferences > SYNTHETIC_REFERENCES_PER_REQUEST;
+    if (current.length && full) {
+      chunks.push(current);
+      current = [];
+      references = 0;
+    }
+    current.push(item);
+    references += itemReferences;
+  }
+  if (current.length) {
+    chunks.push(current);
+  }
+  return chunks;
+};
+
+/**
+ * The body of a synthetic query over these expressions, before it is split into
+ * requests. The limit shares a request's datapoints between the expressions in it,
+ * so a query split into requests of `itemsPerRequest` passes that number.
+ */
+export const buildSyntheticQueryRequest = (
+  expressions: string[],
+  [start, end]: Tuple<number>,
+  timeZone: string | undefined,
+  itemsPerRequest = expressions.length
+): CDFDataQueryRequest => {
+  const limit = calculateDPLimitPerQuery(Math.min(expressions.length, itemsPerRequest));
+  return { items: expressions.map((expression) => ({ expression, start, end, limit, timeZone })) };
+};
+
+/** The time zone sent with requests: "browser" resolved to the browser's zone, "utc" as the API spells it. */
+export const resolveRequestTimeZone = (timezone: string | undefined): string | undefined => {
+  const timeZoneValue = timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone;
+  return timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue;
+};
 
 export function formQueriesForTargets(
   queriesData: QueriesDataItem[],
   options: QueryOptions
 ): CDFDataQueryRequest[] {
-  const timeZoneValue = options.timezone === 'browser' ? Intl.DateTimeFormat().resolvedOptions().timeZone : options.timezone;
-  const timeZone = timeZoneValue === 'utc' ? timeZoneValue.toUpperCase() : timeZoneValue
+  const timeZone = resolveRequestTimeZone(options.timezone);
   return queriesData.map((itemsData) => formQueryForItems(itemsData, {...options, timeZone }));
 }
 
 export async function getLabelsForTarget(
   target: QueryTarget,
   queryList: DataQueryRequestItem[],
-  connector: Connector
+  connector: Connector,
+  syntheticScopes?: QueriesDataItem['scopes']
 ): Promise<string[]> {
   const labelSrc = target.label || '';
   switch (target.tab) {
@@ -182,7 +299,100 @@ export async function getLabelsForTarget(
       }
       return queryList.map(() => labelSrc);
     }
+    case Tab.SyntheticTimeSeries: {
+      const { expression = '', variables = [], view } = target.cdmSyntheticQuery ?? {};
+      const scopes = syntheticScopes ?? [];
+      if (!labelSrc) {
+        return getLabelsForSyntheticQuery('', expression, scopes);
+      }
+      if (!labelContainsVariableProps(labelSrc)) {
+        return queryList.map(() => labelSrc);
+      }
+      // A picked series only carries its id and name; its view properties are fetched
+      // once so `{{A.unit.externalId}}` works on it like on a filtered series.
+      const enriched = view
+        ? await enrichPickedInstanceScopes(connector, labelSrc, view, variables, scopes)
+        : scopes;
+      const withUnits = await resolveScopeUnits(connector, labelSrc, variables, enriched);
+      return getLabelsForSyntheticQuery(labelSrc, expression, withUnits);
+    }
   }
+}
+
+/**
+ * A variable's `unit` is a direct relation, so `{{A.unit.symbol}}` and the like need
+ * the unit itself, as on the Time series tab: the variable's target unit when it has
+ * one, its storage unit otherwise. Only the variables the label reaches into are looked up.
+ */
+async function resolveScopeUnits(
+  connector: Connector,
+  label: string,
+  variables: Array<{ name: string; targetUnit?: string }>,
+  scopes: NonNullable<QueriesDataItem['scopes']>
+): Promise<NonNullable<QueriesDataItem['scopes']>> {
+  const tokens = [...label.matchAll(LABEL_TOKEN)].map(([, group]) => group.split('.'));
+  const reached = variables.filter(({ name }) =>
+    tokens.some(([head, prop, ...rest]) => head === name && prop === 'unit' && rest.length > 0)
+  );
+  if (!reached.length) {
+    return scopes;
+  }
+  const withUnit = async (instance: SyntheticFlatInstance, targetUnit?: string) => {
+    const unit = await resolveEffectiveUnit(connector, instance.unit, targetUnit);
+    return unit ? { ...instance, unit } : instance;
+  };
+  return Promise.all(
+    scopes.map(async (scope) => {
+      const next = { ...scope };
+      for (const { name, targetUnit } of reached) {
+        const value = scope[name];
+        if (Array.isArray(value)) {
+          next[name] = await Promise.all(value.map((instance) => withUnit(instance, targetUnit)));
+        } else if (value) {
+          next[name] = await withUnit(value, targetUnit);
+        }
+      }
+      return next;
+    })
+  );
+}
+
+async function enrichPickedInstanceScopes(
+  connector: Connector,
+  label: string,
+  view: { space: string; externalId: string; version: string },
+  variables: Array<{
+    name: string;
+    mode: string;
+    instance?: { space: string; externalId: string; name?: string };
+  }>,
+  scopes: NonNullable<QueriesDataItem['scopes']>
+): Promise<NonNullable<QueriesDataItem['scopes']>> {
+  const tokens = [...label.matchAll(LABEL_TOKEN)].map(([, group]) => group.split('.'));
+  // {{A}} alone only needs the name, which is saved with the pick unless it has none.
+  const picked = variables.filter(
+    (row) =>
+      row.mode === 'instance' &&
+      row.instance &&
+      scopes.some((scope) => scope[row.name] !== undefined) &&
+      tokens.some(([head, ...rest]) => head === row.name && (rest.length > 0 || !row.instance?.name))
+  );
+  if (!picked.length) {
+    return scopes;
+  }
+  const props = await Promise.all(
+    picked.map((row) => fetchCogniteTimeSeriesInstance(connector, view, row.instance!))
+  );
+  return scopes.map((scope) => {
+    const next = { ...scope };
+    picked.forEach((row, i) => {
+      const value = scope[row.name];
+      if (value && !Array.isArray(value)) {
+        next[row.name] = { ...props[i], ...value };
+      }
+    });
+    return next;
+  });
 }
 
 async function getTimeseriesLabel(
@@ -224,8 +434,12 @@ export function interpolateCogniteTimeSeriesInstanceLabel(
   // `space` and `externalId` come from the instance node itself (not the view
   // schema), but are exposed in `props` and useful in labels.
   const validPropNames = new Set([...viewPropertyNames, 'space', 'externalId']);
-  return labelSrc.replace(LABEL_TOKEN, (_full, group) => {
+  return labelSrc.replace(LABEL_TOKEN, (full, group) => {
     const rootKey = group.split('.')[0];
+    // `{{state}}` names the state of a per-state series; it is filled in with the frames.
+    if (group === STATE_LABEL_TOKEN && !validPropNames.has(group)) {
+      return full;
+    }
     // Own props resolved by the caller (e.g. the effective `unit`) count as valid even when
     // the view schema doesn't declare them.
     if (!validPropNames.has(rootKey) && !Object.prototype.hasOwnProperty.call(props, rootKey)) {
@@ -288,8 +502,17 @@ export function stringifyError(error: any) {
   return errorMessage ? `[${errorCode}ERROR] ${errorMessage}${missingStr}` : `Unknown error`;
 }
 
-function filterDpsOutOfRange(datapoints: Timestamp[], start: number, end: number) {
-  return datapoints.filter(({ timestamp }) => timestamp >= start && timestamp <= end);
+/**
+ * The data points inside a range. CDF aligns aggregate buckets to the granularity
+ * unit, so the first bucket can start before the range (10:00 for a 1h granularity
+ * and a range from 10:43); a bucket is kept when the interval it covers overlaps the
+ * range, otherwise the series would start blank until the next bucket.
+ */
+function filterDpsOutOfRange(datapoints: Timestamp[], start: number, end: number, granularity?: string) {
+  const width = (granularity && granularityToMs(granularity)) || 0;
+  return datapoints.filter(
+    ({ timestamp }) => (timestamp >= start || timestamp + width > start) && timestamp <= end
+  );
 }
 
 function generateTargetTsLabel(
@@ -306,24 +529,50 @@ function generateTargetTsLabel(
 export function reduceTimeseries(
   metaResponses: SuccessResponse[],
   [start, end]: Tuple<number>
-): TimeSeries[] {
-  const responseTimeseries: TimeSeries[] = [];
+): Array<TimeSeries | DataFrame> {
+  const responseTimeseries: Array<TimeSeries | DataFrame> = [];
 
   metaResponses.forEach(({ result, metadata }) => {
-    const { labels, type } = metadata;
-    const { aggregates } = result.config.data;
+    const { labels, type, kind, stateSet, target } = metadata;
+    const { aggregates, granularity } = result.config.data;
+    const aggregate = aggregates?.[0];
     const { items } = result.data;
 
-    const series = items.map(({ datapoints, externalId, id }, i) => {
+    const series = items.flatMap(({ datapoints, externalId, id }, i): Array<TimeSeries | DataFrame> => {
       const label = labels && labels[i];
       const resTarget = label || generateTargetTsLabel(id, aggregates, type, externalId);
       const dpsInRange =
-        type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end);
+        type === 'latest' ? datapoints : filterDpsOutOfRange(datapoints, start, end, granularity);
+      // A state series' states, per point or per state, become frames of their own.
+      if (kind === 'state') {
+        const frames = stateFramesFor(
+          resTarget,
+          dpsInRange,
+          type === 'latest' ? 'none' : target.aggregation,
+          stateSet
+        );
+        if (frames) {
+          return frames;
+        }
+      }
+      // A string series' own values (raw, latest, interpolated) are text.
+      if (kind === 'string' && returnsSeriesValues(aggregate)) {
+        const key = aggregate && aggregate !== 'none' ? aggregate : 'value';
+        return [
+          stringSeriesFrame(
+            resTarget,
+            dpsInRange.map((dp) => ({ timestamp: dp.timestamp, value: dp[key] ?? null }))
+          ),
+        ];
+      }
       const rawDatapoints = datapoints2Tuples(dpsInRange, aggregates);
-      return {
-        target: resTarget,
-        datapoints: rawDatapoints,
-      };
+      return [
+        {
+          target: withoutStateToken(resTarget),
+          datapoints: rawDatapoints,
+          ...(isDurationAggregate(aggregate) ? { unit: 'ms' } : {}),
+        },
+      ];
     });
 
     responseTimeseries.push(...series);
@@ -514,33 +763,41 @@ export function fetchDMSViews(
 }
 
 // Fetch all property names of a specific DMS view (includes inherited properties)
+/** A view with its properties, inherited ones included, or null when it cannot be read. */
+export async function fetchDMSView(
+  connector: Connector,
+  viewSpec: { space: string; externalId: string; version: string }
+): Promise<DMSViewWithProperties | null> {
+  try {
+    const response = await retryOnTransientError(() =>
+      connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
+        method: HttpMethod.POST,
+        path: '/models/views/byids',
+        data: {
+          items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
+          includeInheritedProperties: true,
+        },
+        cacheTime: CacheTime.ResourceByIds,
+      })
+    );
+    return response.data?.items?.[0] ?? null;
+  } catch (err) {
+    console.warn('Failed to fetch DMS view properties:', err);
+    return null;
+  }
+}
+
 export async function fetchDMSViewProperties(
   connector: Connector,
   viewSpec: { space: string; externalId: string; version: string }
 ): Promise<string[]> {
-  try {
-    const response = await connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
-      method: HttpMethod.POST,
-      path: '/models/views/byids',
-      data: {
-        items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
-        includeInheritedProperties: true,
-      },
-      cacheTime: CacheTime.ResourceByIds,
-    });
-    const view = response.data?.items?.[0];
-    if (!view?.properties) {
-      return [];
-    }
-    return Object.keys(view.properties);
-  } catch (err) {
-    console.warn('Failed to fetch DMS view properties:', err);
-    return [];
-  }
+  const view = await fetchDMSView(connector, viewSpec);
+  return Object.keys(view?.properties ?? {});
 }
 
-// Helper function to retry DMS API calls with exponential backoff and jitter on 429 errors
-async function retryOnRateLimit<T>(
+// Helper function to retry DMS API calls with exponential backoff and jitter on temporary failures.
+// Every caller only reads, so sending a request again is safe.
+export async function retryOnTransientError<T>(
   fn: () => Promise<T>,
   maxRetries = 3,
   baseDelay = 1000
@@ -553,11 +810,11 @@ async function retryOnRateLimit<T>(
     } catch (error: any) {
       lastError = error;
 
-      // Only retry on 429 (rate limit) errors
-      const isRateLimitError = error?.status === 429;
-      const hasRetriesLeft = attempt < maxRetries;
+      const isTransient = [408, 425, 429, 502, 503, 504].includes(error?.status);
+      // Only CDF's rate limit says to wait and try again; one more try is enough for the rest.
+      const hasRetriesLeft = attempt < (error?.status === 429 ? maxRetries : Math.min(maxRetries, 1));
 
-      if (!isRateLimitError || !hasRetriesLeft) {
+      if (!isTransient || !hasRetriesLeft) {
         throw error;
       }
 
@@ -566,7 +823,7 @@ async function retryOnRateLimit<T>(
       const delay = exponentialDelay + jitter;
 
       console.warn(
-        `Rate limited (429). Retrying in ${Math.round(delay)}ms ` +
+        `Request failed (${error.status}). Retrying in ${Math.round(delay)}ms ` +
         `(attempt ${attempt + 1}/${maxRetries})`
       );
 
@@ -581,7 +838,7 @@ export function searchDMSInstances(
   connector: Connector,
   searchRequest: DMSSearchRequest
 ): Promise<DMSInstance[]> {
-  return retryOnRateLimit(() =>
+  return retryOnTransientError(() =>
     connector.fetchItems<DMSInstance>({
       method: HttpMethod.POST,
       path: '/models/instances/search',
@@ -594,7 +851,7 @@ export async function listDMSInstances(
   connector: Connector,
   listRequest: DMSListRequest
 ): Promise<DMSInstance[]> {
-  return retryOnRateLimit(() =>
+  return retryOnTransientError(() =>
     connector.fetchItems<DMSInstance>({
       method: HttpMethod.POST,
       path: '/models/instances/list',
@@ -625,7 +882,7 @@ export async function fetchCogniteUnits(
         },
       },
     };
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       // The catalog can exceed a single page, so follow cursors instead of a one-shot list.
       connector.fetchAndPaginate<DMSInstance>({
         method: HttpMethod.POST,
@@ -728,56 +985,132 @@ export async function resolveEffectiveUnit(
 export interface TimeSeriesProperties {
   unit?: string;
   type?: string;
+  /** The state set of a state series. */
+  stateSet?: { space: string; externalId: string };
 }
+
+const TIME_SERIES_VIEW = { type: 'view', space: 'cdf_cdm', externalId: 'CogniteTimeSeries', version: 'v1' };
+
+/** At most this many instances per `byids` request. */
+const BYIDS_LIMIT = 1000;
+
+/** The CogniteTimeSeries properties the connector reads, from an instance of the view. */
+function parseTimeSeriesProperties(instance: DMSInstance): TimeSeriesProperties {
+  const tsProps = instance.properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
+  // Only the structured `unit` direct relation (a CogniteUnit reference) qualifies as
+  // a storage unit for conversion. The free-text `sourceUnit` is informational and not
+  // resolvable against the unit catalog, so we ignore it here.
+  const rawUnit = tsProps?.unit;
+  const unit =
+    rawUnit && typeof rawUnit === 'object' && typeof rawUnit.externalId === 'string'
+      ? rawUnit.externalId
+      : undefined;
+
+  const rawType = tsProps?.type;
+  const type = typeof rawType === 'string' ? rawType : undefined;
+
+  const rawStateSet = tsProps?.stateSet;
+  const stateSet =
+    rawStateSet && typeof rawStateSet.space === 'string' && typeof rawStateSet.externalId === 'string'
+      ? { space: rawStateSet.space, externalId: rawStateSet.externalId }
+      : undefined;
+
+  return { unit, type, ...(stateSet ? { stateSet } : {}) };
+}
+
+const fetchTimeSeriesInstances = (connector: Connector, instanceIds: DMSInstanceId[]) =>
+  retryOnTransientError(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/byids',
+      // A series' type, unit and state set rarely change.
+      cacheTime: CacheTime.ResourceByIds,
+      data: {
+        sources: [{ source: TIME_SERIES_VIEW }],
+        items: instanceIds.map(({ space, externalId }) => ({ instanceType: 'node', space, externalId })),
+        includeTyping: false,
+      },
+    })
+  );
 
 export async function getTimeSeriesProperties(
   connector: Connector,
-  instanceId: { space: string; externalId: string }
+  instanceId: { space: string; externalId: string },
+  { rethrow = false }: { rethrow?: boolean } = {}
 ): Promise<TimeSeriesProperties> {
   try {
-    const instances = await retryOnRateLimit(() =>
+    const instances = await fetchTimeSeriesInstances(connector, [instanceId]);
+    if (instances.length > 0) {
+      return parseTimeSeriesProperties(instances[0]);
+    }
+  } catch (err) {
+    if (rethrow) {
+      throw err;
+    }
+    console.warn('Failed to fetch timeseries properties:', err);
+  }
+  return {};
+}
+
+/** The key `getTimeSeriesPropertiesBatch` files an instance under. */
+export const instanceKey = ({ space, externalId }: DMSInstanceId) => `${space}:${externalId}`;
+
+/**
+ * The properties of many time series in as few requests as `byids` allows, keyed
+ * by `instanceKey`. An instance CDF does not return is absent. A failed request
+ * fails the lookup.
+ */
+export async function getTimeSeriesPropertiesBatch(
+  connector: Connector,
+  instanceIds: DMSInstanceId[]
+): Promise<Map<string, TimeSeriesProperties>> {
+  // Sorted, so the same rows in another order make the same, cached request.
+  const unique = sortBy(uniqBy(instanceIds, instanceKey), instanceKey);
+  const pages = await Promise.all(
+    chunk(unique, BYIDS_LIMIT).map((page) => fetchTimeSeriesInstances(connector, page))
+  );
+  return new Map(pages.flat().map((instance) => [instanceKey(instance), parseTimeSeriesProperties(instance)]));
+}
+
+const STATE_SET_VIEW = { type: 'view', space: 'cdf_cdm', externalId: 'CogniteStateSet', version: 'v1' };
+
+/** A state set's states, ordered by code, or undefined if it cannot be read. */
+export async function getStateSet(
+  connector: Connector,
+  stateSet: { space: string; externalId: string }
+): Promise<StateSetEntry[] | undefined> {
+  try {
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
+        cacheTime: CacheTime.ResourceByIds,
         data: {
-          sources: [{
-            source: {
-              type: 'view',
-              space: 'cdf_cdm',
-              externalId: 'CogniteTimeSeries',
-              version: 'v1',
-            },
-          }],
-          items: [{
-            instanceType: 'node',
-            space: instanceId.space,
-            externalId: instanceId.externalId,
-          }],
+          sources: [{ source: STATE_SET_VIEW }],
+          items: [{ instanceType: 'node', space: stateSet.space, externalId: stateSet.externalId }],
           includeTyping: false,
         },
       })
     );
-
-    if (instances.length > 0) {
-      const tsProps = instances[0].properties?.['cdf_cdm']?.['CogniteTimeSeries/v1'];
-      // Only the structured `unit` direct relation (a CogniteUnit reference) qualifies as
-      // a storage unit for conversion. The free-text `sourceUnit` is informational and not
-      // resolvable against the unit catalog, so we ignore it here.
-      const rawUnit = tsProps?.unit;
-      const unit =
-        rawUnit && typeof rawUnit === 'object' && typeof rawUnit.externalId === 'string'
-          ? rawUnit.externalId
-          : undefined;
-
-      const rawType = tsProps?.type;
-      const type = typeof rawType === 'string' ? rawType : undefined;
-
-      return { unit, type };
+    const states = instances[0]?.properties?.['cdf_cdm']?.['CogniteStateSet/v1']?.states;
+    if (!Array.isArray(states)) {
+      return undefined;
     }
+    return states
+      .filter(
+        (state): state is StateSetEntry =>
+          typeof state?.numericValue === 'number' && typeof state?.stringValue === 'string'
+      )
+      .map(({ numericValue, stringValue, description }) => ({
+        numericValue,
+        stringValue,
+        ...(typeof description === 'string' && description ? { description } : {}),
+      }))
+      .sort((a, b) => a.numericValue - b.numericValue);
   } catch (err) {
-    console.warn('Failed to fetch timeseries properties:', err);
+    console.warn('Failed to fetch the state set:', err);
+    return undefined;
   }
-  return {};
 }
 
 export async function getTimeSeriesUnit(
@@ -795,7 +1128,7 @@ export async function fetchCogniteTimeSeriesInstance(
   instanceId: { space: string; externalId: string }
 ): Promise<Record<string, any>> {
   try {
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/byids',
@@ -846,7 +1179,7 @@ export async function fetchContainerViews(
   connector: Connector,
   containerExternalId: string
 ): Promise<InvolvedView[]> {
-  const response = await retryOnRateLimit(() =>
+  const response = await retryOnTransientError(() =>
     connector.fetchData<{ data: ContainerInspectResponse }>({
       method: HttpMethod.POST,
       path: '/models/containers/inspect',
@@ -951,7 +1284,7 @@ export async function fetchActivitiesFromDMS(
       filter: timeFilter,
     };
 
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/list',
@@ -1018,7 +1351,7 @@ export async function fetchActivitiesByAssets(
       filter,
     };
 
-    const instances = await retryOnRateLimit(() =>
+    const instances = await retryOnTransientError(() =>
       connector.fetchItems<DMSInstance>({
         method: HttpMethod.POST,
         path: '/models/instances/list',

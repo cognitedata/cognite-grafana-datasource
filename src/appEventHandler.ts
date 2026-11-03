@@ -30,7 +30,11 @@ export function showWarnings(responses: SuccessResponse[]) {
     const { items } = result.data;
     const { limit } = result.config.data;
     const { refId } = metadata.target;
-    const warning = [getLimitsWarnings(items, limit), getCalculationWarnings(items)]
+    const warning = [
+      ...(metadata.warnings ?? []),
+      getLimitsWarnings(items, limit),
+      getCalculationWarnings(items),
+    ]
       .filter(Boolean)
       .join('\n\n');
 

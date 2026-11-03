@@ -36,10 +36,10 @@ describe('interpolateGraphqlLabel', () => {
     expect(interpolateGraphqlLabel('', series)).toBe('');
   });
 
-  // The unresolved-token rules below mirror the Time Series tab's labels
+  // The unresolved-token rules below mirror the Time series tab's labels
   // (interpolateCogniteTimeSeriesInstanceLabel), via the shared renderLabelToken.
 
-  it('shows a field the response does not carry as :field, like the Time Series tab', () => {
+  it('shows a field the response does not carry as :field, like the Time series tab', () => {
     expect(interpolateGraphqlLabel('{{nope}}', series)).toBe(':nope');
   });
 
@@ -57,9 +57,15 @@ describe('interpolateGraphqlLabel', () => {
 
   it('serializes an object-valued field instead of [object Object]', () => {
     // A bare {{unit}} shows the property bag, so the available {{unit.<prop>}}
-    // paths are discoverable from the label itself -- same as the Time Series tab.
+    // paths are discoverable from the label itself -- same as the Time series tab.
     expect(interpolateGraphqlLabel('{{unit}}', { unit: { symbol: 'degC' } })).toBe(
       '{"symbol":"degC"}'
     );
+  });
+
+  it('leaves {{state}} for the per-state series to fill in, unless the row has a state field', () => {
+    expect(interpolateGraphqlLabel('{{name}} - {{state}}', { name: 'Pump 7' })).toBe('Pump 7 - {{state}}');
+    expect(interpolateGraphqlLabel('{{state}}', { state: 'open' })).toBe('open');
+    expect(interpolateGraphqlLabel('{{state}}', { state: null })).toBe('{{state}}');
   });
 });

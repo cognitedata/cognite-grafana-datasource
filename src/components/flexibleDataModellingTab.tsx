@@ -12,8 +12,10 @@ import { PANEL_GRAPHQL_EXAMPLES } from './graphql/graphqlExamples';
 import { FlexibleDataModellingOptions } from './graphql/FlexibleDataModellingOptions';
 import { extractFieldNamesFromQuery, leafFieldNames } from './graphql/graphqlFields';
 
-export const FlexibleDataModellingTab = (props: SelectedProps & { datasource: CogniteDatasource }) => {
-  const { query, onQueryChange, datasource } = props;
+export const FlexibleDataModellingTab = (
+  props: SelectedProps & { datasource: CogniteDatasource; intervalMs?: number }
+) => {
+  const { query, onQueryChange, datasource, intervalMs } = props;
   const { flexibleDataModellingQuery } = query;
   const { externalId, space, version, graphQlQuery } = flexibleDataModellingQuery;
   const [schema, setSchema] = useState<GraphQLSchema>();
@@ -111,6 +113,7 @@ export const FlexibleDataModellingTab = (props: SelectedProps & { datasource: Co
           labelFields={labelFields}
           onQueryChange={onQueryChange}
           onLabelChange={(label) => patchFlexibleDataModellingQuery({ label })}
+          intervalMs={intervalMs}
         />
       )}
     </EditorRows>

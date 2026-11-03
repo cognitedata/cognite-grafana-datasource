@@ -1,7 +1,7 @@
 import { Tab as Tabs, TabTitles } from '../types';
 import { getMockedDataSource } from '../test_utils';
 import { isTabDisabled, isTabHidden, getFirstAvailableTab, getActiveTab } from '../queryEditorUtils';
-import { TAB_SUFFIX_TEXT } from '../components/queryEditor';
+import { ASSET_CENTRIC_REPLACEMENTS, TAB_SUFFIX_TEXT } from '../components/queryEditor';
 
 describe('Tab titles', () => {
   // The tab bar skips title-less tabs, otherwise they render as nameless, clickable
@@ -66,7 +66,7 @@ describe('QueryEditor Utility Functions', () => {
       expect(mockDataSource.connector.isRecordsEnabled).toHaveBeenCalled();
     });
 
-    it('should gate Activities tab on enableCogniteActivities independent of Time Series', () => {
+    it('should gate Activities tab on enableCogniteActivities independent of Time series', () => {
       mockDataSource.connector.isCogniteTimeSeriesEnabled = jest.fn().mockReturnValue(true);
       mockDataSource.connector.isCogniteActivitiesEnabled = jest.fn().mockReturnValue(false);
 
@@ -157,6 +157,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isSyntheticTimeSeriesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -186,6 +187,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isSyntheticTimeSeriesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -206,6 +208,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);
       // Disable remaining tabs
       mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isSyntheticTimeSeriesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -242,6 +245,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isTimeseriesCustomQueryEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isSyntheticTimeSeriesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -262,6 +266,7 @@ describe('QueryEditor Utility Functions', () => {
       mockDataSource.connector.isEventsEnabled = jest.fn().mockReturnValue(true);
       // Disable remaining tabs to ensure Events is the first available
       mockDataSource.connector.isRecordsEnabled = jest.fn().mockReturnValue(false);
+      mockDataSource.connector.isSyntheticTimeSeriesEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isFlexibleDataModellingEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isRelationshipsEnabled = jest.fn().mockReturnValue(false);
       mockDataSource.connector.isTemplatesEnabled = jest.fn().mockReturnValue(false);
@@ -275,13 +280,33 @@ describe('QueryEditor Utility Functions', () => {
 });
 
 describe('tab chips', () => {
-  it('marks Records as Alpha and the deprecated tabs as Preview', () => {
+  it('marks Records as Alpha and the asset-centric and retired tabs as Deprecated', () => {
     // The chip lives in the tab's `suffix`, never in TabTitles: the e2e specs match
     // the tab by its exact label text.
     expect(TabTitles[Tabs.Records]).toBe('Records');
     expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Alpha');
-    expect(TAB_SUFFIX_TEXT[Tabs.Templates]).toBe('Preview');
-    expect(TAB_SUFFIX_TEXT[Tabs.ExtractionPipelines]).toBe('Preview');
+    expect(TabTitles[Tabs.SyntheticTimeSeries]).toBe('Synthetic time series');
+    expect(TAB_SUFFIX_TEXT[Tabs.SyntheticTimeSeries]).toBe('Alpha');
+    for (const tab of [
+      Tabs.Timeseries,
+      Tabs.Asset,
+      Tabs.Custom,
+      Tabs.Event,
+      Tabs.Relationships,
+      Tabs.Templates,
+      Tabs.ExtractionPipelines,
+    ]) {
+      expect(TAB_SUFFIX_TEXT[tab]).toBe('Deprecated');
+    }
     expect(TAB_SUFFIX_TEXT[Tabs.CogniteTimeSeriesSearch]).toBeUndefined();
+    expect(TAB_SUFFIX_TEXT[Tabs.CogniteActivity]).toBeUndefined();
+    expect(TAB_SUFFIX_TEXT[Tabs.FlexibleDataModelling]).toBeUndefined();
+  });
+
+  it('names a replacement for every asset-centric tab, and only for those', () => {
+    expect(Object.keys(ASSET_CENTRIC_REPLACEMENTS).sort()).toEqual(
+      [Tabs.Timeseries, Tabs.Asset, Tabs.Custom, Tabs.Event, Tabs.Relationships].sort()
+    );
+    expect(ASSET_CENTRIC_REPLACEMENTS[Tabs.Custom]).toBe('Use the Synthetic time series tab instead.');
   });
 });

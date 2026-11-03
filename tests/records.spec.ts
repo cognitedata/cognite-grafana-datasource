@@ -254,14 +254,14 @@ test.describe('Records query editor', () => {
       (response: Response) =>
         isCdfResponse(AGGREGATE_PATH)(response) && (response.request().postData() ?? '').includes('"1h"')
     );
-    await openSelect(editorRow, 'auto');
+    await openSelect(editorRow, 'Auto');
     await panelEditPage.getByGrafanaSelector(option).filter({ hasText: /^1h$/ }).first().click();
 
     const buckets = findTimeBuckets(await (await histogram).json());
     expect(buckets).toHaveLength(RECORD_COUNT);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(buckets!.every((bucket: any) => bucket.count === 1)).toBe(true);
-    // Exact, so the legacy "Time series …" tabs on this datasource don't match.
-    await expect(editorRow.getByText('Time series', { exact: true })).toBeVisible();
+    // Exact, so the legacy "Time series …" tabs don't match; last, after the Time series tab.
+    await expect(editorRow.getByText('Time series', { exact: true }).last()).toBeVisible();
   });
 });

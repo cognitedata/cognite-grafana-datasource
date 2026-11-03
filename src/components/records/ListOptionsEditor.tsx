@@ -1,10 +1,9 @@
 import React from 'react';
 import { EditorField, EditorFieldGroup } from '@grafana/plugin-ui';
-import { MultiSelect } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { RECORDS_PAGE_LIMIT } from '../../constants';
-import { formatPropertyOptionLabel } from './typeBadges';
 import { BlurInput } from './BlurInput';
+import { PropertyColumnsField } from '../common/PropertyColumnsField';
 
 interface ListOptionsEditorProps {
   columns: string[];
@@ -20,20 +19,14 @@ export const ListOptionsEditor = ({
   onChange,
 }: ListOptionsEditorProps) => (
   <EditorFieldGroup>
-    <EditorField
-      label="Columns"
+    <PropertyColumnsField
+      columns={columns}
+      options={columnOptions}
       tooltip="Fields to show. Leave empty for every view property plus top level record properties."
+      placeholder="all properties"
       optional
-    >
-      <MultiSelect
-        width={44}
-        options={columnOptions}
-        value={columns}
-        placeholder="all properties"
-        formatOptionLabel={formatPropertyOptionLabel(true)}
-        onChange={(selected) => onChange({ columns: selected.map((item) => item.value!) })}
-      />
-    </EditorField>
+      onChange={(next) => onChange({ columns: next })}
+    />
     <EditorField
       label="Limit"
       tooltip={`CDF will return at most ${RECORDS_PAGE_LIMIT} records on this request.`}

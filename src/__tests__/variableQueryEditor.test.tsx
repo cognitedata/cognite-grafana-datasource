@@ -23,6 +23,10 @@ const graphqlQuery: VariableQueryData = {
   dataModel: { space: 'sp', externalId: 'model', version: '1' },
 };
 
+// A tab's accessible name includes its chip ("Assets Deprecated"), so tabs are found
+// by their leading label.
+const tabName = (label: string) => new RegExp(`^${label}\\b`);
+
 const mountEditor = async ({
   legacyEnabled = true,
   graphqlEnabled = true,
@@ -48,13 +52,13 @@ const mountEditor = async ({
   const lastSaved = () => onChange.mock.calls[onChange.mock.calls.length - 1][0];
   const clickTab = async (label: string) => {
     await act(async () => {
-      fireEvent.click(screen.getByRole('tab', { name: label }));
+      fireEvent.click(screen.getByRole('tab', { name: tabName(label) }));
     });
   };
   return { onChange, lastSaved, clickTab, unmount };
 };
 
-const tab = (name: string) => screen.queryByRole('tab', { name });
+const tab = (name: string) => screen.queryByRole('tab', { name: tabName(name) });
 
 describe('CogniteVariableQueryEditor defaults', () => {
   it('saves the default query for a brand new variable, so it runs as shown', async () => {
@@ -197,6 +201,22 @@ describe('CogniteVariableQueryEditor tab gating', () => {
     await mountEditor({ graphqlEnabled: false, query: graphqlQuery });
     expect(tab('GraphQL')).not.toBeNull();
     expect(tab('Assets')).not.toBeNull();
+  });
+
+  it('flags the Assets tab as deprecated', async () => {
+    await mountEditor({ graphqlEnabled: false, query: '' });
+    expect(screen.getByText('Asset-centric features are deprecated')).toBeTruthy();
+  });
+
+  it('marks the Assets tab with a Deprecated chip in the tab bar', async () => {
+    await mountEditor({ query: '' });
+    expect(tab('Assets')?.textContent).toContain('Deprecated');
+    expect(tab('GraphQL')?.textContent).not.toContain('Deprecated');
+  });
+
+  it('shows no deprecation notice on the GraphQL tab', async () => {
+    await mountEditor({ legacyEnabled: false, query: '' });
+    expect(screen.queryByText('Asset-centric features are deprecated')).toBeNull();
   });
 
   it('explains itself when neither feature is on', async () => {
