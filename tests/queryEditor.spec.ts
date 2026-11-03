@@ -784,7 +784,7 @@ test('"GraphQL" query type plots its type and skips the others', async ({ readPr
     const data = dataOfType(type);
     await page.getByRole('radio', { name: label }).click();
     await data;
-    await expect(page.locator('.gf-formatted-warning')).toContainText(
+    await expect(page.getByTestId('warning-message')).toContainText(
       new RegExp(`time series that (is|are) not ${type}`),
       { timeout: 30000 }
     );

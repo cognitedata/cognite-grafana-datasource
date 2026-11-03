@@ -1,9 +1,7 @@
 import React from 'react';
 import { GraphqlExample } from '../graphql/GraphqlExamplesModal';
+import { Keyword as Code } from '../common/Styled';
 
-const Code = ({ children }: { children: React.ReactNode }) => (
-  <code className="query-keyword">{children}</code>
-);
 
 /** How a Filter variable selects its time series: the Filter syntax dialog. */
 export const SYNTHETIC_FILTER_EXAMPLES: GraphqlExample[] = [

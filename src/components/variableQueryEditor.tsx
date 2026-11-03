@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Tab, TabsBar, TabContent } from '@grafana/ui';
+import { Alert, Tab, TabsBar, TabContent } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import {
   DEFAULT_GRAPHQL_DATA_MODEL,
@@ -249,11 +249,10 @@ export const CogniteVariableQueryEditor = ({
 
   if (!showAssetsTab && !showGraphqlTab) {
     return (
-      <div className="gf-form">
-        <span className="gf-form-label">
-          Enable GraphQL or asset-centric features on the data source to define variables.
-        </span>
-      </div>
+      <Alert
+        title="Enable GraphQL or asset-centric features on the data source to define variables."
+        severity="info"
+      />
     );
   }
 
