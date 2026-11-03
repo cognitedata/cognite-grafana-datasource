@@ -1,5 +1,5 @@
 import { expect } from '@grafana/plugin-e2e';
-import type { Request } from '@playwright/test';
+import type { Page, Request, Response } from '@playwright/test';
 import { waitForQueriesToFinish } from '../playwright/fixtures/waitForQueriesToFinish';
 import { test } from '../playwright/fixtures/patchNavigationStrategy';
 import { addPanel as addPanelHelper } from '../playwright/fixtures/addPanel';
@@ -20,6 +20,13 @@ const ASSETS_PROPERTY = ['cdf_cdm', 'CogniteTimeSeries/v1', 'assets'];
 
 const externalIdsIn = (expressions: string[]) =>
   expressions.map((expression) => expression.match(/externalId='([^']+)'/)?.[1]).sort();
+
+/** The synthetic query CDF answered, so a test can check both what was sent and that it was accepted. */
+const syntheticResponse = (page: Page) =>
+  page.waitForResponse((response: Response) => response.url().endsWith('/timeseries/synthetic/query'));
+
+/** A series in the panel's legend, which only appears once its data came back. */
+const legendSeries = (page: Page, name: string) => page.getByTestId(`data-testid VizLegend series ${name}`);
 
 /** The filter's lookup of CogniteTimeSeries instances, not the unit catalog the tab also lists. */
 const isTimeSeriesLookup = (request: Request) =>
@@ -70,7 +77,7 @@ test('"Synthetic time series" resolves a filter variable and sends the instance 
   await page.keyboard.insertText('A * 2');
 
   const instanceLookup = page.waitForRequest(isTimeSeriesLookup);
-  const syntheticQuery = page.waitForRequest((request) => request.url().endsWith('/timeseries/synthetic/query'));
+  const syntheticQuery = syntheticResponse(page);
   // Leaving the editor commits the expression and runs the query.
   await editorRow.locator('input[id="label-A"]').click();
 
@@ -78,7 +85,9 @@ test('"Synthetic time series" resolves a filter variable and sends the instance 
   expect(lookupBody.sources).toEqual([{ source: VIEW_REF }]);
   expect(lookupBody.filter).toEqual({ equals: { property: ['node', 'externalId'], value: FIXTURE_EXTERNAL_ID } });
 
-  const syntheticBody = (await syntheticQuery).postDataJSON();
+  const synthetic = await syntheticQuery;
+  expect(synthetic.ok()).toBe(true);
+  const syntheticBody = synthetic.request().postDataJSON();
   expect(syntheticBody.items).toHaveLength(1);
   const expression: string = syntheticBody.items[0].expression;
   expect(expression).toContain(`space='${FIXTURE_SPACE}'`);
@@ -87,7 +96,6 @@ test('"Synthetic time series" resolves a filter variable and sends the instance 
   expect(expression).toMatch(/\} \* 2$/);
 
   await waitForQueriesToFinish(page);
-  await expect(editorRow.locator('.gf-formatted-error')).toHaveCount(0);
 });
 
 test('"Synthetic time series" filters on a dashboard variable of asset instance ids', async ({
@@ -100,7 +108,7 @@ test('"Synthetic time series" filters on a dashboard variable of asset instance 
   const dashboard = await readProvisionedDashboard({ fileName: 'synthetic-time-series-e2e.json' });
 
   const instanceLookup = page.waitForRequest(isTimeSeriesLookup);
-  const syntheticQuery = page.waitForRequest((request) => request.url().endsWith('/timeseries/synthetic/query'));
+  const syntheticQuery = syntheticResponse(page);
   await gotoDashboardPage(dashboard);
 
   // The variable's instance id becomes a direct-relation value; `=` on a list property is containsAny.
@@ -111,15 +119,20 @@ test('"Synthetic time series" filters on a dashboard variable of asset instance 
       { equals: { property: ['cdf_cdm', 'CogniteTimeSeries/v1', 'type'], value: 'numeric' } },
     ])
   );
-  const syntheticBody = (await syntheticQuery).postDataJSON();
+  const synthetic = await syntheticQuery;
+  expect(synthetic.ok()).toBe(true);
+  const syntheticBody = synthetic.request().postDataJSON();
   expect(externalIdsIn(syntheticBody.items.map((item: { expression: string }) => item.expression))).toEqual(
     [...NORTH_SERIES].sort()
   );
   await waitForQueriesToFinish(page);
+  for (const name of NORTH_SERIES) {
+    await expect(legendSeries(page, name)).toBeVisible();
+  }
 
   // Both assets selected: one value per reference, and every related series is resolved.
   const bothLookup = page.waitForRequest(isTimeSeriesLookup);
-  const bothSynthetic = page.waitForRequest((request) => request.url().endsWith('/timeseries/synthetic/query'));
+  const bothSynthetic = syntheticResponse(page);
   await gotoDashboardPage({
     ...dashboard,
     queryParams: new URLSearchParams([
@@ -130,12 +143,16 @@ test('"Synthetic time series" filters on a dashboard variable of asset instance 
   expect((await bothLookup).postDataJSON().filter.and).toEqual(
     expect.arrayContaining([{ containsAny: { property: ASSETS_PROPERTY, values: [NORTH_ASSET, SOUTH_ASSET] } }])
   );
-  const bothBody = (await bothSynthetic).postDataJSON();
+  const both = await bothSynthetic;
+  expect(both.ok()).toBe(true);
+  const bothBody = both.request().postDataJSON();
   expect(externalIdsIn(bothBody.items.map((item: { expression: string }) => item.expression))).toEqual(
     [...NORTH_SERIES, ...SOUTH_SERIES].sort()
   );
   await waitForQueriesToFinish(page);
-  await expect(page.locator('.gf-formatted-error')).toHaveCount(0);
+  for (const name of [...NORTH_SERIES, ...SOUTH_SERIES]) {
+    await expect(legendSeries(page, name)).toBeVisible();
+  }
 });
 
 test('"Synthetic time series" excludes an asset variable and matches a multi-value text variable', async ({
@@ -148,7 +165,7 @@ test('"Synthetic time series" excludes an asset variable and matches a multi-val
   const dashboard = await readProvisionedDashboard({ fileName: 'synthetic-time-series-e2e-vars.json' });
 
   const instanceLookup = page.waitForRequest(isTimeSeriesLookup);
-  const syntheticQuery = page.waitForRequest((request) => request.url().endsWith('/timeseries/synthetic/query'));
+  const syntheticQuery = syntheticResponse(page);
   await gotoDashboardPage(dashboard);
 
   expect((await instanceLookup).postDataJSON().filter.and).toEqual(
@@ -162,10 +179,15 @@ test('"Synthetic time series" excludes an asset variable and matches a multi-val
       },
     ])
   );
-  const syntheticBody = (await syntheticQuery).postDataJSON();
+  const synthetic = await syntheticQuery;
+  expect(synthetic.ok()).toBe(true);
+  const syntheticBody = synthetic.request().postDataJSON();
   expect(externalIdsIn(syntheticBody.items.map((item: { expression: string }) => item.expression))).toEqual(
     [...SOUTH_SERIES].sort()
   );
   await waitForQueriesToFinish(page);
-  await expect(page.locator('.gf-formatted-error')).toHaveCount(0);
+  for (const name of SOUTH_SERIES) {
+    await expect(legendSeries(page, name)).toBeVisible();
+  }
+  await expect(legendSeries(page, 'ts-expr-north-temp')).toHaveCount(0);
 });

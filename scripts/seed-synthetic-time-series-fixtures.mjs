@@ -50,15 +50,17 @@ function client(token) {
     });
     const text = await response.text();
     if (!response.ok) {
-      throw new Error(`${method} ${path} failed: ${response.status} ${text}`);
+      throw Object.assign(new Error(`${method} ${path} failed: ${response.status} ${text}`), {
+        status: response.status,
+      });
     }
     return text ? JSON.parse(text) : {};
   };
 }
 
 const ASSETS = [
-  { externalId: 'ts-expr-asset-north', name: 'TS expression north', description: 'Time series expression e2e asset' },
-  { externalId: 'ts-expr-asset-south', name: 'TS expression south', description: 'Time series expression e2e asset' },
+  { externalId: 'ts-expr-asset-north', name: 'Synthetic e2e north', description: 'Synthetic time series e2e asset' },
+  { externalId: 'ts-expr-asset-south', name: 'Synthetic e2e south', description: 'Synthetic time series e2e asset' },
 ];
 
 /** Hour h of the day reads base + h * step, so the series stay apart and their averages are known. */
@@ -97,7 +99,7 @@ const timeSeriesNodes = TIME_SERIES.map(({ externalId, asset, unit }) => ({
       source: TIME_SERIES_VIEW,
       properties: {
         name: externalId,
-        description: 'Time series expression e2e series',
+        description: 'Synthetic time series e2e series',
         type: 'numeric',
         isStep: false,
         unit: { space: UNITS_SPACE, externalId: unit },
@@ -117,14 +119,19 @@ function datapoints(dayStartMs) {
   }));
 }
 
-/** A fresh CDM time series takes a moment to accept data points. */
+/**
+ * A fresh CDM time series takes a moment to accept data points, and until then CDF
+ * answers 400 with the instance missing. Anything else, an expired token for one,
+ * fails at once.
+ */
 async function insertDatapointsWithRetry(cdf, items, attempts = 10) {
   for (let attempt = 1; ; attempt++) {
     try {
       await cdf('POST', '/timeseries/data', { items });
       return;
     } catch (error) {
-      if (attempt >= attempts) {
+      const notReadyYet = error.status === 400 && /missing|not found/i.test(error.message);
+      if (!notReadyYet || attempt >= attempts) {
         throw error;
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));

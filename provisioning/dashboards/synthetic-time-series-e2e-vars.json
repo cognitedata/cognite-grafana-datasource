@@ -91,7 +91,7 @@
       {
         "current": {
           "selected": true,
-          "text": ["TS expression north"],
+          "text": ["Synthetic e2e north"],
           "value": ["{\"space\":\"grafana-ts-fixtures\",\"externalId\":\"ts-expr-asset-north\"}"]
         },
         "datasource": {
