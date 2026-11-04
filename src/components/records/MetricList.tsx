@@ -55,7 +55,7 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
   return (
     <EditorField
       label="Compute"
-      tooltip="Each metric becomes one column in the result. The name is the aggregate identifier."
+      tooltip="Each metric becomes one column in the result. The name is the column's name."
     >
       <Stack direction="column" gap={0.5} alignItems="flex-start">
         {metrics.map((metric, index) => {

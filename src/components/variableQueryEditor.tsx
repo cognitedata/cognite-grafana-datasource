@@ -12,6 +12,7 @@ import { VARIABLE_REF_ID } from '../constants';
 import { INSTANCE_ID_FIELD } from '../cdf/instanceRef';
 import { AssetsVariableTab } from './variables/AssetsVariableTab';
 import { DeprecatedChip } from './common/DeprecationNotice';
+import { selectPlaceholderEllipsis } from './common/selectPlaceholder';
 import { GraphqlVariableTab } from './variables/GraphqlVariableTab';
 import {
   VariableQueryProblem,
@@ -257,7 +258,8 @@ export const CogniteVariableQueryEditor = ({
   }
 
   return (
-    <div>
+    // The ellipsis on long placeholders is for the GraphQL tab; the deprecated Assets tab stays as it was.
+    <div className={queryType === 'graphql' ? selectPlaceholderEllipsis : undefined}>
       {/* A single available tab is just a heading, so the bar only appears when there
           is actually a choice to make. */}
       {showAssetsTab && showGraphqlTab && (

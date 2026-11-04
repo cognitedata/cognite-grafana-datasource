@@ -1,7 +1,7 @@
 export const getBackendSrv = () =>
   ({
     fetch: jest.fn(),
-  } as any);
+  }) as any;
 
 // Instance references
 const ASSET_REF = '{"space":"paper_mill","externalId":"ASSET_PM_AREA"}';
@@ -42,6 +42,17 @@ export const getTemplateSrv = () =>
     getVariables: () => variables,
     replace: jest.fn((q, options, format) => {
       let query = q;
+      // Scoped variables, such as a panel's $__interval, win over dashboard variables, as in Grafana.
+      Object.entries((options ?? {}) as Record<string, { value?: unknown }>).forEach(
+        ([name, scoped]) => {
+          if (scoped && typeof scoped === 'object' && 'value' in scoped) {
+            query = query.replace(
+              new RegExp(`\\$\\{${name}\\}|\\$${name}(?![A-Za-z0-9_])`, 'g'),
+              String(scoped.value)
+            );
+          }
+        }
+      );
       variables.forEach(({ name, current }) => {
         // Multi-value variables are joined the way Grafana joins them for the format
         // in play. Default stays comma-joined to match what callers already expect.
@@ -49,9 +60,7 @@ export const getTemplateSrv = () =>
           if (!Array.isArray(current.value)) {
             return String(current.value);
           }
-          return fmt === 'json'
-            ? JSON.stringify(current.value)
-            : current.value.join(',');
+          return fmt === 'json' ? JSON.stringify(current.value) : current.value.join(',');
         };
         const varSyntax1 = new RegExp(`\\[\\[${name}\\]\\]`, 'g');
         const varSyntax2 = new RegExp(`\\$${name}(?![A-Za-z0-9_])`, 'g');
@@ -65,7 +74,7 @@ export const getTemplateSrv = () =>
       });
       return query;
     }),
-  } as any);
+  }) as any;
 
 // @grafana/plugin-ui's SqlDatasource extends this when the module loads.
 export class DataSourceWithBackend<TQuery, TOptions> {

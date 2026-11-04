@@ -136,6 +136,14 @@ export default class CogniteDatasource extends DataSourceApi<
   };
 
   /**
+   * Grafana leaves out a query this rejects before running it, in panels and Explore
+   * alike, so an incomplete query sends nothing and shows no error.
+   */
+  filterQuery(query: CogniteQuery): boolean {
+    return filterEmptyQueryTargets([query]).length > 0;
+  }
+
+  /**
    * used by panels to get timeseries data
    */
   query(

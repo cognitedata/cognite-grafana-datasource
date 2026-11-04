@@ -1,5 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { AsyncMultiSelect, AsyncSelect, Badge, BadgeColor } from '@grafana/ui';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AsyncMultiSelect,
+  AsyncSelect,
+  Badge,
+  BadgeColor,
+} from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { Connector } from '../../connector';
 import { searchDMSInstances, stringifyError } from '../../cdf/client';
@@ -117,7 +122,10 @@ interface InstancePickerProps {
   allowCustomValue?: boolean;
   /** Optional trailing badge, e.g. a time series' value type. */
   badgeOf?: (props: Record<string, any>) => { text: string; color: BadgeColor } | undefined;
-  /** Notified with the failure message, and with null once a later search succeeds. */
+  /**
+   * Notified with the failure message, and with null once a later search succeeds.
+   * The picker itself shows the message in its menu and marks itself invalid.
+   */
   onError?: (message: string | null) => void;
   placeholder?: string;
   width?: number;
@@ -158,8 +166,25 @@ export const InstancePicker = ({
   const filterKey = JSON.stringify(filter ?? null);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- filterKey stands in for filter by value
   const stableFilter = useMemo(() => filter, [filterKey]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const reportError = useCallback((message: string | null) => {
+    setSearchError(message);
+    onErrorRef.current?.(message);
+  }, []);
+  // Another view or filter is another search: the last one's failure no longer applies.
+  const [searchKey, setSearchKey] = useState(`${JSON.stringify(view ?? null)}|${filterKey}`);
+  const nextSearchKey = `${JSON.stringify(view ?? null)}|${filterKey}`;
+  if (nextSearchKey !== searchKey) {
+    setSearchKey(nextSearchKey);
+    setSearchError(null);
+  }
+  // A search still in flight was for the previous view or filter: its reply, success
+  // or failure, must not reach this one.
+  useEffect(() => {
+    generation.current += 1;
+  }, [searchKey]);
 
   const { space: viewSpace, externalId: viewExternalId, version: viewVersion } = view ?? {};
 
@@ -178,17 +203,17 @@ export const InstancePicker = ({
           return [];
         }
         // A search after a failure clears the caller's error surface again.
-        onErrorRef.current?.(null);
+        reportError(null);
         return toInstanceOptions(instances, searchView);
       } catch (error) {
         if (gen !== generation.current) {
           return [];
         }
-        onErrorRef.current?.(`Search failed: ${stringifyError(error)}`);
+        reportError(`Search failed: ${stringifyError(error)}`);
         return [];
       }
     },
-    [connector, viewSpace, viewExternalId, viewVersion, stableFilter, limit]
+    [connector, viewSpace, viewExternalId, viewVersion, stableFilter, limit, reportError]
   );
 
   const loadOptions = useCallback(
@@ -242,8 +267,9 @@ export const InstancePicker = ({
     placeholder,
     width,
     inputId,
-    noOptionsMessage,
+    noOptionsMessage: searchError ?? noOptionsMessage,
     disabled,
+    invalid: !!searchError,
     allowCustomValue,
     formatOptionLabel,
   };

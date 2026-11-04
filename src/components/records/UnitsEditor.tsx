@@ -207,7 +207,7 @@ export const UnitsEditor = ({
       )}
       <EditorField
         label="Unit in label"
-        tooltip="Appends the unit symbol to each unit aware property label."
+        tooltip="Adds the unit symbol to the label of each property that has a unit."
       >
         <InlineSwitch
           value={!hideUnitSuffix}

@@ -139,6 +139,7 @@ export const GraphqlQueryEditor = ({
           <EditorField
             label="Data model"
             tooltip="The data model whose GraphQL endpoint this query runs against."
+            htmlFor={`graphql-data-model-${refId}`}
           >
             {/* Data model labels carry a name, an external ID and a space, so they
                 need the room; there is plenty of it on this row. */}
@@ -169,6 +170,7 @@ export const GraphqlQueryEditor = ({
           <EditorField
             label="Version"
             tooltip="The version of the selected data model. Queries run against this version's schema."
+            htmlFor={`graphql-version-${refId}`}
           >
             <Select
               inputId={`graphql-version-${refId}`}
@@ -215,7 +217,7 @@ export const GraphqlQueryEditor = ({
           <div className={styles.pane}>
             <EditorField
               label="Query"
-              tooltip="The GraphQL query to run. Dashboard variables are interpolated with $variable or ${variable}."
+              tooltip="The GraphQL query to run. Use dashboard variables as $variable or ${variable}."
             >
               <CodeEditor
                 value={graphqlQuery}

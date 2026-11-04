@@ -200,7 +200,7 @@ export const VARIABLE_GRAPHQL_EXAMPLES: GraphqlExample[] = [
 }`,
   },
   {
-    title: 'Emitting instance references',
+    title: 'Returning instance references',
     lead: (
       <>
         Select both <code>space</code> and <code>externalId</code> to unlock the{' '}

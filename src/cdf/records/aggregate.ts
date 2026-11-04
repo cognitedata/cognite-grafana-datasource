@@ -148,7 +148,7 @@ export function buildRecordsAggregateRequest(
 ): { request: RecordsAggregateRequest; warnings: string[] } {
   const { view } = query;
   if (!view) {
-    throw new Error('A record view must be selected before building a request.');
+    throw new Error('Select a record view first.');
   }
   const warnings: string[] = [];
 

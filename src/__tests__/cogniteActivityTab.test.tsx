@@ -16,9 +16,16 @@ const VIEW_PROPERTIES: Record<string, { type: { type: string; list?: boolean } }
 };
 
 /** The tab on a saved query, with CDF answering the view's properties and one space. */
-const renderTab = async (patch: Partial<CogniteActivityTabQuery> = {}) => {
+const renderTab = async (
+  patch: Partial<CogniteActivityTabQuery> = {},
+  { failSpaces = false }: { failSpaces?: boolean } = {}
+) => {
   const fetcher = {
-    fetch: jest.fn().mockImplementation(async ({ url }) => ({
+    fetch: jest.fn().mockImplementation(async ({ url }) => {
+      if (failSpaces && url.includes('/models/spaces')) {
+        throw { status: 403, data: { error: { message: 'no access to spaces' } } };
+      }
+      return {
       status: 200,
       data: {
         items: url.endsWith('/models/views/byids')
@@ -27,7 +34,8 @@ const renderTab = async (patch: Partial<CogniteActivityTabQuery> = {}) => {
             ? [{ space: 'sp' }]
             : [],
       },
-    })),
+      };
+    }),
   };
   const onQueryChange = jest.fn();
   // Mounting loads the spaces and the view's properties; let both land.
@@ -50,6 +58,11 @@ const lastTabQuery = (onQueryChange: jest.Mock): CogniteActivityTabQuery =>
   onQueryChange.mock.calls[onQueryChange.mock.calls.length - 1][0].cogniteActivityTabQuery;
 
 describe('CogniteActivityTab', () => {
+  it('says why the spaces could not be loaded, under the Space field', async () => {
+    await renderTab({}, { failSpaces: true });
+    expect(await screen.findByText(/Couldn't load the spaces/)).toBeTruthy();
+  });
+
   it('opens on the active activities, related to assets, sorted by startTime', async () => {
     await renderTab();
     expect(checked('Active in time range')).toBe(true);

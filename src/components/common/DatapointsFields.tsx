@@ -36,6 +36,13 @@ interface DatapointsFieldsProps {
   onQueryChange: (patch: Partial<CogniteQuery>) => void;
   /** While the series' type is being looked up: the aggregates it accepts are not known yet. */
   disabled?: boolean;
+  /** The modes offered; a tab whose API has no latest value leaves Latest out. */
+  modes?: DatapointsMode[];
+  /** False when the aggregate is chosen elsewhere, e.g. per variable. */
+  withAggregation?: boolean;
+  withGapFill?: boolean;
+  modeTooltip?: string;
+  granularityTooltip?: string;
 }
 
 /**
@@ -44,7 +51,21 @@ interface DatapointsFieldsProps {
  * wraps the row between them rather than mid-pair. Raw and Latest collapse the row
  * to the mode alone.
  */
-export const DatapointsFields = ({ query, kind, intervalMs, onQueryChange, disabled }: DatapointsFieldsProps) => {
+export const DatapointsFields = ({
+  query,
+  kind,
+  intervalMs,
+  onQueryChange,
+  disabled,
+  modes,
+  withAggregation = true,
+  withGapFill = true,
+  modeTooltip = MODE_TOOLTIP,
+  granularityTooltip = GRANULARITY_TOOLTIP,
+}: DatapointsFieldsProps) => {
+  const modeOptions = MODE_OPTIONS.filter(
+    ({ value }) => (!modes || modes.includes(value)) && (value !== 'aggregate' || canAggregate(kind))
+  );
   const mode = datapointsModeOf(query);
   // Raw saves no aggregation, so the one in use is remembered for coming back to Aggregate.
   const lastAggregate = useRef<string | undefined>(undefined);
@@ -56,17 +77,17 @@ export const DatapointsFields = ({ query, kind, intervalMs, onQueryChange, disab
   return (
     <>
       <EditorFieldGroup>
-        <EditorField label="Data points" tooltip={MODE_TOOLTIP}>
+        <EditorField label="Data points" tooltip={modeTooltip}>
           <RadioButtonGroup
             // A type with no aggregates yet is read raw or latest only.
-            options={canAggregate(kind) ? MODE_OPTIONS : MODE_OPTIONS.filter(({ value }) => value !== 'aggregate')}
+            options={modeOptions}
             value={mode}
             onChange={(next) => onQueryChange(datapointsModePatch(next, query, kind, lastAggregate.current))}
             disabled={disabled}
             aria-label="Data points"
           />
         </EditorField>
-        {mode === 'aggregate' && (
+        {mode === 'aggregate' && withAggregation && (
           <EditorField label="Aggregation" tooltip={AGGREGATION_TOOLTIP} htmlFor={`aggregation-${query.refId}`}>
             <Select
               inputId={`aggregation-${query.refId}`}
@@ -82,7 +103,7 @@ export const DatapointsFields = ({ query, kind, intervalMs, onQueryChange, disab
       </EditorFieldGroup>
       {mode === 'aggregate' && (
         <EditorFieldGroup>
-          <EditorField label="Granularity" tooltip={GRANULARITY_TOOLTIP} htmlFor={granularityInputId(query.refId, query.granularity)}>
+          <EditorField label="Granularity" tooltip={granularityTooltip} htmlFor={granularityInputId(query.refId, query.granularity)}>
             <GranularityPicker
               refId={query.refId}
               value={query.granularity}
@@ -90,13 +111,15 @@ export const DatapointsFields = ({ query, kind, intervalMs, onQueryChange, disab
               onChange={(granularity) => onQueryChange({ granularity })}
             />
           </EditorField>
-          <EditorField label="Gap filling" optional tooltip={GAP_FILL_TOOLTIP}>
-            <GapFillControls
-              query={query}
-              intervalMs={intervalMs}
-              onChange={(gapFill) => onQueryChange({ gapFill })}
-            />
-          </EditorField>
+          {withGapFill && (
+            <EditorField label="Gap filling" optional tooltip={GAP_FILL_TOOLTIP}>
+              <GapFillControls
+                query={query}
+                intervalMs={intervalMs}
+                onChange={(gapFill) => onQueryChange({ gapFill })}
+              />
+            </EditorField>
+          )}
         </EditorFieldGroup>
       )}
     </>

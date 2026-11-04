@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Select } from '@grafana/ui';
+import { FieldValidationMessage, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { Connector } from '../../connector';
 import { fetchContainerViews, stringifyError } from '../../cdf/client';
@@ -78,7 +78,7 @@ export function useContainerViews(connector: Connector, container: string): Cont
       .catch((err) => {
         if (!cancelled) {
           setViews([]);
-          setError(`Failed to load ${container} views: ${stringifyError(err)}`);
+          setError(`Couldn't load the ${container} views: ${stringifyError(err)}`);
         }
       })
       .finally(() => {
@@ -104,7 +104,10 @@ export interface ViewPickerProps {
   onChange: (view: InvolvedView | null) => void;
   /** Fires once per successful load, e.g. to apply a default selection. */
   onViewsLoaded?: (views: InvolvedView[]) => void;
-  /** Notified with the failure message, and with null once a later load succeeds. */
+  /**
+   * Notified with the failure message, and with null once a later load succeeds.
+   * Without it the picker shows the message under itself.
+   */
   onError?: (message: string | null) => void;
   placeholder?: string;
   width?: number;
@@ -144,13 +147,9 @@ export const ViewPicker = ({
     }
   }, [loaded, views]);
 
+  // A load after a failure clears the caller's error surface again.
   useEffect(() => {
-    if (error) {
-      (onErrorRef.current ?? console.warn)(error);
-    } else {
-      // A load after a failure clears the caller's error surface again.
-      onErrorRef.current?.(null);
-    }
+    onErrorRef.current?.(error);
   }, [error]);
 
   const selectedValue = value?.space && value?.externalId && value?.version ? encodeViewRef(value) : null;
@@ -166,7 +165,7 @@ export const ViewPicker = ({
     onChange(views.find((view) => encodeViewRef(view) === option.value) ?? parseViewRef(option.value));
   };
 
-  return (
+  const select = (
     <Select
       options={options}
       value={selectedOption}
@@ -177,6 +176,17 @@ export const ViewPicker = ({
       width={width}
       inputId={inputId}
       disabled={disabled}
+      invalid={!!error}
     />
+  );
+  if (onError) {
+    return select;
+  }
+  // Always wrapped, so a failed load only adds the message, not a new layout.
+  return (
+    <div>
+      {select}
+      {error && <FieldValidationMessage>{error}</FieldValidationMessage>}
+    </div>
   );
 };

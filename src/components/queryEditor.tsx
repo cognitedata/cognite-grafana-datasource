@@ -28,6 +28,7 @@ import {
   RecordsQuery,
 } from '../types';
 import { ResourceSelect } from './resourceSelect';
+import { selectPlaceholderEllipsis } from './common/selectPlaceholder';
 import '../css/query_editor.css';
 import { DEPRECATED_CHIP_TEXT, DeprecatedChip, DeprecationNotice } from './common/DeprecationNotice';
 import { TemplatesTab } from './templatesTab';
@@ -287,6 +288,15 @@ function CustomTab(props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { in
  * The chip after a tab's name. `Tab` takes a plain string label, so this slot is the
  * only place a tab can carry one.
  */
+/** The Core Data Model tabs, which share the editor styling the deprecated tabs don't. */
+const CDM_TABS: Tabs[] = [
+  Tabs.CogniteTimeSeriesSearch,
+  Tabs.SyntheticTimeSeries,
+  Tabs.CogniteActivity,
+  Tabs.Records,
+  Tabs.FlexibleDataModelling,
+];
+
 export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
   [Tabs.Timeseries]: DEPRECATED_CHIP_TEXT,
   [Tabs.Asset]: DEPRECATED_CHIP_TEXT,
@@ -372,8 +382,11 @@ export function QueryEditor(props: EditorProps) {
     }
   }, [activeTab, tab, onQueryChange]);
 
+  // The ellipsis on long placeholders is for the Core Data Model tabs; the deprecated ones stay as they were.
+  const isCdmTab = CDM_TABS.includes(activeTab);
+
   return (
-    <div>
+    <div className={isCdmTab ? selectPlaceholderEllipsis : undefined}>
       <TabsBar>
         {Object.values(Tabs).map((t) => {
           // A tab without a title would render as a nameless, clickable tab.
@@ -453,6 +466,7 @@ export function QueryEditor(props: EditorProps) {
             intervalMs={props.data?.request?.intervalMs}
             range={props.range}
             timezone={props.data?.request?.timezone}
+            scopedVars={props.data?.request?.scopedVars}
           />
         )}
       </TabContent>

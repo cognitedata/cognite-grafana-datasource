@@ -6,6 +6,7 @@ import { BlurInput } from './BlurInput';
 import { PropertyColumnsField } from '../common/PropertyColumnsField';
 
 interface ListOptionsEditorProps {
+  refId: string;
   columns: string[];
   columnOptions: Array<SelectableValue<string>>;
   limit: number;
@@ -13,6 +14,7 @@ interface ListOptionsEditorProps {
 }
 
 export const ListOptionsEditor = ({
+  refId,
   columns,
   columnOptions,
   limit,
@@ -20,18 +22,21 @@ export const ListOptionsEditor = ({
 }: ListOptionsEditorProps) => (
   <EditorFieldGroup>
     <PropertyColumnsField
+      inputId={`records-columns-${refId}`}
       columns={columns}
       options={columnOptions}
-      tooltip="Fields to show. Leave empty for every view property plus top level record properties."
+      tooltip="Fields to show. Leave empty for every view property plus the record's own properties."
       placeholder="all properties"
       optional
       onChange={(next) => onChange({ columns: next })}
     />
     <EditorField
       label="Limit"
-      tooltip={`CDF will return at most ${RECORDS_PAGE_LIMIT} records on this request.`}
+      tooltip={`CDF returns at most ${RECORDS_PAGE_LIMIT} records per request.`}
+      htmlFor={`records-limit-${refId}`}
     >
       <BlurInput
+        id={`records-limit-${refId}`}
         width={12}
         type="number"
         value={String(limit)}
