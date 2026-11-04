@@ -180,6 +180,11 @@ export const InstancePicker = ({
     setSearchKey(nextSearchKey);
     setSearchError(null);
   }
+  // A search still in flight was for the previous view or filter: its reply, success
+  // or failure, must not reach this one.
+  useEffect(() => {
+    generation.current += 1;
+  }, [searchKey]);
 
   const { space: viewSpace, externalId: viewExternalId, version: viewVersion } = view ?? {};
 
