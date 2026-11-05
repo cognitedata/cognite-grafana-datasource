@@ -1,7 +1,6 @@
 import React from 'react';
 import { EditorField, InputGroup, AccessoryButton } from '@grafana/plugin-ui';
 import {
-  Button,
   InlineLabel,
   FieldValidationMessage,
   Select,
@@ -14,6 +13,7 @@ import { isNumericType, validateMetricName } from '../../cdf/records';
 import { getGutterHintStyles, METRIC_OPTIONS, propertyOptions } from './shared';
 import { formatPropertyOptionLabel } from './typeBadges';
 import { BlurInput } from './BlurInput';
+import { RowList } from '../common/RowList';
 
 interface MetricListProps {
   metrics: RecordsMetric[];
@@ -49,23 +49,28 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
     return `metric${n}`;
   };
 
-  const patchMetric = (index: number, patchValue: Partial<RecordsMetric>) =>
-    onChange(metrics.map((m, i) => (i === index ? { ...m, ...patchValue } : m)));
-
   return (
     <EditorField
       label="Compute"
       tooltip="Each metric becomes one column in the result. The name is the column's name."
     >
-      <Stack direction="column" gap={0.5} alignItems="flex-start">
-        {metrics.map((metric, index) => {
+      <RowList
+        items={metrics}
+        onChange={onChange}
+        max={5}
+        newItem={(): RecordsMetric => ({ name: nextMetricName(), function: 'count' })}
+        addLabel="Add metric"
+        addTestId="records-add-metric"
+        renderItem={(metric, onChangeMetric, onRemove, index) => {
+          const patchMetric = (patchValue: Partial<RecordsMetric>) =>
+            onChangeMetric({ ...metric, ...patchValue });
           const otherNames = metrics.filter((_, i) => i !== index).map((m) => m.name);
           const nameError = validateMetricName(metric.name, otherNames);
           const needsProperty = metric.function !== 'count';
           const propOptions = optionsFor(metric.function);
 
           return (
-            <Stack key={index} direction="column" gap={0.25} alignItems="flex-start">
+            <Stack direction="column" gap={0.25} alignItems="flex-start">
               <Stack gap={0.5} alignItems="center">
                 <InputGroup>
                   <Select
@@ -73,7 +78,7 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
                     options={METRIC_OPTIONS}
                     value={metric.function}
                     onChange={({ value }) =>
-                      patchMetric(index, {
+                      patchMetric({
                         function: value!,
                         // Kept only when the new function can aggregate it.
                         property:
@@ -91,7 +96,7 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
                       value={metric.property ?? null}
                       placeholder="property"
                       formatOptionLabel={formatPropertyOptionLabel()}
-                      onChange={({ value }) => patchMetric(index, { property: value! })}
+                      onChange={({ value }) => patchMetric({ property: value! })}
                     />
                   )}
                   <InlineLabel width="auto">as</InlineLabel>
@@ -99,14 +104,14 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
                     width={16}
                     invalid={!!nameError}
                     value={metric.name}
-                    onCommit={(name) => patchMetric(index, { name })}
+                    onCommit={(name) => patchMetric({ name })}
                   />
                   <AccessoryButton
                     icon="times"
                     variant="secondary"
                     aria-label={`Remove metric ${index + 1}`}
                     data-testid={`records-remove-metric-${index}`}
-                    onClick={() => onChange(metrics.filter((_, i) => i !== index))}
+                    onClick={onRemove}
                   />
                 </InputGroup>
                 <span className={gutterHint} data-testid={`records-metric-hint-${index}`}>
@@ -116,24 +121,8 @@ export const MetricList = ({ metrics, viewDef, onChange }: MetricListProps) => {
               {nameError && <FieldValidationMessage>{nameError}</FieldValidationMessage>}
             </Stack>
           );
-        })}
-        {metrics.length < 5 && (
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="plus"
-            data-testid="records-add-metric"
-            onClick={() =>
-              onChange([
-                ...metrics,
-                { name: nextMetricName(), function: 'count' },
-              ])
-            }
-          >
-            Add metric
-          </Button>
-        )}
-      </Stack>
+        }}
+      />
     </EditorField>
   );
 };

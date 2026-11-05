@@ -1,8 +1,9 @@
 import React from 'react';
 import { EditorField, InputGroup, AccessoryButton } from '@grafana/plugin-ui';
-import { Button, Select, Stack } from '@grafana/ui';
+import { Select } from '@grafana/ui';
 import { PropertyOption } from '../records/shared';
 import { formatPropertyOptionLabel } from '../records/typeBadges';
+import { RowList } from './RowList';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -49,50 +50,41 @@ export const PropertySortEditor = <R extends SortRow>({
   allowCustomValue,
   withProperty = (row, property) => ({ ...row, property }),
   onChange,
-}: PropertySortEditorProps<R>) => {
-  const patchRow = (index: number, patch: (row: R) => R) =>
-    onChange(rows.map((row, i) => (i === index ? patch(row) : row)));
-  return (
-    <EditorField label="Sort by" tooltip={tooltip} optional>
-      <Stack direction="column" gap={0.5} alignItems="flex-start">
-        {rows.map((row, index) => (
-          <InputGroup key={index}>
-            <Select
-              width={28}
-              options={options}
-              value={row.property || null}
-              placeholder="property"
-              allowCustomValue={allowCustomValue}
-              formatOptionLabel={formatPropertyOptionLabel()}
-              onChange={({ value }) => patchRow(index, (old) => withProperty(old, value!))}
-            />
-            <Select
-              width={16}
-              options={DIRECTION_OPTIONS}
-              value={row.direction}
-              onChange={({ value }) => patchRow(index, (old) => ({ ...old, direction: value! }))}
-            />
-            <AccessoryButton
-              icon="times"
-              variant="secondary"
-              aria-label={`Remove sort ${index + 1}`}
-              data-testid={`${testIdPrefix}-remove-sort-${index}`}
-              onClick={() => onChange(rows.filter((_, i) => i !== index))}
-            />
-          </InputGroup>
-        ))}
-        {rows.length < max && (
-          <Button
+}: PropertySortEditorProps<R>) => (
+  <EditorField label="Sort by" tooltip={tooltip} optional>
+    <RowList
+      items={rows}
+      onChange={onChange}
+      newItem={() => newRow}
+      addLabel="Add sort"
+      max={max}
+      addTestId={`${testIdPrefix}-add-sort`}
+      renderItem={(row, onChangeRow, onRemove, index) => (
+        <InputGroup>
+          <Select
+            width={28}
+            options={options}
+            value={row.property || null}
+            placeholder="property"
+            allowCustomValue={allowCustomValue}
+            formatOptionLabel={formatPropertyOptionLabel()}
+            onChange={({ value }) => onChangeRow(withProperty(row, value!))}
+          />
+          <Select
+            width={16}
+            options={DIRECTION_OPTIONS}
+            value={row.direction}
+            onChange={({ value }) => onChangeRow({ ...row, direction: value! })}
+          />
+          <AccessoryButton
+            icon="times"
             variant="secondary"
-            size="sm"
-            icon="plus"
-            data-testid={`${testIdPrefix}-add-sort`}
-            onClick={() => onChange([...rows, newRow])}
-          >
-            Add sort
-          </Button>
-        )}
-      </Stack>
-    </EditorField>
-  );
-};
+            aria-label={`Remove sort ${index + 1}`}
+            data-testid={`${testIdPrefix}-remove-sort-${index}`}
+            onClick={onRemove}
+          />
+        </InputGroup>
+      )}
+    />
+  </EditorField>
+);

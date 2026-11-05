@@ -2,7 +2,6 @@ import React from 'react';
 import { EditorField, InputGroup, AccessoryButton } from '@grafana/plugin-ui';
 import {
   Badge,
-  Button,
   IconButton,
   InlineLabel,
   Select,
@@ -15,11 +14,11 @@ import { clampBucketSize, isAutoInterval, isTimeType } from '../../cdf/records';
 import {
   getGutterHintStyles,
   INTERVAL_OPTIONS,
-  moveItem,
   propertyOptions,
 } from './shared';
 import { formatPropertyOptionLabel } from './typeBadges';
 import { BlurInput } from './BlurInput';
+import { RowList } from '../common/RowList';
 
 interface BucketListProps {
   buckets: RecordsBucket[];
@@ -34,32 +33,40 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
   const timeProps = propertyOptions(viewDef, (type) => isTimeType(type), (p) => !!p.timeBucket);
   const anyProps = propertyOptions(viewDef, () => true, (p) => !!p.valuesBucket);
 
-  const patch = (index: number, next: RecordsBucket) =>
-    onChange(buckets.map((b, i) => (i === index ? next : b)));
-
   return (
     <EditorField
       label="Group by"
       tooltip="Select view properties to group by."
       optional
     >
-      <Stack direction="column" gap={0.5} alignItems="flex-start">
-        {buckets.map((bucket, index) => (
-          <Stack key={index} gap={0.5} alignItems="center">
+      <RowList
+        items={buckets}
+        onChange={onChange}
+        // Depth 5 is the API cap; stopping at 4 leaves room for the metric level.
+        max={4}
+        newItem={(): RecordsBucket =>
+          buckets.some((b) => b.kind === 'timeHistogram')
+            ? { kind: 'uniqueValues', property: '', size: 10 }
+            : { kind: 'timeHistogram', property: '', interval: 'auto' }
+        }
+        addLabel="Add bucket"
+        addTestId="records-add-bucket"
+        renderItem={(bucket, patch, onRemove, index, onMove) => (
+          <Stack gap={0.5} alignItems="center">
             <Stack gap={0} direction="column">
               <IconButton
                 name="arrow-up"
                 size="sm"
                 aria-label={`Move bucket ${index + 1} up`}
                 disabled={index === 0}
-                onClick={() => onChange(moveItem(buckets, index, -1))}
+                onClick={() => onMove(-1)}
               />
               <IconButton
                 name="arrow-down"
                 size="sm"
                 aria-label={`Move bucket ${index + 1} down`}
                 disabled={index === buckets.length - 1}
-                onClick={() => onChange(moveItem(buckets, index, 1))}
+                onClick={() => onMove(1)}
               />
             </Stack>
             <InputGroup>
@@ -72,7 +79,6 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
                 value={bucket.kind}
                 onChange={({ value }) =>
                   patch(
-                    index,
                     value === 'timeHistogram'
                       ? { kind: 'timeHistogram', property: '', interval: 'auto' }
                       : { kind: 'uniqueValues', property: '', size: 10 }
@@ -85,7 +91,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
                 value={bucket.property || null}
                 placeholder="property"
                 formatOptionLabel={formatPropertyOptionLabel()}
-                onChange={({ value }) => patch(index, { ...bucket, property: value! })}
+                onChange={({ value }) => patch({ ...bucket, property: value! })}
               />
               {bucket.kind === 'timeHistogram' ? (
                 <Select
@@ -93,7 +99,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
                   allowCustomValue
                   options={INTERVAL_OPTIONS}
                   value={bucket.interval}
-                  onChange={({ value }) => patch(index, { ...bucket, interval: value! })}
+                  onChange={({ value }) => patch({ ...bucket, interval: value! })}
                 />
               ) : (
                 <>
@@ -102,7 +108,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
                     width={8}
                     type="number"
                     value={String(bucket.size)}
-                    onCommit={(text) => patch(index, { ...bucket, size: clampBucketSize(Number(text)) })}
+                    onCommit={(text) => patch({ ...bucket, size: clampBucketSize(Number(text)) })}
                   />
                 </>
               )}
@@ -111,7 +117,7 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
                 variant="secondary"
                 aria-label={`Remove bucket ${index + 1}`}
                 data-testid={`records-remove-bucket-${index}`}
-                onClick={() => onChange(buckets.filter((_, i) => i !== index))}
+                onClick={onRemove}
               />
             </InputGroup>
             {bucket.kind === 'timeHistogram' && isAutoInterval(bucket.interval) && (
@@ -125,27 +131,8 @@ export const BucketList = ({ buckets, viewDef, autoInterval, onChange }: BucketL
               {bucket.kind}
             </span>
           </Stack>
-        ))}
-        {/* Depth 5 is the API cap; stopping at 4 leaves room for the metric level. */}
-        {buckets.length < 4 && (
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="plus"
-            data-testid="records-add-bucket"
-            onClick={() =>
-              onChange([
-                ...buckets,
-                buckets.some((b) => b.kind === 'timeHistogram')
-                  ? { kind: 'uniqueValues', property: '', size: 10 }
-                  : { kind: 'timeHistogram', property: '', interval: 'auto' },
-              ])
-            }
-          >
-            Add bucket
-          </Button>
         )}
-      </Stack>
+      />
     </EditorField>
   );
 };
