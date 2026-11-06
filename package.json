@@ -43,7 +43,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.14.188",
     "@types/ms": "^0.7.31",
-    "@types/node": "^20.8.7",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.0.0",
     "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
@@ -101,7 +101,7 @@
     ]
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24.5.0"
   },
   "resolutions": {
     "@babel/plugin-transform-modules-systemjs": "^7.29.8",
