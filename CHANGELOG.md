@@ -3,7 +3,7 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
-## Unreleased
+## 4.7.0 - November 6th, 2026
 
 ### Deprecations
 
@@ -31,8 +31,6 @@ Data Source for Grafana**.
 ### Bug fixes
 
 - Error and warning messages, keywords and links in the query help, and the **Assets** variable query field no longer depend on CSS classes that Grafana 12 removed, so they are styled again on Grafana 12.
-- The backend is now built with Go 1.27.3, which fixes a vulnerability in the Go standard library (`crypto/x509`, GO-2026-6809) that `govulncheck` reports.
-- The backend is now built with `golang.org/x/net` v0.62.0, which fixes two vulnerabilities (GO-2026-6860, GO-2026-6866) that `govulncheck` reports.
 - **Time series**: picking another time series kept the previous one's target unit, so the query failed when the new series measured something else, or had no unit at all. The target unit is now kept only when the new series measures the same quantity.
 - **GraphQL**: an error or warning for one of the panel's series, a failed datapoints request for example, never reached the query row, so the series was missing without explanation. Errors and warnings from the panel's series are now shown on the row, each once.
 - **Time series aggregates**: when the time range did not start on a whole interval (a range from 10:43 with a 1h granularity, say), the first interval was dropped, so series started blank until the next one. An interval that overlaps the range is now shown.
@@ -40,7 +38,7 @@ Data Source for Grafana**.
 
 ### Other
 
-- The plugin no longer ships a Go backend. It was scaffolding that never handled a query, so the plugin is now frontend-only, as every query already ran in the browser. Queries, settings and dashboards are unchanged.
+- The plugin no longer ships a Go backend. It was scaffolding that never handled a query, so the plugin is now frontend-only, as every query already ran in the browser. Queries, settings and dashboards are unchanged. With no Go code shipped, the Go vulnerabilities `govulncheck` reports for 4.6.0 (GO-2026-6809, GO-2026-6860, GO-2026-6866) no longer apply.
 
 ## 4.6.0 - October 14th, 2026
 
