@@ -272,13 +272,13 @@ describe('QueryEditor Utility Functions', () => {
 });
 
 describe('tab chips', () => {
-  it('marks Records as Alpha and the asset-centric and retired tabs as Deprecated', () => {
+  it('marks Records and Synthetic time series as Beta and the asset-centric and retired tabs as Deprecated', () => {
     // The chip lives in the tab's `suffix`, never in TabTitles: the e2e specs match
     // the tab by its exact label text.
     expect(TabTitles[Tabs.Records]).toBe('Records');
-    expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Alpha');
+    expect(TAB_SUFFIX_TEXT[Tabs.Records]).toBe('Beta');
     expect(TabTitles[Tabs.SyntheticTimeSeries]).toBe('Synthetic time series');
-    expect(TAB_SUFFIX_TEXT[Tabs.SyntheticTimeSeries]).toBe('Alpha');
+    expect(TAB_SUFFIX_TEXT[Tabs.SyntheticTimeSeries]).toBe('Beta');
     for (const tab of [
       Tabs.Timeseries,
       Tabs.Asset,

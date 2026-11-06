@@ -50,7 +50,7 @@ test('"Synthetic time series" resolves a filter variable and sends the instance 
 
   const editorRow = panelEditPage.getQueryEditorRow('A');
 
-  // By its leading text, as the Records spec does: the Alpha chip sits inside the tab, and
+  // By its leading text, as the Records spec does: the Beta chip sits inside the tab, and
   // Grafana 10.4 does not expose the tab's role and name the way later versions do.
   const tab = editorRow.getByText(/^Synthetic time series/);
   await expect(tab).toBeVisible();

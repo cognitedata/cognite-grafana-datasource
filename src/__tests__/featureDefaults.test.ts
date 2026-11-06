@@ -21,15 +21,15 @@ describe('resolveFeatureFlags', () => {
     expect(flags.enableLegacyDataModelFeatures).toBe(FEATURE_DEFAULTS.enableLegacyDataModelFeatures);
   });
 
-  it('leaves Records, an alpha, off unless a datasource turns it on', () => {
-    expect(resolveFeatureFlags({}).enableRecords).toBe(false);
-    expect(resolveFeatureFlags({ enableRecords: true }).enableRecords).toBe(true);
+  it('turns Records, a beta, on unless a datasource turns it off', () => {
+    expect(resolveFeatureFlags({}).enableRecords).toBe(true);
+    expect(resolveFeatureFlags({ enableRecords: false }).enableRecords).toBe(false);
   });
 
-  it('leaves Synthetic time series, an alpha, off unless a datasource turns it on', () => {
-    expect(resolveFeatureFlags({}).enableSyntheticTimeSeries).toBe(false);
+  it('turns Synthetic time series, a beta, on unless a datasource turns it off', () => {
+    expect(resolveFeatureFlags({}).enableSyntheticTimeSeries).toBe(true);
     expect(
-      resolveFeatureFlags({ enableSyntheticTimeSeries: true }).enableSyntheticTimeSeries
-    ).toBe(true);
+      resolveFeatureFlags({ enableSyntheticTimeSeries: false }).enableSyntheticTimeSeries
+    ).toBe(false);
   });
 });

@@ -305,8 +305,8 @@ export const TAB_SUFFIX_TEXT: Partial<Record<Tabs, string>> = {
   [Tabs.Relationships]: DEPRECATED_CHIP_TEXT,
   [Tabs.Templates]: DEPRECATED_CHIP_TEXT,
   [Tabs.ExtractionPipelines]: DEPRECATED_CHIP_TEXT,
-  [Tabs.Records]: 'Alpha',
-  [Tabs.SyntheticTimeSeries]: 'Alpha',
+  [Tabs.Records]: 'Beta',
+  [Tabs.SyntheticTimeSeries]: 'Beta',
 };
 
 /**

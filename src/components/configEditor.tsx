@@ -143,8 +143,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
       [masterKey]: isEnabled,
     };
     // Re-enabling a master restores its sub-flags to their defaults; both
-    // masters follow this one rule. Records and Synthetic time series, alphas,
-    // default off, so the CDM master leaves them off.
+    // masters follow this one rule.
     dependentKeys.forEach((key) => {
       patch[key] = isEnabled ? FEATURE_DEFAULTS[key] : false;
     });
@@ -367,7 +366,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     label="Records"
                     value={enableRecords}
                     onChange={onJsonBoolValueChange("enableRecords")}
-                    badge={<Badge text="Alpha" color="purple" />}
+                    badge={<Badge text="Beta" color="blue" />}
                   />
                   <FeatureToggleRow
                     id="enable-synthetic-time-series"
@@ -375,7 +374,7 @@ export function ConfigEditor(props: ConfigEditorProps) {
                     label="Synthetic time series"
                     value={enableSyntheticTimeSeries}
                     onChange={onJsonBoolValueChange("enableSyntheticTimeSeries")}
-                    badge={<Badge text="Alpha" color="purple" />}
+                    badge={<Badge text="Beta" color="blue" />}
                   />
                   <FeatureToggleRow
                     id="enable-flexible-data-modelling"
