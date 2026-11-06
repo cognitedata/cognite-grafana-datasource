@@ -27,7 +27,8 @@ import {
   clearSyntheticModelContext,
   setSyntheticModelContext,
 } from './syntheticTimeSeries/completions';
-import { computeExpressionMarkers, wireDiagnostics } from './syntheticTimeSeries/diagnostics';
+import { computeExpressionMarkers } from './syntheticTimeSeries/diagnostics';
+import { wireDiagnostics } from './common/monacoDiagnostics';
 import { OneLineCodeEditor, OneLineCodeEditorHandle } from './syntheticTimeSeries/OneLineCodeEditor';
 import { SyntheticRequestPreview } from './syntheticTimeSeries/RequestPreview';
 import {

@@ -3,25 +3,16 @@
  * the nearley grammars, unknown variables in the expression, and filter
  * properties the selected view does not declare.
  */
-import type { Monaco, monacoTypes } from '@grafana/ui';
+import { CodeMarker } from '../common/monacoDiagnostics';
 import { validateExpression, validateFilter } from '../../parser/dms';
 import { RESERVED_VARIABLE_NAMES } from '../../parser/dms/variables';
 import { INSTANCE_PROPERTIES } from '../../cdf/instanceProperties';
-
-const DEBOUNCE_MS = 300;
-
-export interface SyntheticMarker {
-  severity: 'error' | 'warning';
-  message: string;
-  startOffset: number;
-  endOffset: number;
-}
 
 const syntaxMarker = (
   text: string,
   error: { offset: number; message: string } | null,
   what: string
-): SyntheticMarker[] =>
+): CodeMarker[] =>
   error
     ? [
         {
@@ -47,12 +38,12 @@ const IDENTIFIER_REGEX = /(?<![\w$.{:[])([A-Za-z_][A-Za-z0-9_]*)\b(?!\s*\()/g;
 export const computeExpressionMarkers = (
   expression: string,
   knownVariables?: Set<string>
-): SyntheticMarker[] => {
+): CodeMarker[] => {
   const syntax = syntaxMarker(expression, validateExpression(expression), 'the expression');
   if (syntax.length || !knownVariables) {
     return syntax;
   }
-  const markers: SyntheticMarker[] = [];
+  const markers: CodeMarker[] = [];
   for (const match of blankStrings(expression).matchAll(IDENTIFIER_REGEX)) {
     const name = match[1];
     if (RESERVED_VARIABLE_NAMES.includes(name) || knownVariables.has(name)) {
@@ -86,12 +77,12 @@ const FILTER_PAIR_REGEX = /(?:^|[,{])\s*([A-Za-z0-9_.]+)\s*(?==~|!~|!=|>=|<=|\^=
 export const computeFilterMarkers = (
   filter: string,
   knownProperties?: Set<string>
-): SyntheticMarker[] => {
+): CodeMarker[] => {
   const syntax = syntaxMarker(filter, validateFilter(filter), 'the filter');
   if (syntax.length || !knownProperties) {
     return syntax;
   }
-  const markers: SyntheticMarker[] = [];
+  const markers: CodeMarker[] = [];
   for (const match of blankStrings(filter).matchAll(FILTER_PAIR_REGEX)) {
     const prop = match[1];
     const root = prop.split('.')[0];
@@ -109,62 +100,3 @@ export const computeFilterMarkers = (
   return markers;
 };
 
-const toMonacoMarkers = (
-  monaco: Monaco,
-  model: monacoTypes.editor.ITextModel,
-  markers: SyntheticMarker[]
-): monacoTypes.editor.IMarkerData[] =>
-  markers.map(({ severity, message, startOffset, endOffset }) => {
-    const start = model.getPositionAt(startOffset);
-    const end = model.getPositionAt(endOffset);
-    return {
-      severity: severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-      message,
-      startLineNumber: start.lineNumber,
-      startColumn: start.column,
-      endLineNumber: end.lineNumber,
-      endColumn: end.column,
-    };
-  });
-
-/**
- * Attaches debounced validation to an editor. Returns a disposer; call it when
- * the editor unmounts. `compute` is called with the current text, so markers
- * follow view or variable changes without rewiring.
- */
-export const wireDiagnostics = (
-  editor: monacoTypes.editor.IStandaloneCodeEditor,
-  monaco: Monaco,
-  compute: (text: string) => SyntheticMarker[],
-  owner: string
-): (() => void) => {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  const validate = () => {
-    const model = editor.getModel();
-    if (!model) {
-      return;
-    }
-    monaco.editor.setModelMarkers(
-      model,
-      owner,
-      toMonacoMarkers(monaco, model, compute(model.getValue()))
-    );
-  };
-  const subscription = editor.onDidChangeModelContent(() => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(validate, DEBOUNCE_MS);
-  });
-  validate();
-  return () => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    subscription.dispose();
-    const model = editor.getModel();
-    if (model) {
-      monaco.editor.setModelMarkers(model, owner, []);
-    }
-  };
-};

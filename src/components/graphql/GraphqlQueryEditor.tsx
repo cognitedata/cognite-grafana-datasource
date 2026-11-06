@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/css';
 import { GraphQLSchema, parse } from 'graphql';
 import { GrafanaTheme2 } from '@grafana/data';
@@ -9,11 +9,13 @@ import {
   FieldValidationMessage,
   MonacoEditor,
   Select,
+  type Monaco,
   Stack,
   useStyles2,
 } from '@grafana/ui';
 import CogniteDatasource from '../../datasource';
-import { getGraphqlSuggestions } from '../graphqlAutocomplete';
+import { getGraphqlMarkers, getGraphqlSuggestions } from '../graphqlAutocomplete';
+import { DiagnosticsHandle, wireDiagnostics } from '../common/monacoDiagnostics';
 import { GraphqlResponsePane } from './GraphqlResponsePane';
 import {
   DataModelOption,
@@ -61,6 +63,7 @@ interface GraphqlQueryEditorProps {
     version: string;
   }) => void;
   onVersionChange: (version: string) => void;
+  /** Saves the text and runs it: both callers, the panel and the variable editor, run on change. */
   onQueryChange: (graphqlQuery: string) => void;
   /** Rendered beside Test query, e.g. an Examples button. */
   headerActions?: React.ReactNode;
@@ -106,6 +109,39 @@ export const GraphqlQueryEditor = ({
   // Stable between renders: the code editor re-registers its completion provider
   // whenever this callback changes.
   const getSuggestions = useCallback(() => getGraphqlSuggestions(schema, editor), [schema, editor]);
+
+  // Markers read the schema through a ref, so they pick it up once introspection lands
+  // without rewiring the editor.
+  const schemaRef = useRef(schema);
+  const diagnosticsRef = useRef<DiagnosticsHandle | null>(null);
+  useEffect(() => {
+    schemaRef.current = schema;
+    // A new schema changes what is valid: check the text again now.
+    diagnosticsRef.current?.refresh();
+  }, [schema]);
+  useEffect(() => () => diagnosticsRef.current?.(), []);
+  const onQueryChangeRef = useRef(onQueryChange);
+  useEffect(() => {
+    onQueryChangeRef.current = onQueryChange;
+  }, [onQueryChange]);
+
+  const onEditorDidMount = (mounted: MonacoEditor, monaco: Monaco) => {
+    setEditor(mounted);
+    if (!monaco) {
+      return;
+    }
+    diagnosticsRef.current?.();
+    diagnosticsRef.current = wireDiagnostics(
+      mounted,
+      monaco,
+      (text) => getGraphqlMarkers(text, schemaRef.current),
+      `graphql-${refId}`
+    );
+    // Shift+Enter saves and runs the query, as in Grafana's own query editors.
+    mounted.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () =>
+      onQueryChangeRef.current(mounted.getValue())
+    );
+  };
   /**
    * Tests the text on screen, not only what was last saved. The editor saves on
    * blur, and Monaco reports blur a tick late, so a quick click could otherwise test
@@ -225,7 +261,7 @@ export const GraphqlQueryEditor = ({
                 height={GRAPHQL_EDITOR_HEIGHT}
                 onBlur={onQueryChange}
                 onSave={onQueryChange}
-                onEditorDidMount={setEditor}
+                onEditorDidMount={onEditorDidMount}
                 showMiniMap={false}
                 showLineNumbers
                 monacoOptions={{ scrollBeyondLastLine: false }}

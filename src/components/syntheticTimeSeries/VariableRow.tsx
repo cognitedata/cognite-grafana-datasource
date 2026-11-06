@@ -39,7 +39,8 @@ import {
   clearSyntheticModelContext,
   setSyntheticModelContext,
 } from './completions';
-import { computeFilterMarkers, wireDiagnostics } from './diagnostics';
+import { computeFilterMarkers } from './diagnostics';
+import { wireDiagnostics } from '../common/monacoDiagnostics';
 import { errorMessageOf } from '../../queryMessages';
 
 const MODE_OPTIONS: Array<{

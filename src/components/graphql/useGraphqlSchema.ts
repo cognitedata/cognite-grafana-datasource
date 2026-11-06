@@ -21,8 +21,11 @@ export const useGraphqlSchema = (
 
   useEffect(() => {
     let cancelled = false;
+    // The previous model's schema goes at once: until the new one arrives, its fields
+    // would be suggested, and checked against, for a model that doesn't have them.
+    setSchema(undefined);
+    setSchemaError(undefined);
     if (!fdmDatasource || !space || !externalId || !version) {
-      setSchema(undefined);
       return undefined;
     }
     fdmDatasource
