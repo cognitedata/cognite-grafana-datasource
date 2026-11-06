@@ -78,14 +78,15 @@ const isConnection = (selections: readonly GraphQLSelection[]): boolean =>
  *
  * Only the first root field is read, matching execution: the datasource unwraps a
  * single root field before mapping rows, so fields from a second one would be
- * offered but never resolve. `refId` routes parse errors to the caller's own query.
+ * offered but never resolve. The editor reports a parse error itself.
  */
 export const extractFieldNamesFromQuery = (
   graphqlQuery: string,
-  refId: string
+  // Kept for the callers; a parse error is no longer reported from here.
+  _refId?: string
 ): string[] => {
   const rootSelections: readonly GraphQLSelection[] =
-    getFirstSelection(graphqlQuery, refId) ?? [];
+    getFirstSelection(graphqlQuery) ?? [];
   // The operation's own root field (`listCogniteAsset`) is an envelope too, so an
   // offered path has to be relative to a row. Without this, every field came back
   // prefixed with the root field name and silently resolved to nothing.

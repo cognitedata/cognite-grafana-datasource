@@ -751,16 +751,6 @@ export interface VariableQueryProps {
   datasource: CogniteDatasource;
 }
 
-export interface QueryRequestError {
-  refId: string;
-  error: string;
-}
-
-export interface QueryWarning {
-  refId: string;
-  warning: string;
-}
-
 export interface FDMQueryResponse<T> {
   [x: string]: {
     edges?: Array<{ node?: T[] }>;

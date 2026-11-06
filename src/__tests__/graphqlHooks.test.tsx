@@ -40,7 +40,7 @@ describe('useGraphqlDataModels', () => {
 
     await waitFor(() => expect(result.current.loadingDataModels).toBe(false));
     await waitFor(() => expect(result.current.loadingVersions).toBe(false));
-    expect(result.current.metadataError).toBe('Failed to load data models.');
+    expect(result.current.metadataError).toBe("Couldn't load the data models: 403");
   });
 
   it('reports both failures when the models and the versions fail together', async () => {
@@ -55,7 +55,7 @@ describe('useGraphqlDataModels', () => {
     await waitFor(() => expect(result.current.loadingDataModels).toBe(false));
     await waitFor(() => expect(result.current.loadingVersions).toBe(false));
     expect(result.current.metadataError).toBe(
-      'Failed to load data models. Failed to load data model versions.'
+      "Couldn't load the data models: 401 Couldn't load the data model's versions: 401"
     );
   });
 
@@ -69,7 +69,7 @@ describe('useGraphqlDataModels', () => {
 });
 
 describe('useGraphqlSchema', () => {
-  it('leaves the editor without a schema when introspection fails', async () => {
+  it('leaves the editor without a schema, and says why, when introspection fails', async () => {
     // Regression: a model that could not be introspected threw while building
     // autocomplete.
     const datasource = graphqlDatasourceStub({
@@ -80,16 +80,19 @@ describe('useGraphqlSchema', () => {
     const { result } = renderHook(() =>
       useGraphqlSchema(datasource, 'A', MODEL.space, MODEL.externalId, MODEL.version)
     );
-    await waitFor(() =>
-      expect(datasource.flexibleDataModellingDatasource.runIntrospectionQuery).toHaveBeenCalled()
-    );
-    expect(result.current).toBeUndefined();
+    await waitFor(() => expect(result.current.schemaError).toBeDefined());
+    expect(result.current).toEqual({
+      schema: undefined,
+      schemaError:
+        "Couldn't read the data model's schema, so there are no suggestions: unreachable",
+    });
   });
 
   it('does not introspect until the version is known', () => {
     const datasource = graphqlDatasourceStub();
-    renderHook(() => useGraphqlSchema(datasource, 'A', 'sp', 'model'));
+    const { result } = renderHook(() => useGraphqlSchema(datasource, 'A', 'sp', 'model'));
     expect(datasource.flexibleDataModellingDatasource.runIntrospectionQuery).not.toHaveBeenCalled();
+    expect(result.current).toEqual({ schema: undefined, schemaError: undefined });
   });
 });
 

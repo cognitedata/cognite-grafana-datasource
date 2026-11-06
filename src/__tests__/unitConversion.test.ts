@@ -114,12 +114,10 @@ describe('Unit Conversion', () => {
       });
     });
 
-    it('should return empty array on error', async () => {
+    it('rejects on error, for the caller to report', async () => {
       mockConnector.fetchAndPaginate.mockRejectedValue(new Error('API Error'));
 
-      const units = await fetchCogniteUnits(mockConnector);
-
-      expect(units).toEqual([]);
+      await expect(fetchCogniteUnits(mockConnector)).rejects.toThrow('API Error');
     });
 
     it('should handle units without properties', async () => {
@@ -298,15 +296,12 @@ describe('Unit Conversion', () => {
       expect(unit).toBeUndefined();
     });
 
-    it('should return undefined on error', async () => {
+    it('rejects on error, for the caller to report', async () => {
       mockConnector.fetchItems.mockRejectedValue(new Error('API Error'));
 
-      const unit = await getTimeSeriesUnit(mockConnector, {
-        space: 'cdm_try',
-        externalId: 'test-ts',
-      });
-
-      expect(unit).toBeUndefined();
+      await expect(
+        getTimeSeriesUnit(mockConnector, { space: 'cdm_try', externalId: 'test-ts' })
+      ).rejects.toThrow('API Error');
     });
   });
 
@@ -362,15 +357,12 @@ describe('Unit Conversion', () => {
       expect(mockConnector.fetchItems).toHaveBeenCalledTimes(1);
     });
 
-    it('returns empty object on error', async () => {
+    it('rejects on error, for the caller to report', async () => {
       mockConnector.fetchItems.mockRejectedValue(new Error('API Error'));
 
-      const result = await getTimeSeriesProperties(mockConnector, {
-        space: 'cdm_try',
-        externalId: 'test-ts',
-      });
-
-      expect(result).toEqual({});
+      await expect(
+        getTimeSeriesProperties(mockConnector, { space: 'cdm_try', externalId: 'test-ts' })
+      ).rejects.toThrow('API Error');
     });
   });
 
@@ -500,8 +492,17 @@ describe('Unit Conversion', () => {
       expect(first.get('volume_flow_rate:ft3-per-hr')?.symbol).toBe('ft³/h');
     });
 
-    it('does not cache an empty catalog, so a failed fetch is retried', async () => {
+    it('does not cache a failed fetch, so it is retried', async () => {
       mockConnector.fetchAndPaginate.mockRejectedValueOnce(new Error('API Error'));
+      await expect(getCogniteUnitIndex(mockConnector)).rejects.toThrow('API Error');
+
+      mockConnector.fetchAndPaginate.mockResolvedValue(catalog);
+      expect((await getCogniteUnitIndex(mockConnector)).size).toBe(2);
+      expect(mockConnector.fetchAndPaginate).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not cache an empty catalog either', async () => {
+      mockConnector.fetchAndPaginate.mockResolvedValueOnce([]);
       expect((await getCogniteUnitIndex(mockConnector)).size).toBe(0);
 
       mockConnector.fetchAndPaginate.mockResolvedValue(catalog);

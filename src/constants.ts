@@ -1,5 +1,4 @@
-import { eventFactory, FieldType } from '@grafana/data';
-import { QueryWarning, QueryRequestError } from './types';
+import { FieldType } from '@grafana/data';
 
 export const API_V1 = 'api/v1/projects';
 
@@ -20,8 +19,6 @@ export const RECORDS_LIMIT_WARNING =
   `This request returned the maximum number of items, so this panel shows only part of the matching records.\n` +
   `Narrow the time range, add filters, or switch to Aggregate if you only need counts.`;
 
-export const failedResponseEvent = eventFactory<QueryRequestError>('failed-request');
-export const responseWarningEvent = eventFactory<QueryWarning>('request-warning');
 export const CacheTime = {
   TimeseriesList: '61s',
   ResourceByIds: '61m',

@@ -11,7 +11,7 @@ import {
   ALL_ACTIVITY_COLUMNS,
   LEGACY_ACTIVITY_COLUMNS,
 } from '../types';
-import { fetchDMSSpaces, fetchDMSView, stringifyError } from '../cdf/client';
+import { fetchDMSSpaces, fetchDMSView } from '../cdf/client';
 import { DMSViewWithProperties, InvolvedView } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeInstanceRef, InstancePicker, PickedInstance } from './common/InstancePicker';
@@ -19,6 +19,7 @@ import { ViewPicker } from './common/ViewPicker';
 import { PropertySortEditor } from './common/PropertySortEditor';
 import { PropertyColumnsField } from './common/PropertyColumnsField';
 import { instancePropertyOptions, PropertyOption, viewPropertyOptions } from './records/shared';
+import { errorMessageOf } from '../queryMessages';
 
 interface CogniteActivityTabProps extends SelectedProps {
   connector: Connector;
@@ -63,6 +64,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
   const [spaceOptions, setSpaceOptions] = useState<Array<SelectableValue<string>>>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(false);
   const [spacesError, setSpacesError] = useState<string | null>(null);
+  const [viewError, setViewError] = useState<string | null>(null);
   const [activityView, setActivityView] = useState<DMSViewWithProperties | null>(null);
   // The view's properties, then the instance ones, then any a query was saved with.
   // Edges and reverse relations carry no stored type and never come back as values.
@@ -92,9 +94,18 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
       const request = ++viewRequest.current;
       // The previous view's properties are not offered while the new one loads.
       setActivityView(null);
-      const view = await fetchDMSView(connector, viewSpec);
-      if (request === viewRequest.current) {
-        setActivityView(view);
+      setViewError(null);
+      try {
+        const view = await fetchDMSView(connector, viewSpec);
+        if (request === viewRequest.current) {
+          setActivityView(view);
+        }
+      } catch (error) {
+        if (request === viewRequest.current) {
+          setViewError(
+            `Couldn't read the view's properties, so Sort by and Columns are empty: ${errorMessageOf(error)}`
+          );
+        }
       }
     },
     [connector]
@@ -110,7 +121,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
         ...spaces.map((s) => ({ label: s.space, value: s.space })),
       ]);
     } catch (err) {
-      setSpacesError(`Couldn't load the spaces: ${stringifyError(err)}`);
+      setSpacesError(`Couldn't load the spaces: ${errorMessageOf(err)}`);
     } finally {
       setLoadingSpaces(false);
     }
@@ -192,6 +203,7 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
             tooltip="The CogniteActivity view the activities are read from."
             htmlFor={`activity-view-${query.refId}`}
           >
+            <div>
             <ViewPicker
               inputId={`activity-view-${query.refId}`}
               connector={connector}
@@ -203,6 +215,8 @@ export const CogniteActivityTab: React.FC<CogniteActivityTabProps> = ({
               isClearable={false}
               width={44}
             />
+            {viewError && <FieldValidationMessage>{viewError}</FieldValidationMessage>}
+            </div>
           </EditorField>
         </EditorFieldGroup>
       </EditorRow>

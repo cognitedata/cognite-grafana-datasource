@@ -32,13 +32,12 @@ describe('FlexibleDataModellingDatasource', () => {
       expect(result.listGraphQlDmlVersions.items[0].externalId).toBe('test');
     });
 
-    it('should return an empty list when an error occurs', async () => {
-      // Mock the fetchItems method of the connector to throw an error
+    it('rejects when an error occurs, so the editor can say why', async () => {
       connectorMock.fetchItems = jest.fn().mockRejectedValue(new Error('Test error'));
 
-      const result = await datasource.listFlexibleDataModelling('test-ref-id');
-
-      expect(result.listGraphQlDmlVersions.items).toHaveLength(0);
+      await expect(datasource.listFlexibleDataModelling('test-ref-id')).rejects.toThrow(
+        'Test error'
+      );
     });
   });
 
@@ -73,17 +72,39 @@ describe('FlexibleDataModellingDatasource', () => {
       expect(result.graphQlDmlVersionsById.items).toHaveLength(1);
     });
 
-    it('should return an empty list when an error occurs', async () => {
-      // Mock the fetchQuery method of the connector to throw an error
+    it('rejects when an error occurs, so the editor can say why', async () => {
       connectorMock.fetchQuery = jest.fn().mockRejectedValue(new Error('Test error'));
 
-      const result = await datasource.listVersionByExternalIdAndSpace(
-        'test-ref-id',
-        'test',
-        'test'
-      );
+      await expect(
+        datasource.listVersionByExternalIdAndSpace('test-ref-id', 'test', 'test')
+      ).rejects.toThrow('Test error');
+    });
+  });
 
-      expect(result.graphQlDmlVersionsById.items).toHaveLength(0);
+  describe('runIntrospectionQuery', () => {
+    const model = { space: 'sp', externalId: 'model', version: '1' };
+
+    it('returns the introspected schema', async () => {
+      const schema = { __schema: { types: [] } };
+      connectorMock.fetchQuery = jest.fn().mockResolvedValue({ data: schema });
+
+      await expect(datasource.runIntrospectionQuery(model)).resolves.toEqual(schema);
+    });
+
+    it('rejects with the first GraphQL error of a 200 response', async () => {
+      connectorMock.fetchQuery = jest
+        .fn()
+        .mockResolvedValue({ errors: [{ message: 'Not authorized' }, { message: 'Second' }] });
+
+      await expect(datasource.runIntrospectionQuery(model)).rejects.toEqual({
+        message: 'Not authorized',
+      });
+    });
+
+    it('rejects when the request fails', async () => {
+      connectorMock.fetchQuery = jest.fn().mockRejectedValue(new Error('Test error'));
+
+      await expect(datasource.runIntrospectionQuery(model)).rejects.toThrow('Test error');
     });
   });
 });

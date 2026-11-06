@@ -22,8 +22,8 @@ export const FlexibleDataModellingTab = (
   const [queryError, setQueryError] = useState<string>();
 
   const firstSelection = useMemo(
-    () => getFirstSelection(graphQlQuery, query.refId),
-    [graphQlQuery, query.refId]
+    () => getFirstSelection(graphQlQuery),
+    [graphQlQuery]
   );
 
   // Named in the Label tooltip, so the tokens that will actually resolve are visible

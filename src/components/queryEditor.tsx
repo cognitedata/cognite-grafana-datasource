@@ -41,7 +41,7 @@ import { RecordsTab } from './recordsTab';
 import { SyntheticTimeSeriesTab } from './syntheticTimeSeriesTab';
 import { CommonEditors, LabelRow } from './commonEditors';
 import { EventsTab } from './eventsTab';
-import { useQueryMessages } from './useQueryMessages';
+import { useQueryWarnings } from './useQueryMessages';
 import { FormattedMessage } from './common/Styled';
 import { isTabDisabled, isTabHidden, getActiveTab } from '../queryEditorUtils';
 
@@ -352,7 +352,7 @@ export function QueryEditor(props: EditorProps) {
   const { query: queryWithoutDefaults, onChange, onRunQuery, datasource } = props;
   const query = defaults(queryWithoutDefaults, defaultQuery);
   const { refId: thisRefId, tab } = query;
-  const { errorMessage, warningMessage, clearMessages } = useQueryMessages(thisRefId);
+  const warningMessage = useQueryWarnings(props.data, thisRefId);
 
   // At the top of the component, after defining `query`
   const queryRef = React.useRef(query);
@@ -362,10 +362,9 @@ export function QueryEditor(props: EditorProps) {
   const onQueryChange: OnQueryChange = React.useCallback((patch, shouldRunQuery = true) => {
     onChange({ ...queryRef.current, ...patch } as CogniteQuery);
     if (shouldRunQuery) {
-      clearMessages();
       onRunQuery();
     }
-  }, [onChange, onRunQuery, clearMessages]); // Dependencies are now stable
+  }, [onChange, onRunQuery]);
 
   const onSelectTab = (tab: Tabs) => () => {
     onQueryChange({ tab });
@@ -470,7 +469,6 @@ export function QueryEditor(props: EditorProps) {
           />
         )}
       </TabContent>
-      {errorMessage && <FormattedMessage severity="error">{errorMessage}</FormattedMessage>}
       {warningMessage && <FormattedMessage severity="warning">{warningMessage}</FormattedMessage>}
     </div>
   );

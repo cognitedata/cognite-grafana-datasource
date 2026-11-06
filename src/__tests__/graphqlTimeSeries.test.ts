@@ -7,7 +7,7 @@ import {
   timeSeriesKeysFromSchema,
 } from '../cdf/graphqlTimeSeries';
 import { FlexibleDataModellingDatasource } from '../datasources/FlexibleDataModellingDatasource';
-import { eventBusService } from '../appEventHandler';
+import { QueryMessages } from '../queryMessages';
 
 const CORE = buildSchema(`
   type CogniteTimeSeries { space: String, externalId: String, name: String, type: String }
@@ -110,18 +110,25 @@ describe('timeSeriesKeysFromSchema', () => {
 
 describe('plotting the series a GraphQL query returns', () => {
   let lastConnector: any;
+  let lastMessages: QueryMessages;
+  /** The warnings the last run left on row A. */
+  const lastNotices = () =>
+    lastMessages.attachTo({ data: [] }).data.flatMap((frame: any) => frame.meta?.notices ?? []);
   /** The per-series datapoint requests a query produces. */
   const runRequests = async (
     keys: { tsKeys?: string[]; schemaTsKeys?: string[]; label?: string; queryType?: string },
     items: any[],
     graphQlQuery: string,
     targetPatch: Record<string, unknown> = {},
-    storedType?: string
+    storedType?: string | Error
   ) => {
     const connector = {
       fetchQuery: jest.fn().mockResolvedValue({ data: { listCogniteTimeSeries: { items } } }),
       // The type lookup for rows that do not select `type`: every instance asked for.
-      fetchItems: jest.fn().mockImplementation(async ({ data }) =>
+      fetchItems:
+        storedType instanceof Error
+          ? jest.fn().mockRejectedValue(storedType)
+          : jest.fn().mockImplementation(async ({ data }) =>
         storedType
           ? data.items.map(({ space, externalId }: any) => ({
               space,
@@ -151,7 +158,8 @@ describe('plotting the series a GraphQL query returns', () => {
       label: keys.label,
       queryType: keys.queryType as any,
     };
-    await ds.runQuery(query, {}, { refId: 'A', flexibleDataModellingQuery: query, ...targetPatch });
+    lastMessages = new QueryMessages();
+    await ds.runQuery(query, {}, { refId: 'A', flexibleDataModellingQuery: query, ...targetPatch }, lastMessages);
     return timeseries.query.mock.calls.map(
       ([request]: any[]) => request.targets[0].flexibleDataModellingQuery
     );
@@ -210,13 +218,29 @@ describe('plotting the series a GraphQL query returns', () => {
   });
 
   it('names the skipped series in a warning on the query row', async () => {
-    const emit = jest.spyOn(eventBusService, 'emit').mockImplementation(() => undefined);
     await runRequests(vouchedRows, mixedRows.slice(0, 3), rowsQuery);
-    expect(emit).toHaveBeenCalledWith(expect.anything(), {
-      refId: 'A',
-      warning: expect.stringMatching(/^Skipped 2 time series that are not numeric: Phase \(string\), Pump \(state\)\./),
-    });
-    emit.mockRestore();
+    expect(lastNotices()).toEqual([
+      {
+        severity: 'warning',
+        text: expect.stringMatching(/^Skipped 2 time series that are not numeric: Phase \(string\), Pump \(state\)\./),
+      },
+    ]);
+    expect(lastMessages.attachTo({ data: [] }).errors).toBeUndefined();
+  });
+
+  it('fails the query, rather than guessing a type, when the type lookup fails', async () => {
+    const untyped = [{ space: 's', externalId: 'phase', name: 'Phase' }];
+    const requests = await runRequests(
+      { ...vouchedRows, queryType: 'state' },
+      untyped,
+      rowsQuery,
+      {},
+      new Error('lookup failed')
+    );
+    expect(requests).toEqual([]);
+    expect(lastMessages.attachTo({ data: [] }).errors).toEqual([
+      expect.objectContaining({ refId: 'A', message: 'lookup failed' }),
+    ]);
   });
 
   it('looks up rows without a type for a string or state panel, not for a numeric one', async () => {
@@ -261,14 +285,9 @@ describe('plotting the series a GraphQL query returns', () => {
   });
 
   it('names a row the lookup finds no time series for as of an unknown type', async () => {
-    const emit = jest.spyOn(eventBusService, 'emit').mockImplementation(() => undefined);
     const requests = await runRequests({ ...vouchedRows, queryType: 'string' }, [{ space: 's', externalId: 'gone', name: 'Gone' }], rowsQuery);
     expect(requests).toEqual([]);
-    expect(emit).toHaveBeenCalledWith(expect.anything(), {
-      refId: 'A',
-      warning: expect.stringContaining('Gone (unknown type)'),
-    });
-    emit.mockRestore();
+    expect(lastNotices().map(({ text }: any) => text)).toEqual([expect.stringContaining('Gone (unknown type)')]);
   });
 
   it('lets the schema decide when the selected type is not populated', async () => {

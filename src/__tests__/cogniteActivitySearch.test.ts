@@ -61,12 +61,10 @@ describe('CogniteActivity DMS Functions', () => {
       expect(result).toEqual(mockActivityViews);
     });
 
-    it('should return empty array on error', async () => {
+    it('rejects on error, so the picker can report it', async () => {
       fetcher.fetch.mockRejectedValue(new Error('API Error'));
 
-      const result = await fetchCogniteActivityViews(connector);
-
-      expect(result).toEqual([]);
+      await expect(fetchCogniteActivityViews(connector)).rejects.toThrow('API Error');
     });
 
     it('should return empty array when no activity views found', async () => {
@@ -235,18 +233,12 @@ describe('CogniteActivity DMS Functions', () => {
       expect(callData.filter.and[1].range.gte).toBe(new Date(timeRange[0]).toISOString());
     });
 
-    it('should return empty array on error', async () => {
+    it('rejects on error, so the query can report it', async () => {
       fetcher.fetch.mockRejectedValue(new Error('Failed to fetch'));
 
-      const result = await fetchActivitiesFromDMS(
-        connector,
-        viewSpec,
-        timeRange,
-        false,
-        timeSeriesInstanceId
-      );
-
-      expect(result).toEqual([]);
+      await expect(
+        fetchActivitiesFromDMS(connector, viewSpec, timeRange, false, timeSeriesInstanceId)
+      ).rejects.toThrow('Failed to fetch');
     });
 
     it('should return empty array when no activities match', async () => {

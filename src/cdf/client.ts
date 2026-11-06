@@ -763,28 +763,26 @@ export function fetchDMSViews(
 }
 
 // Fetch all property names of a specific DMS view (includes inherited properties)
-/** A view with its properties, inherited ones included, or null when it cannot be read. */
+/**
+ * A view with its properties, inherited ones included, or null when CDF has no such
+ * view. A failed request is thrown, for the caller to report.
+ */
 export async function fetchDMSView(
   connector: Connector,
   viewSpec: { space: string; externalId: string; version: string }
 ): Promise<DMSViewWithProperties | null> {
-  try {
-    const response = await retryOnTransientError(() =>
-      connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
-        method: HttpMethod.POST,
-        path: '/models/views/byids',
-        data: {
-          items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
-          includeInheritedProperties: true,
-        },
-        cacheTime: CacheTime.ResourceByIds,
-      })
-    );
-    return response.data?.items?.[0] ?? null;
-  } catch (err) {
-    console.warn('Failed to fetch DMS view properties:', err);
-    return null;
-  }
+  const response = await retryOnTransientError(() =>
+    connector.fetchData<{ data: { items: DMSViewWithProperties[] } }>({
+      method: HttpMethod.POST,
+      path: '/models/views/byids',
+      data: {
+        items: [{ space: viewSpec.space, externalId: viewSpec.externalId, version: viewSpec.version }],
+        includeInheritedProperties: true,
+      },
+      cacheTime: CacheTime.ResourceByIds,
+    })
+  );
+  return response.data?.items?.[0] ?? null;
 }
 
 export async function fetchDMSViewProperties(
@@ -818,14 +816,11 @@ export async function retryOnTransientError<T>(
         throw error;
       }
 
+      // Retried quietly: a retry that succeeds is nothing to report, and the last
+      // failure is thrown to the caller.
       const exponentialDelay = baseDelay * Math.pow(2, attempt);
       const jitter = Math.random() * exponentialDelay * 0.5;
       const delay = exponentialDelay + jitter;
-
-      console.warn(
-        `Request failed (${error.status}). Retrying in ${Math.round(delay)}ms ` +
-        `(attempt ${attempt + 1}/${maxRetries})`
-      );
 
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -863,52 +858,47 @@ export async function listDMSInstances(
 export async function fetchCogniteUnits(
   connector: Connector
 ): Promise<CogniteUnit[]> {
-  try {
-    const listUnitsRequest: DMSListRequest = {
-      sources: [{
-        source: {
-          type: 'view',
-          space: 'cdf_cdm',
-          externalId: 'CogniteUnit',
-          version: 'v1',
-        },
-      }],
-      instanceType: 'node',
-      limit: 5000,
-      filter: {
-        equals: {
-          property: ['node', 'space'],
-          value: UNITS_SPACE,
-        },
+  const listUnitsRequest: DMSListRequest = {
+    sources: [{
+      source: {
+        type: 'view',
+        space: 'cdf_cdm',
+        externalId: 'CogniteUnit',
+        version: 'v1',
       },
+    }],
+    instanceType: 'node',
+    limit: 5000,
+    filter: {
+      equals: {
+        property: ['node', 'space'],
+        value: UNITS_SPACE,
+      },
+    },
+  };
+  const instances = await retryOnTransientError(() =>
+    // The catalog can exceed a single page, so follow cursors instead of a one-shot list.
+    connector.fetchAndPaginate<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/list',
+      data: listUnitsRequest,
+      cacheTime: CacheTime.Units,
+    })
+  );
+  
+  return instances.map((instance) => {
+    const unitProps = instance.properties?.['cdf_cdm']?.['CogniteUnit/v1'] || {};
+    return {
+      space: instance.space,
+      externalId: instance.externalId,
+      name: unitProps.name || instance.externalId,
+      description: unitProps.description,
+      symbol: unitProps.symbol,
+      quantity: unitProps.quantity,
+      source: unitProps.source,
+      sourceReference: unitProps.sourceReference,
     };
-    const instances = await retryOnTransientError(() =>
-      // The catalog can exceed a single page, so follow cursors instead of a one-shot list.
-      connector.fetchAndPaginate<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/list',
-        data: listUnitsRequest,
-        cacheTime: CacheTime.Units,
-      })
-    );
-    
-    return instances.map((instance) => {
-      const unitProps = instance.properties?.['cdf_cdm']?.['CogniteUnit/v1'] || {};
-      return {
-        space: instance.space,
-        externalId: instance.externalId,
-        name: unitProps.name || instance.externalId,
-        description: unitProps.description,
-        symbol: unitProps.symbol,
-        quantity: unitProps.quantity,
-        source: unitProps.source,
-        sourceReference: unitProps.sourceReference,
-      };
-    });
-  } catch (err) {
-    console.warn('Failed to fetch units:', err);
-    return [];
-  }
+  });
 }
 
 /**
@@ -928,8 +918,7 @@ export async function getCogniteUnitIndex(
   }
   const pending = fetchCogniteUnits(connector).then(
     (units) => {
-      // `fetchCogniteUnits` swallows failures and returns `[]`; don't pin an empty catalog
-      // in the cache forever, let the next label interpolation retry.
+      // Don't pin an empty catalog in the cache forever: let the next caller retry.
       if (!units.length) {
         unitIndexCache.delete(connector);
       }
@@ -968,13 +957,10 @@ export async function resolveEffectiveUnit(
   if (!externalId) {
     return undefined;
   }
-  try {
-    const resolved = (await getCogniteUnitIndex(connector)).get(externalId);
-    if (resolved) {
-      return resolved;
-    }
-  } catch (err) {
-    console.warn('Failed to resolve unit for label:', err);
+  // A catalog that can't be read fails the labels, which the query reports.
+  const resolved = (await getCogniteUnitIndex(connector)).get(externalId);
+  if (resolved) {
+    return resolved;
   }
   // Unknown unit (custom space, stale catalog, unreachable catalog): still expose the
   // identifier so `{{unit}}` and `{{unit.externalId}}` resolve to something meaningful.
@@ -1035,21 +1021,10 @@ const fetchTimeSeriesInstances = (connector: Connector, instanceIds: DMSInstance
 
 export async function getTimeSeriesProperties(
   connector: Connector,
-  instanceId: { space: string; externalId: string },
-  { rethrow = false }: { rethrow?: boolean } = {}
+  instanceId: { space: string; externalId: string }
 ): Promise<TimeSeriesProperties> {
-  try {
-    const instances = await fetchTimeSeriesInstances(connector, [instanceId]);
-    if (instances.length > 0) {
-      return parseTimeSeriesProperties(instances[0]);
-    }
-  } catch (err) {
-    if (rethrow) {
-      throw err;
-    }
-    console.warn('Failed to fetch timeseries properties:', err);
-  }
-  return {};
+  const instances = await fetchTimeSeriesInstances(connector, [instanceId]);
+  return instances.length > 0 ? parseTimeSeriesProperties(instances[0]) : {};
 }
 
 /** The key `getTimeSeriesPropertiesBatch` files an instance under. */
@@ -1079,38 +1054,33 @@ export async function getStateSet(
   connector: Connector,
   stateSet: { space: string; externalId: string }
 ): Promise<StateSetEntry[] | undefined> {
-  try {
-    const instances = await retryOnTransientError(() =>
-      connector.fetchItems<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/byids',
-        cacheTime: CacheTime.ResourceByIds,
-        data: {
-          sources: [{ source: STATE_SET_VIEW }],
-          items: [{ instanceType: 'node', space: stateSet.space, externalId: stateSet.externalId }],
-          includeTyping: false,
-        },
-      })
-    );
-    const states = instances[0]?.properties?.['cdf_cdm']?.['CogniteStateSet/v1']?.states;
-    if (!Array.isArray(states)) {
-      return undefined;
-    }
-    return states
-      .filter(
-        (state): state is StateSetEntry =>
-          typeof state?.numericValue === 'number' && typeof state?.stringValue === 'string'
-      )
-      .map(({ numericValue, stringValue, description }) => ({
-        numericValue,
-        stringValue,
-        ...(typeof description === 'string' && description ? { description } : {}),
-      }))
-      .sort((a, b) => a.numericValue - b.numericValue);
-  } catch (err) {
-    console.warn('Failed to fetch the state set:', err);
+  const instances = await retryOnTransientError(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/byids',
+      cacheTime: CacheTime.ResourceByIds,
+      data: {
+        sources: [{ source: STATE_SET_VIEW }],
+        items: [{ instanceType: 'node', space: stateSet.space, externalId: stateSet.externalId }],
+        includeTyping: false,
+      },
+    })
+  );
+  const states = instances[0]?.properties?.['cdf_cdm']?.['CogniteStateSet/v1']?.states;
+  if (!Array.isArray(states)) {
     return undefined;
   }
+  return states
+    .filter(
+      (state): state is StateSetEntry =>
+        typeof state?.numericValue === 'number' && typeof state?.stringValue === 'string'
+    )
+    .map(({ numericValue, stringValue, description }) => ({
+      numericValue,
+      stringValue,
+      ...(typeof description === 'string' && description ? { description } : {}),
+    }))
+    .sort((a, b) => a.numericValue - b.numericValue);
 }
 
 export async function getTimeSeriesUnit(
@@ -1127,48 +1097,43 @@ export async function fetchCogniteTimeSeriesInstance(
   viewSpec: { space: string; externalId: string; version: string },
   instanceId: { space: string; externalId: string }
 ): Promise<Record<string, any>> {
-  try {
-    const instances = await retryOnTransientError(() =>
-      connector.fetchItems<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/byids',
-        data: {
-          sources: [
-            {
-              source: {
-                type: 'view',
-                space: viewSpec.space,
-                externalId: viewSpec.externalId,
-                version: viewSpec.version,
-              },
+  const instances = await retryOnTransientError(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/byids',
+      data: {
+        sources: [
+          {
+            source: {
+              type: 'view',
+              space: viewSpec.space,
+              externalId: viewSpec.externalId,
+              version: viewSpec.version,
             },
-          ],
-          items: [
-            {
-              instanceType: 'node',
-              space: instanceId.space,
-              externalId: instanceId.externalId,
-            },
-          ],
-          includeTyping: false,
-        },
-      })
-    );
-    if (!instances.length) {
-      return {};
-    }
-    const instance = instances[0];
-    const props =
-      instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] ?? {};
-    return {
-      space: instance.space,
-      externalId: instance.externalId,
-      ...props,
-    };
-  } catch (err) {
-    console.warn('Failed to fetch CogniteTimeSeries instance:', err);
+          },
+        ],
+        items: [
+          {
+            instanceType: 'node',
+            space: instanceId.space,
+            externalId: instanceId.externalId,
+          },
+        ],
+        includeTyping: false,
+      },
+    })
+  );
+  if (!instances.length) {
     return {};
   }
+  const instance = instances[0];
+  const props =
+    instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] ?? {};
+  return {
+    space: instance.space,
+    externalId: instance.externalId,
+    ...props,
+  };
 }
 
 /**
@@ -1195,29 +1160,17 @@ export async function fetchContainerViews(
   return response.data?.items?.[0]?.inspectionResults?.involvedViews ?? [];
 }
 
-async function fetchContainerViewsOrEmpty(
-  connector: Connector,
-  containerExternalId: string
-): Promise<InvolvedView[]> {
-  try {
-    return await fetchContainerViews(connector, containerExternalId);
-  } catch (err) {
-    console.warn(`Failed to fetch ${containerExternalId} views:`, err);
-    return [];
-  }
-}
-
 export const fetchCogniteTimeSeriesViews = (connector: Connector): Promise<InvolvedView[]> =>
-  fetchContainerViewsOrEmpty(connector, 'CogniteTimeSeries');
+  fetchContainerViews(connector, 'CogniteTimeSeries');
 
 export const fetchCogniteActivityViews = (connector: Connector): Promise<InvolvedView[]> =>
-  fetchContainerViewsOrEmpty(connector, 'CogniteActivity');
+  fetchContainerViews(connector, 'CogniteActivity');
 
 export const fetchCogniteAssetViews = (connector: Connector): Promise<InvolvedView[]> =>
-  fetchContainerViewsOrEmpty(connector, 'CogniteAsset');
+  fetchContainerViews(connector, 'CogniteAsset');
 
 export const fetchCogniteEquipmentViews = (connector: Connector): Promise<InvolvedView[]> =>
-  fetchContainerViewsOrEmpty(connector, 'CogniteEquipment');
+  fetchContainerViews(connector, 'CogniteEquipment');
 
 // Fetch activities from DMS for a given time range, filtered to a specific time series
 export async function fetchActivitiesFromDMS(
@@ -1227,94 +1180,89 @@ export async function fetchActivitiesFromDMS(
   useScheduledTime: boolean,
   timeSeriesInstanceId: { space: string; externalId: string }
 ): Promise<CogniteActivity[]> {
-  try {
-    const [rangeStart, rangeEnd] = timeRange;
-    const startTimeProperty = useScheduledTime ? 'scheduledStartTime' : 'startTime';
-    const endTimeProperty = useScheduledTime ? 'scheduledEndTime' : 'endTime';
+  const [rangeStart, rangeEnd] = timeRange;
+  const startTimeProperty = useScheduledTime ? 'scheduledStartTime' : 'startTime';
+  const endTimeProperty = useScheduledTime ? 'scheduledEndTime' : 'endTime';
 
-    // Convert Unix timestamps (ms) to ISO 8601 strings as required by DMS
-    const rangeStartISO = new Date(rangeStart).toISOString();
-    const rangeEndISO = new Date(rangeEnd).toISOString();
+  // Convert Unix timestamps (ms) to ISO 8601 strings as required by DMS
+  const rangeStartISO = new Date(rangeStart).toISOString();
+  const rangeEndISO = new Date(rangeEnd).toISOString();
 
-    // Build filter for time range - activities that overlap the time range
-    // We check: startTime <= rangeEnd AND endTime >= rangeStart
-    // PLUS filter to only activities related to the selected time series
-    const timeFilter: DMSFilter = {
-      and: [
-        // Activity starts before or during the range end
-        {
-          range: {
-            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, startTimeProperty],
-            lte: rangeEndISO,
-          },
+  // Build filter for time range - activities that overlap the time range
+  // We check: startTime <= rangeEnd AND endTime >= rangeStart
+  // PLUS filter to only activities related to the selected time series
+  const timeFilter: DMSFilter = {
+    and: [
+      // Activity starts before or during the range end
+      {
+        range: {
+          property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, startTimeProperty],
+          lte: rangeEndISO,
         },
-        // Activity ends after or during the range start
-        {
-          range: {
-            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
-            gte: rangeStartISO,
-          },
+      },
+      // Activity ends after or during the range start
+      {
+        range: {
+          property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, endTimeProperty],
+          gte: rangeStartISO,
         },
-        // Activity is related to the selected time series
-        {
-          in: {
-            property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, 'timeSeries'],
-            values: [{
-              space: timeSeriesInstanceId.space,
-              externalId: timeSeriesInstanceId.externalId,
-            }],
-          },
+      },
+      // Activity is related to the selected time series
+      {
+        in: {
+          property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, 'timeSeries'],
+          values: [{
+            space: timeSeriesInstanceId.space,
+            externalId: timeSeriesInstanceId.externalId,
+          }],
         },
-      ],
+      },
+    ],
+  };
+
+  const listRequest: DMSListRequest = {
+    sources: [
+      {
+        source: {
+          type: 'view',
+          space: viewSpec.space,
+          externalId: viewSpec.externalId,
+          version: viewSpec.version,
+        },
+      },
+    ],
+    instanceType: 'node',
+    limit: 1000,
+    filter: timeFilter,
+  };
+
+  const instances = await retryOnTransientError(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/list',
+      data: listRequest,
+    })
+  );
+
+  // Convert DMS instances to CogniteActivity objects
+  return instances.map((instance) => {
+    const props = instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
+    return {
+      space: instance.space,
+      externalId: instance.externalId,
+      version: instance.version,
+      lastUpdatedTime: instance.lastUpdatedTime,
+      createdTime: instance.createdTime,
+      name: props.name,
+      description: props.description,
+      startTime: props.startTime,
+      endTime: props.endTime,
+      scheduledStartTime: props.scheduledStartTime,
+      scheduledEndTime: props.scheduledEndTime,
+      type: props.type,
+      ...props, // Include any additional properties
     };
-
-    const listRequest: DMSListRequest = {
-      sources: [
-        {
-          source: {
-            type: 'view',
-            space: viewSpec.space,
-            externalId: viewSpec.externalId,
-            version: viewSpec.version,
-          },
-        },
-      ],
-      instanceType: 'node',
-      limit: 1000,
-      filter: timeFilter,
-    };
-
-    const instances = await retryOnTransientError(() =>
-      connector.fetchItems<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/list',
-        data: listRequest,
-      })
-    );
-
-    // Convert DMS instances to CogniteActivity objects
-    return instances.map((instance) => {
-      const props = instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
-      return {
-        space: instance.space,
-        externalId: instance.externalId,
-        version: instance.version,
-        lastUpdatedTime: instance.lastUpdatedTime,
-        createdTime: instance.createdTime,
-        name: props.name,
-        description: props.description,
-        startTime: props.startTime,
-        endTime: props.endTime,
-        scheduledStartTime: props.scheduledStartTime,
-        scheduledEndTime: props.scheduledEndTime,
-        type: props.type,
-        ...props, // Include any additional properties
-      };
-    });
-  } catch (err) {
-    console.warn('Failed to fetch activities from DMS:', err);
-    return [];
-  }
+  });
 }
 
 // Fetch activities from DMS filtered by a set of related instances (assets, equipment, or timeSeries)
@@ -1327,60 +1275,55 @@ export async function fetchActivitiesByAssets(
   if (!assetInstances.length) {
     return [];
   }
-  try {
-    const filter: DMSFilter = {
-      in: {
-        property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, filterProperty],
-        values: assetInstances.map((a) => ({ space: a.space, externalId: a.externalId })),
-      },
-    };
+  const filter: DMSFilter = {
+    in: {
+      property: [viewSpec.space, `${viewSpec.externalId}/${viewSpec.version}`, filterProperty],
+      values: assetInstances.map((a) => ({ space: a.space, externalId: a.externalId })),
+    },
+  };
 
-    const listRequest: DMSListRequest = {
-      sources: [
-        {
-          source: {
-            type: 'view',
-            space: viewSpec.space,
-            externalId: viewSpec.externalId,
-            version: viewSpec.version,
-          },
+  const listRequest: DMSListRequest = {
+    sources: [
+      {
+        source: {
+          type: 'view',
+          space: viewSpec.space,
+          externalId: viewSpec.externalId,
+          version: viewSpec.version,
         },
-      ],
-      instanceType: 'node',
-      limit: 1000,
-      filter,
+      },
+    ],
+    instanceType: 'node',
+    limit: 1000,
+    filter,
+  };
+
+  const instances = await retryOnTransientError(() =>
+    connector.fetchItems<DMSInstance>({
+      method: HttpMethod.POST,
+      path: '/models/instances/list',
+      data: listRequest,
+    })
+  );
+
+  return instances.map((instance) => {
+    const props =
+      instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
+    return {
+      space: instance.space,
+      externalId: instance.externalId,
+      version: instance.version,
+      lastUpdatedTime: instance.lastUpdatedTime,
+      createdTime: instance.createdTime,
+      name: props.name,
+      description: props.description,
+      startTime: props.startTime,
+      endTime: props.endTime,
+      scheduledStartTime: props.scheduledStartTime,
+      scheduledEndTime: props.scheduledEndTime,
+      type: props.type,
+      ...props,
     };
-
-    const instances = await retryOnTransientError(() =>
-      connector.fetchItems<DMSInstance>({
-        method: HttpMethod.POST,
-        path: '/models/instances/list',
-        data: listRequest,
-      })
-    );
-
-    return instances.map((instance) => {
-      const props =
-        instance.properties?.[viewSpec.space]?.[`${viewSpec.externalId}/${viewSpec.version}`] || {};
-      return {
-        space: instance.space,
-        externalId: instance.externalId,
-        version: instance.version,
-        lastUpdatedTime: instance.lastUpdatedTime,
-        createdTime: instance.createdTime,
-        name: props.name,
-        description: props.description,
-        startTime: props.startTime,
-        endTime: props.endTime,
-        scheduledStartTime: props.scheduledStartTime,
-        scheduledEndTime: props.scheduledEndTime,
-        type: props.type,
-        ...props,
-      };
-    });
-  } catch (err) {
-    console.warn('Failed to fetch activities by assets from DMS:', err);
-    return [];
-  }
+  });
 }
 

@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FieldValidationMessage, Select } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { Connector } from '../../connector';
-import { fetchContainerViews, stringifyError } from '../../cdf/client';
+import { fetchContainerViews } from '../../cdf/client';
 import { InvolvedView, ViewRef } from '../../types/dms';
+import { errorMessageOf } from '../../queryMessages';
 
 export type { ViewRef };
 
@@ -78,7 +79,7 @@ export function useContainerViews(connector: Connector, container: string): Cont
       .catch((err) => {
         if (!cancelled) {
           setViews([]);
-          setError(`Couldn't load the ${container} views: ${stringifyError(err)}`);
+          setError(`Couldn't load the ${container} views: ${errorMessageOf(err)}`);
         }
       })
       .finally(() => {
