@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { useGraphqlDataModels } from '../components/graphql/useGraphqlDataModels';
 import { useGraphqlSchema } from '../components/graphql/useGraphqlSchema';
 import { useGraphqlPreview } from '../components/graphql/useGraphqlPreview';
@@ -86,6 +87,33 @@ describe('useGraphqlSchema', () => {
       schemaError:
         "Couldn't read the data model's schema, so there are no suggestions: unreachable",
     });
+  });
+
+  it("drops the previous model's schema as soon as another model is picked", async () => {
+    const introspection = (type: string) =>
+      introspectionFromSchema(buildSchema(`type Query { ${type}: String }`));
+    let resolveSecond: (value: unknown) => void = () => {};
+    const runIntrospectionQuery = jest
+      .fn()
+      .mockResolvedValueOnce(introspection('pumps'))
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+    const datasource = graphqlDatasourceStub({
+      flexibleDataModellingDatasource: { runIntrospectionQuery },
+    });
+    const { result, rerender } = renderHook(
+      ({ externalId }) => useGraphqlSchema(datasource, 'A', MODEL.space, externalId, MODEL.version),
+      { initialProps: { externalId: 'pumps' } }
+    );
+    await waitFor(() =>
+      expect(result.current.schema?.getQueryType()?.getFields().pumps).toBeDefined()
+    );
+
+    rerender({ externalId: 'valves' });
+    // While the new model's introspection is in flight, nothing is suggested or checked.
+    expect(result.current.schema).toBeUndefined();
+
+    await act(async () => resolveSecond(introspection('valves')));
+    expect(result.current.schema?.getQueryType()?.getFields().valves).toBeDefined();
   });
 
   it('does not introspect until the version is known', () => {
