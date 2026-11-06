@@ -1,5 +1,4 @@
-import { isArray } from 'lodash';
-import { applyFilters } from '../utils';
+import { applyFilters, getQueryString } from '../utils';
 import { FilterTypes, ParsedFilter } from '../parser/types';
 
 const { NotEquals, RegexNotEquals, RegexEquals } = FilterTypes;
@@ -51,6 +50,28 @@ describe('Utils', () => {
     });
     it('should follow "and" logic for multiple filter', () => {
       expect(applyFilters(assets, filters).length).toEqual(2);
+    });
+  });
+
+  describe('getQueryString', () => {
+    it('omits null and undefined, sorts keys, encodes like strict-uri-encode', () => {
+      expect(
+        getQueryString({
+          b: 'two words',
+          a: 1,
+          c: null,
+          d: undefined,
+          e: "!'()*",
+        }),
+      ).toBe("a=1&b=two%20words&e=%21%27%28%29%2A");
+    });
+
+    it('serializes array values as repeated keys', () => {
+      expect(getQueryString({ id: [1, 2, 3] })).toBe('id=1&id=2&id=3');
+    });
+
+    it('keeps empty string values', () => {
+      expect(getQueryString({ x: '' })).toBe('x=');
     });
   });
 });
