@@ -50,7 +50,7 @@ jobs:
           # Empty without a backend: package-plugin only builds one when Magefile.go
           # exists, and setup-go then just keeps the runner's Go.
           go-version: ${{ steps.go.outputs.version }}
-          node-version: '20'
+          node-version: '24'
 
       - name: Check the packaged backend's Go version and vulnerabilities
         if: steps.check-for-backend.outputs.has-backend == 'true'

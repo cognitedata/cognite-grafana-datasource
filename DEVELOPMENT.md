@@ -1,7 +1,7 @@
 ## Developing
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js](https://nodejs.org/en/download/) 24.5 or newer (required for `yarn sign` / `@grafana/sign-plugin`; use `.nvmrc` with nvm)
 - [Yarn](https://yarnpkg.com/getting-started/install)
 - [Docker](https://docs.docker.com/get-docker/)
 
