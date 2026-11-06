@@ -1,6 +1,5 @@
 import _, { isNil, omitBy, get, map, filter, find, uniq, head } from 'lodash';
 import { DataFrame, TimeRange } from '@grafana/data';
-import { stringify } from 'query-string';
 import ms from 'ms';
 import { ExecutableDefinitionNode } from 'graphql';
 import gql from 'graphql-tag';
@@ -9,8 +8,28 @@ import { FilterTypes, ParsedFilter } from './parser/types';
 import { NUMERIC_TYPE_KEY } from './cdf/graphqlTimeSeries';
 import { GRAPHQL_ROW_FIELDS } from './cdf/graphqlRows';
 
-export function getQueryString(obj: any) {
-  return stringify(omitBy(obj, isNil));
+/** Same encoding as former `query-string` / `strict-uri-encode`: %20 for space, strict on !'()* */
+const encodeQueryPart = (value: unknown) =>
+  encodeURIComponent(String(value)).replace(
+    /[!'()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+/**
+ * Builds a query string like `query-string@6` `stringify(omitBy(obj, isNil))`:
+ * sorted keys, `key=1&key=2` for arrays, skips null/undefined.
+ */
+export function getQueryString(obj: { [s: string]: any }) {
+  const params = omitBy(obj, isNil) as Record<string, unknown>;
+  return Object.keys(params)
+    .sort()
+    .flatMap((key) => {
+      const value = params[key];
+      return (Array.isArray(value) ? value : [value])
+        .filter((item) => !isNil(item))
+        .map((item) => `${encodeQueryPart(key)}=${encodeQueryPart(item)}`);
+    })
+    .join('&');
 }
 
 export function toGranularityWithLowerBound(milliseconds: number, lowerBound = 1000): string {
