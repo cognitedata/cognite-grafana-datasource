@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { EditorRow, EditorRows, FlexItem } from '@grafana/plugin-ui';
-import { Stack } from '@grafana/ui';
+import { Stack, FieldValidationMessage } from '@grafana/ui';
 import { SelectableValue, TimeRange } from '@grafana/data';
 import {
   RecordsFilterRow,
@@ -25,7 +25,7 @@ import {
   defaultWindowBounds,
   windowBounds,
 } from '../cdf/records';
-import { getCogniteUnitIndex, stringifyError } from '../cdf/client';
+import { getCogniteUnitIndex } from '../cdf/client';
 import { CogniteUnit } from '../types/dms';
 import { Connector } from '../connector';
 import { encodeViewRef } from './common/ViewPicker';
@@ -40,6 +40,7 @@ import { MetricList } from './records/MetricList';
 import { ResultShapeBadge } from './records/ResultShapeBadge';
 import { RequestPreview } from './records/RequestPreview';
 import { UnitsEditor } from './records/UnitsEditor';
+import { errorMessageOf } from '../queryMessages';
 
 interface RecordsTabProps extends SelectedProps {
   connector: Connector;
@@ -72,6 +73,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   const [viewDefs, setViewDefs] = useState<RecordViewDefinition[]>([]);
   const [loadingViews, setLoadingViews] = useState(false);
   const [viewsError, setViewsError] = useState<string | null>(null);
+  const [unitsError, setUnitsError] = useState<string | null>(null);
   const [stream, setStream] = useState<StreamDefinition | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
@@ -90,7 +92,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
       .catch((error) => {
         if (!cancelled) {
           setViewDefs([]);
-          setViewsError(`Couldn't load the record views: ${stringifyError(error)}`);
+          setViewsError(`Couldn't load the record views: ${errorMessageOf(error)}`);
         }
       })
       .finally(() => !cancelled && setLoadingViews(false));
@@ -117,12 +119,14 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
   // fetch per connector no matter how many query rows are open.
   useEffect(() => {
     let cancelled = false;
+    const failed = (what: string) => (error: unknown) =>
+      !cancelled && setUnitsError(`Couldn't load the ${what}: ${errorMessageOf(error)}`);
     getCogniteUnitIndex(connector)
       .then((index) => !cancelled && setUnitIndex(index))
-      .catch(() => !cancelled && setUnitIndex(new Map()));
+      .catch(failed('unit catalog'));
     fetchUnitSystems(connector)
       .then((systems) => !cancelled && setUnitSystems(systems ?? []))
-      .catch(() => !cancelled && setUnitSystems([]));
+      .catch(failed('unit systems'));
     return () => {
       cancelled = true;
     };
@@ -356,6 +360,7 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({
             unitIndex={unitIndex}
             onChange={patchQuery}
           />
+          {unitsError && <FieldValidationMessage>{unitsError}</FieldValidationMessage>}
         </EditorRow>
       )}
 

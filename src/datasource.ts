@@ -25,7 +25,7 @@ import { splitTopLevel } from "./cdf/instanceRef";
 import { isAutoInterval } from "./cdf/records";
 import { interpolateCdmSyntheticQuery, normalizeCdmSyntheticQuery } from "./cdf/syntheticTimeSeries";
 import { interpolateFilterVariables } from "./cdf/filterVariables";
-import { clearQueryMessages } from "./appEventHandler";
+import { QueryMessages } from "./queryMessages";
 import { CogniteVariableSupport } from "./variableSupport";
 import {
   AssetsFilterRequestParams,
@@ -149,8 +149,9 @@ export default class CogniteDatasource extends DataSourceApi<
   query(
     options: DataQueryRequest<CogniteQuery>,
   ): Observable<DataQueryResponse> {
-    // Before any datasource runs, so the messages this run emits are the ones shown.
-    options.targets.forEach(({ refId }) => clearQueryMessages(refId));
+    // This run's errors and warnings, kept apart from every other request's, so two
+    // panels that both have a query "A" never get each other's messages.
+    const messages = new QueryMessages();
     const queryTargets = filterEmptyQueryTargets(options.targets).map((t) =>
       this.replaceVariablesInTarget(t, options.scopedVars)
     );
@@ -175,7 +176,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.timeseriesDatasource.query({
             ...options,
             targets: tsTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(tsObservable);
       }
@@ -185,7 +186,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.eventsDatasource.query({
             ...options,
             targets: eventTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(eventObservable);
       }
@@ -195,7 +196,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.templatesDatasource.query({
             ...options,
             targets: templatesTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(templatesObservable);
       }
@@ -205,7 +206,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.relationshipsDatasource.query({
             ...options,
             targets: relationshipsTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(relationshipsObservable);
       }
@@ -215,7 +216,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.extractionPipelinesDatasource.query({
             ...options,
             targets: extractionPipelinesTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(extractionPipelinesObservable);
       }
@@ -225,7 +226,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.flexibleDataModellingDatasource.query({
             ...options,
             targets: flexibleDataModellingTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(flexibleDataModellingObservable);
       }
@@ -235,7 +236,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.activityDatasource.query({
             ...options,
             targets: activityTargets,
-          }),
+          }, messages),
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(activityObservable);
       }
@@ -245,7 +246,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.activityDatasource.queryByAssets({
             ...options,
             targets: cogniteActivityTabTargets,
-          })
+          }, messages)
         ).pipe(map((result) => ({ data: result.data })));
         observables.push(cogniteActivityTabObservable);
       }
@@ -255,7 +256,7 @@ export default class CogniteDatasource extends DataSourceApi<
           this.recordsDatasource.query({
             ...options,
             targets: recordsTargets,
-          }),
+          }, messages),
           // Errors are forwarded, not just data: a failed records query must
           // reach the panel instead of rendering as an empty result.
         ).pipe(map((result) => ({ data: result.data, errors: result.errors })));
@@ -263,12 +264,13 @@ export default class CogniteDatasource extends DataSourceApi<
       }
     }
 
-    return this.mergeObservables(observables);
+    return this.mergeObservables(observables, messages).pipe(map((response) => messages.attachTo(response)));
   }
 
   // A utility function to merge multiple observables into one
   mergeObservables(
     observables: Array<Observable<DataQueryResponse>>,
+    messages: QueryMessages,
   ): Observable<DataQueryResponse> {
     if (observables.length === 0) {
       return of({ data: [] });
@@ -278,6 +280,21 @@ export default class CogniteDatasource extends DataSourceApi<
       let allData: any[] = [];
       let allErrors: DataQueryError[] = [];
       let completedCount = 0;
+      // An inner request that errors is finished too: without this the merged
+      // response would never arrive.
+      const finish = () => {
+        completedCount++;
+        if (completedCount === observables.length) {
+          const fullResponse: DataQueryResponse = {
+            data: allData,
+          };
+          if (allErrors.length) {
+            fullResponse.errors = allErrors;
+          }
+          subscriber.next(fullResponse);
+          subscriber.complete();
+        }
+      };
 
       const subscriptions = observables.map((obs) =>
         obs.subscribe({
@@ -291,25 +308,11 @@ export default class CogniteDatasource extends DataSourceApi<
             }
           },
           error: (err) => {
-            allErrors.push({
-              message: err?.message || "Unknown error",
-              refId: err?.refId || undefined,
-              ...err,
-            });
+            // Without a refId it is the panel's error, not one query row's.
+            messages.error(err, err?.refId ?? "");
+            finish();
           },
-          complete: () => {
-            completedCount++;
-            if (completedCount === observables.length) {
-              const fullResponse: DataQueryResponse = {
-                data: allData,
-              };
-              if (allErrors.length) {
-                fullResponse.errors = allErrors;
-              }
-              subscriber.next(fullResponse);
-              subscriber.complete();
-            }
-          },
+          complete: finish,
         })
       );
 

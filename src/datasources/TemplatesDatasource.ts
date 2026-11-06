@@ -2,8 +2,8 @@ import { DataQueryRequest, DataQueryResponse, FieldType, toDataFrame, DataFrame 
 import _ from 'lodash';
 import { Connector } from '../connector';
 import { TemplateQuery, CogniteQuery, HttpMethod } from '../types';
-import { handleError } from '../appEventHandler';
 import { addValuesToDataFrameObj } from '../utils';
+import { QueryMessages } from '../queryMessages';
 
 type QueryResult = { query: TemplateQuery & { refId: string }; results: any };
 
@@ -37,7 +37,11 @@ export class TemplatesDatasource {
     });
   }
 
-  private postQuery(query: Partial<TemplateQuery & { refId: string }>, payload: string) {
+  private postQuery(
+    query: Partial<TemplateQuery & { refId: string }>,
+    payload: string,
+    messages: QueryMessages
+  ) {
     const { groupExternalId, version } = query;
     return this.connector
       .fetchData({
@@ -52,13 +56,13 @@ export class TemplatesDatasource {
         return { query, results };
       })
       .catch((err: any) => {
-        handleError(err, query.refId);
+        messages.error(err, query.refId);
         return [];
       });
   }
 
-  private runQuery(query: TemplateQuery & { refId: string }) {
-    return this.postQuery(query, query.graphQlQuery) as Promise<QueryResult>;
+  private runQuery(query: TemplateQuery & { refId: string }, messages: QueryMessages) {
+    return this.postQuery(query, query.graphQlQuery, messages) as Promise<QueryResult>;
   }
 
   private static getItems(resultsData: any, dataPath: string): any[] {
@@ -92,14 +96,18 @@ export class TemplatesDatasource {
       : groupByValues[0][1];
   }
 
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const results = await Promise.all(
       options.targets.map((target) => {
-        return this.runQuery({ refId: target.refId, ...target.templateQuery });
+        return this.runQuery({ refId: target.refId, ...target.templateQuery }, messages);
       })
     );
 
-    const dataframes = results.flatMap((res) => {
+    // A failed query has been recorded in `messages` and has no result to read.
+    const dataframes = results.filter((res) => res?.query).flatMap((res) => {
       const { dataPath } = res.query;
       const { groupBy, datapointsPath, refId } = res.query;
       const datapointsPathArray = TemplatesDatasource.fromMultiStringToArray(datapointsPath);

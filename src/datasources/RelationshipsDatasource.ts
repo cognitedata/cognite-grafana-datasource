@@ -12,9 +12,9 @@ import { fetchRelationships } from '../cdf/client';
 import { Connector } from '../connector';
 import { CogniteQuery, HttpMethod, RelationshipsQuery } from '../types';
 import { nodeField, edgeField } from '../constants';
-import { handleError, handleWarning } from '../appEventHandler';
 import { CogniteRelationshipResponse } from '../cdf/types';
 import { getRange, addValuesToDataFrameObj } from '../utils';
+import { QueryMessages } from '../queryMessages';
 
 type RelationshipsNodeGrap = {
   nodes: DataFrame;
@@ -121,10 +121,11 @@ export class RelationshipsDatasource {
 
   private getRelationships(
     query: RelationshipsQuery & { refId: string },
-    timeFrame
+    timeFrame,
+    messages: QueryMessages
   ): Promise<CogniteRelationshipResponse[]> {
     return fetchRelationships(query, this.connector, timeFrame).catch((err: any) => {
-      handleError(err, query.refId);
+      messages.error(err, query.refId);
       return [];
     });
   }
@@ -133,7 +134,8 @@ export class RelationshipsDatasource {
     relationshipsList: CogniteRelationshipResponse[],
     depth: number,
     sourceExternalIds: string[],
-    timeFrame
+    timeFrame,
+    messages: QueryMessages
   ) {
     const targetExternalIds: string[] = getDifferedIds(relationshipsList, sourceExternalIds);
     try {
@@ -142,10 +144,11 @@ export class RelationshipsDatasource {
           ...query,
           sourceExternalIds: targetExternalIds,
         },
-        timeFrame
+        timeFrame,
+        messages
       );
       if (!targetExternalIds.length) {
-        handleWarning('Maximum of depth reached', query.refId);
+        messages.warning('Maximum of depth reached', query.refId);
         return relationshipsList;
       }
       if (depth > 2 && targetExternalIds.length) {
@@ -154,21 +157,25 @@ export class RelationshipsDatasource {
           list,
           depth - 1,
           _.concat(sourceExternalIds, targetExternalIds),
-          timeFrame
+          timeFrame,
+          messages
         );
         return [...relationshipsList, ...list, ...relist];
       }
       return [...relationshipsList, ...list];
     } catch (error) {
-      handleError(error, query.refId);
+      messages.error(error, query.refId);
       return [];
     }
   }
-  private async postQuery(query: RelationshipsQuery & { refId: string } & { timeFrame: any }) {
+  private async postQuery(
+    query: RelationshipsQuery & { refId: string } & { timeFrame: any },
+    messages: QueryMessages
+  ) {
     const { sourceExternalIds, depth, timeFrame } = query;
     try {
       let list;
-      const relationshipsList = await this.getRelationships(query, timeFrame);
+      const relationshipsList = await this.getRelationships(query, timeFrame, messages);
       list = relationshipsList;
       if (depth > 1 && sourceExternalIds.length) {
         const relationships = await this.depthRelationships(
@@ -176,17 +183,21 @@ export class RelationshipsDatasource {
           relationshipsList,
           depth,
           sourceExternalIds,
-          timeFrame
+          timeFrame,
+          messages
         );
         list = _.uniqBy(relationships, 'externalId');
       }
       return [_.map(createRelationshipsNode(list, query.refId)), [list]];
     } catch (error) {
-      handleError(error, query.refId);
+      messages.error(error, query.refId);
       return [];
     }
   }
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const data = await Promise.all(
       _.map(options.targets, (target) => {
         const [min, max] = getRange(options.range);
@@ -197,7 +208,7 @@ export class RelationshipsDatasource {
           refId: target.refId,
           ...target.relationshipsQuery,
           timeFrame,
-        });
+        }, messages);
       })
     );
     return {
@@ -229,6 +240,7 @@ export class RelationshipsDatasource {
     }
   }
   getSourceExternalIds(query: RelationshipsQuery & { refId: string }): Promise<SelectableValue[]> {
-    return this.getRelationships({ ...query, sourceExternalIds: [] }, []);
+    // Still swallowed: the editor that loads these options has no error handling.
+    return fetchRelationships({ ...query, sourceExternalIds: [] }, this.connector, []).catch(() => []);
   }
 }

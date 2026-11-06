@@ -4,7 +4,7 @@ import { getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { CogniteQuery, FDMQueryResponse, FlexibleDataModellingQuery, HttpMethod } from '../types';
 import { DMSInstanceId } from '../types/dms';
 import { Connector } from '../connector';
-import { handleError, handleWarning } from '../appEventHandler';
+import { QueryMessages } from '../queryMessages';
 import { TimeseriesDatasource } from './TimeseriesDatasource';
 import { convertItemsToTable, getTimeSeriesPropertiesBatch, instanceKey } from '../cdf/client';
 import { isTimeSeriesKind, TimeSeriesKind } from '../cdf/aggregates';
@@ -193,7 +193,8 @@ export class FlexibleDataModellingDatasource {
     items: TimeseriesItem[],
     query: FlexibleDataModellingQuery,
     options: any,
-    target: any
+    target: any,
+    messages: QueryMessages
   ): Promise<any[]> {
     // Instances: the rows alone, already returned as a table, without data points.
     if (items.length === 0 || query.queryType === 'instances') {
@@ -207,7 +208,7 @@ export class FlexibleDataModellingDatasource {
     const skipped = typed.filter(({ kind }) => kind !== selected);
     const plotted = typed.filter((item): item is (typeof typed)[number] & { kind: TimeSeriesKind } => item.kind === selected);
     if (skipped.length) {
-      handleWarning(skippedSeriesWarning(skipped, selected), target.refId);
+      messages.warning(skippedSeriesWarning(skipped, selected), target.refId);
     }
 
     // Query each time series individually with unique refIds
@@ -215,7 +216,8 @@ export class FlexibleDataModellingDatasource {
       const targets = item.type === 'target' ? [item.value as string] : [];
       const instanceIds = item.type === 'instanceId' ? [idOf(item)] : [];
 
-      return this.timeseriesDatasource.query({
+      return this.timeseriesDatasource.query(
+        {
         ...options,
         targets: [
           {
@@ -231,7 +233,9 @@ export class FlexibleDataModellingDatasource {
             },
           },
         ],
-      });
+        },
+        messages
+      );
     });
 
     const results = await Promise.all(queryPromises);
@@ -283,46 +287,37 @@ export class FlexibleDataModellingDatasource {
       graphQlDml: string;
     }>
   > {
-    try {
-      // Use REST API instead of GraphQL to support includeGlobal parameter
-      // https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels
-      const items = await this.connector.fetchItems<{
-        space: string;
-        externalId: string;
-        version: string;
-        name: string;
-        description: string;
-        isGlobal?: boolean;
-      }>({
-        path: '/models/datamodels',
-        method: HttpMethod.GET,
-        data: undefined,
-        params: { limit: 1000, includeGlobal: true },
-      });
-      
-      // Map to expected format (graphQlDml will be fetched separately when needed)
-      const mappedItems = items.map((item) => ({
-        space: item.space,
-        externalId: item.externalId,
-        version: item.version,
-        name: item.name || item.externalId,
-        description: item.description || '',
-        graphQlDml: '', // Will be fetched when a specific model is selected
-      }));
-      
-      return {
-        listGraphQlDmlVersions: {
-          items: mappedItems,
-        },
-      };
-    } catch (error) {
-      handleError(error, refId);
-      return {
-        listGraphQlDmlVersions: {
-          items: [],
-        },
-      };
-    }
+    // Use REST API instead of GraphQL to support includeGlobal parameter
+    // https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels
+    const items = await this.connector.fetchItems<{
+      space: string;
+      externalId: string;
+      version: string;
+      name: string;
+      description: string;
+      isGlobal?: boolean;
+    }>({
+      path: '/models/datamodels',
+      method: HttpMethod.GET,
+      data: undefined,
+      params: { limit: 1000, includeGlobal: true },
+    });
+    
+    // Map to expected format (graphQlDml will be fetched separately when needed)
+    const mappedItems = items.map((item) => ({
+      space: item.space,
+      externalId: item.externalId,
+      version: item.version,
+      name: item.name || item.externalId,
+      description: item.description || '',
+      graphQlDml: '', // Will be fetched when a specific model is selected
+    }));
+    
+    return {
+      listGraphQlDmlVersions: {
+        items: mappedItems,
+      },
+    };
   }
   async listVersionByExternalIdAndSpace(
     refId: string,
@@ -338,77 +333,69 @@ export class FlexibleDataModellingDatasource {
       graphQlDml: string;
     }>
   > {
-    try {
-      const { data } = await this.connector.fetchQuery<{
-        space: string;
-        externalId: string;
-        version: string;
-        name: string;
-        description: string;
-        graphQlDml: string;
-      }>({
-        path: '/dml/graphql',
-        method: HttpMethod.POST,
-        data: JSON.stringify({
-          query: `
-                query getDataModelVersionsById($space:String!, $externalId:String!) {
-                  graphQlDmlVersionsById(space: $space, externalId: $externalId) {
-                    items {
-                      
-              space
-              externalId
-              version
-              name
-              description
-              graphQlDml
-              createdTime
-              lastUpdatedTime
-              
-                    }
+    const { data } = await this.connector.fetchQuery<{
+      space: string;
+      externalId: string;
+      version: string;
+      name: string;
+      description: string;
+      graphQlDml: string;
+    }>({
+      path: '/dml/graphql',
+      method: HttpMethod.POST,
+      data: JSON.stringify({
+        query: `
+              query getDataModelVersionsById($space:String!, $externalId:String!) {
+                graphQlDmlVersionsById(space: $space, externalId: $externalId) {
+                  items {
+                    
+            space
+            externalId
+            version
+            name
+            description
+            graphQlDml
+            createdTime
+            lastUpdatedTime
+            
                   }
                 }
-             `,
-          variables: { space, externalId },
-        }),
-      });
-      return data;
-    } catch (error) {
-      handleError(error, refId);
-      return {
-        graphQlDmlVersionsById: {
-          items: [],
-        },
-      };
-    }
+              }
+           `,
+        variables: { space, externalId },
+      }),
+    });
+    return data;
   }
-  async postQueryEdges(edges, query, options, target): Promise<Many<TimeSeries | TableData>> {
+  async postQueryEdges(edges, query, options, target, messages: QueryMessages): Promise<Many<TimeSeries | TableData>> {
     try {
       const res = getEdgesTableData(edges);
       const nodes = _.map(edges, 'node');
       const tsItems = this.extractTimeseriesItems(nodes, query);
-      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target);
+      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
       return _.concat(res, tsData);
     } catch (error) {
-      handleError(error, target.refId);
+      messages.error(error, target.refId);
       return [];
     }
   }
 
-  async postQueryItems(items, query, options, target) {
+  async postQueryItems(items, query, options, target, messages: QueryMessages) {
     try {
       const res = getItemsTableData(items);
       const tsItems = this.extractTimeseriesItems(items, query);
-      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target);
+      const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
       return _.concat(res, tsData);
     } catch (error) {
-      handleError(error, target.refId);
+      messages.error(error, target.refId);
       return [];
     }
   }
   async runQuery(
     query: FlexibleDataModellingQuery,
     options,
-    target
+    target,
+    messages: QueryMessages
   ): Promise<Many<TimeSeries | TableData>> {
     try {
       const { data, errors } = await this.connector.fetchQuery({
@@ -418,54 +405,52 @@ export class FlexibleDataModellingDatasource {
       });
 
       if (errors) {
-        handleError(_.head(errors), target.refId);
+        messages.error(_.head(errors), target.refId);
         return [];
       }
       const firstResponse = _.get(
         data,
-        getFirstNameValue(_.head(getFirstSelection(query.graphQlQuery, target.refId)))
+        getFirstNameValue(_.head(getFirstSelection(query.graphQlQuery)))
       );
       if (firstResponse) {
         const envelope = readGraphqlRows(firstResponse);
         if (envelope?.kind === 'edges') {
-          return this.postQueryEdges(envelope.raw, query, options, target);
+          return this.postQueryEdges(envelope.raw, query, options, target, messages);
         }
         if (envelope?.kind === 'items') {
-          return this.postQueryItems(envelope.raw, query, options, target);
+          return this.postQueryItems(envelope.raw, query, options, target, messages);
         }
         return [];
       }
-      handleError(
+      messages.error(
         new Error("The response has no rows for the query's first field."),
         target.refId
       );
       return [];
     } catch (error) {
-      handleError(error, target.refId);
+      messages.error(error, target.refId);
       return [];
     }
   }
+  /** The data model's schema. Fails with CDF's message, for the editor to show. */
   async runIntrospectionQuery(
-    query: Omit<FlexibleDataModellingQuery, 'tsKeys' | 'graphQlQuery'>,
-    target
-  ): Promise<IntrospectionQuery | undefined> {
-    try {
-      const { data, errors } = await this.connector.fetchQuery({
-        path: graphqlEndpointPath(query),
-        method: HttpMethod.POST,
-        data: JSON.stringify({ query: getIntrospectionQuery() }),
-      });
-      if (errors) {
-        handleError(_.head(errors), target.refId);
-        return undefined;
-      }
-      return data as unknown as IntrospectionQuery;
-    } catch (error) {
-      handleError(error, target.refId);
-      return undefined;
+    query: Omit<FlexibleDataModellingQuery, 'tsKeys' | 'graphQlQuery'>
+  ): Promise<IntrospectionQuery> {
+    const { data, errors } = await this.connector.fetchQuery({
+      path: graphqlEndpointPath(query),
+      method: HttpMethod.POST,
+      data: JSON.stringify({ query: getIntrospectionQuery() }),
+    });
+    if (errors) {
+      throw _.head(errors);
     }
+    return data as unknown as IntrospectionQuery;
   }
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  /** Errors and warnings go to `messages`; the caller puts them in the response. */
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const response = await Promise.all(
       _.map(options.targets, (target) =>
         this.runQuery(
@@ -473,7 +458,8 @@ export class FlexibleDataModellingDatasource {
             ...target.flexibleDataModellingQuery,
           },
           options,
-          target
+          target,
+          messages
         )
       )
     );

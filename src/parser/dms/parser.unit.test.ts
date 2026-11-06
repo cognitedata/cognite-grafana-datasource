@@ -449,8 +449,19 @@ describe('resolveVariables', () => {
   const mockConnector = (...pages: DMSInstance[][]) => {
     const fetchAndPaginate = jest.fn();
     pages.forEach((items) => fetchAndPaginate.mockResolvedValueOnce(items));
-    return { connector: { fetchAndPaginate } as any, fetchAndPaginate };
+    // The view read that tells list properties apart: CDF has no such view here.
+    const fetchData = jest.fn().mockResolvedValue({ data: { items: [] } });
+    return { connector: { fetchAndPaginate, fetchData } as any, fetchAndPaginate, fetchData };
   };
+
+  it('fails the query when the view cannot be read, instead of guessing at its list properties', async () => {
+    const { connector, fetchData, fetchAndPaginate } = mockConnector();
+    fetchData.mockRejectedValue(new Error('403 Forbidden'));
+    await expect(
+      resolveVariables([filterVar('A', 'name^="PT"')], ['A'], view, connector)
+    ).rejects.toThrow('403 Forbidden');
+    expect(fetchAndPaginate).not.toHaveBeenCalled();
+  });
 
   it('resolves a picked series without a request', async () => {
     const { connector, fetchAndPaginate } = mockConnector();

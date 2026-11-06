@@ -41,6 +41,7 @@ import {
 } from './completions';
 import { computeFilterMarkers } from './diagnostics';
 import { wireDiagnostics } from '../common/monacoDiagnostics';
+import { errorMessageOf } from '../../queryMessages';
 
 const MODE_OPTIONS: Array<{
   label: string;
@@ -352,6 +353,7 @@ export const VariableRow = ({
   const styles = useStyles2(getVariableGridStyles);
   // The picked series' storage unit: from the pick itself, else looked up.
   const [storageUnit, setStorageUnit] = useState<string | undefined>(undefined);
+  const [propertiesError, setPropertiesError] = useState<string | null>(null);
   const instanceKey = row.instance ? `${row.instance.space}:${row.instance.externalId}` : '';
 
   useEffect(() => {
@@ -359,11 +361,20 @@ export const VariableRow = ({
       return;
     }
     let cancelled = false;
-    getTimeSeriesProperties(connector, row.instance).then(({ unit }) => {
-      if (!cancelled) {
-        setStorageUnit(unit);
-      }
-    });
+    getTimeSeriesProperties(connector, row.instance)
+      .then(({ unit }) => {
+        if (!cancelled) {
+          setStorageUnit(unit);
+          setPropertiesError(null);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPropertiesError(
+            `Couldn't read the unit of ${row.name}'s time series, so only unit systems are offered: ${errorMessageOf(error)}`
+          );
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -662,6 +673,11 @@ export const VariableRow = ({
       </div>
       {wide && <div>{removeButton}</div>}
       {nameMessage && <div className={styles.message}>{nameMessage}</div>}
+      {propertiesError && (
+        <div className={styles.message}>
+          <FieldValidationMessage>{propertiesError}</FieldValidationMessage>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { Connector } from '../connector';
+import { QueryMessages } from '../queryMessages';
 import { defaultQuery, CogniteQuery, Tab } from '../types';
 import { ActivityDatasource } from '../datasources/ActivityDatasource';
 import { DataTopic, FieldType } from '@grafana/data';
@@ -63,7 +64,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -75,7 +76,7 @@ describe('ActivityDatasource unit tests', () => {
         cogniteActivityQuery: undefined,
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -90,7 +91,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -105,7 +106,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -120,7 +121,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -135,7 +136,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
       expect(fetchActivitiesFromDMSMock).not.toHaveBeenCalled();
@@ -144,7 +145,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should successfully fetch activities with valid configuration', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue(mockActivities);
 
-      const result = await activityDatasource.fetchActivitiesForTarget(baseQuery, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(baseQuery, [startTime, endTime], new QueryMessages());
 
       expect(fetchActivitiesFromDMSMock).toHaveBeenCalledWith(
         connector,
@@ -174,7 +175,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime]);
+      await activityDatasource.fetchActivitiesForTarget(query, [startTime, endTime], new QueryMessages());
 
       expect(fetchActivitiesFromDMSMock).toHaveBeenCalledWith(
         connector,
@@ -188,7 +189,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should return empty array on error', async () => {
       fetchActivitiesFromDMSMock.mockRejectedValue(new Error('API Error'));
 
-      const result = await activityDatasource.fetchActivitiesForTarget(baseQuery, [startTime, endTime]);
+      const result = await activityDatasource.fetchActivitiesForTarget(baseQuery, [startTime, endTime], new QueryMessages());
 
       expect(result).toEqual([]);
     });
@@ -198,7 +199,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should convert activities to annotation DataFrame', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue(mockActivities);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       expect(result).toHaveLength(1);
       const dataFrame = result[0];
@@ -228,7 +229,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should convert activity timestamps to milliseconds', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue([mockActivities[0]]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const timeField = dataFrame.fields.find((f) => f.name === 'time');
@@ -249,7 +250,7 @@ describe('ActivityDatasource unit tests', () => {
         },
       };
 
-      const result = await activityDatasource.fetchActivityTargets([query], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([query], [startTime, endTime], new QueryMessages());
 
       // Scheduled times are 1 hour earlier in mock data
       const dataFrame = result[0];
@@ -263,7 +264,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should use activity description as annotation text', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue([mockActivities[0]]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const textField = dataFrame.fields.find((f) => f.name === 'text');
@@ -274,7 +275,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should use activity name as annotation title', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue([mockActivities[0]]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const titleField = dataFrame.fields.find((f) => f.name === 'title');
@@ -285,7 +286,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should use activity type as tags', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue([mockActivities[0]]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const tagsField = dataFrame.fields.find((f) => f.name === 'tags');
@@ -303,7 +304,7 @@ describe('ActivityDatasource unit tests', () => {
 
       fetchActivitiesFromDMSMock.mockResolvedValue([minimalActivity]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const textField = dataFrame.fields.find((f) => f.name === 'text');
@@ -329,7 +330,7 @@ describe('ActivityDatasource unit tests', () => {
 
       fetchActivitiesFromDMSMock.mockResolvedValue([activityWithoutStartTime]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       expect(dataFrame.length).toBe(0);
@@ -347,7 +348,7 @@ describe('ActivityDatasource unit tests', () => {
 
       fetchActivitiesFromDMSMock.mockResolvedValue([activityWithoutEndTime]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       const dataFrame = result[0];
       const timeField = dataFrame.fields.find((f) => f.name === 'time');
@@ -366,7 +367,7 @@ describe('ActivityDatasource unit tests', () => {
         refId: 'B',
       };
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery, query2], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery, query2], [startTime, endTime], new QueryMessages());
 
       expect(result).toHaveLength(2);
       expect(result[0].refId).toBe('A');
@@ -377,7 +378,7 @@ describe('ActivityDatasource unit tests', () => {
     it('should return empty DataFrame when no activities found', async () => {
       fetchActivitiesFromDMSMock.mockResolvedValue([]);
 
-      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime]);
+      const result = await activityDatasource.fetchActivityTargets([baseQuery], [startTime, endTime], new QueryMessages());
 
       expect(result).toHaveLength(1);
       const dataFrame = result[0];

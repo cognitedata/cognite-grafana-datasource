@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../../datasource';
+import { errorMessageOf } from '../../queryMessages';
 
 export type DataModelOption = SelectableValue<{
   space: string;
@@ -65,10 +66,10 @@ export const useGraphqlDataModels = (
           }))
         );
       })
-      .catch(() => {
+      .catch((error) => {
         if (!cancelled) {
           setDataModelOptions([]);
-          setModelsError('Failed to load data models.');
+          setModelsError(`Couldn't load the data models: ${errorMessageOf(error)}`);
         }
       })
       .finally(() => !cancelled && setLoadingDataModels(false));
@@ -93,10 +94,10 @@ export const useGraphqlDataModels = (
         setVersionsError(undefined);
         setVersions(items.map((el) => ({ label: el.version, value: { version: el.version } })));
       })
-      .catch(() => {
+      .catch((error) => {
         if (!cancelled) {
           setVersions([]);
-          setVersionsError('Failed to load data model versions.');
+          setVersionsError(`Couldn't load the data model's versions: ${errorMessageOf(error)}`);
         }
       })
       .finally(() => !cancelled && setLoadingVersions(false));

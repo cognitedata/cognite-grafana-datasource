@@ -13,8 +13,8 @@ import {
   FilterRequest,
 } from '../cdf/types';
 import { convertItemsToDataFrame } from '../cdf/client';
-import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT, responseWarningEvent } from '../constants';
-import { emitEvent, handleError } from '../appEventHandler';
+import { EVENTS_LIMIT_WARNING, EVENTS_PAGE_LIMIT } from '../constants';
+import { QueryMessages } from '../queryMessages';
 
 const convertEventsToAnnotations = (events: CogniteEvent[], timeRangeEnd: number) => {
   return events.map(({ description, startTime, endTime, type, id }) => ({
@@ -41,15 +41,19 @@ export const convertEventsDateFields = (events: CogniteEvent[]) => {
 
 export class EventsDatasource {
   constructor(private connector: Connector) { }
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
-    const eventResults = await this.fetchEventTargets(options.targets, timeRange);
+    const eventResults = await this.fetchEventTargets(options.targets, timeRange, messages);
     return { data: eventResults };
   }
 
   async fetchEventsForTarget(
     target: CogniteQuery,
-    [rangeStart, rangeEnd]: Tuple<number>
+    [rangeStart, rangeEnd]: Tuple<number>,
+    messages: QueryMessages
   ) {
     const { refId, eventQuery, query } = target;
     const isAnnotation = isAnnotationTarget(target);
@@ -64,20 +68,20 @@ export class EventsDatasource {
     try {
       const { items, hasMore } = await this.fetchEvents(finalEventQuery, timeFrame);
       if (hasMore) {
-        emitEvent(responseWarningEvent, { refId, warning: EVENTS_LIMIT_WARNING });
+        messages.warning(EVENTS_LIMIT_WARNING, refId);
       }
       return items;
     } catch (e) {
-      handleError(e, refId);
+      messages.error(e, refId);
     }
     return [];
   }
 
 
-  async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
+  async fetchEventTargets(targets: CogniteQuery[], timeRange: Tuple<number>, messages: QueryMessages) {
     return Promise.all(
       targets.map(async (target) => {
-        const resEvents = await this.fetchEventsForTarget(target, timeRange);
+        const resEvents = await this.fetchEventsForTarget(target, timeRange, messages);
         const items = isAnnotationTarget(target) ? convertEventsToAnnotations(resEvents, timeRange[1]) : convertEventsDateFields(resEvents);
         const df = convertItemsToDataFrame(items, target.eventQuery?.columns ?? [], "Events", target.refId);
         return df

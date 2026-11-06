@@ -95,7 +95,7 @@ export const GraphqlQueryEditor = ({
   const { space, externalId, version } = dataModel ?? {};
   const { dataModelOptions, versions, loadingDataModels, loadingVersions, metadataError } =
     useGraphqlDataModels(datasource, refId, space, externalId);
-  const schema = useGraphqlSchema(datasource, refId, space, externalId, version);
+  const { schema, schemaError } = useGraphqlSchema(datasource, refId, space, externalId, version);
   useEffect(() => {
     onSchemaChange?.(schema);
   }, [schema, onSchemaChange]);
@@ -240,9 +240,9 @@ export const GraphqlQueryEditor = ({
         </Stack>
       </EditorRow>
 
-      {metadataError && (
+      {(metadataError || schemaError) && (
         <EditorRow>
-          <FieldValidationMessage>{metadataError}</FieldValidationMessage>
+          <FieldValidationMessage>{metadataError ?? schemaError}</FieldValidationMessage>
         </EditorRow>
       )}
 

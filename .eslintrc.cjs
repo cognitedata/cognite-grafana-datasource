@@ -41,6 +41,15 @@ module.exports = [{
   },
 },
 {
+  // A failure reaches the user, in the query response or at the field that failed,
+  // never only the browser console.
+  files: ["src/**/*.{ts,tsx}"],
+  ignores: ["src/**/__tests__/**", "src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+  rules: {
+    "no-console": "error",
+  },
+},
+{
   files: ["./tests/**/*"],
   rules: {
     "react-hooks/rules-of-hooks": "off",

@@ -1,4 +1,4 @@
-import { DataFrame, DataQueryError, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import {
   CogniteQuery,
   defaultRecordsQuery,
@@ -28,59 +28,35 @@ import {
 import { getCogniteUnitIndex } from '../cdf/client';
 import { CogniteUnit } from '../types/dms';
 import { RECORDS_LIMIT_WARNING } from '../constants';
-import { handleWarning } from '../appEventHandler';
-
-/**
- * One event per query. The query editor keeps a single warning per refId, so
- * emitting several would leave only the last one visible.
- */
-function warnAll(warnings: string[], refId: string) {
-  if (warnings.length) {
-    handleWarning(warnings.join('\n\n'), refId);
-  }
-}
-
-/**
- * The most specific message CDF returned. Records surfaces errors through the query
- * response rather than through `handleError`, so this deliberately stays a bare
- * message -- no status prefix, which would read oddly inside a panel.
- */
-function describeError(error: any): string {
-  return (
-    error?.data?.error?.message ??
-    error?.data?.error ??
-    error?.message ??
-    String(error)
-  );
-}
+import { errorMessageOf, QueryMessages } from '../queryMessages';
 
 export class RecordsDatasource {
   constructor(private connector: Connector) {}
 
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  /** Errors and warnings go to `messages`; the caller puts them in the response. */
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const range = getRange(options.range);
     const results = await Promise.all(
       options.targets.map((target) =>
-        this.handleTarget(target, range, options.maxDataPoints)
+        this.handleTarget(target, range, messages, options.maxDataPoints)
       )
     );
-    const data = results.flatMap((result) => result.frames);
-    const errors = results
-      .map((result) => result.error)
-      .filter((error): error is DataQueryError => !!error);
-
-    return errors.length ? { data, errors } : { data };
+    return { data: results.flat() };
   }
 
   private async handleTarget(
     target: CogniteQuery,
     range: Tuple<number>,
+    messages: QueryMessages,
     maxDataPoints?: number
-  ): Promise<{ frames: DataFrame[]; error?: DataQueryError }> {
+  ): Promise<DataFrame[]> {
     const { refId } = target;
     const view = target.recordsQuery?.view;
     if (!view?.streamId) {
-      return { frames: [] };
+      return [];
     }
     // Dashboards may carry a partial recordsQuery; fill the gaps before building.
     const recordsQuery: RecordsQuery = {
@@ -88,11 +64,10 @@ export class RecordsDatasource {
       ...target.recordsQuery,
     };
 
-    // Collected across every step and emitted once at the end: the editor keeps a
-    // single warning per refId, so a second event would replace the first.
+    // Collected across every step, and noted whatever the outcome.
     const warnings: string[] = [];
     try {
-      const stream = await this.loadStream(view.streamId);
+      const stream = await this.loadStream(view.streamId, warnings);
       // One instant for the whole query. `{{now}}` is resolved more than once (the
       // stream checks, the request and its warnings), and reading the clock in each
       // left them describing slightly different moments.
@@ -106,37 +81,43 @@ export class RecordsDatasource {
       );
       warnings.push(...streamWarnings);
 
-      const unitIndex = await this.loadUnitIndex();
+      const unitIndex = await this.loadUnitIndex(warnings);
 
       const frames =
         effectiveQuery.mode === 'aggregate'
           ? await this.queryAggregate(effectiveQuery, range, refId, buildOptions, warnings, unitIndex)
           : await this.queryList(effectiveQuery, range, refId, buildOptions, warnings, unitIndex);
-      return { frames };
+      return frames;
     } catch (e) {
-      return { frames: [], error: { refId, message: describeError(e) } };
+      messages.error(e, refId);
+      return [];
     } finally {
-      warnAll(warnings, refId);
+      warnings.forEach((warning) => messages.warning(warning, refId));
     }
   }
 
   /**
    * The unit catalog is static reference data behind a long-lived cache, and is
-   * only used to prettify field units, so a failure must not fail the query.
+   * only used to prettify field units, so a failure must not fail the query: it is
+   * a warning instead.
    */
-  private async loadUnitIndex(): Promise<Map<string, CogniteUnit> | undefined> {
+  private async loadUnitIndex(warnings: string[]): Promise<Map<string, CogniteUnit> | undefined> {
     try {
       return await getCogniteUnitIndex(this.connector);
-    } catch {
+    } catch (error) {
+      warnings.push(`Couldn't load the unit catalog, so units show their IDs: ${errorMessageOf(error)}`);
       return undefined;
     }
   }
 
-  /** Stream metadata is advisory: a failure here must not fail the query itself. */
-  private async loadStream(streamId: string): Promise<StreamDefinition | null> {
+  /** Stream metadata is advisory: a failure here is a warning, not a failed query. */
+  private async loadStream(streamId: string, warnings: string[]): Promise<StreamDefinition | null> {
     try {
       return await fetchStream(this.connector, streamId);
-    } catch {
+    } catch (error) {
+      warnings.push(
+        `Couldn't read the stream's limits, so the time window isn't checked against them: ${errorMessageOf(error)}`
+      );
       return null;
     }
   }

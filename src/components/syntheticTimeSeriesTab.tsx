@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getDefaultTimeRange, ScopedVars, TimeRange } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
-import { Button, Stack, type Monaco, type monacoTypes } from '@grafana/ui';
+import { Button, FieldValidationMessage, Stack, type Monaco, type monacoTypes } from '@grafana/ui';
 import { EditorField, EditorFieldGroup, EditorRow, EditorRows } from '@grafana/plugin-ui';
 import { Connector } from '../connector';
 import { getRange } from '../utils';
@@ -40,6 +40,7 @@ import {
 import { VariablesList } from './syntheticTimeSeries/VariablesList';
 import { VariableRename } from './syntheticTimeSeries/VariableRow';
 import { SYNTHETIC_EXPRESSION_EXAMPLES } from './syntheticTimeSeries/examples';
+import { errorMessageOf } from '../queryMessages';
 
 const VIEW_TOOLTIP = 'The view to pick and filter time series from.';
 const EXPRESSION_TOOLTIP =
@@ -96,11 +97,14 @@ export const SyntheticTimeSeriesTab = ({
   const [loadedView, setLoadedView] = useState<{
     key: string;
     def: DMSViewWithProperties | null;
+    error?: string;
   } | null>(null);
   const viewDef = loadedView?.key === viewKey ? loadedView.def : null;
   const [unitIndex, setUnitIndex] = useState<Map<string, CogniteUnit>>(new Map());
   const [unitSystems, setUnitSystems] = useState<UnitSystem[]>([]);
   const [preview, setPreview] = useState<PreviewState | null>(null);
+  const viewError = loadedView?.key === viewKey ? (loadedView.error ?? null) : null;
+  const [unitsError, setUnitsError] = useState<string | null>(null);
   const previewGeneration = useRef(0);
 
   const editorRef = useRef<OneLineCodeEditorHandle>(null);
@@ -114,7 +118,17 @@ export const SyntheticTimeSeriesTab = ({
 
   useEffect(() => {
     let cancelled = false;
-    fetchDMSView(connector, view).then((def) => !cancelled && setLoadedView({ key: viewKey, def }));
+    fetchDMSView(connector, view)
+      .then((def) => !cancelled && setLoadedView({ key: viewKey, def }))
+      .catch(
+        (error) =>
+          !cancelled &&
+          setLoadedView({
+            key: viewKey,
+            def: null,
+            error: `Couldn't read the view's properties, so filters get no suggestions: ${errorMessageOf(error)}`,
+          })
+      );
     return () => {
       cancelled = true;
     };
@@ -124,8 +138,14 @@ export const SyntheticTimeSeriesTab = ({
 
   useEffect(() => {
     let cancelled = false;
-    getCogniteUnitIndex(connector).then((index) => !cancelled && setUnitIndex(index));
-    fetchUnitSystems(connector).then((systems) => !cancelled && setUnitSystems(systems));
+    const failed = (what: string) => (error: unknown) =>
+      !cancelled && setUnitsError(`Couldn't load the ${what}: ${errorMessageOf(error)}`);
+    getCogniteUnitIndex(connector)
+      .then((index) => !cancelled && setUnitIndex(index))
+      .catch(failed('unit catalog'));
+    fetchUnitSystems(connector)
+      .then((systems) => !cancelled && setUnitSystems(systems))
+      .catch(failed('unit systems'));
     return () => {
       cancelled = true;
     };
@@ -277,9 +297,8 @@ export const SyntheticTimeSeriesTab = ({
     let parts: SyntheticRequestPreviewParts;
     try {
       parts = previewWith(await fetchDMSView(connector, interpolatedView));
-    } catch (error: any) {
-      const reason = error?.data?.error?.message ?? error?.message ?? String(error);
-      parts = { path: first.path, error: `Couldn't read the view's properties: ${reason}` };
+    } catch (error) {
+      parts = { path: first.path, error: `Couldn't read the view's properties: ${errorMessageOf(error)}` };
     }
     if (generation === previewGeneration.current) {
       setPreview({ title, parts });
@@ -313,6 +332,14 @@ export const SyntheticTimeSeriesTab = ({
             </EditorField>
           </EditorFieldGroup>
         </EditorRow>
+        {(viewError || unitsError) && (
+          <EditorRow>
+            <Stack direction="column" gap={0.5}>
+              {viewError && <FieldValidationMessage>{viewError}</FieldValidationMessage>}
+              {unitsError && <FieldValidationMessage>{unitsError}</FieldValidationMessage>}
+            </Stack>
+          </EditorRow>
+        )}
         <EditorRow>
           <VariablesList
             refId={refId}

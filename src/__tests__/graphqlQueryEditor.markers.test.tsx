@@ -10,7 +10,7 @@ const schema = buildSchema(`
 
 let mockSchema: GraphQLSchema | undefined;
 jest.mock('../components/graphql/useGraphqlSchema', () => ({
-  useGraphqlSchema: () => mockSchema,
+  useGraphqlSchema: () => ({ schema: mockSchema }),
 }));
 jest.mock('../components/graphql/useGraphqlDataModels', () => ({
   useGraphqlDataModels: () => ({

@@ -7,9 +7,10 @@ import {
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { Connector } from '../../connector';
-import { searchDMSInstances, stringifyError } from '../../cdf/client';
+import { searchDMSInstances } from '../../cdf/client';
 import { DMSFilter, DMSInstance, DMSSearchRequest, ViewRef } from '../../types/dms';
 import { encodeInstanceRef, InstanceRef, parseInstanceRef } from '../../cdf/instanceRef';
+import { errorMessageOf } from '../../queryMessages';
 
 const MAX_LIMIT = 1000;
 const DEBOUNCE_MS = 300;
@@ -209,7 +210,7 @@ export const InstancePicker = ({
         if (gen !== generation.current) {
           return [];
         }
-        reportError(`Search failed: ${stringifyError(error)}`);
+        reportError(`Search failed: ${errorMessageOf(error)}`);
         return [];
       }
     },

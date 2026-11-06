@@ -3,9 +3,9 @@ import { convertActivitiesDateFields, ActivityDatasource } from './ActivityDatas
 import { CogniteActivity } from '../types/dms';
 import { Connector } from '../connector';
 import { Tab } from '../types';
+import { QueryMessages, warningsForRow } from '../queryMessages';
 
 jest.mock('../cdf/client');
-jest.mock('../appEventHandler', () => ({ handleError: jest.fn() }));
 
 const { fetchActivitiesByAssets, fetchDMSView } = jest.requireMock('../cdf/client');
 
@@ -114,8 +114,7 @@ describe('ActivityDatasource.queryByAssets', () => {
 
   it('returns empty data when no targets have assetInstances', async () => {
     const result = await datasource.queryByAssets(
-      makeOptions([makeTarget({ cogniteActivityTabQuery: { assetInstances: [] } })])
-    );
+      makeOptions([makeTarget({ cogniteActivityTabQuery: { assetInstances: [] } })]), new QueryMessages());
     expect(result.data).toHaveLength(0);
     expect(fetchActivitiesByAssets).not.toHaveBeenCalled();
   });
@@ -123,7 +122,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('builds a DataFrame with correct column order for CogniteAsset', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), new QueryMessages());
 
     expect(result.data).toHaveLength(1);
     const frame = result.data[0];
@@ -147,7 +146,7 @@ describe('ActivityDatasource.queryByAssets', () => {
         assetInstances: [{ space: 'cdm_try', externalId: 'sensor-fornebu-anemometer', name: 'Ultrasonic Wind Sensor' }],
         columns: ['externalId', 'description'],
       },
-    })]));
+    })]), new QueryMessages());
 
     const frame = result.data[0];
     const lastField = frame.fields[frame.fields.length - 1];
@@ -159,7 +158,7 @@ describe('ActivityDatasource.queryByAssets', () => {
       makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] }),
     ]);
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), new QueryMessages());
 
     const frame = result.data[0];
     const assetField = frame.fields.find((f: any) => f.name === 'asset');
@@ -172,7 +171,7 @@ describe('ActivityDatasource.queryByAssets', () => {
       makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-lysaker' }] }),
     ]);
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), new QueryMessages());
 
     const frame = result.data[0];
     const assetField = frame.fields.find((f: any) => f.name === 'asset');
@@ -183,7 +182,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('time fields have FieldType.time', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), new QueryMessages());
 
     const frame = result.data[0];
     for (const col of ['startTime', 'endTime', 'scheduledStartTime', 'scheduledEndTime', 'createdTime', 'lastUpdatedTime']) {
@@ -195,7 +194,7 @@ describe('ActivityDatasource.queryByAssets', () => {
   it('string fields have FieldType.string', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ assets: [{ space: 'cdm_try', externalId: 'weather-station-fornebu' }] })]);
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), new QueryMessages());
 
     const frame = result.data[0];
     for (const col of ['externalId', 'space', 'name', 'type', 'description', 'asset']) {
@@ -204,14 +203,27 @@ describe('ActivityDatasource.queryByAssets', () => {
     }
   });
 
-  it('handles fetch errors and returns empty data', async () => {
-    const { handleError } = jest.requireMock('../appEventHandler');
-    fetchActivitiesByAssets.mockRejectedValue(new Error('network error'));
+  it('still returns the activities, and warns, when the view cannot be read', async () => {
+    fetchDMSView.mockRejectedValueOnce({ data: { error: { message: 'Forbidden' } } });
+    const messages = new QueryMessages();
 
-    const result = await datasource.queryByAssets(makeOptions([makeTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), messages);
+
+    expect(result.data).toHaveLength(1);
+    expect(warningsForRow(messages.attachTo(result).data, 'A')).toEqual([
+      "Couldn't read the activity view, so its column order and time formats aren't used: Forbidden",
+    ]);
+  });
+
+  it('reports a fetch error on the query row and returns empty data', async () => {
+    fetchActivitiesByAssets.mockRejectedValue(new Error('network error'));
+    const messages = new QueryMessages();
+
+    const result = await datasource.queryByAssets(makeOptions([makeTarget()]), messages);
 
     expect(result.data).toHaveLength(0);
-    expect(handleError).toHaveBeenCalled();
+    expect(result.errors).toBeUndefined();
+    expect(messages.attachTo({ data: [] }).errors).toEqual([{ refId: 'A', message: 'network error' }]);
   });
 
   it('passes filterProperty based on resourceType to fetchActivitiesByAssets', async () => {
@@ -225,7 +237,7 @@ describe('ActivityDatasource.queryByAssets', () => {
         assetInstances: [{ space: 'cdm_try', externalId: 'ts-001', name: 'My TS' }],
         columns: ['externalId'],
       },
-    })]));
+    })]), new QueryMessages());
 
     expect(fetchActivitiesByAssets).toHaveBeenCalledWith(
       expect.anything(),
@@ -255,7 +267,7 @@ describe('queryByAssets: every property', () => {
       properties: { name: prop('text'), description: prop('text'), startTime: prop('timestamp'), endTime: prop('timestamp'), tags: prop('text', true) },
     });
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]), new QueryMessages());
     expect(result.data[0].fields.map((field: any) => field.name)).toEqual([
       'name', 'description', 'startTime', 'endTime', 'tags',
       'space', 'externalId', 'createdTime', 'lastUpdatedTime',
@@ -271,7 +283,7 @@ describe('queryByAssets: every property', () => {
     const datasource = new ActivityDatasource({} as Connector);
     const target = emptyColumnsTarget(['*']);
     target.cogniteActivityTabQuery.resourceType = 'CogniteEquipment';
-    const result = await datasource.queryByAssets(makeOptions([target]));
+    const result = await datasource.queryByAssets(makeOptions([target]), new QueryMessages());
     const names = result.data[0].fields.map((field: any) => field.name);
     expect(names.filter((name: string) => name === 'equipment')).toHaveLength(1);
     expect(names).not.toContain('source');
@@ -287,7 +299,7 @@ describe('queryByAssets: every property', () => {
       },
     });
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]), new QueryMessages());
     const names = result.data[0].fields.map((field: any) => field.name);
     expect(names).toContain('name');
     expect(names).not.toContain('steps');
@@ -297,14 +309,14 @@ describe('queryByAssets: every property', () => {
   it('writes list and object values as JSON text', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ tags: ['a', 'b'] })]);
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['tags'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['tags'])]), new QueryMessages());
     expect(result.data[0].fields[0].values).toEqual(['["a","b"]']);
   });
 
   it('keeps an empty list meaning the related instances only, as it always did', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget([])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget([])]), new QueryMessages());
     expect(result.data[0].fields.map((field: any) => field.name)).toEqual(['asset']);
   });
 
@@ -319,7 +331,7 @@ describe('queryByAssets: every property', () => {
     ]);
     fetchDMSView.mockResolvedValue(null);
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]), new QueryMessages());
     const names = result.data[0].fields.map((field: any) => field.name);
     expect(names.slice(0, 2)).toEqual(['name', 'description']);
     // Neither the instance version nor a property no activity has.
@@ -335,7 +347,7 @@ describe('queryByAssets: every property', () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity({ sourceCreatedTime: '2026-01-02T03:04:05.000Z' })]);
     fetchDMSView.mockResolvedValue({ properties: { sourceCreatedTime: prop('timestamp') } });
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['sourceCreatedTime'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['sourceCreatedTime'])]), new QueryMessages());
     const field = result.data[0].fields[0];
     expect(field.type).toBe(FieldType.time);
     expect(field.values[0]).toEqual(new Date('2026-01-02T03:04:05.000Z'));
@@ -347,7 +359,7 @@ describe('queryByAssets: every property', () => {
     ]);
     fetchDMSView.mockResolvedValue(null);
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget(['*'])]), new QueryMessages());
     const names = result.data[0].fields.map((field: any) => field.name);
     expect(names).not.toContain('equipment');
     expect(names).toContain('origin');
@@ -361,14 +373,14 @@ describe('queryByAssets: every property', () => {
     const datasource = new ActivityDatasource({} as Connector);
     const target = emptyColumnsTarget(['externalId']);
     target.cogniteActivityTabQuery.sort = [{ property: 'tags', order: 'asc' }];
-    const result = await datasource.queryByAssets(makeOptions([target]));
+    const result = await datasource.queryByAssets(makeOptions([target]), new QueryMessages());
     expect(result.data[0].fields[0].values).toEqual(['a', 'b']);
   });
 
   it('keeps the columns a query saved before they could be chosen always showed', async () => {
     fetchActivitiesByAssets.mockResolvedValue([makeActivity()]);
     const datasource = new ActivityDatasource({} as Connector);
-    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget()]));
+    const result = await datasource.queryByAssets(makeOptions([emptyColumnsTarget()]), new QueryMessages());
     expect(result.data[0].fields.map((field: any) => field.name)).toEqual([
       'externalId', 'description', 'startTime', 'endTime', 'asset',
     ]);

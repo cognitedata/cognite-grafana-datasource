@@ -13,7 +13,7 @@ import { getRange } from '../utils';
 import { CogniteActivity, DMSViewWithProperties } from '../types/dms';
 import { fetchActivitiesFromDMS, fetchActivitiesByAssets, fetchDMSView } from '../cdf/client';
 import { INSTANCE_PROPERTIES } from '../cdf/instanceProperties';
-import { handleError } from '../appEventHandler';
+import { errorMessageOf, QueryMessages } from '../queryMessages';
 
 function inferFieldType(values: any[]): FieldType {
   const first = values.find((v) => v !== null && v !== undefined);
@@ -151,15 +151,20 @@ const sortActivities = (activities: CogniteActivity[], sort: ActivitySortProp[])
 export class ActivityDatasource {
   constructor(private connector: Connector) {}
 
-  async query(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  /** Errors go to `messages`; the caller puts them in the response. */
+  async query(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const timeRange = getRange(options.range);
-    const activityResults = await this.fetchActivityTargets(options.targets, timeRange);
+    const activityResults = await this.fetchActivityTargets(options.targets, timeRange, messages);
     return { data: activityResults };
   }
 
   async fetchActivitiesForTarget(
     target: CogniteQuery,
-    [rangeStart, rangeEnd]: Tuple<number>
+    [rangeStart, rangeEnd]: Tuple<number>,
+    messages: QueryMessages
   ): Promise<CogniteActivity[]> {
     const { refId, cogniteActivityQuery, cogniteTimeSeries } = target;
 
@@ -188,12 +193,15 @@ export class ActivityDatasource {
       );
       return activities;
     } catch (e) {
-      handleError(e, refId);
+      messages.error(e, refId);
       return [];
     }
   }
 
-  async queryByAssets(options: DataQueryRequest<CogniteQuery>): Promise<DataQueryResponse> {
+  async queryByAssets(
+    options: DataQueryRequest<CogniteQuery>,
+    messages: QueryMessages
+  ): Promise<DataQueryResponse> {
     const [rangeStart, rangeEnd] = getRange(options.range);
     const results = await Promise.all(
       options.targets.map(async (target) => {
@@ -217,9 +225,21 @@ export class ActivityDatasource {
         const allColumns = columns.includes(ALL_ACTIVITY_COLUMNS);
         try {
           // The view, for "every property" and its time properties, is read alongside the activities.
+          // It only adds columns, so the activities still come back when it can't be read.
+          const readView = async () => {
+            try {
+              return await fetchDMSView(this.connector, { space, externalId, version });
+            } catch (error) {
+              messages.warning(
+                `Couldn't read the activity view, so its column order and time formats aren't used: ${errorMessageOf(error)}`,
+                refId
+              );
+              return null;
+            }
+          };
           const [fetched, view] = await Promise.all([
             fetchActivitiesByAssets(this.connector, { space, externalId, version }, assetInstances, filterProperty),
-            fetchDMSView(this.connector, { space, externalId, version }),
+            readView(),
           ]);
           let activities = fetched;
 
@@ -300,7 +320,7 @@ export class ActivityDatasource {
           };
           return dataFrame;
         } catch (e) {
-          handleError(e, refId);
+          messages.error(e, refId);
           return null;
         }
       })
@@ -308,10 +328,14 @@ export class ActivityDatasource {
     return { data: results.filter(Boolean) };
   }
 
-  async fetchActivityTargets(targets: CogniteQuery[], timeRange: Tuple<number>) {
+  async fetchActivityTargets(
+    targets: CogniteQuery[],
+    timeRange: Tuple<number>,
+    messages: QueryMessages
+  ) {
     return Promise.all(
       targets.map(async (target) => {
-        const activities = await this.fetchActivitiesForTarget(target, timeRange);
+        const activities = await this.fetchActivitiesForTarget(target, timeRange, messages);
         
         // Convert to annotations for overlay display
         const items = convertActivitiesToAnnotations(

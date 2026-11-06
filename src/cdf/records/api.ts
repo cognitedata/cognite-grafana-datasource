@@ -47,16 +47,11 @@ export async function fetchStream(
 export async function fetchUnitSystems(
   connector: Connector
 ): Promise<UnitSystem[]> {
-  try {
-    return await connector.fetchItems<UnitSystem>({
-      method: HttpMethod.GET,
-      path: '/units/systems',
-      data: undefined,
-      cacheTime: CacheTime.Units,
-    });
-  } catch (error) {
-    // The picker simply hides when the catalog is unavailable.
-    console.warn('Failed to load unit systems', error);
-    return [];
-  }
+  // A failure is thrown, for the editor to say why the systems are missing.
+  return connector.fetchItems<UnitSystem>({
+    method: HttpMethod.GET,
+    path: '/units/systems',
+    data: undefined,
+    cacheTime: CacheTime.Units,
+  });
 }
