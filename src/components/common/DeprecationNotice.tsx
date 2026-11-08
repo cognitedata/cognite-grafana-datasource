@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, TextLink } from '@grafana/ui';
-import '../../css/query_editor.css';
+import { TabSuffixLabel } from './editorChromeStyles';
 
 export const ASSET_CENTRIC_RETIREMENT_DATE = 'December 31, 2027';
 export const DEPRECATED_DOCS_URL = 'https://docs.cognite.com/cdf/deprecated';
@@ -27,4 +27,4 @@ export const DeprecationNotice = ({ replacement = DEFAULT_REPLACEMENT }: Depreca
 );
 
 /** The chip after a deprecated tab's name. */
-export const DeprecatedChip = () => <p className="preview-label deprecated-label">{DEPRECATED_CHIP_TEXT}</p>;
+export const DeprecatedChip = () => <TabSuffixLabel variant="deprecated">{DEPRECATED_CHIP_TEXT}</TabSuffixLabel>;

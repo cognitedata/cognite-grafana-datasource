@@ -1,11 +1,11 @@
 /* eslint-disable */
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
-// Bypasses TS6133. Allow declared but unused functions.
-// @ts-ignore
+// Referenced for TS6133; nearley emits runtime grammar actions that use id.
 function id(d: any[]): any {
   return d[0];
 }
+void id;
 
 const formatQuery = ([type, query]) => ({ type, query });
 const emptyObject = () => ({});

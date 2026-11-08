@@ -3,8 +3,7 @@ import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2 } from '@grafana/ui';
 
-// Grafana 12 dropped the legacy global classes (query-keyword, gf-formatted-*) these
-// replace, so the styles come from the theme instead.
+// Grafana 12 dropped legacy global query help classes; styles come from the theme instead.
 const getStyles = (theme: GrafanaTheme2) => ({
   keyword: css({
     color: theme.colors.primary.text,

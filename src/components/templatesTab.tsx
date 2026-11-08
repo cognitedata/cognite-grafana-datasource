@@ -3,7 +3,6 @@ import { Select, AsyncSelect, Field, Input, CodeEditor, Stack } from '@grafana/u
 import { SelectableValue } from '@grafana/data';
 import CogniteDatasource from '../datasource';
 import { EditorProps, SelectedProps, TemplateQuery } from '../types';
-import '../css/query_editor.css';
 
 export function TemplatesTab(
   props: SelectedProps & Pick<EditorProps, 'onRunQuery'> & { datasource: CogniteDatasource }

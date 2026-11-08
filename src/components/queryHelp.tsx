@@ -1,23 +1,27 @@
-import { Alert, Icon, TextLink } from '@grafana/ui';
+import { Alert, Icon, TextLink, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 import { Keyword as Code, FormattedMessage } from './common/Styled';
+import { getQueryHelpPanelStyles } from './common/editorChromeStyles';
 
 type HelpParams = { onDismiss: () => void; title: string; children: React.ReactNode, docsUrl?: boolean };
 
-const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) => (
+const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) => {
+  const styles = useStyles2(getQueryHelpPanelStyles);
+  return (
   <Alert
     style={{ marginTop: '10px' }}
     title={title}
     severity="info"
     onRemove={onDismiss}
   >
-    <div className="help-panel">{children}</div>
+    <div className={styles.helpPanel}>{children}</div>
     {docsUrl ? <a href={DOCS_URL} target='_blank' rel='noreferrer' style={{ marginTop: 10, textDecoration: 'underline' }}>
       Read more <Icon name="external-link-alt" />
     </a> : null}
   </Alert>
-);
+  );
+};
 
 export const CustomQueryHelp = ({ onDismiss }: Pick<HelpParams, 'onDismiss'>) => (
   <HelpPanel title="Custom query syntax help" onDismiss={onDismiss}>
