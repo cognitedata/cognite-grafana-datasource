@@ -181,20 +181,25 @@ export const VARIABLE_GRAPHQL_EXAMPLES: GraphqlExample[] = [
     title: 'Children of an asset held in a variable',
     lead: (
       <>
-        A variable holding an instance reference can be passed straight to an{' '}
-        <code>instance</code> argument.
+        Filter a list query on the direct relation, with the parts of the reference the{' '}
+        <code>asset</code> variable holds. The options are the rows of the first field, so
+        instances nested inside one row, such as the <code>children</code> of an asset
+        fetched with <code>getCogniteAssetById</code>, don&apos;t become options.
       </>
     ),
     code: `query ChildrenOfAsset {
-  getCogniteAssetById(instance: \${asset}) {
+  listCogniteAsset(
+    filter: {
+      and: [
+        { parent: { space: { eq: "\${asset.space}" } } }
+        { parent: { externalId: { eq: "\${asset.externalId}" } } }
+      ]
+    }
+  ) {
     items {
-      children {
-        items {
-          space
-          externalId
-          name
-        }
-      }
+      space
+      externalId
+      name
     }
   }
 }`,
