@@ -399,7 +399,7 @@ export function EventsTab(
                 },
               })
             }
-            className={styles.monospace}
+            className={styles.monospaceInput}
           />
         </InlineField>
         <Button

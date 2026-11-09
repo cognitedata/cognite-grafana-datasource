@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip, useStyles2 } from '@grafana/ui';
+import { AsyncMultiSelect, Field, Input, MultiSelect, Select, Switch, Tooltip } from '@grafana/ui';
 import _ from 'lodash';
 import CogniteDatasource from '../datasource';
 import { EVENTS_PAGE_LIMIT } from '../constants';
-import { getRelationshipsTabStyles } from './common/editorChromeStyles';
+import { relationshipsTabStyles } from './common/editorChromeStyles';
 import { SelectedProps } from '../types';
 
 const queryTypeSelector = 'relationshipsQuery';
@@ -20,14 +20,13 @@ const labels = {
 };
 
 const MultiSelectAsync = (props) => {
-  const styles = useStyles2(getRelationshipsTabStyles);
   const { datasource, query, onQueryChange, selector, placeholder, queryBinder } = props;
   const route = queryBinder
     ? `${queryBinder}.${queryTypeSelector}.${selector.route}`
     : `${queryTypeSelector}.${selector.route}`;
   const s = route.split('.');
   return (
-    <Field label={`Filter relationships by ${selector.type}`} className={styles.select}>
+    <Field label={`Filter relationships by ${selector.type}`} className={relationshipsTabStyles.select}>
       <AsyncMultiSelect
         loadOptions={() => datasource.relationshipsDatasource.getRelationshipsDropdowns(selector)}
         value={_.get(query, s)}
@@ -48,7 +47,6 @@ export const RelationshipsTab = (
   props: SelectedProps & { datasource: CogniteDatasource } & { queryBinder: string | null }
 ) => {
   const { datasource, query, onQueryChange, queryBinder } = props;
-  const styles = useStyles2(getRelationshipsTabStyles);
   const route = queryBinder ? `${queryBinder}.${queryTypeSelector}` : `${queryTypeSelector}`;
   const [options, setOptions] = useState([]);
   const updateOptions = async () => {
@@ -75,7 +73,7 @@ export const RelationshipsTab = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataIds, containsAny]);
   return (
-    <div className={styles.row}>
+    <div className={relationshipsTabStyles.row}>
       <MultiSelectAsync
         query={query}
         datasource={datasource}
@@ -92,7 +90,7 @@ export const RelationshipsTab = (
         onQueryChange={onQueryChange}
         queryBinder={queryBinder}
       />
-      <Field label="Target Type Timeseries?" className={styles.item}>
+      <Field label="Target Type Timeseries?" className={relationshipsTabStyles.item}>
         <Tooltip content="Switch to get Target Type: Timeseries ">
           <Switch
             value={_.get(query, `${route}.isTypeTimeseries`)}
@@ -108,7 +106,7 @@ export const RelationshipsTab = (
           />
         </Tooltip>
       </Field>
-      <Field label="Limit" className={styles.item}>
+      <Field label="Limit" className={relationshipsTabStyles.item}>
         <Tooltip content="Limit must been between 1 and 1000">
           <Input
             type="number"
@@ -125,7 +123,7 @@ export const RelationshipsTab = (
           />
         </Tooltip>
       </Field>
-      <Field label="Active at Time" className={styles.item}>
+      <Field label="Active at Time" className={relationshipsTabStyles.item}>
         <Switch
           value={_.get(query, `${route}.isActiveAtTime`)}
           onChange={({ currentTarget }) =>
@@ -135,7 +133,7 @@ export const RelationshipsTab = (
       </Field>
       {!queryBinder && (
         <>
-          <Field label="Start ExternalId" className={styles.select}>
+          <Field label="Start ExternalId" className={relationshipsTabStyles.select}>
             <Tooltip content="Select start source external id">
               <MultiSelect
                 options={_.map(options, ({ sourceExternalId }) => ({
@@ -157,7 +155,7 @@ export const RelationshipsTab = (
             </Tooltip>
           </Field>
           {isDepthActive && (
-            <Field label="Depth" className={styles.item}>
+            <Field label="Depth" className={relationshipsTabStyles.item}>
               <Tooltip content="Select the depth of the relationships">
                 <Input
                   type="number"

@@ -8,7 +8,7 @@ const getTabSuffixLabelStyles = (theme: GrafanaTheme2) => ({
     alignSelf: 'center',
     background: '#ffdc7f',
     borderRadius: theme.shape.radius.default,
-    color: theme.colors.text.primary,
+    color: '#262626',
     marginTop: 0,
     marginLeft: 5,
     marginBottom: 0,
@@ -48,29 +48,34 @@ export const TabSuffixLabel = ({
   );
 };
 
-export const getQueryHelpPanelStyles = (_theme: GrafanaTheme2) => ({
-  helpPanel: css({
+/** Help alerts in queryEditor / queryHelp — mirrors the old `.help-panel` and `pre code` spacing. */
+export const queryHelpPanelClassName = css({
+  lineHeight: 2,
+  '& code': {
     lineHeight: 2,
-    '& code': {
-      lineHeight: 2,
+  },
+  '& pre': {
+    lineHeight: 2,
+  },
+  '& pre code': {
+    lineHeight: 2,
+  },
+});
+
+const getEventsTabInputStyles = (theme: GrafanaTheme2) => ({
+  monospaceInput: css({
+    '& input': {
+      fontFamily: theme.typography.fontFamilyMonospace,
     },
   }),
-});
-
-export const getMonospaceInputStyles = (theme: GrafanaTheme2) => ({
-  monospace: css({
-    fontFamily: theme.typography.fontFamilyMonospace,
-  }),
-});
-
-export const getEventsTabStyles = (theme: GrafanaTheme2) => ({
-  ...getMonospaceInputStyles(theme),
   marginRight4: css({
     marginRight: 4,
   }),
 });
 
-export const getRelationshipsTabStyles = (_theme: GrafanaTheme2) => ({
+export const getEventsTabStyles = (theme: GrafanaTheme2) => getEventsTabInputStyles(theme);
+
+export const relationshipsTabStyles = {
   row: css({
     width: '100%',
     marginTop: 4,
@@ -83,4 +88,4 @@ export const getRelationshipsTabStyles = (_theme: GrafanaTheme2) => ({
     width: '38.5em',
     margin: 6,
   }),
-});
+};
