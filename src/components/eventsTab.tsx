@@ -15,12 +15,14 @@ import {
   InlineSegmentGroup,
   Icon,
   Field,
+  useStyles2,
 } from '@grafana/ui';
 import jsonlint from 'jsonlint-mod';
 import { EventQuery, SelectedProps, EditorProps, EventsOrderDirection } from '../types';
 import { EventFields, EventSortByFields } from '../constants';
 import CogniteDatasource from '../datasource';
 import { EventQueryHelp, EventAdvancedFilterHelp } from './queryHelp';
+import { getEventsTabStyles } from './common/editorChromeStyles';
 
 const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   const { query, onQueryChange } = props;
@@ -49,6 +51,7 @@ const ActiveAtTimeRangeCheckbox = (props: SelectedProps) => {
   );
 };
 const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
+  const styles = useStyles2(getEventsTabStyles);
   const options = EventFields.map((value) => ({ value, label: value }));
   const { columns, aggregate } = query.eventQuery;
   
@@ -96,7 +99,7 @@ const ColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
                 });
               }}
               icon="times"
-              className='cog-mr-4'
+              className={styles.marginRight4}
               data-testId={"event-remove-col-" + key}
             />
           </React.Fragment>
@@ -120,6 +123,7 @@ const OrderDirectionEditor = (
   { onChange, direction = "asc" }:
   { direction: EventsOrderDirection, onChange: (val: EventsOrderDirection) => void }
 ) => {
+  const styles = useStyles2(getEventsTabStyles);
   const options = [{ label: "ascending", value: "asc" }, { label: "descending", value: "desc" }];
   return (
     <InlineFieldRow>
@@ -129,7 +133,7 @@ const OrderDirectionEditor = (
         options={options}
         menuPosition="fixed"
         value={direction}
-        className="cog-mr-4"
+        className={styles.marginRight4}
         width={16}
       />
     </InlineFieldRow>
@@ -138,6 +142,7 @@ const OrderDirectionEditor = (
 
 
 const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
+  const styles = useStyles2(getEventsTabStyles);
   const options = EventSortByFields.map((value) => ({ value, label: value }));
   const { sort = [] } = query.eventQuery;
 
@@ -184,7 +189,7 @@ const SortByPicker = ({ query, onQueryChange }: SelectedProps ) => {
                 });
               }}
               icon="times"
-              className='cog-mr-4'
+              className={styles.marginRight4}
               data-testId={"event-remove-sort-" + key}
             />
           </React.Fragment>
@@ -233,6 +238,7 @@ const ActiveAggregateCheckbox = ({ query, onQueryChange }: SelectedProps) => {
   );
 };
 const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
+  const styles = useStyles2(getEventsTabStyles);
   const options = [];
   useEffect(() => {
     if (!query.eventQuery.aggregate?.properties?.length) {
@@ -289,7 +295,7 @@ const FieldsTypeColumnsPicker = ({ query, onQueryChange }: SelectedProps) => {
                 });
               }}
               icon="times"
-              className='cog-mr-4'
+              className={styles.marginRight4}
               data-testId={"event-remove-aggr-field-" + key}
             />
           </React.Fragment>
@@ -366,6 +372,7 @@ const AdvancedEventFilter = (props) => {
 export function EventsTab(
   props: SelectedProps & { datasource: CogniteDatasource } & Pick<EditorProps, 'onRunQuery'>
 ) {
+  const styles = useStyles2(getEventsTabStyles);
   const { query, onQueryChange, datasource } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [value, setValue] = useState(query.eventQuery.expr);
@@ -392,7 +399,7 @@ export function EventsTab(
                 },
               })
             }
-            className="custom-query"
+            className={styles.monospaceInput}
           />
         </InlineField>
         <Button

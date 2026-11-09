@@ -2,6 +2,7 @@ import { Alert, Icon, TextLink } from '@grafana/ui';
 import React from 'react';
 import { DOCS_URL } from '../constants';
 import { Keyword as Code, FormattedMessage } from './common/Styled';
+import { queryHelpPanelClassName } from './common/editorChromeStyles';
 
 type HelpParams = { onDismiss: () => void; title: string; children: React.ReactNode, docsUrl?: boolean };
 
@@ -12,7 +13,7 @@ const HelpPanel = ({ onDismiss, title, children, docsUrl = true }: HelpParams) =
     severity="info"
     onRemove={onDismiss}
   >
-    <div className="help-panel">{children}</div>
+    <div className={queryHelpPanelClassName}>{children}</div>
     {docsUrl ? <a href={DOCS_URL} target='_blank' rel='noreferrer' style={{ marginTop: 10, textDecoration: 'underline' }}>
       Read more <Icon name="external-link-alt" />
     </a> : null}

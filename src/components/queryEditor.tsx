@@ -12,7 +12,6 @@ import {
   InlineFieldRow,
   Input,
   InlineSwitch,
-  useTheme2,
 } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { CustomQueryHelp } from './queryHelp';
@@ -29,8 +28,8 @@ import {
 } from '../types';
 import { ResourceSelect } from './resourceSelect';
 import { selectPlaceholderEllipsis } from './common/selectPlaceholder';
-import '../css/query_editor.css';
 import { DEPRECATED_CHIP_TEXT, DeprecatedChip, DeprecationNotice } from './common/DeprecationNotice';
+import { TabSuffixLabel } from './common/editorChromeStyles';
 import { TemplatesTab } from './templatesTab';
 import { RelationshipsTab } from './relationships';
 import { ExtractionPipelinesTab } from './extractionPipelinesTab';
@@ -324,21 +323,14 @@ export const ASSET_CENTRIC_REPLACEMENTS: Partial<Record<Tabs, string>> = {
 
 type TabSuffixComponent = React.ComponentType<{ className?: string }>;
 
-function DisabledTabSuffix() {
-  const theme = useTheme2();
-  return (
-    <p className="preview-label" style={{ color: theme.colors.error.text }}>
-      Disabled
-    </p>
-  );
-}
+const DisabledTabSuffix = () => <TabSuffixLabel variant="disabled">Disabled</TabSuffixLabel>;
 
 const SUFFIX_COMPONENTS: Partial<Record<Tabs, TabSuffixComponent>> = mapValues(
   TAB_SUFFIX_TEXT,
   (text) =>
     text === DEPRECATED_CHIP_TEXT
       ? DeprecatedChip
-      : () => <p className="preview-label">{text}</p>
+      : () => <TabSuffixLabel>{text}</TabSuffixLabel>
 );
 
 const tabSuffix = (tab: Tabs, showingDisabledTab: boolean): TabSuffixComponent | undefined => {

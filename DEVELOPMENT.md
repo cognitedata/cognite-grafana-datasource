@@ -1,5 +1,7 @@
 ## Developing
 
+AI agents and contributors should follow [AGENTS.md](./AGENTS.md) for Grafana **marketplace validation** rules (styling, TypeScript, and release checks).
+
 ### Prerequisites
 - [Node.js](https://nodejs.org/en/download/) 24.5 or newer (required for `yarn sign` / `@grafana/sign-plugin`; use `.nvmrc` with nvm)
 - [Yarn](https://yarnpkg.com/getting-started/install)
