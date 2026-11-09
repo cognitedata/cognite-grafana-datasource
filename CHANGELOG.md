@@ -3,6 +3,12 @@
 This article documents the ongoing improvements we're making to the **Cognite
 Data Source for Grafana**.
 
+## Unreleased
+
+### Bug fixes
+
+- **Variables**: the **Children of an asset held in a variable** example gave a variable with no options. It passed the variable to `getCogniteAssetById`, which returns the asset as a single row with its children nested inside, and a variable's options come only from the rows of the first field. The example now lists the children with `listCogniteAsset`, filtered on `parent` with `${asset.space}` and `${asset.externalId}`, and its description explains why nested instances don't become options.
+
 ## 4.7.0 - November 6th, 2026
 
 ### Deprecations
