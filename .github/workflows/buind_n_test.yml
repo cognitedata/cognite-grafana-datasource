@@ -2,9 +2,9 @@ name: Lint & Build & Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, backend-integration ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, backend-integration ]
 
 env:
   COGNITE_HOST: westeurope-1.cognitedata.com
@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: '24'
           cache: 'yarn'
+      - name: Test stable release eligibility
+        run: bash scripts/test-release-tag.sh
+
       - name: Install dependencies
         run: yarn install --immutable --prefer-offline
 
