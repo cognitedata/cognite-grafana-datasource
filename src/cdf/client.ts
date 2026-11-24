@@ -580,7 +580,7 @@ export function reduceTimeseries(
         const frame = toDataFrame(item);
         frame.refId = target.refId;
         frame.fields.forEach((field) => {
-          if (field.type === FieldType.number && !field.config.displayNameFromDS) {
+          if (field.type === FieldType.number && frame.name && !field.config?.displayNameFromDS) {
             field.config = { ...field.config, displayNameFromDS: frame.name };
           }
         });

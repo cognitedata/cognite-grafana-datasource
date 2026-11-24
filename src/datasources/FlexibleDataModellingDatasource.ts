@@ -1,5 +1,5 @@
-import { DataQueryRequest, TableData, TimeSeries, DataQueryResponse } from '@grafana/data';
-import _, { Many } from 'lodash';
+import { DataFrame, DataQueryRequest, TableData, TimeSeries, DataQueryResponse } from '@grafana/data';
+import _ from 'lodash';
 import { getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { CogniteQuery, FDMQueryResponse, FlexibleDataModellingQuery, HttpMethod } from '../types';
 import { DMSInstanceId } from '../types/dms';
@@ -14,6 +14,8 @@ import { readScalarPath } from '../cdf/instanceRef';
 import { interpolateGraphqlLabel } from '../cdf/graphqlLabel';
 import { graphqlSeriesRefId, TIME_SERIES_ROOT_KEY } from '../cdf/graphqlTimeSeries';
 import { getFirstSelection } from '../utils';
+
+type GraphqlResult = DataFrame | TableData | TimeSeries;
 
 const getItemsTableData = (items): TableData => {
   const columns = ['item'];
@@ -195,7 +197,7 @@ export class FlexibleDataModellingDatasource {
     options: any,
     target: any,
     messages: QueryMessages
-  ): Promise<any[]> {
+  ): Promise<Array<DataFrame | TimeSeries>> {
     // Instances: the rows alone, already returned as a table, without data points.
     if (items.length === 0 || query.queryType === 'instances') {
       return [];
@@ -367,25 +369,25 @@ export class FlexibleDataModellingDatasource {
     });
     return data;
   }
-  async postQueryEdges(edges, query, options, target, messages: QueryMessages): Promise<Many<TimeSeries | TableData>> {
+  async postQueryEdges(edges, query, options, target, messages: QueryMessages): Promise<GraphqlResult[]> {
     try {
       const res = getEdgesTableData(edges);
       const nodes = _.map(edges, 'node');
       const tsItems = this.extractTimeseriesItems(nodes, query);
       const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
-      return _.concat(res, tsData).map((frame) => ({ ...frame, refId: target.refId }));
+      return [res, ...tsData].map((frame) => ({ ...frame, refId: target.refId }));
     } catch (error) {
       messages.error(error, target.refId);
       return [];
     }
   }
 
-  async postQueryItems(items, query, options, target, messages: QueryMessages) {
+  async postQueryItems(items, query, options, target, messages: QueryMessages): Promise<GraphqlResult[]> {
     try {
       const res = getItemsTableData(items);
       const tsItems = this.extractTimeseriesItems(items, query);
       const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
-      return _.concat(res, tsData).map((frame) => ({ ...frame, refId: target.refId }));
+      return [res, ...tsData].map((frame) => ({ ...frame, refId: target.refId }));
     } catch (error) {
       messages.error(error, target.refId);
       return [];
@@ -396,7 +398,7 @@ export class FlexibleDataModellingDatasource {
     options,
     target,
     messages: QueryMessages
-  ): Promise<Many<TimeSeries | TableData>> {
+  ): Promise<GraphqlResult[]> {
     try {
       const { data, errors } = await this.connector.fetchQuery({
         path: graphqlEndpointPath(query),

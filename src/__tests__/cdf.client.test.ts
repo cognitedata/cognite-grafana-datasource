@@ -99,14 +99,18 @@ describe('CDF client', () => {
         expect(messages.attachTo({ data }).data).toEqual([expect.objectContaining({
           refId: 'B',
           name: 'pressure',
+          fields: expect.arrayContaining([expect.objectContaining({
+            config: expect.objectContaining({ displayNameFromDS: 'pressure' }),
+          })]),
           meta: { notices: [{ severity: 'warning', text: 'Partial result' }] },
         })]);
       }
     );
 
-    it('should return datapoints and the default label', () => {
+    it('keeps the legacy numeric result shape for a deprecated query with a RefID', () => {
       const id = 2;
       const externalIdPrefix = 'Timeseries';
+      const metadata = getMeta(id, 'average', ['']);
       const metaResponses: any[] = [
         {
           result: getDataqueryResponse(
@@ -116,15 +120,14 @@ describe('CDF client', () => {
             },
             externalIdPrefix
           ),
-          metadata: getMeta(id, 'average', ['']),
+          metadata: { ...metadata, target: { ...metadata.target, tab: Tab.Timeseries, refId: 'B' } },
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]) as TimeSeries[];
-      expect(reduced.datapoints).toEqual([
-        [0, 1549336675000],
-        [1, 1549337275000],
-      ]);
-      expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
+      expect(reduced).toEqual({
+        target: `average ${externalIdPrefix}${id}`,
+        datapoints: [[0, 1549336675000], [1, 1549337275000]],
+      });
     });
 
     it('should return latest data point even if outside the time range with a correct label', () => {

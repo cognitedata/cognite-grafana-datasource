@@ -1075,6 +1075,15 @@ describe('grouping by a direct relation', () => {
     expect(JSON.stringify(names)).not.toContain('[object Object]');
   });
 
+  it('groups equivalent relation references regardless of property order', () => {
+    const [first, second] = timeSeriesResponse.aggregates.bucket_0.uniqueValueBuckets;
+    const reordered = { externalId: REF_A.externalId, space: REF_A.space };
+    const response = { aggregates: { bucket_0: { uniqueValueBuckets: [first, { ...second, value: reordered }] } } };
+    const frames = recordsAggregateToDataFrames(response as any, timeSeriesQuery, 'A');
+    expect(frames).toHaveLength(1);
+    expect(frames[0].fields[1].values).toEqual([1, 2]);
+  });
+
   it('labels the series with the rendered reference', () => {
     const [frame] = recordsAggregateToDataFrames(timeSeriesResponse as any, timeSeriesQuery, 'A');
     expect(frame.fields[1].labels).toEqual({
