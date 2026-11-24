@@ -18,6 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+        with:
+          fetch-depth: 0
+
+      - name: Check stable release eligibility
+        run: bash scripts/check-release-tag.sh "$GITHUB_REF_NAME"
+
       - name: Check for backend
         id: check-for-backend
         shell: bash
