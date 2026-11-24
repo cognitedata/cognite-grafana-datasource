@@ -67,7 +67,7 @@ func (s Settings) normalized() (Settings, error) {
 func hostURL(host string) (*url.URL, error) {
 	// Configuration accepts a bare host, as the frontend normalizes schemes away.
 	u, err := url.Parse("https://" + host)
-	if err != nil || u.Hostname() == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || strings.Contains(host, "://") {
+	if err != nil || u.Hostname() == "" || u.User != nil || u.Path != "" || u.ForceQuery || u.RawQuery != "" || u.Fragment != "" || strings.Contains(host, "://") {
 		return nil, errors.New("CDF cluster must be a hostname without a scheme, path, or credentials")
 	}
 	return u, nil

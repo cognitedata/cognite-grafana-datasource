@@ -50,6 +50,9 @@ func TestBoundedGzipResponses(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			res := &http.Response{Body: io.NopCloser(bytes.NewReader(tc.body)), Header: http.Header{"Content-Encoding": {tc.encoding}}, Uncompressed: tc.uncompressed}
 			got, err := readResponse(res, tc.limit)
+			if errors.Is(err, errResponseTooLarge) != strings.Contains(tc.name, "limit") {
+				t.Fatalf("wrong size classification: %v", err)
+			}
 			if (err != nil) != tc.fail {
 				t.Fatalf("unexpected decode result: %v", err)
 			}
@@ -168,5 +171,13 @@ func TestCompressedCDFError(t *testing.T) {
 	var apiErr *Error
 	if !errors.As(err, &apiErr) || apiErr.Status != http.StatusForbidden || apiErr.RequestID != "request-42" || apiErr.Message != "denied for [redacted]" {
 		t.Fatalf("unexpected CDF error: %v", err)
+	}
+}
+func TestUnsupportedEncodingChain(t *testing.T) {
+	for _, values := range [][]string{{"gzip", "br"}, {"gzip, br"}} {
+		res := &http.Response{Header: http.Header{"Content-Encoding": values}, Body: io.NopCloser(bytes.NewReader(nil))}
+		if _, err := readResponse(res, 128); err == nil || err.Error() != "Unsupported CDF response content encoding" {
+			t.Errorf("%v: %v", values, err)
+		}
 	}
 }

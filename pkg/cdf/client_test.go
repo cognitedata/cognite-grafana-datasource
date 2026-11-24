@@ -65,6 +65,9 @@ func TestClientCredentialsCacheAndRefresh(t *testing.T) {
 				t.Error("user authorization leaked to token endpoint")
 			}
 			_ = r.ParseForm()
+			if r.Form.Has("scope") {
+				t.Error("empty scope sent")
+			}
 			if r.Form.Get("client_secret") != "test-secret" {
 				t.Error("missing client secret")
 			}
@@ -211,5 +214,50 @@ func TestConfiguredHTTPTimeoutIsPreserved(t *testing.T) {
 	c, err := NewClient(Settings{APIHost: "example.com", Project: &p}, "", &http.Client{Timeout: 17 * time.Second})
 	if err != nil || c.http.Timeout != 17*time.Second {
 		t.Fatalf("%v %v", c, err)
+	}
+}
+func TestInvalidOperationBeforeConcurrencyWait(t *testing.T) {
+	client, _ := testClient(t, func(http.ResponseWriter, *http.Request) { t.Error("invalid operation reached server") }, false)
+	for range cap(client.slots) {
+		client.slots <- struct{}{}
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	for _, path := range []string{"-other/views", "/models/views?", "/../token"} {
+		if err := client.Do(ctx, "Bearer t", "GET", path, nil, nil, nil); err == nil || errors.Is(err, context.Canceled) {
+			t.Errorf("expected path validation for %q; got %v", path, err)
+		}
+	}
+	if _, err := hostURL("example.com?"); err == nil {
+		t.Fatal("accepted trailing query delimiter")
+	}
+}
+
+func TestForwardedCredentialAndMissingItems(t *testing.T) {
+	client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "bearer private-token" || r.Header.Get("Content-Type") != "" || r.ContentLength != 0 {
+			t.Error("unexpected GET headers or body")
+		}
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte(`{"error":{"message":"denied private-token","missing":[{ "externalId": "missing" },{"id":42}]}}`))
+	}, false)
+	err := client.Do(t.Context(), "  bearer private-token  ", "GET", "/models/views", nil, nil, nil)
+	if err == nil || err.Error() != `denied [redacted] Missing: {"externalId":"missing"}, {"id":42}` {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResponseBodyTimeout(t *testing.T) {
+	for _, oauth := range []bool{false, true} {
+		client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Encoding", "gzip")
+			w.WriteHeader(200)
+			w.(http.Flusher).Flush()
+			<-r.Context().Done()
+		}, oauth)
+		client.http.Timeout = 200 * time.Millisecond
+		if err := client.Do(t.Context(), "Bearer test", "GET", "/models/views", nil, nil, nil); !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("oauth=%v: expected timeout, got %v", oauth, err)
+		}
 	}
 }

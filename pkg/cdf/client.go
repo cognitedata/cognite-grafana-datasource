@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand/v2"
 	"net/http"
 	"net/url"
@@ -74,7 +75,8 @@ func (c *Client) Close() { c.http.CloseIdleConnections() }
 // A forwarded identity is supplied per operation, never stored on the instance.
 func (c *Client) authorization(ctx context.Context, forwarded string) (string, error) {
 	if c.settings.PassThrough || !c.settings.ClientCredentials {
-		if strings.TrimSpace(forwarded) == "" {
+		forwarded = strings.TrimSpace(forwarded)
+		if forwarded == "" {
 			return "", &Error{Status: 401, Message: "Forwarded OAuth identity is missing. Sign in with OAuth; unattended queries require a client-credentials data source."}
 		}
 		return forwarded, nil
@@ -88,7 +90,10 @@ func (c *Client) authorization(ctx context.Context, forwarded string) (string, e
 	if c.token != "" && time.Now().Add(30*time.Second).Before(c.expires) {
 		return "Bearer " + c.token, nil
 	}
-	values := url.Values{"grant_type": {"client_credentials"}, "client_id": {c.settings.ClientID}, "client_secret": {c.secret}, "scope": {c.settings.Scope}}
+	values := url.Values{"grant_type": {"client_credentials"}, "client_id": {c.settings.ClientID}, "client_secret": {c.secret}}
+	if scope := strings.TrimSpace(c.settings.Scope); scope != "" {
+		values.Set("scope", scope)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.settings.TokenURL, strings.NewReader(values.Encode()))
 	if err != nil {
 		return "", errors.New("Invalid OAuth token URL")
@@ -109,6 +114,9 @@ func (c *Client) authorization(ctx context.Context, forwarded string) (string, e
 	if readErr != nil {
 		if ctx.Err() != nil {
 			return "", ctx.Err()
+		}
+		if errors.Is(readErr, context.DeadlineExceeded) {
+			return "", context.DeadlineExceeded
 		}
 		return "", &Error{Status: http.StatusBadGateway, Message: "Could not decode OAuth response"}
 	}
@@ -144,6 +152,9 @@ func (c *Client) invalidate(ctx context.Context, auth string) {
 // Do only performs read operations selected by a query executor or resource handler.
 // The path is relative to the configured project; caller input cannot change host.
 func (c *Client) Do(ctx context.Context, forwarded, method, path string, query url.Values, body any, output any) error {
+	if !strings.HasPrefix(path, "/") {
+		return errors.New("Invalid CDF operation path")
+	}
 	return c.request(ctx, forwarded, method, "/api/v1/projects/"+url.PathEscape(*c.settings.Project)+path, query, body, output)
 }
 
@@ -152,25 +163,8 @@ func (c *Client) Inspect(ctx context.Context, forwarded string, output any) erro
 }
 
 func (c *Client) request(ctx context.Context, forwarded, method, path string, query url.Values, body any, output any) error {
-	select {
-	case c.slots <- struct{}{}:
-		defer func() { <-c.slots }()
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	payload, err := json.Marshal(body)
-	if err != nil {
-		return errors.New("Could not encode CDF request")
-	}
-	if body == nil {
-		payload = nil
-	}
-	payload, compressed, err := compressRequest(payload)
-	if err != nil {
-		return errors.New("Could not compress CDF request")
-	}
 	ref, err := url.Parse(path)
-	if err != nil || !strings.HasPrefix(path, "/api/v1/") || ref.IsAbs() || ref.Host != "" || ref.RawQuery != "" || ref.Fragment != "" {
+	if err != nil || !strings.HasPrefix(path, "/api/v1/") || ref.IsAbs() || ref.Host != "" || ref.ForceQuery || ref.RawQuery != "" || ref.Fragment != "" {
 		return errors.New("Invalid CDF operation path")
 	}
 	for _, segment := range strings.Split(ref.Path, "/") {
@@ -180,18 +174,41 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 	}
 	target := c.base.ResolveReference(ref)
 	target.RawQuery = query.Encode()
+	select {
+	case c.slots <- struct{}{}:
+		defer func() { <-c.slots }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	var payload []byte
+	if body != nil {
+		payload, err = json.Marshal(body)
+		if err != nil {
+			return errors.New("Could not encode CDF request")
+		}
+	}
+	payload, compressed, err := compressRequest(payload)
+	if err != nil {
+		return errors.New("Could not compress CDF request")
+	}
 	refreshed := false
 	for attempt := 0; attempt < 4; attempt++ {
 		auth, err := c.authorization(ctx, forwarded)
 		if err != nil {
 			return err
 		}
-		req, err := http.NewRequestWithContext(ctx, method, target.String(), bytes.NewReader(payload))
+		var reader io.Reader
+		if body != nil {
+			reader = bytes.NewReader(payload)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, target.String(), reader)
 		if err != nil {
 			return errors.New("Could not construct CDF request")
 		}
 		req.Header.Set("Authorization", auth)
-		req.Header.Set("Content-Type", "application/json")
+		if body != nil {
+			req.Header.Set("Content-Type", "application/json")
+		}
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("Accept-Encoding", "gzip")
 		if compressed {
@@ -213,6 +230,9 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 		if readErr != nil {
 			if ctx.Err() != nil {
 				return ctx.Err()
+			}
+			if errors.Is(readErr, context.DeadlineExceeded) {
+				return context.DeadlineExceeded
 			}
 			return &Error{Status: http.StatusBadGateway, Message: readErr.Error()}
 		}
@@ -237,14 +257,14 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 			delay := time.Duration(200*(1<<attempt)+rand.IntN(100)) * time.Millisecond
 			if seconds, e := strconv.Atoi(res.Header.Get("Retry-After")); e == nil && seconds > 0 {
 				if seconds > 30 {
-					return &Error{Status: res.StatusCode, Message: "CDF requested a retry beyond this query's retry budget"}
+					return &Error{Status: res.StatusCode, RequestID: res.Header.Get("x-request-id"), Message: "CDF requested a retry beyond this query's retry budget"}
 				}
 				delay = time.Duration(seconds) * time.Second
 			} else if at, e := http.ParseTime(res.Header.Get("Retry-After")); e == nil && time.Until(at) > delay {
 				delay = time.Until(at)
 			}
 			if delay > 30*time.Second {
-				return &Error{Status: res.StatusCode, Message: "CDF requested a retry beyond this query's retry budget"}
+				return &Error{Status: res.StatusCode, RequestID: res.Header.Get("x-request-id"), Message: "CDF requested a retry beyond this query's retry budget"}
 			}
 			timer := time.NewTimer(delay)
 			select {
@@ -257,7 +277,8 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 		}
 		var envelope struct {
 			Error struct {
-				Message string `json:"message"`
+				Message string            `json:"message"`
+				Missing []json.RawMessage `json:"missing"`
 			} `json:"error"`
 		}
 		_ = json.Unmarshal(data, &envelope)
@@ -265,7 +286,21 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 		if message == "" {
 			message = fmt.Sprintf("CDF request failed (HTTP %d)", res.StatusCode)
 		}
-		for _, sensitive := range []string{auth, strings.TrimPrefix(auth, "Bearer "), c.secret} {
+		if len(envelope.Error.Missing) > 0 {
+			var items []string
+			for _, item := range envelope.Error.Missing {
+				var compact bytes.Buffer
+				if json.Compact(&compact, item) == nil {
+					items = append(items, compact.String())
+				}
+			}
+			message += " Missing: " + strings.Join(items, ", ")
+		}
+		secrets := []string{auth, c.secret}
+		if fields := strings.Fields(auth); len(fields) == 2 {
+			secrets = append(secrets, fields[1])
+		}
+		for _, sensitive := range secrets {
 			if sensitive != "" {
 				message = strings.ReplaceAll(message, sensitive, "[redacted]")
 			}
