@@ -9,6 +9,8 @@ import (
 
 type Datasource struct{}
 
+var _ backend.QueryDataHandler = (*Datasource)(nil)
+
 func NewDatasource(context.Context, backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	return &Datasource{}, nil
 }

@@ -6,6 +6,7 @@ AI agents and contributors should follow [AGENTS.md](./AGENTS.md) for Grafana **
 - [Node.js](https://nodejs.org/en/download/) 24.5 or newer (required for `yarn sign` / `@grafana/sign-plugin`; use `.nvmrc` with nvm)
 - [Yarn](https://yarnpkg.com/getting-started/install)
 - [Docker](https://docs.docker.com/get-docker/)
+- [Go](https://go.dev/doc/install) with automatic toolchain selection enabled for the version pinned in [go.mod](./go.mod)
 
 The easiest way to work on this datasource is by using [docker compose](./docker-compose.yaml) approach. 
 First, run the connector:
@@ -14,8 +15,7 @@ First, run the connector:
 yarn dev
 ```
 
-In another terminal, build the Go backend before starting Grafana. Install Go with
-toolchain selection enabled (see `go.mod` for the pinned version), then run:
+In another terminal, build the Go backend before starting Grafana:
 
 ```sh
 go run github.com/magefile/mage -v build:linux     # Docker on amd64
