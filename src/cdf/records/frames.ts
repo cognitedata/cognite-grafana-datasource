@@ -360,7 +360,10 @@ export function recordsAggregateToDataFrames(
   // One frame per distinct combination of non-time bucket values.
   const groups = new Map<string, FlatAggregateRow[]>();
   rows.forEach((row) => {
-    const key = labelKeys.map((k) => formatComplexValue(row.keys[k])).join(' · ');
+    const key = JSON.stringify(labelKeys.map((k) => {
+      const value = row.keys[k];
+      return value?.space && value?.externalId ? [value.space, value.externalId] : value;
+    }));
     const existing = groups.get(key);
     if (existing) {
       existing.push(row);
@@ -369,7 +372,8 @@ export function recordsAggregateToDataFrames(
     }
   });
 
-  return Array.from(groups.entries()).map(([groupKey, groupRows]) => {
+  return Array.from(groups.values()).map((groupRows) => {
+    const groupKey = labelKeys.map((k) => formatComplexValue(groupRows[0].keys[k])).join(' · ');
     const labels = labelKeys.reduce<Record<string, string>>((acc, key) => {
       acc[key] = formatComplexValue(groupRows[0].keys[key]);
       return acc;

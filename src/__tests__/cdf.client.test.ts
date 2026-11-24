@@ -1,5 +1,6 @@
 import { TimeSeries } from '@grafana/data';
-import { Err, Ok } from '../types';
+import { QueryMessages } from '../queryMessages';
+import { Err, Ok, Tab } from '../types';
 import {
   datapoints2Tuples,
   reduceTimeseries,
@@ -84,6 +85,25 @@ describe('CDF client', () => {
   });
 
   describe('reduce timeseries', () => {
+    it.each([Tab.CogniteTimeSeriesSearch, Tab.SyntheticTimeSeries, Tab.FlexibleDataModelling])(
+      'attaches warnings to the returned %s series',
+      (tab) => {
+        const metadata = getMeta(2, 'average', ['pressure']);
+        const response = {
+          metadata: { ...metadata, target: { ...metadata.target, tab, refId: 'B' } },
+          result: getDataqueryResponse({ items: [{ id: 2 }], aggregates: ['average'] }, 'ts'),
+        };
+        const data = reduceTimeseries([response as any], [1549336675000, 1549337275000]);
+        const messages = new QueryMessages();
+        messages.warning('Partial result', 'B');
+        expect(messages.attachTo({ data }).data).toEqual([expect.objectContaining({
+          refId: 'B',
+          name: 'pressure',
+          meta: { notices: [{ severity: 'warning', text: 'Partial result' }] },
+        })]);
+      }
+    );
+
     it('should return datapoints and the default label', () => {
       const id = 2;
       const externalIdPrefix = 'Timeseries';

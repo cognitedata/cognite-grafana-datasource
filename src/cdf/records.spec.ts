@@ -1069,8 +1069,8 @@ describe('grouping by a direct relation', () => {
     const frames = recordsAggregateToDataFrames(timeSeriesResponse as any, timeSeriesQuery, 'A');
     const names = frames.map((f) => f.fields[1].config?.displayNameFromDS);
     expect(names).toEqual([
-      'opcua_alarms:asset:equip:iaa_wh_82ft4657c · count',
-      'opcua_alarms:asset:equip:iaa_sep_66ft9834d · count',
+      'opcua_alarms:asset:equip:iaa_wh_82ft4657c Â· count',
+      'opcua_alarms:asset:equip:iaa_sep_66ft9834d Â· count',
     ]);
     expect(JSON.stringify(names)).not.toContain('[object Object]');
   });
@@ -1182,12 +1182,32 @@ describe('aggregate series naming', () => {
     ['time:sec', { space: 'u', externalId: 'time:sec', name: 'SEC', description: 'second', symbol: 's' }],
   ]);
 
+  it('keeps distinct bucket tuples with the same display name in separate frames', () => {
+    const pairs = [['a Â· b', 'c'], ['a', 'b Â· c']];
+    const uniqueValueBuckets = pairs.map(([area, line], i) => {
+      const histogram = { intervalStart: '2026-08-25T08:00:00Z', count: 1, aggregates: { duration: { avg: i + 1 } } };
+      const lineBucket = { value: line, count: 1, aggregates: { bucket_2: { timeHistogramBuckets: [histogram] } } };
+      return { value: area, count: 1, aggregates: { bucket_1: { uniqueValueBuckets: [lineBucket] } } };
+    });
+    const response = { aggregates: { bucket_0: { uniqueValueBuckets } } };
+    const query = baseQuery({ ...QUERY, buckets: [
+      { kind: 'uniqueValues', property: 'area', size: 10 },
+      { kind: 'uniqueValues', property: 'line', size: 10 },
+      { kind: 'timeHistogram', property: 'Time', interval: 'auto' },
+    ] });
+    const frames = recordsAggregateToDataFrames(response, query, 'B');
+    expect(frames.map((f) => [f.fields[1].labels, f.fields[1].values])).toEqual([
+      [{ area: 'a Â· b', line: 'c' }, [1]],
+      [{ area: 'a', line: 'b Â· c' }, [2]],
+    ]);
+  });
+
   it('names each series once, not once per source of the bucket value', () => {
     // Regression: the frame name and the field labels both carried the bucket value,
     // so Grafana composed "i=10523 duration (s) i=10523".
     const frames = recordsAggregateToDataFrames(RESPONSE as any, QUERY, 'A', SECONDS);
     const names = frames.map((f) => f.fields[1].config?.displayNameFromDS);
-    expect(names).toEqual(['i=10523 · duration (s)', 'i=2782 · duration (s)']);
+    expect(names).toEqual(['i=10523 Â· duration (s)', 'i=2782 Â· duration (s)']);
   });
 
   it('keeps the bucket value as a label for transformations and overrides', () => {
@@ -1230,7 +1250,7 @@ describe('aggregate series naming', () => {
       SECONDS
     );
     const names = frames.map((f) => f.fields[1].config?.displayNameFromDS);
-    expect(names).toEqual(['i=10523 · duration', 'i=2782 · duration']);
+    expect(names).toEqual(['i=10523 Â· duration', 'i=2782 Â· duration']);
   });
 });
 
@@ -1720,7 +1740,7 @@ describe('records response conversion', () => {
       'A'
     );
 
-    // The bucket also reports count: 2737 — it must not surface as a second column
+    // The bucket also reports count: 2737 â€” it must not surface as a second column
     expect(frames[0].fields.map((f) => f.name)).toEqual(['time', 'count']);
   });
 });

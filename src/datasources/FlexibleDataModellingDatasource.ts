@@ -373,7 +373,7 @@ export class FlexibleDataModellingDatasource {
       const nodes = _.map(edges, 'node');
       const tsItems = this.extractTimeseriesItems(nodes, query);
       const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
-      return _.concat(res, tsData);
+      return _.concat(res, tsData).map((frame) => ({ ...frame, refId: target.refId }));
     } catch (error) {
       messages.error(error, target.refId);
       return [];
@@ -385,7 +385,7 @@ export class FlexibleDataModellingDatasource {
       const res = getItemsTableData(items);
       const tsItems = this.extractTimeseriesItems(items, query);
       const tsData = await this.queryTimeseriesItems(tsItems, target.flexibleDataModellingQuery, options, target, messages);
-      return _.concat(res, tsData);
+      return _.concat(res, tsData).map((frame) => ({ ...frame, refId: target.refId }));
     } catch (error) {
       messages.error(error, target.refId);
       return [];
