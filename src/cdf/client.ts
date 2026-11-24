@@ -1,5 +1,5 @@
 import { get, cloneDeep, chunk, sortBy, uniqBy } from 'lodash';
-import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone } from '@grafana/data';
+import { DataFrame, Field, TableData, TimeSeries, guessFieldTypeFromNameAndValue, getTimeZone, toDataFrame, FieldType } from '@grafana/data';
 import {
   TimeSeriesDatapoint,
   Timestamp,
@@ -575,7 +575,20 @@ export function reduceTimeseries(
       ];
     });
 
-    responseTimeseries.push(...series);
+    if ([Tab.CogniteTimeSeriesSearch, Tab.SyntheticTimeSeries, Tab.FlexibleDataModelling].includes(target.tab)) {
+      responseTimeseries.push(...series.map((item) => {
+        const frame = toDataFrame(item);
+        frame.refId = target.refId;
+        frame.fields.forEach((field) => {
+          if (field.type === FieldType.number && frame.name && !field.config?.displayNameFromDS) {
+            field.config = { ...field.config, displayNameFromDS: frame.name };
+          }
+        });
+        return frame;
+      }));
+    } else {
+      responseTimeseries.push(...series);
+    }
   });
 
   return responseTimeseries;

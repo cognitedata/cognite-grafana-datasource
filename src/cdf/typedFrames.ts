@@ -1,9 +1,9 @@
 import { DataFrame, Field, FieldType, MappingType, ValueMapping } from '@grafana/data';
 
 /**
- * Frames for series whose values are not numbers. The numeric path keeps returning
- * legacy `TimeSeries`, which Grafana always reads as numbers; text values need a
- * frame with a string field so the table and state timeline panels show them.
+ * Frames for string and state series. A string field lets tables and state timelines
+ * display text values. Numeric results become data frames on modern query tabs
+ * and keep the legacy TimeSeries shape on deprecated tabs.
  *
  * Built as plain objects (arrays as field values) so they work on every Grafana
  * version the plugin supports.

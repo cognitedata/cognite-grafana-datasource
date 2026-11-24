@@ -176,6 +176,18 @@ describe('plotting the series a GraphQL query returns', () => {
   const rowsQuery = '{ listCogniteTimeSeries { items { space externalId name } } }';
   const vouchedRows = { schemaTsKeys: [TIME_SERIES_ROOT_KEY] };
 
+  it.each(['items', 'edges'])('returns the parent query RefID on %s tables and series', async (kind) => {
+    const series = ['pressure', 'temperature'].map(externalId => ({ space: 's', externalId, type: 'numeric' }));
+    const rows = kind === 'edges' ? series.map(node => ({ node })) : series;
+    const connector = { fetchQuery: jest.fn().mockResolvedValue({ data: { listCogniteTimeSeries: { [kind]: rows } } }) };
+    const timeseries = { query: jest.fn().mockResolvedValue({ data: [{ refId: 'child', fields: [], length: 0 }] }) };
+    const ds = new FlexibleDataModellingDatasource(connector as any, timeseries as any);
+    const query = { ...vouchedRows, graphQlQuery: rowsQuery, tsKeys: [] };
+    const frames = await ds.runQuery(query as any, {}, { refId: 'B', flexibleDataModellingQuery: query }, new QueryMessages());
+    expect(timeseries.query.mock.calls.map(([request]) => request.targets[0].refId)).toEqual(['B_fdm_0', 'B_fdm_1']);
+    expect(frames.map(frame => frame.refId)).toEqual(['B', 'B', 'B']);
+  });
+
   it('fetches datapoints for rows the schema vouched for, without a type field', async () => {
     const fetched = await run(
       vouchedRows,

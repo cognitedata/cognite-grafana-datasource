@@ -1075,6 +1075,15 @@ describe('grouping by a direct relation', () => {
     expect(JSON.stringify(names)).not.toContain('[object Object]');
   });
 
+  it('groups equivalent relation references regardless of property order', () => {
+    const [first, second] = timeSeriesResponse.aggregates.bucket_0.uniqueValueBuckets;
+    const reordered = { externalId: REF_A.externalId, space: REF_A.space };
+    const response = { aggregates: { bucket_0: { uniqueValueBuckets: [first, { ...second, value: reordered }] } } };
+    const frames = recordsAggregateToDataFrames(response as any, timeSeriesQuery, 'A');
+    expect(frames).toHaveLength(1);
+    expect(frames[0].fields[1].values).toEqual([1, 2]);
+  });
+
   it('labels the series with the rendered reference', () => {
     const [frame] = recordsAggregateToDataFrames(timeSeriesResponse as any, timeSeriesQuery, 'A');
     expect(frame.fields[1].labels).toEqual({
@@ -1181,6 +1190,26 @@ describe('aggregate series naming', () => {
   const SECONDS = new Map<string, CogniteUnit>([
     ['time:sec', { space: 'u', externalId: 'time:sec', name: 'SEC', description: 'second', symbol: 's' }],
   ]);
+
+  it('keeps distinct bucket tuples with the same display name in separate frames', () => {
+    const pairs = [['a · b', 'c'], ['a', 'b · c']];
+    const uniqueValueBuckets = pairs.map(([area, line], i) => {
+      const histogram = { intervalStart: '2026-08-25T08:00:00Z', count: 1, aggregates: { duration: { avg: i + 1 } } };
+      const lineBucket = { value: line, count: 1, aggregates: { bucket_2: { timeHistogramBuckets: [histogram] } } };
+      return { value: area, count: 1, aggregates: { bucket_1: { uniqueValueBuckets: [lineBucket] } } };
+    });
+    const response = { aggregates: { bucket_0: { uniqueValueBuckets } } };
+    const query = baseQuery({ ...QUERY, buckets: [
+      { kind: 'uniqueValues', property: 'area', size: 10 },
+      { kind: 'uniqueValues', property: 'line', size: 10 },
+      { kind: 'timeHistogram', property: 'Time', interval: 'auto' },
+    ] });
+    const frames = recordsAggregateToDataFrames(response, query, 'B');
+    expect(frames.map((f) => [f.fields[1].labels, f.fields[1].values])).toEqual([
+      [{ area: 'a · b', line: 'c' }, [1]],
+      [{ area: 'a', line: 'b · c' }, [2]],
+    ]);
+  });
 
   it('names each series once, not once per source of the bucket value', () => {
     // Regression: the frame name and the field labels both carried the bucket value,

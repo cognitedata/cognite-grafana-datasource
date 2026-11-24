@@ -1,5 +1,6 @@
 import { TimeSeries } from '@grafana/data';
-import { Err, Ok } from '../types';
+import { QueryMessages } from '../queryMessages';
+import { Err, Ok, Tab } from '../types';
 import {
   datapoints2Tuples,
   reduceTimeseries,
@@ -84,9 +85,32 @@ describe('CDF client', () => {
   });
 
   describe('reduce timeseries', () => {
-    it('should return datapoints and the default label', () => {
+    it.each([Tab.CogniteTimeSeriesSearch, Tab.SyntheticTimeSeries, Tab.FlexibleDataModelling])(
+      'attaches warnings to the returned %s series',
+      (tab) => {
+        const metadata = getMeta(2, 'average', ['pressure']);
+        const response = {
+          metadata: { ...metadata, target: { ...metadata.target, tab, refId: 'B' } },
+          result: getDataqueryResponse({ items: [{ id: 2 }], aggregates: ['average'] }, 'ts'),
+        };
+        const data = reduceTimeseries([response as any], [1549336675000, 1549337275000]);
+        const messages = new QueryMessages();
+        messages.warning('Partial result', 'B');
+        expect(messages.attachTo({ data }).data).toEqual([expect.objectContaining({
+          refId: 'B',
+          name: 'pressure',
+          fields: expect.arrayContaining([expect.objectContaining({
+            config: expect.objectContaining({ displayNameFromDS: 'pressure' }),
+          })]),
+          meta: { notices: [{ severity: 'warning', text: 'Partial result' }] },
+        })]);
+      }
+    );
+
+    it('keeps the legacy numeric result shape for a deprecated query with a RefID', () => {
       const id = 2;
       const externalIdPrefix = 'Timeseries';
+      const metadata = getMeta(id, 'average', ['']);
       const metaResponses: any[] = [
         {
           result: getDataqueryResponse(
@@ -96,15 +120,14 @@ describe('CDF client', () => {
             },
             externalIdPrefix
           ),
-          metadata: getMeta(id, 'average', ['']),
+          metadata: { ...metadata, target: { ...metadata.target, tab: Tab.Timeseries, refId: 'B' } },
         },
       ];
       const [reduced] = reduceTimeseries(metaResponses, [1549336675000, 1549337275000]) as TimeSeries[];
-      expect(reduced.datapoints).toEqual([
-        [0, 1549336675000],
-        [1, 1549337275000],
-      ]);
-      expect(reduced.target).toEqual(`average ${externalIdPrefix}${id}`);
+      expect(reduced).toEqual({
+        target: `average ${externalIdPrefix}${id}`,
+        datapoints: [[0, 1549336675000], [1, 1549337275000]],
+      });
     });
 
     it('should return latest data point even if outside the time range with a correct label', () => {

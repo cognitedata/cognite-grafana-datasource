@@ -1025,7 +1025,10 @@ describe('Given a string Time series (data modeling) query', () => {
   it('returns counts as numbers and durations in milliseconds', async () => {
     respond([{ timestamp: t0, durationGood: 3_600_000 }]);
     const [series] = await run({ aggregation: 'durationGood' });
-    expect(series).toEqual({ target: 'grafana-ts-fixtures:batch_phase', datapoints: [[3_600_000, t0]], unit: 'ms' });
+    expect(series.name).toBe('grafana-ts-fixtures:batch_phase');
+    expect(series.fields[0].values).toEqual([t0]);
+    expect(series.fields[1].values).toEqual([3_600_000]);
+    expect(series.fields[1].config.unit).toBe('ms');
   });
 
   it('fails the query when the aggregation is one string series do not have', async () => {
@@ -1117,12 +1120,13 @@ describe('Given a state Time series (data modeling) query', () => {
     );
     const result = await lastValueFrom(stateDs.query({ ...options, targets: [target()] }));
     expect(result.errors).toBeUndefined();
-    // The series, without value mappings, and the empty frame its warning rides on.
-    const [series, carrier] = result.data;
+    // The warning belongs to the series now that its RefID is preserved.
+    const [series] = result.data;
     expect(series.fields[1].values).toEqual(['AVAILABLE']);
     expect(series.fields[1].config.mappings).toBeUndefined();
-    expect(carrier).toMatchObject({ refId: 'T', fields: [] });
-    expect(carrier.meta.notices).toEqual([
+    expect(result.data).toHaveLength(1);
+    expect(series.refId).toBe('T');
+    expect(series.meta.notices).toEqual([
       {
         severity: 'warning',
         text: expect.stringMatching(
