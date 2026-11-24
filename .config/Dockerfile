@@ -6,7 +6,8 @@ FROM grafana/${grafana_image}:${grafana_version}
 ARG development=true
 ARG TARGETARCH
 
-ARG GO_VERSION=1.21.6
+# Keep the development image in sync with the toolchain directive in go.mod.
+ARG GO_VERSION=1.27.4
 ARG GO_ARCH=${TARGETARCH:-amd64}
 
 ENV DEV "${development}"

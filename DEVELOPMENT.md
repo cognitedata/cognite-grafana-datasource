@@ -6,6 +6,7 @@ AI agents and contributors should follow [AGENTS.md](./AGENTS.md) for Grafana **
 - [Node.js](https://nodejs.org/en/download/) 24.5 or newer (required for `yarn sign` / `@grafana/sign-plugin`; use `.nvmrc` with nvm)
 - [Yarn](https://yarnpkg.com/getting-started/install)
 - [Docker](https://docs.docker.com/get-docker/)
+- [Go](https://go.dev/doc/install) with automatic toolchain selection enabled for the version pinned in [go.mod](./go.mod)
 
 The easiest way to work on this datasource is by using [docker compose](./docker-compose.yaml) approach. 
 First, run the connector:
@@ -14,7 +15,14 @@ First, run the connector:
 yarn dev
 ```
 
-And then use another terminal to run Grafana in docker:
+In another terminal, build the Go backend before starting Grafana:
+
+```sh
+go run github.com/magefile/mage -v build:linux     # Docker on amd64
+# For Docker on arm64 use build:linuxARM64 instead.
+```
+
+Start Grafana in Docker:
 
 ```
 yarn server
@@ -58,6 +66,21 @@ Also note the volume does not survive a Docker Desktop reinstall or factory rese
 `yarn` followed by `yarn build` should work on systems with a shell. The repository is on yarn 1, and `.yarnrc` sets `ignore-engines` because `@grafana/plugin-ui` declares a yarn 4 engine.
 
 For debugging and development, use `yarn dev`, and for testing use `yarn test`.
+
+## Building and testing the Go backend
+
+Run from the repository root on macOS or Linux:
+
+```sh
+go vet ./pkg/...
+go test -race ./pkg/...
+go run github.com/magefile/mage -v buildAll
+```
+
+The build places six executables in `dist/` for Linux (amd64, arm64, arm),
+macOS (amd64, arm64) and Windows (amd64). For a native Grafana instance, use
+the executable matching its host. Panel queries continue to use the frontend
+while backend query support is under development.
 
 ## Without Docker
 

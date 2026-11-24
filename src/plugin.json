@@ -2,6 +2,8 @@
   "type": "datasource",
   "name": "Cognite Data Fusion",
   "id": "cognitedata-datasource",
+  "backend": true,
+  "executable": "gpx_cognite_datasource",
 
   "info": {
     "description": "Cognite Data Fusion datasource",
