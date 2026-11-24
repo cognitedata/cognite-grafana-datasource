@@ -27,6 +27,27 @@ func testClient(t *testing.T, handler http.HandlerFunc, credentials bool) (*Clie
 	return client, server
 }
 
+func TestOAuthTokenLifetime(t *testing.T) {
+	for _, lifetime := range []string{"3600", `"3600"`} {
+		t.Run(lifetime, func(t *testing.T) {
+			var calls atomic.Int32
+			client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+				calls.Add(1)
+				_, _ = w.Write([]byte(`{"access_token":"cached","expires_in":` + lifetime + `}`))
+			}, true)
+			before := time.Now()
+			for range 2 {
+				if auth, err := client.authorization(t.Context(), ""); err != nil || auth != "Bearer cached" {
+					t.Fatalf("authorization returned %q, %v", auth, err)
+				}
+			}
+			if calls.Load() != 1 || client.expires.Before(before.Add(time.Hour)) || client.expires.After(time.Now().Add(time.Hour)) {
+				t.Fatalf("token endpoint calls=%d, expiration=%v", calls.Load(), client.expires)
+			}
+		})
+	}
+}
+
 func TestSettingsCompatibility(t *testing.T) {
 	for _, tc := range []struct {
 		raw, host, project string

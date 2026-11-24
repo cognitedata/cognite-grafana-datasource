@@ -124,16 +124,23 @@ func (c *Client) authorization(ctx context.Context, forwarded string) (string, e
 		return "", &Error{Status: res.StatusCode, Message: fmt.Sprintf("OAuth token request failed (HTTP %d)", res.StatusCode)}
 	}
 	var token struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
+		AccessToken string      `json:"access_token"`
+		ExpiresIn   json.Number `json:"expires_in"`
 	}
 	if err := json.NewDecoder(bytes.NewReader(data)).Decode(&token); err != nil || token.AccessToken == "" {
 		return "", &Error{Status: http.StatusBadGateway, Message: "OAuth server returned an invalid token response"}
 	}
-	if token.ExpiresIn <= 0 {
-		token.ExpiresIn = 60
+	var seconds int64
+	if token.ExpiresIn != "" {
+		seconds, err = token.ExpiresIn.Int64()
+		if err != nil {
+			return "", &Error{Status: http.StatusBadGateway, Message: "OAuth server returned an invalid token lifetime"}
+		}
 	}
-	c.token, c.expires = token.AccessToken, time.Now().Add(time.Duration(token.ExpiresIn)*time.Second)
+	if seconds <= 0 {
+		seconds = 60
+	}
+	c.token, c.expires = token.AccessToken, time.Now().Add(time.Duration(seconds)*time.Second)
 	return "Bearer " + c.token, nil
 }
 
