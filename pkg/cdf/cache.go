@@ -1,6 +1,7 @@
 package cdf
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"crypto/sha256"
@@ -167,6 +168,18 @@ func GetOrLoadJSON[T any](ctx context.Context, c *Cache, key string, ttl time.Du
 	}
 }
 
+func decodeCachedJSON(raw []byte, dst any) error {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	if err := decoder.Decode(dst); err != nil {
+		return err
+	}
+	if len(bytes.TrimSpace(raw[decoder.InputOffset():])) != 0 {
+		return errors.New("unexpected trailing data in cached JSON")
+	}
+	return nil
+}
+
 func getOrLoadJSONOnce[T any](
 	ctx context.Context,
 	c *Cache,
@@ -178,7 +191,7 @@ func getOrLoadJSONOnce[T any](
 	if c != nil {
 		if raw, ok := c.Get(key); ok {
 			var decoded T
-			if err := json.Unmarshal(raw, &decoded); err == nil {
+			if err := decodeCachedJSON(raw, &decoded); err == nil {
 				return decoded, nil
 			}
 		}
@@ -197,7 +210,7 @@ func getOrLoadJSONOnce[T any](
 				return zero, call.err
 			}
 			var decoded T
-			if err := json.Unmarshal(call.val, &decoded); err != nil {
+			if err := decodeCachedJSON(call.val, &decoded); err != nil {
 				return zero, err
 			}
 			return decoded, nil
@@ -209,7 +222,7 @@ func getOrLoadJSONOnce[T any](
 	// Close the cache-miss/registration window while owning the in-flight lock.
 	if raw, ok := c.Get(key); ok {
 		var decoded T
-		if err := json.Unmarshal(raw, &decoded); err == nil {
+		if err := decodeCachedJSON(raw, &decoded); err == nil {
 			c.inflightMu.Unlock()
 			return decoded, nil
 		}
@@ -247,7 +260,7 @@ func getOrLoadJSONOnce[T any](
 		return zero, err
 	}
 	var decoded T
-	if err := json.Unmarshal(call.val, &decoded); err != nil {
+	if err := decodeCachedJSON(call.val, &decoded); err != nil {
 		return zero, err
 	}
 	return decoded, nil

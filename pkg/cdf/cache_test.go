@@ -2,6 +2,7 @@ package cdf
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -9,6 +10,38 @@ import (
 	"testing"
 	"time"
 )
+
+func TestCachedJSONPreservesLargeID(t *testing.T) {
+	const id = json.Number("9007199254740993")
+	cache := NewCache(1, nil)
+	started, release := make(chan struct{}), make(chan struct{})
+	var calls atomic.Int32
+	load := func(context.Context) (map[string]any, error) {
+		if calls.Add(1) == 1 {
+			close(started)
+		}
+		<-release
+		return map[string]any{"id": id}, nil
+	}
+	read := func(ctx context.Context) {
+		value, err := GetOrLoadJSON(ctx, cache, "key", time.Hour, load)
+		if err != nil || value["id"] != id {
+			t.Errorf("unexpected cached value %v, error %v", value, err)
+		}
+	}
+	var wg sync.WaitGroup
+	wg.Go(func() { read(t.Context()) })
+	<-started
+	waiter := &observedContext{Context: t.Context(), observed: make(chan struct{})}
+	wg.Go(func() { read(waiter) })
+	<-waiter.observed
+	close(release)
+	wg.Wait()
+	read(t.Context())
+	if calls.Load() != 1 {
+		t.Fatalf("loader called %d times", calls.Load())
+	}
+}
 
 func TestCacheKeyTupleBoundaries(t *testing.T) {
 	if CacheKey("user", "views", "a:b", "c") == CacheKey("user", "views", "a", "b:c") {

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"sync"
 	"sync/atomic"
 )
@@ -38,19 +40,30 @@ func FetchAndPaginate[T any](
 	body map[string]any,
 	fullLimit int,
 ) ([]T, error) {
-	if fullLimit <= 0 {
-		if rawLimit, ok := body["limit"]; ok {
-			if n, ok := asPositiveInt(rawLimit); ok {
-				fullLimit = n
-			}
+	cursor, _ := body["cursor"].(string)
+	var pageBody map[string]any
+	if method == http.MethodGet {
+		query = maps.Clone(query)
+		if query == nil {
+			query = make(url.Values)
+		}
+		cursor = query.Get("cursor")
+		if fullLimit <= 0 {
+			fullLimit, _ = strconv.Atoi(query.Get("limit"))
+		}
+	} else {
+		pageBody = maps.Clone(body)
+		if pageBody == nil {
+			pageBody = make(map[string]any)
 		}
 		if fullLimit <= 0 {
-			fullLimit = defaultMaxPageLimit
+			fullLimit, _ = asPositiveInt(body["limit"])
 		}
 	}
-
+	if fullLimit <= 0 {
+		fullLimit = defaultMaxPageLimit
+	}
 	var all []T
-	cursor, _ := body["cursor"].(string)
 	seenCursors := map[string]struct{}{cursor: {}}
 
 	for {
@@ -58,13 +71,19 @@ func FetchAndPaginate[T any](
 			return nil, err
 		}
 
-		reqBody := maps.Clone(body)
-		if reqBody == nil {
-			reqBody = make(map[string]any)
-		}
-		reqBody["limit"] = min(defaultMaxPageLimit, fullLimit-len(all))
-		if cursor != "" {
-			reqBody["cursor"] = cursor
+		limit := min(defaultMaxPageLimit, fullLimit-len(all))
+		var reqBody any
+		if method == http.MethodGet {
+			query.Set("limit", strconv.Itoa(limit))
+			if cursor != "" {
+				query.Set("cursor", cursor)
+			}
+		} else {
+			pageBody["limit"] = limit
+			if cursor != "" {
+				pageBody["cursor"] = cursor
+			}
+			reqBody = pageBody
 		}
 
 		var page CursorResponse[T]

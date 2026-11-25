@@ -6,11 +6,43 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 )
+
+func TestGETPaginationUsesQueryParameters(t *testing.T) {
+	query := url.Values{"cursor": {"initial"}, "limit": {"3"}, "filter": {"a", "b"}}
+	original := query.Encode()
+	client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if r.Method != http.MethodGet || r.Body != http.NoBody || !slices.Equal(q["filter"], []string{"a", "b"}) {
+			t.Error("expected bodyless GET with both filter values")
+		}
+		switch q.Get("cursor") {
+		case "initial":
+			if q.Get("limit") != "3" {
+				t.Errorf("first limit: %s", q.Get("limit"))
+			}
+			fmt.Fprint(w, `{"items":[1,2],"nextCursor":"next+/="}`)
+		case "next+/=":
+			if q.Get("limit") != "1" {
+				t.Errorf("remaining limit: %s", q.Get("limit"))
+			}
+			fmt.Fprint(w, `{"items":[3],"nextCursor":"unused"}`)
+		default:
+			t.Errorf("unexpected cursor %q", q.Get("cursor"))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	}, false)
+	items, err := FetchAndPaginate[int](t.Context(), client, "Bearer test", http.MethodGet, "/models/views", query, nil, 0)
+	if err != nil || !slices.Equal(items, []int{1, 2, 3}) || query.Encode() != original {
+		t.Fatalf("items=%v query=%v err=%v", items, query, err)
+	}
+}
 
 func TestFetchAndPaginateAndRepeatedCursor(t *testing.T) {
 	client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
