@@ -1,13 +1,16 @@
 package plugin
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/cognitedata/cognite-grafana-datasource/pkg/cdf"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -41,6 +44,9 @@ func TestModelVersionResource(t *testing.T) {
 		status             int
 	}{
 		{"POST", "graphql/dml", `{"data":{"query":"{other}","variables":{"space":"s","externalId":"m","extra":"unused"}}}`, 200},
+		{"POST", "graphql/dml", `{"data":"{\"query\":\"{other}\",\"variables\":{\"space\":\"s\",\"externalId\":\"m\"}}"}`, 200},
+		{"POST", "graphql/dml", `{"data":"{\"query\":\"mutation { write }\",\"variables\":{\"space\":\"s\",\"externalId\":\"m\"}}"}`, 400},
+		{"POST", "graphql/dml", `{"data":"{"}`, 400},
 		{"GET", "graphql/dml", "", 405},
 		{"POST", "graphql/dml", strings.Repeat("x", maxQueryPayloadBytes+1), 413},
 		{"POST", "graphql/dml", "{", 400},
@@ -63,7 +69,31 @@ func TestModelVersionResource(t *testing.T) {
 			t.Fatalf("expected rejected operation: %+v %v", sender.resp, err)
 		}
 	}
-	if calls != 1 {
-		t.Fatalf("upstream calls=%d, want 1", calls)
+	if calls != 2 {
+		t.Fatalf("upstream calls=%d, want 2", calls)
+	}
+}
+
+func TestResourceErrorClassification(t *testing.T) {
+	for _, tc := range []struct {
+		err     error
+		status  int
+		message string
+	}{
+		{errors.New("private diagnostic"), 500, "Internal data source error"},
+		{&cdf.Error{Status: 307, Message: "redirect"}, 502, "Unexpected CDF response status"},
+		{&cdf.Error{Status: 403, Message: "denied"}, 403, "denied"},
+		{&cdf.Error{Status: 503, Message: "unavailable"}, 503, "unavailable"},
+		{context.Canceled, 499, "context canceled"},
+		{context.DeadlineExceeded, 504, "context deadline exceeded"},
+	} {
+		sender := &captureResourceSender{}
+		if err := sendErrorResource(sender, tc.err); err != nil {
+			t.Fatal(err)
+		}
+		var body struct{ Message string }
+		if err := json.Unmarshal(sender.resp.Body, &body); err != nil || sender.resp.Status != tc.status || body.Message != tc.message {
+			t.Errorf("got %d %q for %v", sender.resp.Status, sender.resp.Body, tc.err)
+		}
 	}
 }

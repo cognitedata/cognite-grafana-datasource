@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -32,9 +31,9 @@ func sendJSONResource(sender backend.CallResourceResponseSender, status int, pay
 }
 
 func sendErrorResource(sender backend.CallResourceResponseSender, err error) error {
-	status := errorStatus(err)
-	return sendJSONResource(sender, status, map[string]string{
-		"message": err.Error(),
+	result := errorResponse(err)
+	return sendJSONResource(sender, int(result.Status), map[string]string{
+		"message": result.Error.Error(),
 	})
 }
 
@@ -61,18 +60,25 @@ func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResource
 		Data json.RawMessage `json:"data"`
 	}
 	if err := json.Unmarshal(req.Body, &envelope); err != nil {
-		return sendErrorResource(sender, errors.New("Invalid JSON resource payload"))
+		return sendJSONResource(sender, http.StatusBadRequest, map[string]string{"message": "Invalid JSON resource payload"})
 	}
 	raw := envelope.Data
 	if raw == nil {
 		raw = req.Body
+	} else if len(raw) > 0 && raw[0] == '"' {
+		// The frontend editor serializes the GraphQL payload before wrapping it in data.
+		var serialized string
+		if err := json.Unmarshal(raw, &serialized); err != nil {
+			return sendJSONResource(sender, http.StatusBadRequest, map[string]string{"message": "Invalid serialized GraphQL payload"})
+		}
+		raw = json.RawMessage(serialized)
 	}
 	body, err := modelVersionsBody(raw)
 	if err != nil {
-		return sendErrorResource(sender, err)
+		return sendJSONResource(sender, http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 	if d.configErr != nil {
-		return sendErrorResource(sender, d.configErr)
+		return sendJSONResource(sender, http.StatusBadRequest, map[string]string{"message": d.configErr.Error()})
 	}
 	var result json.RawMessage
 	auth := req.GetHTTPHeader(backend.OAuthIdentityTokenHeaderName)

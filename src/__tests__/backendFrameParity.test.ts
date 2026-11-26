@@ -3,7 +3,7 @@ import path from 'path';
 import { DataFrame, DataFrameJSON, FieldType, dataFrameFromJSON, dataFrameToJSON } from '@grafana/data';
 
 function expectBackendFrames(fixture: string, frontend: DataFrame[]) {
-  const dir = process.env.CDF_PARITY_EXPORT_DIR ?? path.resolve(__dirname, '../../testdata/backend-parity');
+  const dir = process.env.CDF_PARITY_EXPORT_DIR || path.resolve(__dirname, '../../testdata/backend-parity');
   const wire: DataFrameJSON[] = JSON.parse(fs.readFileSync(path.join(dir, fixture + '.json'), 'utf8'));
   const backendFrames = wire.map(dataFrameFromJSON).map(dataFrameToJSON);
 

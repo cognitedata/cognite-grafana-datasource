@@ -56,27 +56,20 @@ func modelVersionsBody(raw json.RawMessage) (any, error) {
 	return map[string]any{"query": modelVersionsQuery, "variables": map[string]string{"space": space, "externalId": externalID}}, nil
 }
 
-func errorStatus(err error) int {
+func errorResponse(err error) backend.DataResponse {
 	if errors.Is(err, context.DeadlineExceeded) {
-		return http.StatusGatewayTimeout
+		return backend.ErrDataResponse(http.StatusGatewayTimeout, context.DeadlineExceeded.Error())
 	}
 	if errors.Is(err, context.Canceled) {
-		return 499
+		return backend.ErrDataResponse(499, context.Canceled.Error())
 	}
-	var downstream *cdf.Error
-	if errors.As(err, &downstream) && downstream.Status >= 400 && downstream.Status <= 599 {
-		backend.Logger.Debug("CDF request failed", "status", downstream.Status, "requestID", downstream.RequestID)
-		return downstream.Status
-	}
-	return http.StatusBadRequest
-}
-
-func errorResponse(err error) backend.DataResponse {
-	status := errorStatus(err)
-	response := backend.ErrDataResponse(backend.Status(status), err.Error())
 	var downstream *cdf.Error
 	if errors.As(err, &downstream) {
-		response.ErrorSource = backend.ErrorSourceDownstream
+		backend.Logger.Debug("CDF request failed", "status", downstream.Status, "requestID", downstream.RequestID)
+		if downstream.Status < 400 || downstream.Status > 599 {
+			return backend.ErrDataResponseWithSource(http.StatusBadGateway, backend.ErrorSourceDownstream, "Unexpected CDF response status")
+		}
+		return backend.ErrDataResponseWithSource(backend.Status(downstream.Status), backend.ErrorSourceDownstream, downstream.Message)
 	}
-	return response
+	return backend.ErrDataResponse(http.StatusInternalServerError, "Internal data source error")
 }
