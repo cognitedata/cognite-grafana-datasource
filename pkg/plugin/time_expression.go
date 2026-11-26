@@ -36,90 +36,59 @@ type TimeExpressionResult struct {
 	Error string
 }
 
-var (
-	simpleDurationRe = regexp.MustCompile(`^(\d+)\s*(ms|s|m|h|d|w)$`)
-	isoDurationRe    = regexp.MustCompile(`^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$`)
-	isoInstantLexRe  = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?`)
-	durationLexRe    = regexp.MustCompile(`^(?:P(?:\d+Y)?(?:\d+M)?(?:\d+W)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+S)?)?|\d+(?:ms|s|m|h|d|w))`)
-	numberLexRe      = regexp.MustCompile(`^\d+(?:\.\d+)?`)
+const (
+	teDecimal      = `\d+(?:\.\d+)?`
+	teAmount       = "(" + teDecimal + ")"
+	simpleDuration = teAmount + `(ms|s|m|h|d|w)`
+	isoDuration    = "P(?:" + teAmount + "Y)?(?:" + teAmount + "M)?(?:" + teAmount + "W)?(?:" + teAmount + "D)?(?:T(?:" + teAmount + "H)?(?:" + teAmount + "M)?(?:" + teAmount + "S)?)?"
 )
 
-// parseDurationMs parses simple Grafana/CDF durations (e.g. "30m", "2w", "500ms")
-// and ISO-8601 durations (e.g. "PT168H", "P1Y", "P7D") to milliseconds.
-func parseDurationMs(raw string) (int64, bool) {
+var (
+	simpleDurationRe = regexp.MustCompile("^" + simpleDuration + "$")
+	isoDurationRe    = regexp.MustCompile("^" + isoDuration + "$")
+	durationLexRe    = regexp.MustCompile("^(?:" + isoDuration + "|" + simpleDuration + ")")
+	numberLexRe      = regexp.MustCompile("^" + teDecimal)
+	isoInstantLexRe  = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})?)?`)
+)
+
+func parseDurationMs(raw string) (float64, bool) {
 	s := strings.TrimSpace(raw)
-	if s == "" {
+	if m := simpleDurationRe.FindStringSubmatch(s); m != nil {
+		scale := map[string]int64{"ms": 1, "s": teSecondMS, "m": teMinuteMS, "h": teHourMS, "d": teDayMS, "w": teWeekMS}[m[2]]
+		n, err := strconv.ParseFloat(m[1], 64)
+		ms := n * float64(scale)
+		return ms, err == nil && ms < math.Exp2(63)
+	}
+	m := isoDurationRe.FindStringSubmatch(s)
+	if m == nil {
 		return 0, false
 	}
-	if m := simpleDurationRe.FindStringSubmatch(strings.ToLower(s)); len(m) == 3 {
-		n, err := strconv.ParseInt(m[1], 10, 64)
+	var total float64
+	hasComponent := false
+	for i, scale := range [...]int64{teYearMS, teMonthMS, teWeekMS, teDayMS, teHourMS, teMinuteMS, teSecondMS} {
+		if m[i+1] == "" {
+			continue
+		}
+		hasComponent = true
+		n, err := strconv.ParseFloat(m[i+1], 64)
 		if err != nil {
 			return 0, false
 		}
-		scale := map[string]int64{"ms": 1, "s": teSecondMS, "m": teMinuteMS, "h": teHourMS, "d": teDayMS, "w": teWeekMS}[m[2]]
-		if n > math.MaxInt64/scale {
-			return 0, false
-		}
-		return n * scale, true
+		total += n * float64(scale)
 	}
-
-	if m := isoDurationRe.FindStringSubmatch(s); len(m) == 8 {
-		hasComponent := false
-		for i := 1; i <= 7; i++ {
-			if m[i] != "" {
-				hasComponent = true
-				break
-			}
-		}
-		if !hasComponent {
-			return 0, false
-		}
-		var total int64
-		mults := [7]int64{teYearMS, teMonthMS, teWeekMS, teDayMS, teHourMS, teMinuteMS, teSecondMS}
-		for i := 1; i <= 7; i++ {
-			if m[i] == "" {
-				continue
-			}
-			n, err := strconv.ParseInt(m[i], 10, 64)
-			if err != nil {
-				return 0, false
-			}
-			if n > (math.MaxInt64-total)/mults[i-1] {
-				return 0, false
-			}
-			total += n * mults[i-1]
-		}
-		return total, true
-	}
-	return 0, false
+	return total, hasComponent && total < math.Exp2(63)
 }
 
 func parseUTCInstantMs(literal string) (int64, bool) {
-	s := strings.TrimSpace(literal)
-	if len(s) == 10 && s[4] == '-' && s[7] == '-' {
-		t, err := time.Parse("2006-01-02", s)
-		if err != nil {
-			return 0, false
-		}
-		return t.UTC().UnixMilli(), true
-	}
-	// If offset-less datetime, append Z so it interprets strictly in UTC.
-	if len(s) >= 19 && s[10] == 'T' {
-		rest := s[11:]
-		hasZone := strings.ContainsAny(rest, "Zz+-")
-		candidate := s
-		if !hasZone {
-			candidate += "Z"
-		}
-		if t, err := time.Parse(time.RFC3339Nano, candidate); err == nil {
-			return t.UTC().UnixMilli(), true
-		}
-		// Handle +0200 style offset without colon if provided.
-		if t, err := time.Parse("2006-01-02T15:04:05.999999999-0700", s); err == nil {
-			return t.UTC().UnixMilli(), true
-		}
-		if t, err := time.Parse("2006-01-02T15:04:05-0700", s); err == nil {
-			return t.UTC().UnixMilli(), true
+	s := strings.Replace(literal, " ", "T", 1)
+	for _, layout := range [...]string{
+		time.DateOnly, time.RFC3339Nano, "2006-01-02T15:04Z07:00",
+		"2006-01-02T15:04:05-0700", "2006-01-02T15:04-0700",
+		"2006-01-02T15:04:05", "2006-01-02T15:04",
+	} {
+		// time.Parse uses UTC for layouts without a zone.
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.UnixMilli(), true
 		}
 	}
 	return 0, false
@@ -207,7 +176,7 @@ func tokenizeTimeExpression(expr string, ctx TimeExpressionContext) ([]teToken, 
 		if loc := durationLexRe.FindStringIndex(rest); loc != nil {
 			lit := rest[:loc[1]]
 			if ms, ok := parseDurationMs(lit); ok {
-				tokens = append(tokens, teToken{Kind: teTokValue, Val: teValue{Kind: teDuration, Val: float64(ms)}})
+				tokens = append(tokens, teToken{Kind: teTokValue, Val: teValue{Kind: teDuration, Val: ms}})
 				i += loc[1]
 				continue
 			}
@@ -244,10 +213,7 @@ func resolveTimeAnchor(name string, ctx TimeExpressionContext) (teValue, error) 
 		if ctx.Now != nil {
 			return teValue{Kind: teInstant, Val: float64(*ctx.Now)}, nil
 		}
-		if ctx.EndTime != nil {
-			return teValue{Kind: teInstant, Val: float64(*ctx.EndTime)}, nil
-		}
-		return teValue{}, fmt.Errorf("\"{{now}}\" requires a dashboard time range")
+		return teValue{Kind: teInstant, Val: float64(time.Now().UnixMilli())}, nil
 	case "maxFilteringInterval":
 		if ctx.MaxFilteringIntervalMs == nil || *ctx.MaxFilteringIntervalMs <= 0 {
 			return teValue{}, fmt.Errorf("{{maxFilteringInterval}} is only available on streams with a filtering interval limit")

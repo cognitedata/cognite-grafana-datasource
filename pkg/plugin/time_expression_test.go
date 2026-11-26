@@ -19,11 +19,11 @@ func TestTimeExpressionGrammar(t *testing.T) {
 		MaxFilteringIntervalMs: &sevenDays,
 	}
 
-	if ms, ok := parseDurationMs("PT168H"); !ok || ms != 7*day {
-		t.Fatalf("PT168H = (%d, %v)", ms, ok)
+	if ms, ok := parseDurationMs("PT168H"); !ok || ms != float64(7*day) {
+		t.Fatalf("PT168H = (%g, %v)", ms, ok)
 	}
-	if ms, ok := parseDurationMs("P1Y"); !ok || ms != 365*day {
-		t.Fatalf("P1Y = (%d, %v)", ms, ok)
+	if ms, ok := parseDurationMs("P1Y"); !ok || ms != float64(365*day) {
+		t.Fatalf("P1Y = (%g, %v)", ms, ok)
 	}
 	if _, ok := parseDurationMs("P"); ok {
 		t.Fatalf("expected P to fail")
@@ -96,6 +96,30 @@ func TestTimeExpressionBoundaries(t *testing.T) {
 		result := evaluateTimeExpression(input, TimeExpressionContext{})
 		if !result.OK || result.ISO != "2026-10-25T00:30:00.000Z" {
 			t.Errorf("%s resolved to %+v", input, result)
+		}
+	}
+}
+
+func TestRecordTimeExpressionFrontendParity(t *testing.T) {
+	end := int64(0)
+	ctx := TimeExpressionContext{EndTime: &end}
+	before := time.Now().UnixMilli()
+	if r := evaluateTimeExpression("{{now}}", ctx); !r.OK || r.MS < before || r.MS > time.Now().UnixMilli() {
+		t.Errorf("current time with historical range = %+v", r)
+	}
+	ctx.Now = &end
+	for expr, want := range map[string]int64{
+		"{{now}}":                      0,
+		"{{endTime}} - 1.5h":           -5400000,
+		"{{endTime}} - PT1.5H":         -5400000,
+		"{{endTime}} + 0.25ms * 4":     1,
+		"{{endTime}} + PT0.00025S * 4": 1,
+		"1970-01-01T06:30Z":            23400000,
+		"1970-01-01 06:30:00":          23400000,
+		"1970-01-01 08:30+0200":        23400000,
+	} {
+		if r := evaluateTimeExpression(expr, ctx); !r.OK || r.MS != want {
+			t.Errorf("%s = %+v, want %d", expr, r, want)
 		}
 	}
 }
