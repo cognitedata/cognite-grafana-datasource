@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -14,6 +15,7 @@ import (
 )
 
 const defaultMaxPageLimit = 1000
+const maxConsecutiveEmptyPages = 10
 
 // CursorResponse represents a cursor-paginated CDF list response.
 type CursorResponse[T any] struct {
@@ -48,22 +50,29 @@ func FetchAndPaginate[T any](
 			query = make(url.Values)
 		}
 		cursor = query.Get("cursor")
+		query.Del("cursor")
 		if fullLimit <= 0 {
-			fullLimit, _ = strconv.Atoi(query.Get("limit"))
+			if n, err := strconv.Atoi(query.Get("limit")); err == nil && n > 0 {
+				fullLimit = n
+			}
 		}
 	} else {
 		pageBody = maps.Clone(body)
 		if pageBody == nil {
 			pageBody = make(map[string]any)
 		}
+		delete(pageBody, "cursor")
 		if fullLimit <= 0 {
-			fullLimit, _ = asPositiveInt(body["limit"])
+			if n, ok := asPositiveInt(body["limit"]); ok {
+				fullLimit = n
+			}
 		}
 	}
 	if fullLimit <= 0 {
 		fullLimit = defaultMaxPageLimit
 	}
 	var all []T
+	emptyPages := 0
 	seenCursors := map[string]struct{}{cursor: {}}
 
 	for {
@@ -97,6 +106,14 @@ func FetchAndPaginate[T any](
 		}
 		if _, dup := seenCursors[page.NextCursor]; dup {
 			return nil, fmt.Errorf("cdf pagination repeated cursor: %q", page.NextCursor)
+		}
+		if len(page.Items) == 0 {
+			emptyPages++
+			if emptyPages >= maxConsecutiveEmptyPages {
+				return nil, fmt.Errorf("CDF pagination returned %d consecutive empty pages with a next cursor", emptyPages)
+			}
+		} else {
+			emptyPages = 0
 		}
 		seenCursors[page.NextCursor] = struct{}{}
 		cursor = page.NextCursor
@@ -172,25 +189,27 @@ func BatchDo[T any, R any](
 		return nil, err
 	}
 
-	var merged []R
-	for _, part := range results {
-		merged = append(merged, part...)
-	}
-	return merged, nil
+	return slices.Concat(results...), nil
 }
 
 func asPositiveInt(v any) (int, bool) {
 	switch n := v.(type) {
-	case json.Number:
-		i, err := n.Int64()
-		return int(i), err == nil && i > 0 && int64(int(i)) == i
 	case int:
-		return n, n > 0
+		if n > 0 {
+			return n, true
+		}
 	case int64:
-		return int(n), n > 0 && int64(int(n)) == n
+		if n > 0 && n <= math.MaxInt {
+			return int(n), true
+		}
+	case json.Number:
+		if i, err := n.Int64(); err == nil && i > 0 && i <= math.MaxInt {
+			return int(i), true
+		}
 	case float64:
-		return int(n), int(n) > 0 && float64(int(n)) == n
-	default:
-		return 0, false
+		if n > 0 && n < 1<<(strconv.IntSize-1) && math.Trunc(n) == n {
+			return int(n), true
+		}
 	}
+	return 0, false
 }

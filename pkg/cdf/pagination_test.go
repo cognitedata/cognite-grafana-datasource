@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -137,5 +139,97 @@ func TestBatchDoOrderingAndErrors(t *testing.T) {
 		return batch, nil
 	}); !errors.Is(err, boom) {
 		t.Fatalf("expected chunk error, got %v", err)
+	}
+}
+
+func TestPositivePaginationLimit(t *testing.T) {
+	for _, v := range []any{3.7, float64(1 << (strconv.IntSize - 1)), json.Number("invalid"), int(-1), math.NaN()} {
+		if n, ok := asPositiveInt(v); ok || n != 0 {
+			t.Errorf("invalid %v returned %d, %v", v, n, ok)
+		}
+	}
+	for _, v := range []any{int64(math.MaxInt), json.Number(strconv.Itoa(math.MaxInt)), float64(3)} {
+		if _, ok := asPositiveInt(v); !ok {
+			t.Errorf("rejected valid limit %v", v)
+		}
+	}
+	if strconv.IntSize == 32 {
+		for _, v := range []any{int64(1<<32 + 5), json.Number("4294967301")} {
+			if n, ok := asPositiveInt(v); ok || n != 0 {
+				t.Errorf("overflow %v returned %d, %v", v, n, ok)
+			}
+		}
+		if n, ok := asPositiveInt(float64(math.MaxInt32)); !ok || n != math.MaxInt32 {
+			t.Fatal("rejected 32-bit maximum")
+		}
+	}
+}
+
+func TestInvalidLimitAndEmptyCursorOnFirstRequest(t *testing.T) {
+	for _, method := range []string{http.MethodGet, http.MethodPost} {
+		t.Run(method, func(t *testing.T) {
+			query := url.Values{}
+			body := map[string]any{}
+			if method == http.MethodGet {
+				query.Set("limit", "999999999999999999999")
+				query.Set("cursor", "")
+			} else {
+				body["limit"] = 3.7
+				body["cursor"] = ""
+			}
+			client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+				if method == http.MethodGet {
+					q := r.URL.Query()
+					if q.Has("cursor") || q.Get("limit") != strconv.Itoa(defaultMaxPageLimit) {
+						t.Errorf("unexpected query %v", q)
+					}
+				} else {
+					var payload map[string]any
+					if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+						t.Error(err)
+					}
+					if _, ok := payload["cursor"]; ok || payload["limit"] != float64(defaultMaxPageLimit) {
+						t.Errorf("unexpected body %v", payload)
+					}
+				}
+				fmt.Fprint(w, `{"items":[]}`)
+			}, false)
+			_, err := FetchAndPaginate[int](t.Context(), client, "Bearer test", method, "/models/views", query, body, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if method == http.MethodGet && (!query.Has("cursor") || query.Get("limit") != "999999999999999999999") {
+				t.Fatal("input query changed")
+			}
+			if method == http.MethodPost && (body["cursor"] != "" || body["limit"] != 3.7) {
+				t.Fatal("input body changed")
+			}
+		})
+	}
+}
+
+func TestConsecutiveEmptyPages(t *testing.T) {
+	for _, progress := range []bool{false, true} {
+		calls := 0
+		client, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+			calls++
+			var items []int
+			if progress && calls%maxConsecutiveEmptyPages == 0 {
+				items = []int{calls}
+			}
+			if calls > 2*maxConsecutiveEmptyPages {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			json.NewEncoder(w).Encode(CursorResponse[int]{Items: items, NextCursor: strconv.Itoa(calls)})
+		}, false)
+		items, err := FetchAndPaginate[int](t.Context(), client, "Bearer test", http.MethodGet, "/models/views", nil, nil, 2)
+		if progress {
+			if err != nil || !slices.Equal(items, []int{maxConsecutiveEmptyPages, 2 * maxConsecutiveEmptyPages}) {
+				t.Fatalf("progress: %v, %v", items, err)
+			}
+		} else if err == nil || !strings.Contains(err.Error(), "consecutive empty pages") || calls != maxConsecutiveEmptyPages {
+			t.Fatalf("empty pages: calls=%d err=%v", calls, err)
+		}
 	}
 }

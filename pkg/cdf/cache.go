@@ -161,8 +161,9 @@ func GetOrLoadJSON[T any](ctx context.Context, c *Cache, key string, ttl time.Du
 		if ctx.Err() == nil && errors.Is(err, errCacheOwnerCanceled) {
 			continue
 		}
-		if ctx.Err() != nil {
-			return result, ctx.Err()
+		if err := ctx.Err(); err != nil {
+			var zero T
+			return zero, err
 		}
 		return result, err
 	}

@@ -189,3 +189,12 @@ func BenchmarkCacheMetadata(b *testing.B) {
 		}
 	}
 }
+
+func TestGetOrLoadJSONDiscardsResultAfterCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	got, err := GetOrLoadJSON(ctx, nil, "key", time.Hour, func(context.Context) (int, error) { cancel(); return 42, nil })
+	if got != 0 || !errors.Is(err, context.Canceled) {
+		t.Fatalf("got %d, %v", got, err)
+	}
+}
