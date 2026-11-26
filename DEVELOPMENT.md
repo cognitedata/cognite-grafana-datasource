@@ -82,6 +82,18 @@ macOS (amd64, arm64) and Windows (amd64). For a native Grafana instance, use
 the executable matching its host. Panel queries continue to use the frontend
 while backend query support is under development.
 
+### Comparing backend and frontend frames
+
+The Go and Jest tests share frame fixtures in `testdata/backend-parity/`. To compare
+a fresh Go SDK export with the frontend frame in the same shell, run:
+
+```sh
+export CDF_PARITY_EXPORT_DIR="$(mktemp -d)"
+go test -count=1 ./pkg/plugin -run TestRuntimeFrameParity
+yarn jest --runInBand --runTestsByPath src/__tests__/backendFrameParity.test.ts
+unset CDF_PARITY_EXPORT_DIR
+```
+
 ## Without Docker
 
 If you are running Grafana natively, you need to build the plugin and link the folder to Grafana's plugin directory.
