@@ -1,0 +1,40 @@
+[
+  {
+    "schema": {
+      "name": "pressure",
+      "refId": "B",
+      "fields": [
+        {
+          "name": "Time",
+          "type": "time",
+          "typeInfo": {
+            "frame": "time.Time"
+          }
+        },
+        {
+          "name": "pressure",
+          "type": "number",
+          "typeInfo": {
+            "frame": "float64"
+          },
+          "labels": {
+            "asset": "pump"
+          },
+          "config": {
+            "unit": "bar"
+          }
+        }
+      ]
+    },
+    "data": {
+      "values": [
+        [
+          1000
+        ],
+        [
+          2.5
+        ]
+      ]
+    }
+  }
+]
