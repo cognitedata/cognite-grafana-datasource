@@ -73,8 +73,22 @@ func NewClient(s Settings, secret string, transport *http.Client) (*Client, erro
 func (c *Client) Close() { c.http.CloseIdleConnections() }
 
 // A forwarded identity is supplied per operation, never stored on the instance.
+func (c *Client) usesClientCredentials() bool {
+	return c.settings.ClientCredentials && !c.settings.PassThrough
+}
+
+// CacheKey scopes data to the authorization identity used by this client.
+// Each data source instance owns its cache, including its service-principal entries.
+func (c *Client) CacheKey(forwarded, resource string, parts ...string) string {
+	identity := strings.TrimSpace(forwarded)
+	if c.usesClientCredentials() {
+		identity = ""
+	}
+	return CacheKey(identity, resource, parts...)
+}
+
 func (c *Client) authorization(ctx context.Context, forwarded string) (string, error) {
-	if c.settings.PassThrough || !c.settings.ClientCredentials {
+	if !c.usesClientCredentials() {
 		forwarded = strings.TrimSpace(forwarded)
 		if forwarded == "" {
 			return "", &Error{Status: 401, Message: "Forwarded OAuth identity is missing. Sign in with OAuth; unattended queries require a client-credentials data source."}
@@ -254,7 +268,7 @@ func (c *Client) request(ctx context.Context, forwarded, method, path string, qu
 			}
 			return nil
 		}
-		if res.StatusCode == 401 && c.settings.ClientCredentials && !c.settings.PassThrough && !refreshed && attempt < 3 {
+		if res.StatusCode == 401 && c.usesClientCredentials() && !refreshed && attempt < 3 {
 			c.invalidate(ctx, auth)
 			refreshed = true
 			continue

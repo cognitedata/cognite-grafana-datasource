@@ -37,7 +37,7 @@ type orderedViewDef struct {
 }
 
 func (d *Datasource) fetchOrderedDMSView(ctx context.Context, auth string, view View) (*orderedViewDef, error) {
-	key := cdf.CacheKey(auth, "dms_view", view.Space, view.ExternalID, view.Version)
+	key := d.client.CacheKey(auth, "dms_view", view.Space, view.ExternalID, view.Version)
 	return cdf.GetOrLoadJSON(ctx, d.cache, key, metadataTTL, func(ctx context.Context) (*orderedViewDef, error) {
 		body := map[string]any{"items": []View{view}, "includeInheritedProperties": true}
 		var resp cdf.CursorResponse[struct {
@@ -55,6 +55,9 @@ func (d *Datasource) fetchOrderedDMSView(ctx context.Context, auth string, view 
 		value, err := decodeOrderedJSON(item.Properties)
 		if err != nil {
 			return nil, err
+		}
+		if value == nil {
+			return result, nil
 		}
 		obj, ok := value.(*orderedObj)
 		if !ok {
@@ -74,7 +77,7 @@ func dmsViewSources(view View) []any {
 }
 
 func (d *Datasource) fetchDMSInstance(ctx context.Context, auth string, view View, id InstanceID) (*dmsInstance, error) {
-	key := cdf.CacheKey(auth, "dms_instance", view.Space, view.ExternalID, view.Version, id.Space, id.ExternalID)
+	key := d.client.CacheKey(auth, "dms_instance", view.Space, view.ExternalID, view.Version, id.Space, id.ExternalID)
 	return cdf.GetOrLoadJSON(ctx, d.cache, key, metadataTTL, func(ctx context.Context) (*dmsInstance, error) {
 		body := map[string]any{"sources": dmsViewSources(view), "includeTyping": false, "items": []any{map[string]string{"instanceType": "node", "space": id.Space, "externalId": id.ExternalID}}}
 		items, err := cdf.FetchItems[dmsInstance](ctx, d.client, auth, http.MethodPost, "/models/instances/byids", nil, body)

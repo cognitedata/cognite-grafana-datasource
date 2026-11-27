@@ -22,7 +22,7 @@ func TestOrderedViewMetadata(t *testing.T) {
 		fmt.Fprint(w, `{"items":[{"name":"test","properties":{"z":{"value":9007199254740993},"\u03bb":null,"a":[]}}]}`)
 	})
 	view := View{"s", "v", "1"}
-	for _, auth := range []string{"Bearer a", "Bearer a", "Bearer b"} {
+	for _, auth := range []string{"Bearer a", " Bearer a ", "Bearer b"} {
 		got, err := ds.fetchOrderedDMSView(t.Context(), auth, view)
 		if err != nil || got == nil {
 			t.Fatalf("view: %v, %v", got, err)
@@ -63,13 +63,36 @@ func TestStateSetMetadata(t *testing.T) {
 		}
 		fmt.Fprint(w, `{"items":[{"space":"s","externalId":"x","properties":{"cdf_cdm":{"CogniteStateSet/v1":{"states":[{"numericValue":2,"stringValue":"two"},{"numericValue":null,"stringValue":"invalid"},{"numericValue":0,"stringValue":"zero","description":"first"}]}}}}]}`)
 	})
-	for i := 0; i < 2; i++ {
-		states, err := ds.getStateSet(t.Context(), "Bearer user", InstanceID{"s", "x"})
+	for _, auth := range []string{"Bearer user", " Bearer user "} {
+		states, err := ds.getStateSet(t.Context(), auth, InstanceID{"s", "x"})
 		if err != nil || !reflect.DeepEqual(states, []StateSetEntry{{0, "zero", "first"}, {2, "two", ""}}) {
 			t.Fatalf("states: %+v (%v)", states, err)
 		}
 	}
 	if calls != 1 {
 		t.Errorf("instance fetched %d times", calls)
+	}
+}
+
+func TestViewWithoutProperties(t *testing.T) {
+	for _, tc := range []struct {
+		item    string
+		invalid bool
+	}{
+		{`{"name":"empty"}`, false},
+		{`{"name":"empty","properties":null}`, false},
+		{`{"properties":[]}`, true},
+	} {
+		ds := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{"items":[%s]}`, tc.item)
+		})
+		got, err := ds.fetchOrderedDMSView(t.Context(), "Bearer user", View{"s", "v", "1"})
+		if tc.invalid {
+			if err == nil {
+				t.Errorf("accepted invalid properties in %s", tc.item)
+			}
+		} else if err != nil || got == nil || got.Name != "empty" || len(got.PropertyNames) != 0 || len(got.Properties) != 0 {
+			t.Errorf("%s: got %+v, err %v", tc.item, got, err)
+		}
 	}
 }
