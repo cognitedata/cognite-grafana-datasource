@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -81,6 +82,12 @@ func parseDurationMs(raw string) (float64, bool) {
 
 func parseUTCInstantMs(literal string) (int64, bool) {
 	s := strings.Replace(literal, " ", "T", 1)
+	// Go only parses hours through 23. Parse end-of-day literals at hour zero
+	// in their original offset, then advance by one day.
+	endOfDay := len(s) >= 13 && s[10:13] == "T24"
+	if endOfDay {
+		s = s[:11] + "00" + s[13:]
+	}
 	for _, layout := range [...]string{
 		time.DateOnly, time.RFC3339Nano, "2006-01-02T15:04Z07:00",
 		"2006-01-02T15:04:05-0700", "2006-01-02T15:04-0700",
@@ -88,6 +95,12 @@ func parseUTCInstantMs(literal string) (int64, bool) {
 	} {
 		// time.Parse uses UTC for layouts without a zone.
 		if t, err := time.Parse(layout, s); err == nil {
+			if endOfDay {
+				if t.Minute() != 0 || t.Second() != 0 || t.Nanosecond() != 0 {
+					return 0, false
+				}
+				t = t.Add(24 * time.Hour)
+			}
 			return t.UnixMilli(), true
 		}
 	}
@@ -128,8 +141,9 @@ func tokenizeTimeExpression(expr string, ctx TimeExpressionContext) ([]teToken, 
 	i := 0
 	n := len(expr)
 	for i < n {
-		if unicode.IsSpace(rune(expr[i])) {
-			i++
+		r, width := utf8.DecodeRuneInString(expr[i:])
+		if unicode.IsSpace(r) || r == '\uFEFF' {
+			i += width
 			continue
 		}
 		ch := expr[i]
