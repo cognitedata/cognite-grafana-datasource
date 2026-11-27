@@ -22,6 +22,7 @@ var (
 
 type Datasource struct {
 	client   *cdf.Client
+	cache    *cdf.Cache
 	settings cdf.Settings
 	// Incomplete provisioning must still allow the frontend editor to open.
 	configErr error
@@ -50,6 +51,7 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	}
 	return &Datasource{
 		client:   client,
+		cache:    cdf.NewCache(0, nil),
 		settings: config,
 	}, nil
 }

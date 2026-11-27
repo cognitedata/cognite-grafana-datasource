@@ -282,3 +282,22 @@ func TestResponseBodyTimeout(t *testing.T) {
 		}
 	}
 }
+
+func TestClientMetadataCacheIdentity(t *testing.T) {
+	for _, tc := range []struct {
+		settings Settings
+		shared   bool
+	}{
+		{Settings{ClientCredentials: true}, true},
+		{Settings{ClientCredentials: true, PassThrough: true}, false},
+		{Settings{PassThrough: true}, false},
+		{Settings{}, false},
+	} {
+		client := &Client{settings: tc.settings}
+		key := client.CacheKey("Bearer a", "view", "s", "v")
+		if key != client.CacheKey(" Bearer a ", "view", "s", "v") ||
+			(key == client.CacheKey("Bearer b", "view", "s", "v")) != tc.shared {
+			t.Errorf("unexpected cache identity for passthrough=%v clientCredentials=%v", tc.settings.PassThrough, tc.settings.ClientCredentials)
+		}
+	}
+}
