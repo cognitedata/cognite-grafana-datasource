@@ -8,16 +8,13 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 const (
-	teSecondMS = int64(1000)
-	teMinuteMS = 60 * teSecondMS
-	teHourMS   = 60 * teMinuteMS
-	teDayMS    = 24 * teHourMS
-	teWeekMS   = 7 * teDayMS
-	teMonthMS  = 30 * teDayMS
-	teYearMS   = 365 * teDayMS
+	teWeekMS  = 7 * dayMS
+	teMonthMS = 30 * dayMS
+	teYearMS  = 365 * dayMS
 )
 
 // TimeExpressionContext provides the anchor values resolved inside custom record time windows.
@@ -54,18 +51,18 @@ var (
 func parseDurationMs(raw string) (float64, bool) {
 	s := strings.TrimSpace(raw)
 	if m := simpleDurationRe.FindStringSubmatch(s); m != nil {
-		scale := map[string]int64{"ms": 1, "s": teSecondMS, "m": teMinuteMS, "h": teHourMS, "d": teDayMS, "w": teWeekMS}[m[2]]
+		scale := map[string]int64{"ms": 1, "s": secondMS, "m": minuteMS, "h": hourMS, "d": dayMS, "w": teWeekMS}[m[2]]
 		n, err := strconv.ParseFloat(m[1], 64)
 		ms := n * float64(scale)
 		return ms, err == nil && ms < math.Exp2(63)
 	}
 	m := isoDurationRe.FindStringSubmatch(s)
-	if m == nil {
+	if m == nil || strings.HasSuffix(s, "T") {
 		return 0, false
 	}
 	var total float64
 	hasComponent := false
-	for i, scale := range [...]int64{teYearMS, teMonthMS, teWeekMS, teDayMS, teHourMS, teMinuteMS, teSecondMS} {
+	for i, scale := range [...]int64{teYearMS, teMonthMS, teWeekMS, dayMS, hourMS, minuteMS, secondMS} {
 		if m[i+1] == "" {
 			continue
 		}
@@ -81,6 +78,12 @@ func parseDurationMs(raw string) (float64, bool) {
 
 func parseUTCInstantMs(literal string) (int64, bool) {
 	s := strings.Replace(literal, " ", "T", 1)
+	// Go only parses hours through 23. Parse end-of-day literals at hour zero
+	// in their original offset, then advance by one day.
+	endOfDay := len(s) >= 13 && s[10:13] == "T24"
+	if endOfDay {
+		s = s[:11] + "00" + s[13:]
+	}
 	for _, layout := range [...]string{
 		time.DateOnly, time.RFC3339Nano, "2006-01-02T15:04Z07:00",
 		"2006-01-02T15:04:05-0700", "2006-01-02T15:04-0700",
@@ -88,6 +91,12 @@ func parseUTCInstantMs(literal string) (int64, bool) {
 	} {
 		// time.Parse uses UTC for layouts without a zone.
 		if t, err := time.Parse(layout, s); err == nil {
+			if endOfDay {
+				if t.Minute() != 0 || t.Second() != 0 || t.Nanosecond() != 0 {
+					return 0, false
+				}
+				t = t.Add(24 * time.Hour)
+			}
 			return t.UnixMilli(), true
 		}
 	}
@@ -128,8 +137,9 @@ func tokenizeTimeExpression(expr string, ctx TimeExpressionContext) ([]teToken, 
 	i := 0
 	n := len(expr)
 	for i < n {
-		if unicode.IsSpace(rune(expr[i])) {
-			i++
+		r, width := utf8.DecodeRuneInString(expr[i:])
+		if unicode.IsSpace(r) || r == '\uFEFF' {
+			i += width
 			continue
 		}
 		ch := expr[i]
@@ -191,7 +201,7 @@ func tokenizeTimeExpression(expr string, ctx TimeExpressionContext) ([]teToken, 
 			i += loc[1]
 			continue
 		}
-		return nil, fmt.Errorf("Unexpected character %q", string(ch))
+		return nil, fmt.Errorf("Unexpected character %q", string(r))
 	}
 	tokens = append(tokens, teToken{Kind: teTokEOF})
 	return tokens, nil
@@ -283,18 +293,16 @@ func (p *teParser) parseMulDiv() (teValue, error) {
 }
 
 func (p *teParser) parseUnary() (teValue, error) {
-	if p.peek().Kind == teTokOp && (p.peek().Op == '+' || p.peek().Op == '-') {
-		op := p.next().Op
+	if p.peek().Kind == teTokOp && p.peek().Op == '-' {
+		p.next()
 		v, err := p.parseUnary()
 		if err != nil {
 			return teValue{}, err
 		}
 		if v.Kind == teInstant {
-			return teValue{}, fmt.Errorf("Cannot apply unary %q to a timestamp", string(op))
+			return teValue{}, fmt.Errorf(`Cannot apply unary "-" to a timestamp`)
 		}
-		if op == '-' {
-			v.Val = -v.Val
-		}
+		v.Val = -v.Val
 		return v, nil
 	}
 	return p.parsePrimary()

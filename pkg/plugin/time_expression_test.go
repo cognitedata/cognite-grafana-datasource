@@ -123,3 +123,49 @@ func TestRecordTimeExpressionFrontendParity(t *testing.T) {
 		}
 	}
 }
+
+func TestRecordEndOfDay(t *testing.T) {
+	for expr, want := range map[string]string{
+		"2026-08-01T24:00:00Z":          "2026-08-02T00:00:00.000Z",
+		"2024-02-29 24:00":              "2024-03-01T00:00:00.000Z",
+		"2026-12-31T24:00:00.000-02:30": "2027-01-01T02:30:00.000Z",
+	} {
+		if r := evaluateTimeExpression(expr, TimeExpressionContext{}); !r.OK || r.ISO != want {
+			t.Errorf("%s = %+v, want %s", expr, r, want)
+		}
+	}
+	for _, expr := range []string{"2026-08-01T24:01", "2026-08-01T24:00:01", "2026-08-01T24:00:00.000000001Z"} {
+		if r := evaluateTimeExpression(expr, TimeExpressionContext{}); r.OK {
+			t.Errorf("accepted %s", expr)
+		}
+	}
+}
+
+func TestRecordExpressionUnicodeWhitespace(t *testing.T) {
+	r := evaluateTimeExpression("1970-01-01\u00a0+\u20031s\ufeff+1ms", TimeExpressionContext{})
+	if !r.OK || r.MS != 1001 {
+		t.Errorf("expression with Unicode whitespace resolved to %+v", r)
+	}
+}
+
+func TestRecordExpressionTokenParity(t *testing.T) {
+	end := int64(0)
+	ctx := TimeExpressionContext{EndTime: &end}
+	if r := evaluateTimeExpression("2026-08-01 \u2013 1d", ctx); r.Error != "Unexpected character \"\u2013\"" {
+		t.Errorf("unexpected character diagnostic = %q", r.Error)
+	}
+	for _, expr := range []string{"{{endTime}} - P1DT", "{{endTime}} - +1d"} {
+		if r := evaluateTimeExpression(expr, ctx); r.OK {
+			t.Errorf("accepted %q", expr)
+		}
+	}
+	for expr, want := range map[string]int64{
+		"{{endTime}} + P1D":    dayMS,
+		"{{endTime}} + P1DT2H": dayMS + 2*hourMS,
+		"{{endTime}} + -1d":    -dayMS,
+	} {
+		if r := evaluateTimeExpression(expr, ctx); !r.OK || r.MS != want {
+			t.Errorf("%s = %+v, want %d", expr, r, want)
+		}
+	}
+}
