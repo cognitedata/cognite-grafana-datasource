@@ -147,3 +147,25 @@ func TestRecordExpressionUnicodeWhitespace(t *testing.T) {
 		t.Errorf("expression with Unicode whitespace resolved to %+v", r)
 	}
 }
+
+func TestRecordExpressionTokenParity(t *testing.T) {
+	end := int64(0)
+	ctx := TimeExpressionContext{EndTime: &end}
+	if r := evaluateTimeExpression("2026-08-01 \u2013 1d", ctx); r.Error != "Unexpected character \"\u2013\"" {
+		t.Errorf("unexpected character diagnostic = %q", r.Error)
+	}
+	for _, expr := range []string{"{{endTime}} - P1DT", "{{endTime}} - +1d"} {
+		if r := evaluateTimeExpression(expr, ctx); r.OK {
+			t.Errorf("accepted %q", expr)
+		}
+	}
+	for expr, want := range map[string]int64{
+		"{{endTime}} + P1D":    dayMS,
+		"{{endTime}} + P1DT2H": dayMS + 2*hourMS,
+		"{{endTime}} + -1d":    -dayMS,
+	} {
+		if r := evaluateTimeExpression(expr, ctx); !r.OK || r.MS != want {
+			t.Errorf("%s = %+v, want %d", expr, r, want)
+		}
+	}
+}
