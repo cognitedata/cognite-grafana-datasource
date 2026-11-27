@@ -40,6 +40,7 @@ func newTestDatasource(t *testing.T, handler http.HandlerFunc) *Datasource {
 	t.Cleanup(client.Close)
 	return &Datasource{
 		client:   client,
+		cache:    cdf.NewCache(0, nil),
 		settings: settings,
 	}
 }
