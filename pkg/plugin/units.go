@@ -16,11 +16,11 @@ type CogniteUnit struct {
 	Space           string  `json:"space"`
 	ExternalID      string  `json:"externalId"`
 	Name            string  `json:"name,omitempty"`
-	Description     string  `json:"description,omitempty"`
+	Description     *string `json:"description,omitempty"`
 	Symbol          *string `json:"symbol,omitempty"`
-	Quantity        string  `json:"quantity,omitempty"`
-	Source          string  `json:"source,omitempty"`
-	SourceReference string  `json:"sourceReference,omitempty"`
+	Quantity        *string `json:"quantity,omitempty"`
+	Source          *string `json:"source,omitempty"`
+	SourceReference *string `json:"sourceReference,omitempty"`
 }
 
 var errEmptyUnitCatalog = errors.New("empty unit catalog")
@@ -81,14 +81,12 @@ func (d *Datasource) fetchCogniteUnits(ctx context.Context, auth string) ([]Cogn
 			Space:           inst.Space,
 			ExternalID:      inst.ExternalID,
 			Name:            name,
-			Description:     stringProp(unitProps["description"]),
-			Quantity:        stringProp(unitProps["quantity"]),
-			Source:          stringProp(unitProps["source"]),
-			SourceReference: stringProp(unitProps["sourceReference"]),
+			Description:     optionalStringProp(unitProps["description"]),
+			Quantity:        optionalStringProp(unitProps["quantity"]),
+			Source:          optionalStringProp(unitProps["source"]),
+			SourceReference: optionalStringProp(unitProps["sourceReference"]),
 		}
-		if symbol, ok := unitProps["symbol"].(string); ok {
-			unit.Symbol = &symbol
-		}
+		unit.Symbol = optionalStringProp(unitProps["symbol"])
 		units = append(units, unit)
 	}
 	return units, nil
@@ -96,7 +94,7 @@ func (d *Datasource) fetchCogniteUnits(ctx context.Context, auth string) ([]Cogn
 
 func resolveEffectiveUnit(ctx context.Context, d *Datasource, auth string, storageUnit any, targetUnit string) (*CogniteUnit, error) {
 	var storageExternalID, storageSpace string
-	if m, ok := storageUnit.(map[string]any); ok {
+	if m, ok := orderedToPlainMap(storageUnit).(map[string]any); ok {
 		storageExternalID = stringProp(m["externalId"])
 		storageSpace = stringProp(m["space"])
 	}
@@ -149,4 +147,12 @@ func withUnitSuffix(name, unitExternalID string, index map[string]CogniteUnit) s
 func stringProp(v any) string {
 	s, _ := v.(string)
 	return s
+}
+
+func optionalStringProp(v any) *string {
+	s, ok := v.(string)
+	if !ok {
+		return nil
+	}
+	return &s
 }

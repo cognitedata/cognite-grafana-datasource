@@ -11,9 +11,12 @@ import (
 
 const stateLabelToken = "state"
 
+// ECMAScript whitespace and line terminators used by the frontend token grammar.
+const labelSpace = `\t-\r\p{Zs}\x{2028}\x{2029}\x{FEFF}`
+
 var (
-	labelTokenRe = regexp.MustCompile(`\{\{\s*([^{}\s]+)\s*\}\}`)
-	stateTokenRe = regexp.MustCompile(`\{\{\s*state\s*\}\}`)
+	labelTokenRe = regexp.MustCompile(`\{\{[` + labelSpace + `]*([^{}` + labelSpace + `]+)[` + labelSpace + `]*\}\}`)
+	stateTokenRe = regexp.MustCompile(`\{\{[` + labelSpace + `]*state[` + labelSpace + `]*\}\}`)
 )
 
 func labelContainsVariableProps(label string) bool {
@@ -44,31 +47,23 @@ func resolveLabelPath(item any, path string) (any, bool) {
 		switch obj := node.(type) {
 		case map[string]any:
 			value, found = obj[segment]
-		default:
-			// Unit structs and raw JSON retain field order for bare object tokens.
+		case *orderedObj:
+			value, found = obj.Values[segment]
+		case []any:
+			idx, err := strconv.Atoi(segment)
+			if err == nil && idx >= 0 && idx < len(obj) && strconv.Itoa(idx) == segment {
+				value, found = obj[idx], true
+			}
+		case *CogniteUnit, CogniteUnit, json.RawMessage:
 			raw, err := json.Marshal(obj)
 			if err != nil {
 				return nil, false
 			}
-			var fields map[string]json.RawMessage
-			if err := json.Unmarshal(raw, &fields); err != nil {
+			decoded, err := decodeOrderedJSON(raw)
+			if err != nil {
 				return nil, false
 			}
-			part, ok := fields[segment]
-			if !ok {
-				return nil, false
-			}
-			switch part[0] {
-			case '{', '[':
-				value = part
-			default:
-				dec := json.NewDecoder(bytes.NewReader(part))
-				dec.UseNumber()
-				if err := dec.Decode(&value); err != nil {
-					return nil, false
-				}
-			}
-			found = true
+			value, found = resolveLabelPath(decoded, segment)
 		}
 		if !found {
 			return nil, false
@@ -94,12 +89,25 @@ func renderLabelToken(path string, value any, found bool) string {
 	case bool:
 		return strconv.FormatBool(v)
 	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
+		if v == 0 {
+			return "0"
+		}
+		raw, err := json.Marshal(v)
+		if err == nil {
+			return string(raw)
+		}
+		return fmt.Sprint(v)
 	case int:
 		return strconv.Itoa(v)
 	case int64:
 		return strconv.FormatInt(v, 10)
 	case json.Number:
+		if !strings.ContainsAny(v.String(), ".eE") && v.String() != "-0" {
+			return v.String()
+		}
+		if n, err := v.Float64(); err == nil {
+			return renderLabelToken(path, n, true)
+		}
 		return v.String()
 	default:
 		var b bytes.Buffer
