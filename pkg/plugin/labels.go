@@ -36,7 +36,8 @@ func withoutStateToken(label string) string {
 	return stateTokenRe.ReplaceAllString(label, ":"+stateLabelToken)
 }
 
-func resolveLabelPath(item any, path string) (any, bool) {
+// Time-series labels follow the editor's dotted paths, including numeric list indices.
+func resolveTimeSeriesLabelPath(item any, path string) (any, bool) {
 	if path == "" {
 		return nil, false
 	}
@@ -47,7 +48,12 @@ func resolveLabelPath(item any, path string) (any, bool) {
 		switch obj := node.(type) {
 		case map[string]any:
 			value, found = obj[segment]
+		case instanceProperties:
+			value, found = obj[segment]
 		case *orderedObj:
+			if obj == nil {
+				return nil, false
+			}
 			value, found = obj.Values[segment]
 		case []any:
 			idx, err := strconv.Atoi(segment)
@@ -63,7 +69,7 @@ func resolveLabelPath(item any, path string) (any, bool) {
 			if err != nil {
 				return nil, false
 			}
-			value, found = resolveLabelPath(decoded, segment)
+			value, found = resolveTimeSeriesLabelPath(decoded, segment)
 		}
 		if !found {
 			return nil, false
@@ -77,7 +83,7 @@ func renderLabelToken(path string, value any, found bool) string {
 	if !found {
 		return ":" + path
 	}
-	if value == nil {
+	if value == nil || value == (*CogniteUnit)(nil) || value == (*orderedObj)(nil) {
 		if strings.Contains(path, ".") {
 			return ":" + path
 		}
@@ -143,7 +149,7 @@ func interpolateCogniteTimeSeriesInstanceLabel(labelSrc string, props map[string
 		if !rootInView && !rootOwnProp {
 			return renderLabelToken(group, nil, false)
 		}
-		val, _ := resolveLabelPath(props, group)
+		val, _ := resolveTimeSeriesLabelPath(props, group)
 		return renderLabelToken(group, val, true)
 	})
 }

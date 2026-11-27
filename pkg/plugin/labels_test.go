@@ -45,3 +45,20 @@ func TestOptionalUnitLabelFields(t *testing.T) {
 		t.Errorf("unit label = %q", got)
 	}
 }
+
+func TestTimeSeriesLabelPathFromInstanceProperties(t *testing.T) {
+	props := instanceProperties{"aliases": []any{"primary"}}
+	got, found := resolveTimeSeriesLabelPath(props, "aliases.0")
+	if !found || got != "primary" {
+		t.Errorf("aliases.0 = (%v, %v)", got, found)
+	}
+}
+
+func TestTypedNilUnitLabel(t *testing.T) {
+	var unit *CogniteUnit
+	props := map[string]any{"unit": unit, "asset": instanceProperties{"unit": unit}}
+	got := interpolateCogniteTimeSeriesInstanceLabel("{{unit}}/{{asset.unit}}/{{asset.unit.symbol}}", props, nil)
+	if got != "null/:asset.unit/:asset.unit.symbol" {
+		t.Errorf("nil unit label = %q", got)
+	}
+}
