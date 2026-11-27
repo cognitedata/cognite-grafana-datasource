@@ -24,9 +24,30 @@ type InstanceID struct {
 	ExternalID string `json:"externalId"`
 }
 
+// Property names are looked up directly. Nested objects retain CDF field order
+// because a template can render an entire property as JSON.
+type instanceProperties map[string]any
+
+func (p *instanceProperties) UnmarshalJSON(raw []byte) error {
+	value, err := decodeOrderedJSON(raw)
+	if err != nil {
+		return err
+	}
+	if value == nil {
+		*p = nil
+		return nil
+	}
+	obj, ok := value.(*orderedObj)
+	if !ok {
+		return fmt.Errorf("expected an object for DMS instance properties")
+	}
+	*p = obj.Values
+	return nil
+}
+
 type dmsInstance struct {
 	InstanceID
-	Properties map[string]map[string]map[string]any `json:"properties"`
+	Properties map[string]map[string]instanceProperties `json:"properties"`
 }
 
 type orderedViewDef struct {
@@ -103,7 +124,7 @@ func (d *Datasource) getStateSet(ctx context.Context, auth string, id InstanceID
 	states, _ := inst.Properties[view.Space][view.ExternalID+"/"+view.Version]["states"].([]any)
 	var entries []StateSetEntry
 	for _, raw := range states {
-		m, _ := raw.(map[string]any)
+		m, _ := orderedToPlainMap(raw).(map[string]any)
 		n, hasNumber := m["numericValue"].(json.Number)
 		label, hasLabel := m["stringValue"].(string)
 		if !hasNumber || !hasLabel {

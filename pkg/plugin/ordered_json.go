@@ -105,3 +105,27 @@ func orderedToPlainMap(v any) any {
 		return v
 	}
 }
+
+// MarshalJSON preserves object field order in cache entries and display labels.
+func (obj *orderedObj) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	buf.WriteByte('{')
+	for i, key := range obj.Keys {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		if err := enc.Encode(key); err != nil {
+			return nil, err
+		}
+		buf.Truncate(buf.Len() - 1)
+		buf.WriteByte(':')
+		if err := enc.Encode(obj.Values[key]); err != nil {
+			return nil, err
+		}
+		buf.Truncate(buf.Len() - 1)
+	}
+	buf.WriteByte('}')
+	return buf.Bytes(), nil
+}
